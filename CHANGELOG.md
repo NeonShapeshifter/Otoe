@@ -38,6 +38,8 @@
 - Expanded the UI kit preview with controlled select and action menu examples.
 - Added keyboard handling for button-backed controls, menus, and selects:
   Arrow keys, Home/End, Enter/Space, and Escape.
+- Added `FocusScope` plus live-preview Tab trapping and focus restoration for
+  dialogs and popovers.
 
 ## v0.0.1 - Technical Preview
 

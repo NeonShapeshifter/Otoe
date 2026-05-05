@@ -30,6 +30,21 @@ from otoe import (
 )
 
 
+def _focus_panel(show_widget):
+    return show_widget.children[0].children[0]
+
+
+def _menu_items(menu_widget):
+    panel = _focus_panel(menu_widget)
+    return panel.children[0].children[0].children
+
+
+def _select_items(select_widget):
+    focus_scope = select_widget.children[1].children[0]
+    panel = focus_scope.children[0]
+    return panel.children[0].children[0].children
+
+
 def test_class_names_deduplicates_and_skips_empty_parts():
     assert class_names("ui-button primary", None, "", "primary extra") == "ui-button primary extra"
 
@@ -189,9 +204,12 @@ def test_dialog_tracks_open_signal():
     open_dialog.set(True)
 
     backdrop = dialog.children[0]
-    panel = backdrop.children[0]
+    focus_scope = backdrop.children[0]
+    panel = focus_scope.children[0]
     body = panel.children[0]
     assert backdrop.props["className"] == "ui-dialog-backdrop"
+    assert focus_scope.name == "FocusScope"
+    assert focus_scope.props["className"] == "ui-focus-scope ui-dialog-focus-scope"
     assert body.children[0].children[0].props["content"] == "Workspace settings"
     assert body.children[2].props["content"] == "Synced"
 
@@ -367,10 +385,11 @@ def test_menu_renders_active_items_and_ignores_disabled_selection():
         )
     )
 
-    panel = menu.children[0]
-    list_widget = panel.children[0].children[0]
-    first, second = list_widget.children
+    focus_scope = menu.children[0]
+    panel = focus_scope.children[0]
+    first, second = _menu_items(menu)
 
+    assert focus_scope.props["className"] == "ui-focus-scope ui-menu-focus-scope"
     assert panel.props["className"] == "ui-card is-default ui-menu"
     assert first.props["className"] == "ui-menu-item is-info is-active"
     assert first.children[0].children[0].children[0].props["content"] == "Edit view"
@@ -402,7 +421,7 @@ def test_menu_tracks_open_signal():
 
     open_menu.set(True)
 
-    button = menu.children[0].children[0].children[0].children[0]
+    button = _menu_items(menu)[0]
     assert button.children[0].children[0].children[0].props["content"] == "Edit view"
 
 
@@ -426,8 +445,7 @@ def test_menu_keyboard_moves_focus_selects_and_closes():
             )
         )
     )
-    list_widget = menu.children[0].children[0].children[0]
-    edit, duplicate, archive = list_widget.children
+    edit, duplicate, archive = _menu_items(menu)
 
     edit.trigger("onKeyDown", "ArrowDown")
 
@@ -463,7 +481,7 @@ def test_menu_keyboard_escape_closes_without_selecting():
             )
         )
     )
-    button = menu.children[0].children[0].children[0].children[0]
+    button = _menu_items(menu)[0]
 
     button.trigger("onKeyDown", "Escape")
 
@@ -502,9 +520,9 @@ def test_select_renders_selected_option_and_dispatches_change():
     assert open_select.value is True
     assert trigger.props["className"] == "ui-select-trigger is-active"
 
-    popover = select.children[1].children[0]
-    list_widget = popover.children[0].children[0]
-    compact, roomy = list_widget.children
+    focus_scope = select.children[1].children[0]
+    compact, roomy = _select_items(select)
+    assert focus_scope.props["className"] == "ui-focus-scope ui-select-focus-scope"
     assert compact.props["className"] == "ui-select-option is-active"
     assert roomy.children[0].children[0].children[0].props["content"] == "Roomy"
 
@@ -532,7 +550,7 @@ def test_select_ignores_disabled_options():
             )
         )
     )
-    locked = select.children[1].children[0].children[0].children[0].children[1]
+    locked = _select_items(select)[1]
 
     assert locked.props["className"] == "ui-select-option is-disabled"
     assert locked.props["disabled"] is True
@@ -569,8 +587,7 @@ def test_select_keyboard_opens_moves_selection_and_closes():
     assert open_select.value is True
     assert trigger.children[0].children[0].children[0].props["content"] == "Roomy"
 
-    popover = select.children[1].children[0]
-    compact, locked, roomy = popover.children[0].children[0].children
+    compact, locked, roomy = _select_items(select)
     assert locked.props["className"] == "ui-select-option is-disabled"
     assert roomy.props["className"] == "ui-select-option is-active"
 
@@ -602,7 +619,7 @@ def test_select_keyboard_enter_selects_focused_option():
             )
         )
     )
-    roomy = select.children[1].children[0].children[0].children[0].children[1]
+    roomy = _select_items(select)[1]
 
     roomy.trigger("onKeyDown", "Enter")
 

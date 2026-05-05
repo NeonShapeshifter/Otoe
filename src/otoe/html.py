@@ -212,6 +212,23 @@ def _render_widget(
             stylesheet,
             strict_styles,
         )
+    if name == "FocusScope":
+        focus_attrs = {}
+        if widget.props.get("trapFocus"):
+            focus_attrs["data-otoe-focus-scope"] = "trap"
+        if widget.props.get("restoreFocus"):
+            focus_attrs["data-otoe-restore-focus"] = "true"
+        return _container(
+            "div",
+            widget,
+            "otoe-focus-scope",
+            pretty,
+            indent,
+            attributes,
+            stylesheet,
+            strict_styles,
+            extra_attrs=focus_attrs,
+        )
     if name in {"Show", "For"}:
         return _container(
             "div",
@@ -244,15 +261,20 @@ def _container(
     attributes: Callable[[FakeWidget], dict[str, Any]] | None,
     stylesheet: StyleSheet | None,
     strict_styles: bool,
+    *,
+    extra_attrs: dict[str, Any] | None = None,
 ) -> str:
+    base_attrs = {
+        "class": _classes(base_class, widget.props.get("className")),
+        **_style_vars(widget),
+    }
+    if extra_attrs:
+        base_attrs.update(extra_attrs)
     return _block(
         tag,
         _widget_attrs(
             widget,
-            {
-                "class": _classes(base_class, widget.props.get("className")),
-                **_style_vars(widget),
-            },
+            base_attrs,
             attributes,
             stylesheet,
             strict_styles,

@@ -24,6 +24,8 @@ stable public framework or a production desktop renderer.
   and controlled selects.
 - Keyboard handling for command palettes, menus, selects, and button-backed
   controls in the live preview backend.
+- `FocusScope` support for live focus trapping and focus restoration in dialogs
+  and popovers.
 - Live autofocus support for command overlays and other focused inputs.
 - Wraith-shaped and SaaS-shaped case studies using the same UI primitives.
 - UI kit kitchen-sink preview for validating primitives outside one product shape.

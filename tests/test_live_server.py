@@ -44,6 +44,11 @@ def test_render_live_page_includes_click_input_and_keydown_dispatchers():
     assert 'closest("[data-otoe-keydown]")' in html
     assert 'querySelector("[data-otoe-global-keydown]")' in html
     assert 'querySelector("[data-otoe-autofocus]")' in html
+    assert "[data-otoe-focus-scope='trap']" in html
+    assert "trapFocus(event)" in html
+    assert "lastFocusOutsideScope" in html
+    assert "restoreFocusTarget(restoreSelector)" in html
+    assert "focusSelectorFor(activeTarget)" in html
     assert "focusAutoTarget()" in html
     assert "event.key" in html
     assert "ctrlKey" in html

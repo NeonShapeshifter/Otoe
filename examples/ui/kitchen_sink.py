@@ -296,7 +296,7 @@ def UIKitRoute(
             ),
             StatCard(
                 label="Tests",
-                value="101",
+                value="102",
                 detail="Runtime covered",
                 tone="good",
                 className="ui-demo-stat",

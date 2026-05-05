@@ -29,6 +29,7 @@ class LivePreviewConfig:
 LIVE_SCRIPT = r"""
 (() => {
   const root = document.getElementById("otoe-root");
+  let lastFocusOutsideScope = null;
 
   const escapeSelector = (value) => {
     if (window.CSS && CSS.escape) {
@@ -37,22 +38,45 @@ LIVE_SCRIPT = r"""
     return value.replace(/["\\]/g, "\\$&");
   };
 
-  const replaceRoot = (html, activeEventId, selectionStart, selectionEnd) => {
+  const replaceRoot = (html, activeTarget = null, selectionStart, selectionEnd, restoreSelector = null) => {
     root.innerHTML = html;
-    if (!activeEventId) {
+    const focusSelector = focusSelectorFor(activeTarget);
+    if (!focusSelector) {
       focusAutoTarget();
       return;
     }
-    const selector = `[data-otoe-change="${escapeSelector(activeEventId)}"]`;
-    const nextInput = root.querySelector(selector);
-    if (!nextInput) {
+    const nextTarget = root.querySelector(focusSelector);
+    if (!nextTarget) {
+      if (restoreFocusTarget(restoreSelector)) {
+        return;
+      }
       focusAutoTarget();
       return;
     }
-    nextInput.focus();
-    if (typeof selectionStart === "number" && typeof selectionEnd === "number") {
-      nextInput.setSelectionRange(selectionStart, selectionEnd);
+    nextTarget.focus();
+    if (
+      typeof nextTarget.setSelectionRange === "function"
+      && typeof selectionStart === "number"
+      && typeof selectionEnd === "number"
+    ) {
+      nextTarget.setSelectionRange(selectionStart, selectionEnd);
     }
+  };
+
+  const focusSelectorFor = (target) => {
+    if (!target?.dataset) {
+      return null;
+    }
+    if (target.dataset.otoeChange) {
+      return `[data-otoe-change="${escapeSelector(target.dataset.otoeChange)}"]`;
+    }
+    if (target.dataset.otoeKeydown) {
+      return `[data-otoe-keydown="${escapeSelector(target.dataset.otoeKeydown)}"]`;
+    }
+    if (target.dataset.otoeClick) {
+      return `[data-otoe-click="${escapeSelector(target.dataset.otoeClick)}"]`;
+    }
+    return null;
   };
 
   const focusAutoTarget = () => {
@@ -66,7 +90,25 @@ LIVE_SCRIPT = r"""
     }
   };
 
+  const restoreFocusTarget = (selector) => {
+    if (!selector) {
+      return false;
+    }
+    const target = root.querySelector(selector);
+    if (!target || typeof target.focus !== "function") {
+      return false;
+    }
+    target.focus();
+    return true;
+  };
+
   const sendEvent = async (id, args, activeInput = null) => {
+    const restoreSelector = activeInput && isInsideRestoringScope(activeInput)
+      ? lastFocusOutsideScope
+      : null;
+    if (activeInput && !isInsideRestoringScope(activeInput)) {
+      lastFocusOutsideScope = focusSelectorFor(activeInput) || lastFocusOutsideScope;
+    }
     const response = await fetch("/event", {
       method: "POST",
       headers: {"content-type": "application/json"},
@@ -78,10 +120,61 @@ LIVE_SCRIPT = r"""
     }
     replaceRoot(
       payload.html,
-      activeInput?.dataset.otoeChange,
+      activeInput,
       activeInput?.selectionStart,
       activeInput?.selectionEnd,
+      restoreSelector,
     );
+  };
+
+  const focusableSelector = [
+    "button:not([disabled])",
+    "input:not([disabled])",
+    "select:not([disabled])",
+    "textarea:not([disabled])",
+    "a[href]",
+    "[tabindex]:not([tabindex='-1'])",
+  ].join(",");
+
+  const visibleFocusable = (scope) => {
+    return Array.from(scope.querySelectorAll(focusableSelector)).filter((node) => {
+      return node.offsetParent !== null || node === document.activeElement;
+    });
+  };
+
+  const trapFocus = (event) => {
+    if (event.key !== "Tab") {
+      return false;
+    }
+    const scope = event.target.closest("[data-otoe-focus-scope='trap']");
+    if (!scope) {
+      return false;
+    }
+    const focusable = visibleFocusable(scope);
+    if (!focusable.length) {
+      event.preventDefault();
+      return true;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+      return true;
+    }
+    if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+      return true;
+    }
+    return false;
+  };
+
+  const isInsideRestoringScope = (target) => {
+    if (!target) {
+      return false;
+    }
+    return Boolean(target.closest("[data-otoe-focus-scope='trap'][data-otoe-restore-focus='true']"));
   };
 
   const keyPayload = (event) => ({
@@ -112,7 +205,13 @@ LIVE_SCRIPT = r"""
       return;
     }
     event.preventDefault();
-    sendEvent(target.dataset.otoeClick, []);
+    sendEvent(target.dataset.otoeClick, [], target);
+  });
+
+  document.addEventListener("focusin", (event) => {
+    if (!isInsideRestoringScope(event.target)) {
+      lastFocusOutsideScope = focusSelectorFor(event.target);
+    }
   });
 
   document.addEventListener("input", (event) => {
@@ -124,6 +223,9 @@ LIVE_SCRIPT = r"""
   });
 
   document.addEventListener("keydown", (event) => {
+    if (trapFocus(event)) {
+      return;
+    }
     const target = event.target.closest("[data-otoe-keydown]");
     if (target) {
       sendEvent(target.dataset.otoeKeydown, [event.key], target);

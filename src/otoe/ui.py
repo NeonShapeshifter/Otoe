@@ -7,7 +7,16 @@ from .component import component
 from .control import For, Show
 from .node import Node
 from .reactive import computed, is_reactive
-from .widgets import Button, HStack, Input, Panel, ShortcutScope as ShortcutScopeWidget, Text, VStack
+from .widgets import (
+    Button,
+    FocusScope as FocusScopeWidget,
+    HStack,
+    Input,
+    Panel,
+    ShortcutScope as ShortcutScopeWidget,
+    Text,
+    VStack,
+)
 
 
 @dataclass(frozen=True)
@@ -105,6 +114,21 @@ def ShortcutScope(*children, onKeyDown, className: str | None = None):
         *children,
         className=class_names("ui-shortcut-scope", className),
         onGlobalKeyDown=onKeyDown,
+    )
+
+
+@component
+def FocusScope(
+    *children,
+    trapFocus: bool = True,
+    restoreFocus: bool = True,
+    className: str | None = None,
+):
+    return FocusScopeWidget(
+        *children,
+        className=class_names("ui-focus-scope", className),
+        trapFocus=trapFocus,
+        restoreFocus=restoreFocus,
     )
 
 
@@ -284,21 +308,24 @@ def Dialog(
 ):
     return Show(
         HStack(
-            Card(
-                VStack(
-                    Show(
-                        Text(title, className="ui-dialog-title"),
-                        when=computed(lambda: _has_value(title)),
+            FocusScope(
+                Card(
+                    VStack(
+                        Show(
+                            Text(title, className="ui-dialog-title"),
+                            when=computed(lambda: _has_value(title)),
+                        ),
+                        Show(
+                            Text(description, className="ui-dialog-description"),
+                            when=computed(lambda: _has_value(description)),
+                        ),
+                        *children,
+                        className="ui-dialog-body",
+                        gap=12,
                     ),
-                    Show(
-                        Text(description, className="ui-dialog-description"),
-                        when=computed(lambda: _has_value(description)),
-                    ),
-                    *children,
-                    className="ui-dialog-body",
-                    gap=12,
+                    className=class_names("ui-dialog-panel", className),
                 ),
-                className=class_names("ui-dialog-panel", className),
+                className="ui-dialog-focus-scope",
             ),
             className="ui-dialog-backdrop",
         ),
@@ -390,25 +417,28 @@ def Menu(
     fallback = empty if isinstance(empty, Node) else Text(empty, className="ui-menu-empty")
 
     return Show(
-        Card(
-            VStack(
-                For(
-                    each=normalized_items,
-                    key=lambda item: item.id,
-                    children=lambda item: _menu_item(
-                        item,
-                        normalized_items,
-                        on_select,
-                        focus_value,
-                        on_focus,
-                        on_open_change,
+        FocusScope(
+            Card(
+                VStack(
+                    For(
+                        each=normalized_items,
+                        key=lambda item: item.id,
+                        children=lambda item: _menu_item(
+                            item,
+                            normalized_items,
+                            on_select,
+                            focus_value,
+                            on_focus,
+                            on_open_change,
+                        ),
+                        fallback=fallback,
                     ),
-                    fallback=fallback,
+                    className="ui-menu-list",
+                    gap=6,
                 ),
-                className="ui-menu-list",
-                gap=6,
+                className=class_names("ui-menu", className),
             ),
-            className=class_names("ui-menu", className),
+            className="ui-menu-focus-scope",
         ),
         when=open,
     )
@@ -462,24 +492,27 @@ def Select(
             ),
         ),
         Show(
-            Card(
-                VStack(
-                    For(
-                        each=normalized_options,
-                        key=lambda option: option.value,
-                        children=lambda option: _select_option_button(
-                            option,
-                            normalized_options,
-                            value,
-                            on_change,
-                            on_open_change,
+            FocusScope(
+                Card(
+                    VStack(
+                        For(
+                            each=normalized_options,
+                            key=lambda option: option.value,
+                            children=lambda option: _select_option_button(
+                                option,
+                                normalized_options,
+                                value,
+                                on_change,
+                                on_open_change,
+                            ),
+                            fallback=fallback,
                         ),
-                        fallback=fallback,
+                        className="ui-select-list",
+                        gap=6,
                     ),
-                    className="ui-select-list",
-                    gap=6,
+                    className="ui-select-popover",
                 ),
-                className="ui-select-popover",
+                className="ui-select-focus-scope",
             ),
             when=open,
         ),

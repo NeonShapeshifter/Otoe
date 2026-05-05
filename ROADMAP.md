@@ -121,7 +121,8 @@ Wraith remains the production app until an isolated Otoe surface proves equivale
 - UI kit preview now includes live controlled select and action menu examples.
 - Button-backed controls now support live `onKeyDown`.
 - Menu and select primitives now support keyboard movement, submit, and Escape close behavior.
-- Baseline tests: `101 passed`.
+- `FocusScope` added with live-preview Tab trapping and focus restoration for dialogs and popovers.
+- Baseline tests: `102 passed`.
 
 ### Current Sprint
 
@@ -129,7 +130,7 @@ Wraith remains the production app until an isolated Otoe surface proves equivale
 2. Tighten Mission Exec spacing, hierarchy, and interaction states until it feels better than the current Wraith UI.
 3. Compare a non-trivial Mission Exec change in Otoe versus the Wraith Kivy/front prototype and record the friction points.
 4. Decide whether the next Wraith-shaped benchmark is overlay/modal depth, runtime polling, or a full app-shell migration.
-5. Review the routed UI kit preview visually and decide the next primitive: richer dialog controls, focus traps, or menu/select focus restoration.
+5. Review the routed UI kit preview visually and decide whether `v0.0.3` is ready or needs a focused visual cleanup pass first.
 6. Add screenshot/GIF assets for the public README once the preview polish stabilizes.
 7. Keep snapshots plus live-render tests as the renderer contract while the backend is still moving.
 

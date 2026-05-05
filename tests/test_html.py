@@ -1,5 +1,5 @@
 from examples.wraith.preview import build_preview_html
-from otoe import Button, HStack, Input, Text, css, mount, render_html
+from otoe import Button, FocusScope, HStack, Input, Text, css, mount, render_html
 
 
 def test_render_html_escapes_text_and_attrs():
@@ -47,6 +47,16 @@ def test_render_html_marks_autofocus_input():
 
     assert 'autofocus="autofocus"' in html
     assert 'data-otoe-autofocus="true"' in html
+
+
+def test_render_html_marks_focus_scope_trap():
+    mounted = mount(FocusScope(Button("Close"), className="modal"))
+
+    html = render_html(mounted)
+
+    assert 'class="otoe-focus-scope ui-focus-scope modal"' in html
+    assert 'data-otoe-focus-scope="trap"' in html
+    assert 'data-otoe-restore-focus="true"' in html
 
 
 def test_render_html_can_apply_otoe_stylesheet_inline():

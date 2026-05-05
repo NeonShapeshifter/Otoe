@@ -43,3 +43,8 @@ class Panel(Widget):
 class ShortcutScope(Widget):
     props = {"className", "id"}
     events = {"onGlobalKeyDown"}
+
+
+class FocusScope(Widget):
+    props = {"className", "trapFocus", "restoreFocus", "id"}
+    events = set()

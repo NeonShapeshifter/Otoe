@@ -26,6 +26,7 @@ def test_ui_kit_preview_contains_component_kitchen_sink():
     assert "Controlled inputs" in html
     assert "ui-select-popover" in html
     assert "Inspect surface" in html
+    assert 'data-otoe-focus-scope="trap"' in html
     assert "Renderer boundary ready" in html
     assert 'data-otoe-autofocus="true"' in html
     assert "ui-command-card ui-demo-command" in html

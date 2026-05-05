@@ -68,7 +68,9 @@ Use the sidebar, command launcher, `Ctrl+K`/`Meta+K`, command search, Enter key,
 and route switching. The UI kit route also includes a controlled select and
 action menu to verify open state, disabled options, selection events, Arrow
 keys, Enter/Space submit, and Escape close behavior. The command input is marked
-for autofocus when the overlay opens.
+for autofocus when the overlay opens. Dialogs and popovers are wrapped in
+`FocusScope` so the live preview traps Tab inside the active overlay scope and
+restores focus after the overlay disappears.
 
 Otoe also has an optional JSX-like `template(...)` authoring path. It returns
 the same `Node` tree as Python components, so it is syntax sugar rather than a
