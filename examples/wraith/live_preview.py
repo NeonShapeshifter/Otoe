@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-import argparse
-import json
 import threading
-from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+from examples.live_server import (
+    LivePreviewConfig,
+    parse_host_port,
+    render_live_page,
+    run_live_preview,
+)
 from examples.wraith.arsenal import ArsenalView
 from examples.wraith.runtime_status import RuntimeStatusCluster
 from examples.wraith.topbar import TopBar
@@ -16,6 +18,12 @@ from otoe import LiveHtmlRenderer, computed, mount, signal
 
 ROOT = Path(__file__).resolve().parents[2]
 CSS_PATH = ROOT / "preview" / "wraith.css"
+LIVE_CONFIG = LivePreviewConfig(
+    title="Otoe Wraith Live Preview",
+    css_route="/wraith.css",
+    css_path=CSS_PATH,
+    root_class="app-shell",
+)
 PAGE_SIZE = 3
 
 
@@ -74,23 +82,7 @@ class WraithLivePreview:
             )
 
     def render_page(self) -> str:
-        fragment = self.render_fragment()
-        return f"""<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Otoe Wraith Live Preview</title>
-  <link rel="stylesheet" href="/wraith.css">
-</head>
-<body>
-  <div id="otoe-root" class="app-shell">
-{fragment}
-  </div>
-  <script>{LIVE_SCRIPT}</script>
-</body>
-</html>
-"""
+        return render_live_page(self, LIVE_CONFIG)
 
     def dispatch_event(self, event_id: str, *args: Any) -> str:
         with self._lock:
@@ -136,136 +128,6 @@ class WraithLivePreview:
         snapshot = RUNTIME_SNAPSHOTS[self.status_index % len(RUNTIME_SNAPSHOTS)]
         self.status_index += 1
         return dict(snapshot)
-
-
-class LivePreviewHandler(BaseHTTPRequestHandler):
-    app: WraithLivePreview
-
-    def do_GET(self) -> None:
-        if self.path in {"/", "/index.html"}:
-            self._send_text(self.app.render_page(), "text/html; charset=utf-8")
-            return
-        if self.path == "/wraith.css":
-            self._send_text(
-                CSS_PATH.read_text(encoding="utf-8"),
-                "text/css; charset=utf-8",
-            )
-            return
-        if self.path == "/health":
-            self._send_json({"ok": True})
-            return
-        self.send_error(HTTPStatus.NOT_FOUND)
-
-    def do_POST(self) -> None:
-        if self.path != "/event":
-            self.send_error(HTTPStatus.NOT_FOUND)
-            return
-
-        try:
-            length = int(self.headers.get("content-length", "0"))
-            payload = json.loads(self.rfile.read(length) or b"{}")
-            event_id = payload["id"]
-            args = payload.get("args", [])
-            if not isinstance(args, list):
-                raise TypeError("event args must be a list")
-            html = self.app.dispatch_event(event_id, *args)
-        except Exception as exc:
-            self._send_json({"ok": False, "error": str(exc)}, HTTPStatus.BAD_REQUEST)
-            return
-
-        self._send_json({"ok": True, "html": html})
-
-    def log_message(self, fmt: str, *args: Any) -> None:
-        return
-
-    def _send_text(
-        self,
-        body: str,
-        content_type: str,
-        status: HTTPStatus = HTTPStatus.OK,
-    ) -> None:
-        encoded = body.encode()
-        self.send_response(status)
-        self.send_header("content-type", content_type)
-        self.send_header("content-length", str(len(encoded)))
-        self.end_headers()
-        self.wfile.write(encoded)
-
-    def _send_json(
-        self,
-        body: dict[str, Any],
-        status: HTTPStatus = HTTPStatus.OK,
-    ) -> None:
-        self._send_text(
-            json.dumps(body),
-            "application/json; charset=utf-8",
-            status,
-        )
-
-
-LIVE_SCRIPT = r"""
-(() => {
-  const root = document.getElementById("otoe-root");
-
-  const escapeSelector = (value) => {
-    if (window.CSS && CSS.escape) {
-      return CSS.escape(value);
-    }
-    return value.replace(/["\\]/g, "\\$&");
-  };
-
-  const replaceRoot = (html, activeEventId, selectionStart, selectionEnd) => {
-    root.innerHTML = html;
-    if (!activeEventId) {
-      return;
-    }
-    const selector = `[data-otoe-change="${escapeSelector(activeEventId)}"]`;
-    const nextInput = root.querySelector(selector);
-    if (!nextInput) {
-      return;
-    }
-    nextInput.focus();
-    if (typeof selectionStart === "number" && typeof selectionEnd === "number") {
-      nextInput.setSelectionRange(selectionStart, selectionEnd);
-    }
-  };
-
-  const sendEvent = async (id, args, activeInput = null) => {
-    const response = await fetch("/event", {
-      method: "POST",
-      headers: {"content-type": "application/json"},
-      body: JSON.stringify({id, args}),
-    });
-    const payload = await response.json();
-    if (!payload.ok) {
-      throw new Error(payload.error || "Otoe event failed");
-    }
-    replaceRoot(
-      payload.html,
-      activeInput?.dataset.otoeChange,
-      activeInput?.selectionStart,
-      activeInput?.selectionEnd,
-    );
-  };
-
-  document.addEventListener("click", (event) => {
-    const target = event.target.closest("[data-otoe-click]");
-    if (!target) {
-      return;
-    }
-    event.preventDefault();
-    sendEvent(target.dataset.otoeClick, []);
-  });
-
-  document.addEventListener("input", (event) => {
-    const target = event.target.closest("[data-otoe-change]");
-    if (!target) {
-      return;
-    }
-    sendEvent(target.dataset.otoeChange, [target.value], target);
-  });
-})();
-"""
 
 
 MISSIONS = [
@@ -314,27 +176,17 @@ RUNTIME_SNAPSHOTS = [
 
 
 def run(host: str = "127.0.0.1", port: int = 8765) -> None:
-    app = WraithLivePreview()
-
-    class Handler(LivePreviewHandler):
-        pass
-
-    Handler.app = app
-    server = ThreadingHTTPServer((host, port), Handler)
-    print(f"Otoe Wraith live preview: http://{host}:{port}")
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()
+    run_live_preview(
+        app_factory=WraithLivePreview,
+        config=LIVE_CONFIG,
+        host=host,
+        port=port,
+        label="Otoe Wraith live preview",
+    )
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--host", default="127.0.0.1")
-    parser.add_argument("--port", default=8765, type=int)
-    args = parser.parse_args()
+    args = parse_host_port(default_port=8765)
     run(args.host, args.port)
 
 

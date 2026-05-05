@@ -15,7 +15,7 @@ stable public framework or a production desktop renderer.
 - `Show` and keyed `For` control flow.
 - Fake-widget mounting and deterministic snapshots.
 - Static HTML preview rendering.
-- Live HTML preview rendering with click/input event dispatch.
+- Shared live HTML preview server with click/input event dispatch.
 - Optional JSX-like `template(...)` syntax that returns the same `Node` tree.
 - Experimental portable `css(...)` / `StyleSheet` API.
 - Wraith-shaped and SaaS-shaped case studies.

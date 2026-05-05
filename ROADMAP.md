@@ -100,7 +100,8 @@ Wraith remains the production app until an isolated Otoe surface proves equivale
 - Public technical preview README.
 - GitHub Actions CI for compile and tests.
 - Sanitized preview fixtures for public sharing.
-- Baseline tests: `56 passed`.
+- Shared live-preview server helper used by Wraith, Mission Exec, and SaaS demos.
+- Baseline tests: `58 passed`.
 
 ### Current Sprint
 
@@ -109,7 +110,7 @@ Wraith remains the production app until an isolated Otoe surface proves equivale
 3. Compare a non-trivial Mission Exec change in Otoe versus the Wraith Kivy/front prototype and record the friction points.
 4. Decide whether the next Wraith-shaped benchmark is routing/app shell, overlay/modal, or runtime polling.
 5. Decide whether Wraith or SaaS should migrate one small surface from browser CSS to portable `css(...)`.
-6. Extract shared live-preview/server code after the third live surface proves the duplication is real.
+6. Add screenshot/GIF assets for the public README once the preview polish stabilizes.
 7. Keep snapshots plus live-render tests as the renderer contract while the backend is still moving.
 
 ---

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Extracted shared live-preview server infrastructure for Wraith, Mission Exec,
+  and SaaS demos.
+- Added tests for the shared live-page shell and event script.
+
 ## v0.0.1 - Technical Preview
 
 Initial public technical preview of Otoe.
