@@ -267,19 +267,22 @@ input {
   background: #ffffff;
 }
 
-.metric-body {
+.metric-body,
+.ui-stat-body {
   min-height: 132px;
   padding: 18px;
   justify-content: space-between;
 }
 
-.metric-label {
+.metric-label,
+.ui-stat-label {
   color: var(--muted);
   font-size: 13px;
   font-weight: 800;
 }
 
-.metric-value {
+.metric-value,
+.ui-stat-value {
   display: block;
   margin-top: 8px;
   color: var(--text);
@@ -288,7 +291,8 @@ input {
   line-height: 1;
 }
 
-.metric-delta {
+.metric-delta,
+.ui-stat-detail {
   display: inline-flex;
   width: fit-content;
   margin-top: 12px;
@@ -298,12 +302,14 @@ input {
   font-weight: 800;
 }
 
-.metric-delta.good {
+.metric-delta.good,
+.ui-stat-detail.is-good {
   background: #e9f8f0;
   color: var(--green);
 }
 
-.metric-delta.info {
+.metric-delta.info,
+.ui-stat-detail.is-info {
   background: #e9f4fd;
   color: var(--blue);
 }

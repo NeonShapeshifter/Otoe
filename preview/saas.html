@@ -8,20 +8,20 @@
 </head>
 <body>
     <div class="otoe-stack otoe-vstack saas-app" style="--otoe-gap:0px">
-      <div class="otoe-stack otoe-hstack saas-topbar" style="--otoe-gap:12px">
+      <div class="otoe-stack otoe-hstack ui-toolbar saas-topbar" style="--otoe-gap:12px">
         <span class="otoe-text saas-brand">LumaOps</span>
         <span class="otoe-text saas-workspace">Growth workspace</span>
-        <span class="otoe-text saas-status">94% retention</span>
-        <button class="otoe-button saas-invite" type="button">Invite</button>
+        <span class="otoe-text ui-badge is-success saas-status">94% retention</span>
+        <button class="otoe-button ui-button is-primary is-md saas-invite" type="button">Invite</button>
       </div>
       <div class="otoe-stack otoe-hstack saas-layout" style="--otoe-gap:18px">
-        <section class="otoe-panel saas-sidebar">
-          <div class="otoe-stack otoe-vstack saas-nav" style="--otoe-gap:8px">
-            <button class="otoe-button nav-item is-active" type="button">Overview</button>
-            <button class="otoe-button nav-item" type="button">Customers</button>
-            <button class="otoe-button nav-item" type="button">Revenue</button>
-            <button class="otoe-button nav-item" type="button">Automations</button>
-            <button class="otoe-button nav-item" type="button">Settings</button>
+        <section class="otoe-panel ui-card is-default saas-sidebar">
+          <div class="otoe-stack otoe-vstack ui-tabs is-vertical saas-nav" style="--otoe-gap:8px">
+            <button class="otoe-button ui-tab nav-item is-active" type="button">Overview</button>
+            <button class="otoe-button ui-tab nav-item" type="button">Customers</button>
+            <button class="otoe-button ui-tab nav-item" type="button">Revenue</button>
+            <button class="otoe-button ui-tab nav-item" type="button">Automations</button>
+            <button class="otoe-button ui-tab nav-item" type="button">Settings</button>
           </div>
         </section>
         <div class="otoe-stack otoe-vstack saas-main" style="--otoe-gap:16px">
@@ -33,25 +33,31 @@
             <input class="otoe-input saas-search" placeholder="Search customers, deals, owners...">
           </div>
           <div class="otoe-stack otoe-hstack metric-grid" style="--otoe-gap:14px">
-            <section class="otoe-panel saas-metric-card">
-              <div class="otoe-stack otoe-vstack metric-body">
-                <span class="otoe-text metric-label">Pipeline</span>
-                <span class="otoe-text metric-value">$88,300</span>
-                <span class="otoe-text metric-delta good">+18.4% this month</span>
+            <section class="otoe-panel ui-card is-default ui-stat-card saas-metric-card">
+              <div class="otoe-stack otoe-vstack ui-stat-body">
+                <span class="otoe-text ui-stat-label">Pipeline</span>
+                <span class="otoe-text ui-stat-value">$88,300</span>
+                <div class="otoe-fragment otoe-show">
+                  <span class="otoe-text ui-stat-detail is-good">+18.4% this month</span>
+                </div>
               </div>
             </section>
-            <section class="otoe-panel saas-metric-card">
-              <div class="otoe-stack otoe-vstack metric-body">
-                <span class="otoe-text metric-label">Accounts</span>
-                <span class="otoe-text metric-value">3 active</span>
-                <span class="otoe-text metric-delta info">7 ready for outreach</span>
+            <section class="otoe-panel ui-card is-default ui-stat-card saas-metric-card">
+              <div class="otoe-stack otoe-vstack ui-stat-body">
+                <span class="otoe-text ui-stat-label">Accounts</span>
+                <span class="otoe-text ui-stat-value">3 active</span>
+                <div class="otoe-fragment otoe-show">
+                  <span class="otoe-text ui-stat-detail is-info">7 ready for outreach</span>
+                </div>
               </div>
             </section>
-            <section class="otoe-panel saas-metric-card">
-              <div class="otoe-stack otoe-vstack metric-body">
-                <span class="otoe-text metric-label">NPS</span>
-                <span class="otoe-text metric-value">72</span>
-                <span class="otoe-text metric-delta good">+6 from last cycle</span>
+            <section class="otoe-panel ui-card is-default ui-stat-card saas-metric-card">
+              <div class="otoe-stack otoe-vstack ui-stat-body">
+                <span class="otoe-text ui-stat-label">NPS</span>
+                <span class="otoe-text ui-stat-value">72</span>
+                <div class="otoe-fragment otoe-show">
+                  <span class="otoe-text ui-stat-detail is-good">+6 from last cycle</span>
+                </div>
               </div>
             </section>
           </div>
@@ -62,7 +68,7 @@
                   <div class="otoe-stack otoe-vstack pipeline-list" style="--otoe-gap:12px">
                     <div class="otoe-stack otoe-hstack section-header">
                       <span class="otoe-text section-heading">Priority deals</span>
-                      <button class="otoe-button ghost-button" type="button">New deal</button>
+                      <button class="otoe-button ui-button is-ghost is-md ghost-button" type="button">New deal</button>
                     </div>
                     <div class="otoe-fragment otoe-for">
                       <section class="otoe-panel pipeline-card">

@@ -1,4 +1,5 @@
-from otoe import Button, For, HStack, Input, Panel, Show, Text, VStack, component, computed
+from otoe import For, HStack, Input, Panel, Show, Text, VStack, component, computed
+from otoe.ui import ActionButton, Badge, Card, StatCard, TabButton, Tabs, Toolbar
 
 
 NAV_ITEMS = ["Overview", "Customers", "Revenue", "Automations", "Settings"]
@@ -29,11 +30,11 @@ PAGE_COPY = {
 
 @component
 def SaaSTopBar(*, workspace, health_label, on_invite):
-    return HStack(
+    return Toolbar(
         Text("LumaOps", className="saas-brand"),
         Text(workspace, className="saas-workspace"),
-        Text(health_label, className="saas-status"),
-        Button("Invite", className="saas-invite", onClick=on_invite),
+        Badge(health_label, tone="success", className="saas-status"),
+        ActionButton("Invite", className="saas-invite", onClick=on_invite),
         className="saas-topbar",
         gap=12,
     )
@@ -41,24 +42,20 @@ def SaaSTopBar(*, workspace, health_label, on_invite):
 
 @component
 def MetricCard(*, label, value, delta, tone):
-    return Panel(
-        VStack(
-            Text(label, className="metric-label"),
-            Text(value, className="metric-value"),
-            Text(delta, className=f"metric-delta {tone}"),
-            className="metric-body",
-        ),
+    return StatCard(
+        label=label,
+        value=value,
+        detail=delta,
+        tone=tone,
         className="saas-metric-card",
     )
 
 
 def NavItem(*, label, active_section, on_nav):
-    class_name = computed(
-        lambda: "nav-item is-active" if active_section.value == label else "nav-item"
-    )
-    return Button(
+    return TabButton(
         label,
-        className=class_name,
+        active=computed(lambda: active_section.value == label),
+        className="nav-item",
         onClick=lambda: on_nav(label),
     )
 
@@ -98,7 +95,12 @@ def OverviewView(*, deals, customers, on_invite):
             VStack(
                 HStack(
                     Text("Priority deals", className="section-heading"),
-                    Button("New deal", className="ghost-button", onClick=on_invite),
+                    ActionButton(
+                        "New deal",
+                        variant="ghost",
+                        className="ghost-button",
+                        onClick=on_invite,
+                    ),
                     className="section-header",
                 ),
                 For(
@@ -311,8 +313,8 @@ def SaaSOverview(
             on_invite=on_invite,
         ),
         HStack(
-            Panel(
-                VStack(
+            Card(
+                Tabs(
                     *[
                         NavItem(
                             label=item,
@@ -323,6 +325,7 @@ def SaaSOverview(
                     ],
                     className="saas-nav",
                     gap=8,
+                    orientation="vertical",
                 ),
                 className="saas-sidebar",
             ),

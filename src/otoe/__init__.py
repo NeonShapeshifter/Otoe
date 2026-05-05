@@ -25,10 +25,23 @@ from .style import (
 )
 from .template import TemplateError, template
 from .timing import Interval, interval
+from .ui import (
+    ActionButton,
+    Badge,
+    Card,
+    StatCard,
+    TabButton,
+    Tabs,
+    Toolbar,
+    class_names,
+)
 from .widgets import Button, HStack, Input, Panel, ScrollView, Text, VStack
 
 __all__ = [
+    "ActionButton",
+    "Badge",
     "Button",
+    "Card",
     "Computed",
     "DuplicatePrimaryPropError",
     "Effect",
@@ -53,14 +66,19 @@ __all__ = [
     "StyleRule",
     "StyleSheet",
     "StyleSyntaxError",
+    "StatCard",
+    "TabButton",
+    "Tabs",
     "Text",
     "TemplateError",
     "Token",
+    "Toolbar",
     "UnknownPropError",
     "UnknownStyleClassError",
     "VStack",
     "Widget",
     "batch",
+    "class_names",
     "component",
     "computed",
     "css",

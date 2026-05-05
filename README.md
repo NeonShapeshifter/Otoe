@@ -18,6 +18,8 @@ stable public framework or a production desktop renderer.
 - Shared live HTML preview server with click/input event dispatch.
 - Optional JSX-like `template(...)` syntax that returns the same `Node` tree.
 - Experimental portable `css(...)` / `StyleSheet` API.
+- First `otoe.ui` primitives: cards, badges, action buttons, tabs, toolbars,
+  and stat cards.
 - Wraith-shaped and SaaS-shaped case studies.
 
 ## What Is Not Ready Yet
@@ -90,7 +92,7 @@ Otoe is intentionally split into layers:
 - **Core runtime:** nodes, components, signals, effects, events, owners, control flow.
 - **Renderer boundary:** fake widgets and HTML preview today; native desktop later.
 - **Style system:** portable style representation and CSS preview adapter.
-- **UI kits:** future component libraries inspired by systems like shadcn or Horizon UI.
+- **UI kits:** current `otoe.ui` primitives, growing toward libraries inspired by systems like shadcn or Horizon UI.
 - **Case studies:** Wraith validates dense operational UI; SaaS validates softer product UI.
 
 ## Repository Map

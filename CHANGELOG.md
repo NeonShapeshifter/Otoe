@@ -5,6 +5,9 @@
 - Extracted shared live-preview server infrastructure for Wraith, Mission Exec,
   and SaaS demos.
 - Added tests for the shared live-page shell and event script.
+- Added the first `otoe.ui` primitives: `Card`, `Badge`, `ActionButton`,
+  `Toolbar`, `Tabs`, `TabButton`, and `StatCard`.
+- Migrated the SaaS preview topbar, nav, actions, and metrics onto `otoe.ui`.
 
 ## v0.0.1 - Technical Preview
 
