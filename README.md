@@ -19,7 +19,8 @@ stable public framework or a production desktop renderer.
 - Optional JSX-like `template(...)` syntax that returns the same `Node` tree.
 - Experimental portable `css(...)` / `StyleSheet` API.
 - First `otoe.ui` primitives: cards, badges, action buttons, tabs, toolbars,
-  stat cards, data tables, dialogs, toasts, and command palettes.
+  stat cards, data tables, dialogs, toasts, command palettes, app shells,
+  sidebar navigation, and route views.
 - Wraith-shaped and SaaS-shaped case studies using the same UI primitives.
 - UI kit kitchen-sink preview for validating primitives outside one product shape.
 
@@ -77,8 +78,8 @@ Run the live UI kit preview:
 PYTHONPATH=src:. python -m examples.ui.live_preview
 ```
 
-Then open <http://127.0.0.1:8768>. Use the command search and command rows to
-verify live filtering, selection, dialog mounting, and toast updates.
+Then open <http://127.0.0.1:8768>. Use the sidebar and command search to verify
+live route switching between UI Kit, SaaS, and Wraith-shaped surfaces.
 
 ## Tiny Example
 

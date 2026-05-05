@@ -1,15 +1,21 @@
 from otoe import (
     ActionButton,
+    AppShell,
     Badge,
     Card,
     CommandPalette,
     DataTable,
     Dialog,
+    NavRoute,
+    RouteView,
+    SidebarNav,
     StatCard,
     TabButton,
     TableColumn,
     Tabs,
+    Text,
     Toast,
+    VStack,
     class_names,
     mount,
     root_widget,
@@ -255,3 +261,100 @@ def test_command_palette_filters_and_dispatches_selection():
     item.trigger("onClick")
 
     assert selected.value == "mission"
+
+
+def test_app_shell_composes_header_sidebar_and_content_slots():
+    shell = root_widget(
+        mount(
+            AppShell(
+                header=Text("Topbar"),
+                sidebar=Text("Sidebar"),
+                content=Text("Content"),
+                className="workspace",
+            )
+        )
+    )
+
+    assert shell.name == "VStack"
+    assert shell.props["className"] == "ui-app-shell workspace"
+    assert shell.children[0].props["className"] == "ui-app-header"
+    assert shell.children[0].children[0].props["content"] == "Topbar"
+
+    main = shell.children[1]
+    assert main.props["className"] == "ui-app-main"
+    assert main.children[0].props["className"] == "ui-app-sidebar"
+    assert main.children[0].children[0].props["content"] == "Sidebar"
+    assert main.children[1].props["className"] == "ui-app-content"
+    assert main.children[1].children[0].props["content"] == "Content"
+
+
+def test_sidebar_nav_tracks_active_route_and_dispatches_navigation():
+    active = signal("overview")
+    selected = signal(None)
+    routes = [
+        NavRoute("overview", "Overview", "Workspace state", badge="3", tone="info"),
+        {"id": "wraith", "label": "Wraith", "description": "Mission surface"},
+    ]
+    nav = root_widget(
+        mount(
+            SidebarNav(
+                routes=routes,
+                active=active,
+                on_navigate=lambda route_id: selected.set(route_id),
+                brand=Text("Otoe"),
+                footer="Ready",
+            )
+        )
+    )
+
+    assert nav.props["className"] == "ui-sidebar-nav"
+    assert nav.children[0].props["className"] == "ui-sidebar-brand"
+    route_list = nav.children[1]
+    first, second = route_list.children
+    assert first.props["className"] == "ui-nav-item is-active"
+    assert first.children[0].children[0].children[0].props["content"] == "Overview"
+    assert first.children[0].children[1].children[0].props["content"] == "3"
+    assert second.props["className"] == "ui-nav-item"
+
+    active.set("wraith")
+
+    assert first.props["className"] == "ui-nav-item"
+    assert second.props["className"] == "ui-nav-item is-active"
+
+    second.trigger("onClick")
+
+    assert selected.value == "wraith"
+
+
+def test_route_view_renders_active_route_and_fallback():
+    active = signal("ui")
+    routes = [
+        NavRoute("ui", "UI Kit"),
+        NavRoute("saas", "SaaS"),
+    ]
+
+    view = root_widget(
+        mount(
+            RouteView(
+                route=active,
+                routes=routes,
+                render=lambda route: VStack(
+                    Text(route.label, className="route-title"),
+                    className=f"route-{route.id}",
+                ),
+            )
+        )
+    )
+
+    route_list = view.children[0]
+    assert route_list.children[0].props["className"] == "route-ui"
+    assert route_list.children[0].children[0].props["content"] == "UI Kit"
+
+    active.set("saas")
+
+    assert route_list.children[0].props["className"] == "route-saas"
+    assert route_list.children[0].children[0].props["content"] == "SaaS"
+
+    active.set("missing")
+
+    assert route_list.children[0].props["content"] == "Route not found"

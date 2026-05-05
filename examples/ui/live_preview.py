@@ -31,15 +31,18 @@ class UIKitLivePreview:
         self.query = signal("")
         self.selected = signal(None)
         self.dialog_open = signal(False)
+        self.active_route = signal("ui")
 
         self.app = mount(
             UIKitKitchenSink(
                 query=self.query,
                 selected=self.selected,
                 dialog_open=self.dialog_open,
+                active_route=self.active_route,
                 on_query=self._query,
                 on_select=self._select,
                 on_toggle_dialog=self._toggle_dialog,
+                on_navigate=self._navigate,
             )
         )
 
@@ -61,10 +64,22 @@ class UIKitLivePreview:
 
     def _select(self, command_id: str) -> None:
         self.selected.set(command_id)
+        self.active_route.set(_route_for_command(command_id))
         self.dialog_open.set(True)
 
     def _toggle_dialog(self) -> None:
         self.dialog_open.set(not self.dialog_open.value)
+
+    def _navigate(self, route_id: str) -> None:
+        self.active_route.set(route_id)
+
+
+def _route_for_command(command_id: str) -> str:
+    if command_id in {"customers", "settings"}:
+        return "saas"
+    if command_id in {"mission", "export"}:
+        return "wraith"
+    return "ui"
 
 
 def run(host: str = "127.0.0.1", port: int = 8768) -> None:

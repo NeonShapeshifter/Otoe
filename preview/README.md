@@ -63,8 +63,8 @@ PYTHONPATH=src:. python -m examples.ui.live_preview
 ```
 
 Then open <http://127.0.0.1:8768>.
-Use the command palette search and command rows to verify live filtering,
-selection, dialog mounting, and toast state.
+Use the sidebar and command palette to verify live route switching between UI
+Kit, SaaS, and Wraith-shaped surfaces.
 
 Otoe also has an optional JSX-like `template(...)` authoring path. It returns
 the same `Node` tree as Python components, so it is syntax sugar rather than a

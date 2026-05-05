@@ -109,15 +109,17 @@ Wraith remains the production app until an isolated Otoe surface proves equivale
 - `CommandPalette` added to `otoe.ui`.
 - UI kit kitchen-sink preview added for validating shared primitives outside one case study.
 - UI kit live preview proves command filtering, command selection, dialog mounting, empty state, and reactive toast classes.
-- Baseline tests: `74 passed`.
+- `AppShell`, `SidebarNav`, `NavItem`, `NavRoute`, and `RouteView` added for signal-based app routing.
+- UI kit preview reworked into a routed shell that switches between UI Kit, SaaS, and Wraith-shaped surfaces.
+- Baseline tests: `78 passed`.
 
 ### Current Sprint
 
 1. Review the Mission Exec live preview visually in a browser against the Wraith source.
 2. Tighten Mission Exec spacing, hierarchy, and interaction states until it feels better than the current Wraith UI.
 3. Compare a non-trivial Mission Exec change in Otoe versus the Wraith Kivy/front prototype and record the friction points.
-4. Decide whether the next Wraith-shaped benchmark is routing/app shell, overlay/modal, or runtime polling.
-5. Review the UI kit kitchen-sink preview visually and decide the next primitive: menu, sidebar shell, select, or richer dialog controls.
+4. Decide whether the next Wraith-shaped benchmark is overlay/modal depth, runtime polling, or a full app-shell migration.
+5. Review the routed UI kit preview visually and decide the next primitive: menu, select, richer dialog controls, or keyboard command handling.
 6. Add screenshot/GIF assets for the public README once the preview polish stabilizes.
 7. Keep snapshots plus live-render tests as the renderer contract while the backend is still moving.
 

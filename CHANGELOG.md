@@ -15,6 +15,10 @@
   component validation.
 - Added live UI kit preview tests for command filtering, selection, dialog
   opening, empty states, and reactive toast classes.
+- Added `AppShell`, `SidebarNav`, `NavItem`, `NavRoute`, and `RouteView`
+  primitives for signal-based app routing.
+- Reworked the UI kit preview into a routed shell that switches between UI Kit,
+  SaaS, and Wraith-shaped surfaces.
 
 ## v0.0.1 - Technical Preview
 

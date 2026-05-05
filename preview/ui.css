@@ -125,6 +125,33 @@ input {
   padding: 24px 28px 34px;
 }
 
+.ui-app-header {
+  width: 100%;
+  align-items: stretch;
+  margin-bottom: 16px;
+}
+
+.ui-app-header > .ui-toolbar {
+  flex: 1;
+}
+
+.ui-app-main {
+  align-items: stretch;
+  gap: 16px;
+}
+
+.ui-app-sidebar {
+  width: 242px;
+  flex: 0 0 242px;
+}
+
+.ui-app-content,
+.ui-route-view,
+.ui-demo-surface {
+  min-width: 0;
+  flex: 1;
+}
+
 .ui-demo-topbar {
   min-height: 62px;
   padding: 0 16px;
@@ -157,6 +184,80 @@ input {
   font-weight: 850;
 }
 
+.ui-demo-sidebar {
+  height: 100%;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 18px 44px var(--shadow);
+}
+
+.ui-sidebar-brand {
+  padding: 8px 8px 12px;
+}
+
+.ui-demo-sidebar-brand-title {
+  color: var(--text);
+  font-size: 19px;
+  font-weight: 950;
+}
+
+.ui-demo-sidebar-brand-copy,
+.ui-demo-sidebar-footnote,
+.ui-nav-description,
+.ui-route-copy {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.ui-sidebar-footer {
+  margin-top: auto;
+  padding: 10px 8px 4px;
+}
+
+.ui-nav-item {
+  width: 100%;
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: stretch;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text);
+  padding: 0 10px;
+  box-shadow: none;
+}
+
+.ui-nav-item:hover,
+.ui-nav-item:focus-visible,
+.ui-nav-item.is-active {
+  border-color: var(--line);
+  background: var(--panel);
+  color: var(--accent-strong);
+}
+
+.ui-nav-row {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.ui-nav-copy {
+  flex: 1;
+  text-align: left;
+}
+
+.ui-nav-label {
+  color: inherit;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.ui-nav-badge {
+  flex: 0 0 auto;
+}
+
 .ui-demo-stats,
 .ui-demo-grid {
   align-items: stretch;
@@ -178,6 +279,29 @@ input {
 
 .ui-card.is-default {
   background: rgba(255, 255, 255, 0.9);
+}
+
+.ui-route-card {
+  flex: 1;
+  padding: 16px;
+}
+
+.ui-route-card-wide {
+  flex: 1.45;
+}
+
+.ui-route-title {
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.ui-route-heading {
+  justify-content: space-between;
+}
+
+.ui-route-badge {
+  min-height: 28px;
 }
 
 .ui-stat-body,
@@ -261,6 +385,8 @@ input {
 .ui-command-item {
   width: 100%;
   min-height: 66px;
+  display: flex;
+  align-items: center;
   justify-content: stretch;
   border: 1px solid var(--line);
   background: var(--panel-soft);
@@ -378,12 +504,15 @@ input {
 }
 
 @media (max-width: 900px) {
+  .ui-app-main,
   .ui-demo-grid,
   .ui-demo-stats,
   .ui-demo-topbar {
     flex-direction: column;
   }
 
+  .ui-app-sidebar,
+  .ui-app-content,
   .ui-demo-right,
   .ui-demo-left {
     width: 100%;

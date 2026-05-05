@@ -18,6 +18,8 @@ def test_ui_kit_preview_contains_component_kitchen_sink():
 
     assert "<!doctype html>" in html
     assert "<title>Otoe UI Kit Preview</title>" in html
+    assert "ui-app-shell ui-demo-shell" in html
+    assert "ui-sidebar-nav ui-demo-sidebar" in html
     assert "Command palette" in html
     assert "Review Customers" in html
     assert "Renderer boundary ready" in html
@@ -41,7 +43,7 @@ def test_ui_kit_live_preview_filters_commands():
     assert "No commands" not in html
 
 
-def test_ui_kit_live_preview_selects_command_and_opens_dialog():
+def test_ui_kit_live_preview_selects_command_and_routes_to_surface():
     app = UIKitLivePreview()
     html = app.render_fragment()
     change_id = _attr_near(html, "Search Wraith, SaaS, export...", "data-otoe-change")
@@ -50,9 +52,23 @@ def test_ui_kit_live_preview_selects_command_and_opens_dialog():
 
     html = app.dispatch_event(click_id)
 
-    assert "Selected: Review Customers" in html
-    assert "Renderer boundary ready" in html
-    assert "ui-dialog-backdrop" in html
+    assert "SaaS route loaded" in html
+    assert "Commercial dashboard" in html
+    assert "Route: SaaS" in html
+    assert "Command palette" not in html
+
+
+def test_ui_kit_live_preview_sidebar_navigation_switches_routes():
+    app = UIKitLivePreview()
+    html = app.render_fragment()
+    click_id = _attr_near(html, "Wraith", "data-otoe-click")
+
+    html = app.dispatch_event(click_id)
+
+    assert "Wraith route loaded" in html
+    assert "Mission controls" in html
+    assert "Route: Wraith" in html
+    assert "SaaS route loaded" not in html
 
 
 def test_ui_kit_live_preview_shows_empty_command_state():
