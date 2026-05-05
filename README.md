@@ -22,6 +22,8 @@ stable public framework or a production desktop renderer.
   stat cards, data tables, dialogs, toasts, command palettes, app shells,
   sidebar navigation, route views, command registries, shortcut scopes, menus,
   and controlled selects.
+- Keyboard handling for command palettes, menus, selects, and button-backed
+  controls in the live preview backend.
 - Live autofocus support for command overlays and other focused inputs.
 - Wraith-shaped and SaaS-shaped case studies using the same UI primitives.
 - UI kit kitchen-sink preview for validating primitives outside one product shape.

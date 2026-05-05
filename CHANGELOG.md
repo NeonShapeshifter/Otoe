@@ -36,6 +36,8 @@
 - Added `Menu`, `MenuItem`, `Select`, and `SelectOption` primitives with
   controlled open/selection state.
 - Expanded the UI kit preview with controlled select and action menu examples.
+- Added keyboard handling for button-backed controls, menus, and selects:
+  Arrow keys, Home/End, Enter/Space, and Escape.
 
 ## v0.0.1 - Technical Preview
 

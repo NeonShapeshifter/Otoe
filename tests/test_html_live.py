@@ -64,6 +64,18 @@ def test_live_html_renderer_dispatches_keydown_payloads():
     assert key.value == "Enter"
 
 
+def test_live_html_renderer_dispatches_button_keydown_payloads():
+    key = signal(None)
+    mounted = mount(Button("Open", onKeyDown=lambda value: key.set(value)))
+    renderer = LiveHtmlRenderer()
+    html = renderer.render(mounted)
+    keydown_id = _event_id(html, "data-otoe-keydown")
+
+    renderer.dispatch(keydown_id, "ArrowDown")
+
+    assert key.value == "ArrowDown"
+
+
 def test_live_html_renderer_dispatches_global_keydown_payloads():
     payload = signal(None)
     mounted = mount(

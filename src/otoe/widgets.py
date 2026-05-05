@@ -22,7 +22,7 @@ class Text(Widget):
 class Button(Widget):
     primary_prop = "label"
     props = {"label", "className", "disabled", "id"}
-    events = {"onClick", "onFocus", "onBlur"}
+    events = {"onClick", "onKeyDown", "onFocus", "onBlur"}
 
 
 class Input(Widget):

@@ -379,10 +379,14 @@ def Menu(
     on_select,
     open=True,
     active=None,
+    focused=None,
+    on_focus=None,
+    on_open_change=None,
     className: str | None = None,
     empty="No actions",
 ):
     normalized_items = computed(lambda: [_normalize_menu_item(item) for item in _list_value(items)])
+    focus_value = focused if focused is not None else active
     fallback = empty if isinstance(empty, Node) else Text(empty, className="ui-menu-empty")
 
     return Show(
@@ -391,7 +395,14 @@ def Menu(
                 For(
                     each=normalized_items,
                     key=lambda item: item.id,
-                    children=lambda item: _menu_item(item, on_select, active),
+                    children=lambda item: _menu_item(
+                        item,
+                        normalized_items,
+                        on_select,
+                        focus_value,
+                        on_focus,
+                        on_open_change,
+                    ),
                     fallback=fallback,
                 ),
                 className="ui-menu-list",
@@ -441,6 +452,14 @@ def Select(
             ),
             className=_active_class("ui-select-trigger", open, None),
             onClick=lambda: on_open_change(not bool(_value(open))),
+            onKeyDown=lambda key: _select_trigger_key_down(
+                key,
+                normalized_options.value,
+                _value(value),
+                _value(open),
+                on_change,
+                on_open_change,
+            ),
         ),
         Show(
             Card(
@@ -448,7 +467,13 @@ def Select(
                     For(
                         each=normalized_options,
                         key=lambda option: option.value,
-                        children=lambda option: _select_option_button(option, value, on_change, on_open_change),
+                        children=lambda option: _select_option_button(
+                            option,
+                            normalized_options,
+                            value,
+                            on_change,
+                            on_open_change,
+                        ),
                         fallback=fallback,
                     ),
                     className="ui-select-list",
@@ -721,7 +746,7 @@ def _command_item(command: Command, on_select) -> Node:
     )
 
 
-def _menu_item(item: MenuItem, on_select, active) -> Node:
+def _menu_item(item: MenuItem, items, on_select, focused, on_focus, on_open_change) -> Node:
     return Button(
         "",
         HStack(
@@ -743,16 +768,24 @@ def _menu_item(item: MenuItem, on_select, active) -> Node:
         ),
         className=_state_class(
             "ui-menu-item",
-            active=computed(lambda: item.id == _value(active)) if active is not None else False,
+            active=computed(lambda: item.id == _value(focused)) if focused is not None else False,
             disabled=item.disabled,
             extra=class_names(f"is-{item.tone}", item.className),
         ),
         disabled=item.disabled,
         onClick=lambda item_id=item.id: None if item.disabled else on_select(item_id),
+        onKeyDown=lambda key, item_id=item.id: _menu_key_down(
+            key,
+            items.value,
+            _focused_id(focused, item_id),
+            on_select,
+            on_focus,
+            on_open_change,
+        ),
     )
 
 
-def _select_option_button(option: SelectOption, value, on_change, on_open_change) -> Node:
+def _select_option_button(option: SelectOption, options, value, on_change, on_open_change) -> Node:
     return Button(
         "",
         HStack(
@@ -780,6 +813,14 @@ def _select_option_button(option: SelectOption, value, on_change, on_open_change
         ),
         disabled=option.disabled,
         onClick=lambda option_value=option.value: _select_option(option_value, option.disabled, on_change, on_open_change),
+        onKeyDown=lambda key, option_value=option.value: _select_option_key_down(
+            key,
+            options.value,
+            option_value,
+            option.disabled,
+            on_change,
+            on_open_change,
+        ),
     )
 
 
@@ -863,3 +904,128 @@ def _select_option(option_value: str, disabled: bool, on_change, on_open_change)
         return
     on_change(option_value)
     on_open_change(False)
+
+
+def _focused_id(focused, fallback: str) -> str:
+    if focused is None:
+        return fallback
+    value = _value(focused)
+    return fallback if value is None else str(value)
+
+
+def _menu_key_down(
+    key: str,
+    items: list[MenuItem],
+    focused_id: str,
+    on_select,
+    on_focus,
+    on_open_change,
+) -> None:
+    if key == "Escape":
+        _call_optional(on_open_change, False)
+        return
+    if key in {"ArrowDown", "ArrowUp", "Home", "End"}:
+        target = _next_menu_item(items, focused_id, key)
+        if target is not None:
+            _call_optional(on_focus, target.id)
+        return
+    if _is_submit_key(key):
+        target = _find_menu_item(items, focused_id)
+        if target is not None and not target.disabled:
+            on_select(target.id)
+            _call_optional(on_open_change, False)
+
+
+def _next_menu_item(items: list[MenuItem], focused_id: str, key: str) -> MenuItem | None:
+    enabled = [item for item in items if not item.disabled]
+    if not enabled:
+        return None
+    if key == "Home":
+        return enabled[0]
+    if key == "End":
+        return enabled[-1]
+    current_index = _item_index(enabled, focused_id, "id")
+    if current_index is None:
+        return enabled[0]
+    step = 1 if key == "ArrowDown" else -1
+    return enabled[(current_index + step) % len(enabled)]
+
+
+def _find_menu_item(items: list[MenuItem], item_id: str) -> MenuItem | None:
+    for item in items:
+        if item.id == item_id:
+            return item
+    return None
+
+
+def _select_trigger_key_down(
+    key: str,
+    options: list[SelectOption],
+    value: str,
+    open: bool,
+    on_change,
+    on_open_change,
+) -> None:
+    if key == "Escape":
+        on_open_change(False)
+        return
+    if _is_submit_key(key):
+        on_open_change(not open)
+        return
+    if key in {"ArrowDown", "ArrowUp", "Home", "End"}:
+        target = _next_select_option(options, value, key)
+        if target is not None:
+            on_change(target.value)
+        on_open_change(True)
+
+
+def _select_option_key_down(
+    key: str,
+    options: list[SelectOption],
+    option_value: str,
+    disabled: bool,
+    on_change,
+    on_open_change,
+) -> None:
+    if key == "Escape":
+        on_open_change(False)
+        return
+    if _is_submit_key(key):
+        _select_option(option_value, disabled, on_change, on_open_change)
+        return
+    if key in {"ArrowDown", "ArrowUp", "Home", "End"}:
+        target = _next_select_option(options, option_value, key)
+        if target is not None:
+            on_change(target.value)
+        on_open_change(True)
+
+
+def _next_select_option(options: list[SelectOption], value: str, key: str) -> SelectOption | None:
+    enabled = [option for option in options if not option.disabled]
+    if not enabled:
+        return None
+    if key == "Home":
+        return enabled[0]
+    if key == "End":
+        return enabled[-1]
+    current_index = _item_index(enabled, value, "value")
+    if current_index is None:
+        return enabled[0]
+    step = 1 if key == "ArrowDown" else -1
+    return enabled[(current_index + step) % len(enabled)]
+
+
+def _item_index(items: list[Any], value: str, attr: str) -> int | None:
+    for index, item in enumerate(items):
+        if getattr(item, attr) == value:
+            return index
+    return None
+
+
+def _is_submit_key(key: str) -> bool:
+    return key in {"Enter", " ", "Spacebar"}
+
+
+def _call_optional(callback, *args) -> None:
+    if callback is not None:
+        callback(*args)

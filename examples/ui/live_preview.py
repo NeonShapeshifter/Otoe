@@ -34,6 +34,7 @@ class UIKitLivePreview:
         self.palette_open = signal(False)
         self.menu_open = signal(False)
         self.menu_action = signal(None)
+        self.menu_focus = signal("inspect")
         self.density = signal("balanced")
         self.density_open = signal(False)
         self.active_route = signal("ui")
@@ -46,6 +47,7 @@ class UIKitLivePreview:
                 palette_open=self.palette_open,
                 menu_open=self.menu_open,
                 menu_action=self.menu_action,
+                menu_focus=self.menu_focus,
                 density=self.density,
                 density_open=self.density_open,
                 active_route=self.active_route,
@@ -55,6 +57,8 @@ class UIKitLivePreview:
                 on_toggle_dialog=self._toggle_dialog,
                 on_toggle_menu=self._toggle_menu,
                 on_menu_select=self._menu_select,
+                on_menu_focus=self._menu_focus,
+                on_menu_open_change=self._menu_open_change,
                 on_density_change=self._density_change,
                 on_density_open_change=self._density_open_change,
                 on_navigate=self._navigate,
@@ -92,11 +96,23 @@ class UIKitLivePreview:
         self.dialog_open.set(not self.dialog_open.value)
 
     def _toggle_menu(self) -> None:
-        self.menu_open.set(not self.menu_open.value)
+        next_open = not self.menu_open.value
+        if next_open and self.menu_focus.value is None:
+            self.menu_focus.set(self.menu_action.value or "inspect")
+        self.menu_open.set(next_open)
 
     def _menu_select(self, item_id: str) -> None:
         self.menu_action.set(item_id)
+        self.menu_focus.set(item_id)
         self.menu_open.set(False)
+
+    def _menu_focus(self, item_id: str) -> None:
+        self.menu_focus.set(item_id)
+
+    def _menu_open_change(self, value: bool) -> None:
+        if value and self.menu_focus.value is None:
+            self.menu_focus.set(self.menu_action.value or "inspect")
+        self.menu_open.set(value)
 
     def _density_change(self, value: str) -> None:
         self.density.set(value)

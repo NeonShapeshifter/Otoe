@@ -406,6 +406,72 @@ def test_menu_tracks_open_signal():
     assert button.children[0].children[0].children[0].props["content"] == "Edit view"
 
 
+def test_menu_keyboard_moves_focus_selects_and_closes():
+    selected = signal(None)
+    focused = signal("edit")
+    open_menu = signal(True)
+    menu = root_widget(
+        mount(
+            Menu(
+                items=[
+                    MenuItem("edit", "Edit view", tone="info"),
+                    MenuItem("duplicate", "Duplicate view", tone="success"),
+                    MenuItem("archive", "Archive view", disabled=True, tone="warn"),
+                ],
+                open=open_menu,
+                focused=focused,
+                on_focus=lambda item_id: focused.set(item_id),
+                on_select=lambda item_id: selected.set(item_id),
+                on_open_change=lambda value: open_menu.set(value),
+            )
+        )
+    )
+    list_widget = menu.children[0].children[0].children[0]
+    edit, duplicate, archive = list_widget.children
+
+    edit.trigger("onKeyDown", "ArrowDown")
+
+    assert focused.value == "duplicate"
+    assert edit.props["className"] == "ui-menu-item is-info"
+    assert duplicate.props["className"] == "ui-menu-item is-success is-active"
+
+    duplicate.trigger("onKeyDown", "ArrowDown")
+
+    assert focused.value == "edit"
+
+    assert archive.props["className"] == "ui-menu-item is-warn is-disabled"
+    assert selected.value is None
+
+    edit.trigger("onKeyDown", "Enter")
+
+    assert selected.value == "edit"
+    assert open_menu.value is False
+    assert menu.children == []
+
+
+def test_menu_keyboard_escape_closes_without_selecting():
+    selected = signal(None)
+    open_menu = signal(True)
+    menu = root_widget(
+        mount(
+            Menu(
+                items=[{"id": "edit", "label": "Edit view"}],
+                open=open_menu,
+                focused=signal("edit"),
+                on_select=lambda item_id: selected.set(item_id),
+                on_open_change=lambda value: open_menu.set(value),
+            )
+        )
+    )
+    button = menu.children[0].children[0].children[0].children[0]
+
+    button.trigger("onKeyDown", "Escape")
+
+    assert selected.value is None
+    assert open_menu.value is False
+    assert menu.children == []
+
+
 def test_select_renders_selected_option_and_dispatches_change():
     selected = signal("compact")
     open_select = signal(False)
@@ -475,6 +541,73 @@ def test_select_ignores_disabled_options():
 
     assert selected.value == "compact"
     assert open_select.value is True
+
+
+def test_select_keyboard_opens_moves_selection_and_closes():
+    selected = signal("compact")
+    open_select = signal(False)
+    select = root_widget(
+        mount(
+            Select(
+                options=[
+                    SelectOption("compact", "Compact", tone="info"),
+                    SelectOption("locked", "Locked", disabled=True, tone="warn"),
+                    SelectOption("roomy", "Roomy", tone="success"),
+                ],
+                value=selected,
+                open=open_select,
+                on_change=lambda value: selected.set(value),
+                on_open_change=lambda value: open_select.set(value),
+            )
+        )
+    )
+    trigger = select.children[0]
+
+    trigger.trigger("onKeyDown", "ArrowDown")
+
+    assert selected.value == "roomy"
+    assert open_select.value is True
+    assert trigger.children[0].children[0].children[0].props["content"] == "Roomy"
+
+    popover = select.children[1].children[0]
+    compact, locked, roomy = popover.children[0].children[0].children
+    assert locked.props["className"] == "ui-select-option is-disabled"
+    assert roomy.props["className"] == "ui-select-option is-active"
+
+    roomy.trigger("onKeyDown", "ArrowDown")
+
+    assert selected.value == "compact"
+    assert compact.props["className"] == "ui-select-option is-active"
+
+    compact.trigger("onKeyDown", "Escape")
+
+    assert open_select.value is False
+    assert len(select.children[1].children) == 0
+
+
+def test_select_keyboard_enter_selects_focused_option():
+    selected = signal("compact")
+    open_select = signal(True)
+    select = root_widget(
+        mount(
+            Select(
+                options=[
+                    SelectOption("compact", "Compact"),
+                    SelectOption("roomy", "Roomy"),
+                ],
+                value=selected,
+                open=open_select,
+                on_change=lambda value: selected.set(value),
+                on_open_change=lambda value: open_select.set(value),
+            )
+        )
+    )
+    roomy = select.children[1].children[0].children[0].children[0].children[1]
+
+    roomy.trigger("onKeyDown", "Enter")
+
+    assert selected.value == "roomy"
+    assert open_select.value is False
 
 
 def test_shortcut_scope_registers_global_keydown_handler():

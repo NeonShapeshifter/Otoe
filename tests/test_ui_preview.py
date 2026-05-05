@@ -191,3 +191,40 @@ def test_ui_kit_live_preview_select_and_menu_update_state():
 
     assert "Density: Roomy; action: Duplicate view" in html
     assert "Fork the current app route." not in html
+
+
+def test_ui_kit_live_preview_select_keyboard_updates_state():
+    app = UIKitLivePreview()
+    html = app.render_fragment()
+    select_keydown_id = _attr_near(html, "Balanced", "data-otoe-keydown")
+
+    html = app.dispatch_event(select_keydown_id, "ArrowDown")
+
+    assert "Density: Roomy; action: None" in html
+    assert "Softer SaaS dashboard spacing." in html
+    assert "ui-select-popover" in html
+
+    select_keydown_id = _attr_near(html, "Roomy", "data-otoe-keydown")
+    html = app.dispatch_event(select_keydown_id, "Escape")
+
+    assert "Density: Roomy; action: None" in html
+    assert "ui-select-popover" not in html
+
+
+def test_ui_kit_live_preview_menu_keyboard_updates_state():
+    app = UIKitLivePreview()
+    html = app.render_fragment()
+    menu_id = _attr_near(html, "Open Action Menu", "data-otoe-click")
+    html = app.dispatch_event(menu_id)
+    inspect_keydown_id = _attr_near(html, "Inspect surface", "data-otoe-keydown")
+
+    html = app.dispatch_event(inspect_keydown_id, "ArrowDown")
+
+    assert "ui-menu-item is-success is-active" in html
+    assert "Density: Balanced; action: None" in html
+
+    duplicate_keydown_id = _attr_near(html, "Duplicate view", "data-otoe-keydown")
+    html = app.dispatch_event(duplicate_keydown_id, "Enter")
+
+    assert "Density: Balanced; action: Duplicate view" in html
+    assert "Fork the current app route." not in html
