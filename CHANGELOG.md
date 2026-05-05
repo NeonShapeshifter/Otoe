@@ -28,6 +28,8 @@
   registered commands.
 - Added explicit command-palette open state to the UI kit preview, with a
   launcher card, overlay dialog, and Escape close behavior.
+- Added `Input(autoFocus=...)` support plus live-preview autofocus after
+  rerender, so command overlays can focus their search field immediately.
 
 ## v0.0.1 - Technical Preview
 

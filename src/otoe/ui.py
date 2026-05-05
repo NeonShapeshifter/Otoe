@@ -320,6 +320,7 @@ def CommandPalette(
     placeholder: str = "Search commands...",
     className: str | None = None,
     empty="No commands",
+    autoFocus: bool = False,
 ):
     visible_commands = computed(
         lambda: _filter_commands(commands, query.value)
@@ -333,6 +334,7 @@ def CommandPalette(
                 value=query,
                 placeholder=placeholder,
                 className="ui-command-input",
+                autoFocus=autoFocus,
                 onChange=on_query,
                 onKeyDown=lambda key: _submit_first_command(key, visible_commands.value, on_select),
             ),

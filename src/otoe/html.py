@@ -109,6 +109,9 @@ def _render_widget(
         }
         if widget.props.get("disabled"):
             attrs["disabled"] = "disabled"
+        if widget.props.get("autoFocus"):
+            attrs["autofocus"] = "autofocus"
+            attrs["data-otoe-autofocus"] = "true"
         return _inline(
             pretty,
             indent,

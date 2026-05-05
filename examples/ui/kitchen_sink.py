@@ -214,7 +214,7 @@ def UIKitRoute(*, query, selected, dialog_open, palette_open, on_query, on_selec
             ),
             StatCard(
                 label="Tests",
-                value="87",
+                value="89",
                 detail="Runtime covered",
                 tone="good",
                 className="ui-demo-stat",
@@ -285,6 +285,7 @@ def UIKitRoute(*, query, selected, dialog_open, palette_open, on_query, on_selec
                         on_select=on_select,
                         placeholder="Search Wraith, SaaS, export...",
                         className="ui-demo-command",
+                        autoFocus=palette_open,
                     ),
                     open=palette_open,
                     title="Command palette",

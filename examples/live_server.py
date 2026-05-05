@@ -40,16 +40,29 @@ LIVE_SCRIPT = r"""
   const replaceRoot = (html, activeEventId, selectionStart, selectionEnd) => {
     root.innerHTML = html;
     if (!activeEventId) {
+      focusAutoTarget();
       return;
     }
     const selector = `[data-otoe-change="${escapeSelector(activeEventId)}"]`;
     const nextInput = root.querySelector(selector);
     if (!nextInput) {
+      focusAutoTarget();
       return;
     }
     nextInput.focus();
     if (typeof selectionStart === "number" && typeof selectionEnd === "number") {
       nextInput.setSelectionRange(selectionStart, selectionEnd);
+    }
+  };
+
+  const focusAutoTarget = () => {
+    const target = root.querySelector("[data-otoe-autofocus]");
+    if (!target || typeof target.focus !== "function") {
+      return;
+    }
+    target.focus();
+    if (typeof target.select === "function") {
+      target.select();
     }
   };
 

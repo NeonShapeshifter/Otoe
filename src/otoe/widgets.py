@@ -26,7 +26,7 @@ class Button(Widget):
 
 
 class Input(Widget):
-    props = {"value", "placeholder", "className", "disabled", "id"}
+    props = {"value", "placeholder", "className", "disabled", "autoFocus", "id"}
     events = {"onChange", "onKeyDown", "onFocus", "onBlur"}
 
 

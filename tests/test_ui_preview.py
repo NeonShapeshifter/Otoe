@@ -24,6 +24,7 @@ def test_ui_kit_preview_contains_component_kitchen_sink():
     assert "Command palette" in html
     assert "Review Customers" in html
     assert "Renderer boundary ready" in html
+    assert 'data-otoe-autofocus="true"' in html
     assert "ui-command-card ui-demo-command" in html
     assert "ui-command-item" in html
     assert "ui-dialog-backdrop" in html
@@ -39,6 +40,8 @@ def test_ui_kit_live_preview_filters_commands():
     open_id = _attr_near(html, "Open Command Palette", "data-otoe-click")
     html = app.dispatch_event(open_id)
     change_id = _attr_near(html, "Search Wraith, SaaS, export...", "data-otoe-change")
+
+    assert 'data-otoe-autofocus="true"' in html
 
     html = app.dispatch_event(change_id, "customers")
 
@@ -96,6 +99,7 @@ def test_ui_kit_live_preview_ctrl_k_opens_command_palette():
 
     assert "Command palette" in html
     assert "Search Wraith, SaaS, export..." in html
+    assert 'data-otoe-autofocus="true"' in html
     assert "Route: UI Kit" in html
     assert "Wraith route loaded" not in html
 

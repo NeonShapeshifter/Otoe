@@ -308,6 +308,30 @@ def test_command_palette_enter_selects_first_visible_command():
     assert selected.value == "customers"
 
 
+def test_command_palette_can_mark_input_for_autofocus():
+    query = signal("")
+    palette = root_widget(
+        mount(
+            CommandPalette(
+                query=query,
+                commands=[
+                    {
+                        "id": "mission",
+                        "label": "Open Mission Exec",
+                    },
+                ],
+                on_query=lambda value: query.set(value),
+                on_select=lambda command_id: None,
+                autoFocus=True,
+            )
+        )
+    )
+
+    input_widget = palette.children[0].children[1]
+
+    assert input_widget.props["autoFocus"] is True
+
+
 def test_command_registry_normalizes_filters_and_matches_shortcuts():
     registry = CommandRegistry(
         [

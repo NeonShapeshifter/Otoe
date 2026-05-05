@@ -116,7 +116,8 @@ Wraith remains the production app until an isolated Otoe surface proves equivale
 - `Command`, `CommandRegistry`, and `ShortcutScope` added for command metadata and global key handling.
 - UI kit global shortcuts added: `Ctrl+K`/`Meta+K`, `Escape`, and registered single-key command shortcuts.
 - UI kit command palette now has explicit open/close state, a launcher card, and overlay dialog.
-- Baseline tests: `87 passed`.
+- `Input(autoFocus=...)` added with live-preview autofocus after rerender.
+- Baseline tests: `89 passed`.
 
 ### Current Sprint
 
@@ -124,7 +125,7 @@ Wraith remains the production app until an isolated Otoe surface proves equivale
 2. Tighten Mission Exec spacing, hierarchy, and interaction states until it feels better than the current Wraith UI.
 3. Compare a non-trivial Mission Exec change in Otoe versus the Wraith Kivy/front prototype and record the friction points.
 4. Decide whether the next Wraith-shaped benchmark is overlay/modal depth, runtime polling, or a full app-shell migration.
-5. Review the routed UI kit preview visually and decide the next primitive: menu, select, richer dialog controls, or focus management.
+5. Review the routed UI kit preview visually and decide the next primitive: menu, select, richer dialog controls, or focus traps.
 6. Add screenshot/GIF assets for the public README once the preview polish stabilizes.
 7. Keep snapshots plus live-render tests as the renderer contract while the backend is still moving.
 
