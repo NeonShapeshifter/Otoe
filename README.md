@@ -37,6 +37,14 @@ stable public framework or a production desktop renderer.
 
 Use Python 3.11 or newer.
 
+Install from PyPI:
+
+```bash
+python -m pip install otoe
+```
+
+For local development:
+
 ```bash
 python -m venv .venv
 . .venv/bin/activate

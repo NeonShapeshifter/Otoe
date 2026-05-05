@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## v0.0.2 - App Shell and Command System Preview
+
+- Prepared PyPI package metadata and Trusted Publishing release automation.
 - Extracted shared live-preview server infrastructure for Wraith, Mission Exec,
   and SaaS demos.
 - Added tests for the shared live-page shell and event script.
