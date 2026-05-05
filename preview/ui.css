@@ -286,6 +286,20 @@ input {
   padding: 16px;
 }
 
+.ui-command-launcher-card {
+  flex: 1;
+}
+
+.ui-command-launcher {
+  min-height: 174px;
+  padding: 16px;
+  justify-content: center;
+}
+
+.ui-command-dialog {
+  width: min(580px, 100%);
+}
+
 .ui-route-card-wide {
   flex: 1.45;
 }

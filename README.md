@@ -78,9 +78,9 @@ Run the live UI kit preview:
 PYTHONPATH=src:. python -m examples.ui.live_preview
 ```
 
-Then open <http://127.0.0.1:8768>. Use the sidebar, command search, Enter key,
-`Ctrl+K`/`Meta+K`, `Escape`, and single-key command shortcuts to verify live
-route switching between UI Kit, SaaS, and Wraith-shaped surfaces.
+Then open <http://127.0.0.1:8768>. Use the sidebar, command launcher,
+`Ctrl+K`/`Meta+K`, command search, Enter key, `Escape`, and single-key command
+shortcuts to verify the live command overlay and route switching.
 
 ## Tiny Example
 

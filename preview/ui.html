@@ -14,6 +14,7 @@
             <span class="otoe-text ui-demo-brand">Otoe UI</span>
             <span class="otoe-text ui-demo-copy">Signal-routed app shell over shared primitives.</span>
             <span class="otoe-text ui-badge is-info ui-demo-status">UI Kit</span>
+            <button class="otoe-button ui-button is-ghost is-md" type="button">Command Palette</button>
             <button class="otoe-button ui-button is-ghost is-md" type="button">Toggle Dialog</button>
           </div>
         </div>
@@ -107,48 +108,11 @@
                   </div>
                   <div class="otoe-stack otoe-hstack ui-demo-grid" style="--otoe-gap:16px">
                     <div class="otoe-stack otoe-vstack ui-demo-left" style="--otoe-gap:14px">
-                      <section class="otoe-panel ui-card is-default ui-command-card ui-demo-command">
-                        <div class="otoe-stack otoe-vstack ui-command" style="--otoe-gap:10px">
-                          <span class="otoe-text ui-command-title">Command palette</span>
-                          <input class="otoe-input ui-command-input" placeholder="Search Wraith, SaaS, export...">
-                          <div class="otoe-fragment otoe-for">
-                            <button class="otoe-button ui-command-item" type="button">
-                              <div class="otoe-stack otoe-hstack ui-command-row" style="--otoe-gap:12px">
-                                <div class="otoe-stack otoe-vstack ui-command-copy" style="--otoe-gap:3px">
-                                  <span class="otoe-text ui-command-label">Open Mission Exec</span>
-                                  <span class="otoe-text ui-command-description">Jump to the Wraith operational surface.</span>
-                                </div>
-                                <span class="otoe-text ui-command-shortcut">M</span>
-                              </div>
-                            </button>
-                            <button class="otoe-button ui-command-item" type="button">
-                              <div class="otoe-stack otoe-hstack ui-command-row" style="--otoe-gap:12px">
-                                <div class="otoe-stack otoe-vstack ui-command-copy" style="--otoe-gap:3px">
-                                  <span class="otoe-text ui-command-label">Review Customers</span>
-                                  <span class="otoe-text ui-command-description">Open account health and next-step table.</span>
-                                </div>
-                                <span class="otoe-text ui-command-shortcut">C</span>
-                              </div>
-                            </button>
-                            <button class="otoe-button ui-command-item" type="button">
-                              <div class="otoe-stack otoe-hstack ui-command-row" style="--otoe-gap:12px">
-                                <div class="otoe-stack otoe-vstack ui-command-copy" style="--otoe-gap:3px">
-                                  <span class="otoe-text ui-command-label">Export Evidence</span>
-                                  <span class="otoe-text ui-command-description">Prepare a review bundle for handoff.</span>
-                                </div>
-                                <span class="otoe-text ui-command-shortcut">E</span>
-                              </div>
-                            </button>
-                            <button class="otoe-button ui-command-item" type="button">
-                              <div class="otoe-stack otoe-hstack ui-command-row" style="--otoe-gap:12px">
-                                <div class="otoe-stack otoe-vstack ui-command-copy" style="--otoe-gap:3px">
-                                  <span class="otoe-text ui-command-label">Workspace Settings</span>
-                                  <span class="otoe-text ui-command-description">Open team access and defaults.</span>
-                                </div>
-                                <span class="otoe-text ui-command-shortcut">,</span>
-                              </div>
-                            </button>
-                          </div>
+                      <section class="otoe-panel ui-card is-default ui-command-launcher-card">
+                        <div class="otoe-stack otoe-vstack ui-command-launcher" style="--otoe-gap:12px">
+                          <span class="otoe-text ui-route-title">Command center</span>
+                          <span class="otoe-text ui-route-copy">Open the palette with Ctrl+K / Meta+K, then use Enter or shortcut keys.</span>
+                          <button class="otoe-button ui-button is-primary is-md" type="button">Open Command Palette</button>
                         </div>
                       </section>
                       <div class="otoe-stack otoe-hstack ui-toast is-success ui-demo-toast" style="--otoe-gap:12px">
@@ -214,6 +178,64 @@
                                 </div>
                                 <span class="otoe-text ui-badge is-info ui-toast-badge">INFO</span>
                               </div>
+                            </div>
+                          </section>
+                        </div>
+                      </div>
+                      <div class="otoe-fragment otoe-show">
+                        <div class="otoe-stack otoe-hstack ui-dialog-backdrop">
+                          <section class="otoe-panel ui-card is-default ui-dialog-panel ui-command-dialog">
+                            <div class="otoe-stack otoe-vstack ui-dialog-body" style="--otoe-gap:12px">
+                              <div class="otoe-fragment otoe-show">
+                                <span class="otoe-text ui-dialog-title">Command palette</span>
+                              </div>
+                              <div class="otoe-fragment otoe-show">
+                                <span class="otoe-text ui-dialog-description">Type to filter, press Enter to run the first visible command.</span>
+                              </div>
+                              <section class="otoe-panel ui-card is-default ui-command-card ui-demo-command">
+                                <div class="otoe-stack otoe-vstack ui-command" style="--otoe-gap:10px">
+                                  <span class="otoe-text ui-command-title">Command palette</span>
+                                  <input class="otoe-input ui-command-input" placeholder="Search Wraith, SaaS, export...">
+                                  <div class="otoe-fragment otoe-for">
+                                    <button class="otoe-button ui-command-item" type="button">
+                                      <div class="otoe-stack otoe-hstack ui-command-row" style="--otoe-gap:12px">
+                                        <div class="otoe-stack otoe-vstack ui-command-copy" style="--otoe-gap:3px">
+                                          <span class="otoe-text ui-command-label">Open Mission Exec</span>
+                                          <span class="otoe-text ui-command-description">Jump to the Wraith operational surface.</span>
+                                        </div>
+                                        <span class="otoe-text ui-command-shortcut">M</span>
+                                      </div>
+                                    </button>
+                                    <button class="otoe-button ui-command-item" type="button">
+                                      <div class="otoe-stack otoe-hstack ui-command-row" style="--otoe-gap:12px">
+                                        <div class="otoe-stack otoe-vstack ui-command-copy" style="--otoe-gap:3px">
+                                          <span class="otoe-text ui-command-label">Review Customers</span>
+                                          <span class="otoe-text ui-command-description">Open account health and next-step table.</span>
+                                        </div>
+                                        <span class="otoe-text ui-command-shortcut">C</span>
+                                      </div>
+                                    </button>
+                                    <button class="otoe-button ui-command-item" type="button">
+                                      <div class="otoe-stack otoe-hstack ui-command-row" style="--otoe-gap:12px">
+                                        <div class="otoe-stack otoe-vstack ui-command-copy" style="--otoe-gap:3px">
+                                          <span class="otoe-text ui-command-label">Export Evidence</span>
+                                          <span class="otoe-text ui-command-description">Prepare a review bundle for handoff.</span>
+                                        </div>
+                                        <span class="otoe-text ui-command-shortcut">E</span>
+                                      </div>
+                                    </button>
+                                    <button class="otoe-button ui-command-item" type="button">
+                                      <div class="otoe-stack otoe-hstack ui-command-row" style="--otoe-gap:12px">
+                                        <div class="otoe-stack otoe-vstack ui-command-copy" style="--otoe-gap:3px">
+                                          <span class="otoe-text ui-command-label">Workspace Settings</span>
+                                          <span class="otoe-text ui-command-description">Open team access and defaults.</span>
+                                        </div>
+                                        <span class="otoe-text ui-command-shortcut">,</span>
+                                      </div>
+                                    </button>
+                                  </div>
+                                </div>
+                              </section>
                             </div>
                           </section>
                         </div>

@@ -26,6 +26,8 @@
 - Added UI kit global shortcuts: `Ctrl+K`/`Meta+K` returns to the command
   surface, `Escape` clears transient state, and command shortcut keys execute
   registered commands.
+- Added explicit command-palette open state to the UI kit preview, with a
+  launcher card, overlay dialog, and Escape close behavior.
 
 ## v0.0.1 - Technical Preview
 

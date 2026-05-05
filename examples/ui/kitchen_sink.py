@@ -107,9 +107,11 @@ def UIKitKitchenSink(
     query,
     selected,
     dialog_open,
+    palette_open,
     active_route,
     on_query,
     on_select,
+    on_open_palette,
     on_toggle_dialog,
     on_navigate,
     on_shortcut,
@@ -122,6 +124,7 @@ def UIKitKitchenSink(
                 Text("Otoe UI", className="ui-demo-brand"),
                 Text("Signal-routed app shell over shared primitives.", className="ui-demo-copy"),
                 Badge(active_label, tone="info", className="ui-demo-status"),
+                ActionButton("Command Palette", variant="ghost", onClick=on_open_palette),
                 ActionButton("Toggle Dialog", variant="ghost", onClick=on_toggle_dialog),
                 className="ui-demo-topbar",
                 gap=12,
@@ -149,8 +152,10 @@ def UIKitKitchenSink(
                     query=query,
                     selected=selected,
                     dialog_open=dialog_open,
+                    palette_open=palette_open,
                     on_query=on_query,
                     on_select=on_select,
+                    on_open_palette=on_open_palette,
                 ),
                 className="ui-demo-route",
             ),
@@ -160,7 +165,17 @@ def UIKitKitchenSink(
     )
 
 
-def _route_surface(route, *, query, selected, dialog_open, on_query, on_select):
+def _route_surface(
+    route,
+    *,
+    query,
+    selected,
+    dialog_open,
+    palette_open,
+    on_query,
+    on_select,
+    on_open_palette,
+):
     if route.id == "saas":
         return SaaSRoute()
     if route.id == "wraith":
@@ -169,13 +184,15 @@ def _route_surface(route, *, query, selected, dialog_open, on_query, on_select):
         query=query,
         selected=selected,
         dialog_open=dialog_open,
+        palette_open=palette_open,
         on_query=on_query,
         on_select=on_select,
+        on_open_palette=on_open_palette,
     )
 
 
 @component
-def UIKitRoute(*, query, selected, dialog_open, on_query, on_select):
+def UIKitRoute(*, query, selected, dialog_open, palette_open, on_query, on_select, on_open_palette):
     selected_label = computed(lambda: _selected_label(selected.value))
     selected_tone = computed(lambda: "success" if selected.value else "neutral")
 
@@ -207,13 +224,18 @@ def UIKitRoute(*, query, selected, dialog_open, on_query, on_select):
         ),
         HStack(
             VStack(
-                CommandPalette(
-                    query=query,
-                    commands=COMMANDS,
-                    on_query=on_query,
-                    on_select=on_select,
-                    placeholder="Search Wraith, SaaS, export...",
-                    className="ui-demo-command",
+                Card(
+                    VStack(
+                        Text("Command center", className="ui-route-title"),
+                        Text(
+                            "Open the palette with Ctrl+K / Meta+K, then use Enter or shortcut keys.",
+                            className="ui-route-copy",
+                        ),
+                        ActionButton("Open Command Palette", variant="primary", onClick=on_open_palette),
+                        className="ui-command-launcher",
+                        gap=12,
+                    ),
+                    className="ui-command-launcher-card",
                 ),
                 Toast(
                     "Command state",
@@ -254,6 +276,20 @@ def UIKitRoute(*, query, selected, dialog_open, on_query, on_select):
                     title="Renderer boundary ready",
                     description="Composite UI primitives now sit inside a routed app shell.",
                     className="ui-demo-dialog",
+                ),
+                Dialog(
+                    CommandPalette(
+                        query=query,
+                        commands=COMMANDS,
+                        on_query=on_query,
+                        on_select=on_select,
+                        placeholder="Search Wraith, SaaS, export...",
+                        className="ui-demo-command",
+                    ),
+                    open=palette_open,
+                    title="Command palette",
+                    description="Type to filter, press Enter to run the first visible command.",
+                    className="ui-command-dialog",
                 ),
                 className="ui-demo-right",
                 gap=14,

@@ -31,6 +31,7 @@ class UIKitLivePreview:
         self.query = signal("")
         self.selected = signal(None)
         self.dialog_open = signal(False)
+        self.palette_open = signal(False)
         self.active_route = signal("ui")
 
         self.app = mount(
@@ -38,9 +39,11 @@ class UIKitLivePreview:
                 query=self.query,
                 selected=self.selected,
                 dialog_open=self.dialog_open,
+                palette_open=self.palette_open,
                 active_route=self.active_route,
                 on_query=self._query,
                 on_select=self._select,
+                on_open_palette=self._open_palette,
                 on_toggle_dialog=self._toggle_dialog,
                 on_navigate=self._navigate,
                 on_shortcut=self._shortcut,
@@ -66,13 +69,19 @@ class UIKitLivePreview:
     def _select(self, command_id: str) -> None:
         self.selected.set(command_id)
         self.active_route.set(_route_for_command(command_id))
+        self.palette_open.set(False)
         self.dialog_open.set(True)
+
+    def _open_palette(self) -> None:
+        self.active_route.set("ui")
+        self.palette_open.set(True)
 
     def _toggle_dialog(self) -> None:
         self.dialog_open.set(not self.dialog_open.value)
 
     def _navigate(self, route_id: str) -> None:
         self.active_route.set(route_id)
+        self.palette_open.set(False)
 
     def _shortcut(self, payload: dict[str, Any]) -> None:
         key = str(payload.get("key", ""))
@@ -80,9 +89,11 @@ class UIKitLivePreview:
         if is_modifier_command and key.lower() == "k":
             self.active_route.set("ui")
             self.query.set("")
+            self.palette_open.set(True)
             self.dialog_open.set(False)
             return
         if key == "Escape":
+            self.palette_open.set(False)
             self.dialog_open.set(False)
             self.query.set("")
             return

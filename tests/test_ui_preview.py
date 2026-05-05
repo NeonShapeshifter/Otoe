@@ -34,6 +34,10 @@ def test_ui_kit_preview_contains_component_kitchen_sink():
 def test_ui_kit_live_preview_filters_commands():
     app = UIKitLivePreview()
     html = app.render_fragment()
+    assert "Open Command Palette" in html
+    assert "Search Wraith, SaaS, export..." not in html
+    open_id = _attr_near(html, "Open Command Palette", "data-otoe-click")
+    html = app.dispatch_event(open_id)
     change_id = _attr_near(html, "Search Wraith, SaaS, export...", "data-otoe-change")
 
     html = app.dispatch_event(change_id, "customers")
@@ -47,6 +51,8 @@ def test_ui_kit_live_preview_filters_commands():
 def test_ui_kit_live_preview_selects_command_and_routes_to_surface():
     app = UIKitLivePreview()
     html = app.render_fragment()
+    open_id = _attr_near(html, "Open Command Palette", "data-otoe-click")
+    html = app.dispatch_event(open_id)
     change_id = _attr_near(html, "Search Wraith, SaaS, export...", "data-otoe-change")
     html = app.dispatch_event(change_id, "customers")
     click_id = _attr_near(html, "Review Customers", "data-otoe-click")
@@ -62,6 +68,8 @@ def test_ui_kit_live_preview_selects_command_and_routes_to_surface():
 def test_ui_kit_live_preview_enter_selects_first_filtered_command():
     app = UIKitLivePreview()
     html = app.render_fragment()
+    open_id = _attr_near(html, "Open Command Palette", "data-otoe-click")
+    html = app.dispatch_event(open_id)
     change_id = _attr_near(html, "Search Wraith, SaaS, export...", "data-otoe-change")
     keydown_id = _attr_near(html, "Search Wraith, SaaS, export...", "data-otoe-keydown")
 
@@ -74,7 +82,7 @@ def test_ui_kit_live_preview_enter_selects_first_filtered_command():
     assert "Command palette" not in html
 
 
-def test_ui_kit_live_preview_ctrl_k_returns_to_command_surface():
+def test_ui_kit_live_preview_ctrl_k_opens_command_palette():
     app = UIKitLivePreview()
     html = app.render_fragment()
     nav_id = _attr_near(html, "Wraith", "data-otoe-click")
@@ -87,6 +95,7 @@ def test_ui_kit_live_preview_ctrl_k_returns_to_command_surface():
     )
 
     assert "Command palette" in html
+    assert "Search Wraith, SaaS, export..." in html
     assert "Route: UI Kit" in html
     assert "Wraith route loaded" not in html
 
@@ -109,9 +118,9 @@ def test_ui_kit_live_preview_global_shortcut_runs_command():
 def test_ui_kit_live_preview_escape_clears_dialog_state():
     app = UIKitLivePreview()
     html = app.render_fragment()
-    click_id = _attr_near(html, "Toggle Dialog", "data-otoe-click")
+    click_id = _attr_near(html, "Open Command Palette", "data-otoe-click")
     html = app.dispatch_event(click_id)
-    assert "Renderer boundary ready" in html
+    assert "Search Wraith, SaaS, export..." in html
     shortcut_id = _attr_near(html, "ui-shortcut-scope", "data-otoe-global-keydown")
 
     html = app.dispatch_event(
@@ -119,8 +128,8 @@ def test_ui_kit_live_preview_escape_clears_dialog_state():
         {"key": "Escape", "ctrlKey": False, "metaKey": False, "altKey": False, "shiftKey": False},
     )
 
-    assert "Renderer boundary ready" not in html
-    assert "Command palette" in html
+    assert "Search Wraith, SaaS, export..." not in html
+    assert "Open Command Palette" in html
 
 
 def test_ui_kit_live_preview_sidebar_navigation_switches_routes():
@@ -139,6 +148,8 @@ def test_ui_kit_live_preview_sidebar_navigation_switches_routes():
 def test_ui_kit_live_preview_shows_empty_command_state():
     app = UIKitLivePreview()
     html = app.render_fragment()
+    open_id = _attr_near(html, "Open Command Palette", "data-otoe-click")
+    html = app.dispatch_event(open_id)
     change_id = _attr_near(html, "Search Wraith, SaaS, export...", "data-otoe-change")
 
     html = app.dispatch_event(change_id, "nothing-matches")
