@@ -2,9 +2,19 @@
 
 ## Unreleased
 
-## v0.0.2 - App Shell and Command System Preview
+## v0.0.3 - Controlled UI Primitives
 
 - Prepared PyPI package metadata and Trusted Publishing release automation.
+- Added `Menu`, `MenuItem`, `Select`, and `SelectOption` primitives with
+  controlled open/selection state.
+- Expanded the UI kit preview with controlled select and action menu examples.
+- Added keyboard handling for button-backed controls, menus, and selects:
+  Arrow keys, Home/End, Enter/Space, and Escape.
+- Added `FocusScope` plus live-preview Tab trapping and focus restoration for
+  dialogs and popovers.
+
+## v0.0.2 - App Shell and Command System Preview
+
 - Extracted shared live-preview server infrastructure for Wraith, Mission Exec,
   and SaaS demos.
 - Added tests for the shared live-page shell and event script.
@@ -33,13 +43,6 @@
   launcher card, overlay dialog, and Escape close behavior.
 - Added `Input(autoFocus=...)` support plus live-preview autofocus after
   rerender, so command overlays can focus their search field immediately.
-- Added `Menu`, `MenuItem`, `Select`, and `SelectOption` primitives with
-  controlled open/selection state.
-- Expanded the UI kit preview with controlled select and action menu examples.
-- Added keyboard handling for button-backed controls, menus, and selects:
-  Arrow keys, Home/End, Enter/Space, and Escape.
-- Added `FocusScope` plus live-preview Tab trapping and focus restoration for
-  dialogs and popovers.
 
 ## v0.0.1 - Technical Preview
 
