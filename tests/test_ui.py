@@ -263,6 +263,48 @@ def test_command_palette_filters_and_dispatches_selection():
     assert selected.value == "mission"
 
 
+def test_command_palette_enter_selects_first_visible_command():
+    query = signal("")
+    selected = signal(None)
+    commands = [
+        {
+            "id": "mission",
+            "label": "Open Mission Exec",
+            "description": "Jump to the active Wraith mission.",
+        },
+        {
+            "id": "customers",
+            "label": "Open Customers",
+            "description": "Review account health.",
+        },
+    ]
+
+    palette = root_widget(
+        mount(
+            CommandPalette(
+                query=query,
+                commands=commands,
+                on_query=lambda value: query.set(value),
+                on_select=lambda command_id: selected.set(command_id),
+            )
+        )
+    )
+    input_widget = palette.children[0].children[1]
+
+    input_widget.trigger("onKeyDown", "Escape")
+
+    assert selected.value is None
+
+    input_widget.trigger("onKeyDown", "Enter")
+
+    assert selected.value == "mission"
+
+    query.set("customers")
+    input_widget.trigger("onKeyDown", "Enter")
+
+    assert selected.value == "customers"
+
+
 def test_app_shell_composes_header_sidebar_and_content_slots():
     shell = root_widget(
         mount(

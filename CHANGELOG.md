@@ -19,6 +19,8 @@
   primitives for signal-based app routing.
 - Reworked the UI kit preview into a routed shell that switches between UI Kit,
   SaaS, and Wraith-shaped surfaces.
+- Added live `onKeyDown` dispatch and `CommandPalette` Enter-key selection for
+  the first visible command.
 
 ## v0.0.1 - Technical Preview
 

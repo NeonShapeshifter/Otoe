@@ -187,7 +187,7 @@ def UIKitRoute(*, query, selected, dialog_open, on_query, on_select):
             ),
             StatCard(
                 label="Tests",
-                value="78",
+                value="81",
                 detail="Runtime covered",
                 tone="good",
                 className="ui-demo-stat",

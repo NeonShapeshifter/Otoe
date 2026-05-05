@@ -283,6 +283,7 @@ def CommandPalette(
                 placeholder=placeholder,
                 className="ui-command-input",
                 onChange=on_query,
+                onKeyDown=lambda key: _submit_first_command(key, visible_commands.value, on_select),
             ),
             For(
                 each=visible_commands,
@@ -504,6 +505,12 @@ def _command_item(command: dict[str, Any], on_select) -> Node:
         className="ui-command-item",
         onClick=lambda: on_select(command["id"]),
     )
+
+
+def _submit_first_command(key: str, commands: list[dict[str, Any]], on_select) -> None:
+    if key != "Enter" or not commands:
+        return
+    on_select(commands[0]["id"])
 
 
 def _matching_routes(routes: list[NavRoute], route_id: str) -> list[NavRoute]:

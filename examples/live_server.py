@@ -87,6 +87,14 @@ LIVE_SCRIPT = r"""
     }
     sendEvent(target.dataset.otoeChange, [target.value], target);
   });
+
+  document.addEventListener("keydown", (event) => {
+    const target = event.target.closest("[data-otoe-keydown]");
+    if (!target) {
+      return;
+    }
+    sendEvent(target.dataset.otoeKeydown, [event.key], target);
+  });
 })();
 """
 

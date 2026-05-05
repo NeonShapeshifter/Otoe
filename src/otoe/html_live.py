@@ -50,6 +50,8 @@ class LiveHtmlRenderer:
             attrs["data-otoe-click"] = self._register(widget, "onClick")
         if "onChange" in widget.events:
             attrs["data-otoe-change"] = self._register(widget, "onChange")
+        if "onKeyDown" in widget.events:
+            attrs["data-otoe-keydown"] = self._register(widget, "onKeyDown")
         return attrs
 
     def _register(self, widget: FakeWidget, event_name: str) -> str:

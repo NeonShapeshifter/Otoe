@@ -78,8 +78,9 @@ Run the live UI kit preview:
 PYTHONPATH=src:. python -m examples.ui.live_preview
 ```
 
-Then open <http://127.0.0.1:8768>. Use the sidebar and command search to verify
-live route switching between UI Kit, SaaS, and Wraith-shaped surfaces.
+Then open <http://127.0.0.1:8768>. Use the sidebar, command search, and Enter
+key to verify live route switching between UI Kit, SaaS, and Wraith-shaped
+surfaces.
 
 ## Tiny Example
 

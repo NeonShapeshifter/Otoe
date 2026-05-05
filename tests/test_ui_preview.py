@@ -58,6 +58,21 @@ def test_ui_kit_live_preview_selects_command_and_routes_to_surface():
     assert "Command palette" not in html
 
 
+def test_ui_kit_live_preview_enter_selects_first_filtered_command():
+    app = UIKitLivePreview()
+    html = app.render_fragment()
+    change_id = _attr_near(html, "Search Wraith, SaaS, export...", "data-otoe-change")
+    keydown_id = _attr_near(html, "Search Wraith, SaaS, export...", "data-otoe-keydown")
+
+    html = app.dispatch_event(change_id, "customers")
+    html = app.dispatch_event(keydown_id, "Enter")
+
+    assert "SaaS route loaded" in html
+    assert "Commercial dashboard" in html
+    assert "Route: SaaS" in html
+    assert "Command palette" not in html
+
+
 def test_ui_kit_live_preview_sidebar_navigation_switches_routes():
     app = UIKitLivePreview()
     html = app.render_fragment()

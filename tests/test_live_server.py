@@ -29,7 +29,7 @@ def test_render_live_page_wraps_fragment_with_shared_shell():
     assert 'data-otoe-click="x:onClick"' in html
 
 
-def test_render_live_page_includes_click_and_input_dispatchers():
+def test_render_live_page_includes_click_input_and_keydown_dispatchers():
     html = render_live_page(
         DummyPreview(),
         LivePreviewConfig(
@@ -41,4 +41,6 @@ def test_render_live_page_includes_click_and_input_dispatchers():
 
     assert 'closest("[data-otoe-click]")' in html
     assert 'closest("[data-otoe-change]")' in html
+    assert 'closest("[data-otoe-keydown]")' in html
+    assert "event.key" in html
     assert 'fetch("/event"' in html
