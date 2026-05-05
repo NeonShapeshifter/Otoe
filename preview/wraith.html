@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Otoe Wraith Preview</title>
+  <link rel="stylesheet" href="wraith.css">
+</head>
+<body>
+  <div class="app-shell">
+    <div class="otoe-stack otoe-hstack topbar" style="--otoe-gap:8px">
+      <span class="otoe-text brand">WRAITH OS</span>
+      <span class="otoe-text campaign">Primary Campaign</span>
+      <span class="otoe-text indicator">WiFi: UP</span>
+      <button class="otoe-button topbar-stealth is-active" type="button">ST</button>
+    </div>
+    <main class="preview-main">
+      <section class="preview-column preview-column--left">
+        <div class="preview-section-title">Runtime</div>
+        <div class="otoe-stack otoe-hstack runtime-status" style="--otoe-gap:8px">
+          <span class="otoe-text indicator">WiFi: UP</span>
+          <span class="otoe-text indicator">BT: READY</span>
+          <span class="otoe-text indicator">CPU: 42C</span>
+          <span class="otoe-text indicator">Disk: 18GB</span>
+        </div>
+      </section>
+      <section class="preview-column preview-column--main">
+        <div class="preview-section-title">Arsenal</div>
+        <div class="otoe-stack otoe-vstack arsenal" style="--otoe-gap:12px">
+          <section class="otoe-panel hero">
+            <div class="otoe-panel-title">QUICK ACTIONS</div>
+            <div class="otoe-stack otoe-hstack metrics">
+              <span class="otoe-text metric">3 QUICK ACTIONS</span>
+              <span class="otoe-text metric">FILTER: ALL</span>
+              <span class="otoe-text metric">PAGE 1/1</span>
+            </div>
+          </section>
+          <section class="otoe-panel search-panel">
+            <div class="otoe-panel-title">SEARCH / FILTERS</div>
+            <input class="otoe-input" placeholder="SEARCH QUICK ACTIONS...">
+          </section>
+          <section class="otoe-panel mission-panel">
+            <div class="otoe-panel-title">MISSION SURFACES</div>
+            <div class="otoe-fragment otoe-show">
+              <div class="otoe-scroll mission-scroll">
+                <div class="otoe-fragment otoe-for">
+                  <section class="otoe-panel mission-card">
+                    <div class="otoe-stack otoe-vstack mission-card-body">
+                      <div class="otoe-stack otoe-hstack mission-meta">
+                        <span class="otoe-text mission-vector">WiFi</span>
+                        <span class="otoe-text mission-opsec">OPSEC LOW</span>
+                      </div>
+                      <span class="otoe-text mission-title">WiFi Scan</span>
+                      <span class="otoe-text mission-description">Discover nearby networks.</span>
+                    </div>
+                  </section>
+                  <section class="otoe-panel mission-card">
+                    <div class="otoe-stack otoe-vstack mission-card-body">
+                      <div class="otoe-stack otoe-hstack mission-meta">
+                        <span class="otoe-text mission-vector">RF</span>
+                        <span class="otoe-text mission-opsec">OPSEC MED</span>
+                      </div>
+                      <span class="otoe-text mission-title">RF Survey</span>
+                      <span class="otoe-text mission-description">Inspect spectrum activity.</span>
+                    </div>
+                  </section>
+                  <section class="otoe-panel mission-card">
+                    <div class="otoe-stack otoe-vstack mission-card-body">
+                      <div class="otoe-stack otoe-hstack mission-meta">
+                        <span class="otoe-text mission-vector">USB</span>
+                        <span class="otoe-text mission-opsec">OPSEC HIGH</span>
+                      </div>
+                      <span class="otoe-text mission-title">Lab Flow</span>
+                      <span class="otoe-text mission-description">Restricted validation path.</span>
+                    </div>
+                  </section>
+                </div>
+              </div>
+            </div>
+            <button class="otoe-button" type="button">NEXT</button>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
+

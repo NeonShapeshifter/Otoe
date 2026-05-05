@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Otoe Wraith Mission Exec Preview</title>
+  <link rel="stylesheet" href="wraith.css">
+</head>
+<body>
+    <div class="otoe-stack otoe-vstack mission-exec-shell" style="--otoe-gap:0px">
+      <div class="otoe-stack otoe-hstack topbar" style="--otoe-gap:8px">
+        <span class="otoe-text brand">WRAITH OS</span>
+        <span class="otoe-text campaign">Mission Exec / Handshake Hunter</span>
+        <span class="otoe-text indicator">ENGAGED</span>
+        <span class="otoe-text indicator">00:01:16</span>
+      </div>
+      <div class="otoe-stack otoe-hstack mission-exec" style="--otoe-gap:16px">
+        <div class="otoe-stack otoe-vstack exec-left" style="--otoe-gap:12px">
+          <section class="otoe-panel mission-brief-panel">
+            <div class="otoe-stack otoe-vstack mission-brief" style="--otoe-gap:12px">
+              <span class="otoe-text mission-brief-tag">MISSION / WIFI / OPSEC HIGH</span>
+              <span class="otoe-text mission-brief-title">Handshake Hunter</span>
+              <span class="otoe-text mission-brief-copy">Passive capture of WPA/WPA2 4-way handshakes against a scoped AP. No deauth, no injection; client-driven reassociation only.</span>
+              <div class="otoe-stack otoe-hstack mission-facts" style="--otoe-gap:10px">
+                <div class="otoe-stack otoe-vstack mission-fact" style="--otoe-gap:4px">
+                  <span class="otoe-text fact-label">TARGET</span>
+                  <span class="otoe-text fact-value">DEMO-GUEST (02:00:5e:00:53:01)</span>
+                </div>
+                <div class="otoe-stack otoe-vstack mission-fact" style="--otoe-gap:4px">
+                  <span class="otoe-text fact-label">SCOPE</span>
+                  <span class="otoe-text fact-value">DEMO-SCOPE-001 (demo-lab)</span>
+                </div>
+                <div class="otoe-stack otoe-vstack mission-fact" style="--otoe-gap:4px">
+                  <span class="otoe-text fact-label">ASSET</span>
+                  <span class="otoe-text fact-value">demo-radio-0</span>
+                </div>
+                <div class="otoe-stack otoe-vstack mission-fact" style="--otoe-gap:4px">
+                  <span class="otoe-text fact-label">PROFILE</span>
+                  <span class="otoe-text fact-value">Stealth / Passive / 300s</span>
+                </div>
+                <div class="otoe-stack otoe-vstack mission-fact" style="--otoe-gap:4px">
+                  <span class="otoe-text fact-label">VALIDATION</span>
+                  <span class="otoe-text fact-value">IMPLEMENTED</span>
+                </div>
+                <div class="otoe-stack otoe-vstack mission-fact" style="--otoe-gap:4px">
+                  <span class="otoe-text fact-label">POSTURE</span>
+                  <span class="otoe-text fact-value">STEALTH / CHAMELEON</span>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="otoe-panel exec-status-panel">
+            <div class="otoe-stack otoe-hstack exec-status-row" style="--otoe-gap:12px">
+              <div class="otoe-stack otoe-vstack exec-status-copy">
+                <span class="otoe-text eyebrow">STATUS</span>
+                <span class="otoe-text exec-status-value">ENGAGED</span>
+              </div>
+              <div class="otoe-stack otoe-vstack exec-timer-box">
+                <span class="otoe-text eyebrow align-right">ELAPSED</span>
+                <span class="otoe-text exec-timer">00:01:16</span>
+              </div>
+            </div>
+          </section>
+          <section class="otoe-panel preflight-panel">
+            <div class="otoe-stack otoe-vstack preflight-list" style="--otoe-gap:8px">
+              <div class="otoe-stack otoe-hstack exec-toolbar-head">
+                <span class="otoe-text section-heading">PREFLIGHT</span>
+                <span class="otoe-text ready-pill">5/5 READY</span>
+              </div>
+              <div class="otoe-stack otoe-hstack check-row" style="--otoe-gap:10px">
+                <span class="otoe-text check-icon">OK</span>
+                <span class="otoe-text check-label">Policy guard</span>
+                <span class="otoe-text check-value">DEMO-SCOPE-001 (demo-lab) approved</span>
+              </div>
+              <div class="otoe-stack otoe-hstack check-row" style="--otoe-gap:10px">
+                <span class="otoe-text check-icon">OK</span>
+                <span class="otoe-text check-label">Hardware</span>
+                <span class="otoe-text check-value">demo-radio-0 / monitor</span>
+              </div>
+              <div class="otoe-stack otoe-hstack check-row" style="--otoe-gap:10px">
+                <span class="otoe-text check-icon">OK</span>
+                <span class="otoe-text check-label">Scope</span>
+                <span class="otoe-text check-value">DEMO-GUEST (02:00:5e:00:53:01)</span>
+              </div>
+              <div class="otoe-stack otoe-hstack check-row" style="--otoe-gap:10px">
+                <span class="otoe-text check-icon">OK</span>
+                <span class="otoe-text check-label">Posture</span>
+                <span class="otoe-text check-value">stealth / passive</span>
+              </div>
+              <div class="otoe-stack otoe-hstack check-row" style="--otoe-gap:10px">
+                <span class="otoe-text check-icon">OK</span>
+                <span class="otoe-text check-label">Vault</span>
+                <span class="otoe-text check-value">sealed / demo-key</span>
+              </div>
+            </div>
+          </section>
+          <section class="otoe-panel exec-danger-panel">
+            <div class="otoe-stack otoe-vstack exec-actions" style="--otoe-gap:10px">
+              <span class="otoe-text danger-label">EMERGENCY CONTROLS</span>
+              <button class="otoe-button danger-button" type="button">ABORT MISSION</button>
+              <button class="otoe-button ghost-button" type="button">PAUSE CAPTURE</button>
+            </div>
+          </section>
+        </div>
+        <div class="otoe-stack otoe-vstack exec-right" style="--otoe-gap:12px">
+          <section class="otoe-panel exec-probe-panel">
+            <div class="otoe-stack otoe-hstack exec-probe" style="--otoe-gap:14px">
+              <div class="otoe-stack otoe-vstack exec-probe-main" style="--otoe-gap:4px">
+                <div class="otoe-stack otoe-hstack exec-probe-head" style="--otoe-gap:8px">
+                  <span class="otoe-text section-heading">CAPTURE FEED</span>
+                  <span class="otoe-text exec-probe-badge is-ok">OK</span>
+                </div>
+                <span class="otoe-text exec-probe-frame">FRAME 000</span>
+                <span class="otoe-text exec-probe-label">Fixture telemetry loaded</span>
+                <span class="otoe-text exec-probe-copy">Handshake capture stream is staged for replay.</span>
+              </div>
+              <button class="otoe-button probe-button" type="button">SIMULATE FRAME</button>
+            </div>
+          </section>
+          <section class="otoe-panel exec-terminal-panel">
+            <div class="otoe-stack otoe-vstack exec-telemetry" style="--otoe-gap:12px">
+              <div class="otoe-stack otoe-hstack exec-toolbar-head">
+                <span class="otoe-text section-heading">LIVE TELEMETRY / wlan1mon</span>
+                <span class="otoe-text exec-count">17 lines</span>
+              </div>
+              <div class="otoe-stack otoe-hstack exec-filters" style="--otoe-gap:8px">
+                <button class="otoe-button filter-button is-active" type="button">ALL</button>
+                <button class="otoe-button filter-button" type="button">INFO</button>
+                <button class="otoe-button filter-button" type="button">OK</button>
+                <button class="otoe-button filter-button" type="button">WARN</button>
+                <button class="otoe-button filter-button" type="button">SIG</button>
+                <button class="otoe-button filter-button" type="button">CMD</button>
+                <button class="otoe-button ghost-button compact" type="button">CLEAR</button>
+                <button class="otoe-button ghost-button compact" type="button">EXPORT</button>
+              </div>
+              <div class="otoe-scroll exec-terminal">
+                <div class="otoe-fragment otoe-for">
+                  <div class="otoe-stack otoe-hstack log-line is-info" style="--otoe-gap:10px">
+                    <span class="otoe-text log-ts">08:49:58</span>
+                    <span class="otoe-text log-level is-info">info</span>
+                    <span class="otoe-text log-message">wraith.daemon: attach interface wlan1mon</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-line is-ok" style="--otoe-gap:10px">
+                    <span class="otoe-text log-ts">08:49:58</span>
+                    <span class="otoe-text log-level is-ok">ok</span>
+                    <span class="otoe-text log-message">wraith.daemon: monitor mode confirmed</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-line is-cmd" style="--otoe-gap:10px">
+                    <span class="otoe-text log-ts">08:49:59</span>
+                    <span class="otoe-text log-level is-cmd">cmd</span>
+                    <span class="otoe-text log-message">&gt; handshake_hunter --scope DEMO-SCOPE-001 --target 02:00:5e:00:53:01 --window 300s --stealth</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-line is-sig" style="--otoe-gap:10px">
+                    <span class="otoe-text log-ts">08:50:00</span>
+                    <span class="otoe-text log-level is-sig">sig</span>
+                    <span class="otoe-text log-message">policy_guard: scope check OK - target in DEMO-SCOPE-001</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-line is-sig" style="--otoe-gap:10px">
+                    <span class="otoe-text log-ts">08:50:00</span>
+                    <span class="otoe-text log-level is-sig">sig</span>
+                    <span class="otoe-text log-message">policy_guard: posture=STEALTH - deauth/injection DISABLED</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-line is-info" style="--otoe-gap:10px">
+                    <span class="otoe-text log-ts">08:50:01</span>
+                    <span class="otoe-text log-level is-info">info</span>
+                    <span class="otoe-text log-message">chameleon: MAC rotated to 02:00:5e:00:53:10</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-line is-info" style="--otoe-gap:10px">
+                    <span class="otoe-text log-ts">08:50:02</span>
+                    <span class="otoe-text log-level is-info">info</span>
+                    <span class="otoe-text log-message">channel lock: 11 @ 2.462GHz</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-line is-info" style="--otoe-gap:10px">
+                    <span class="otoe-text log-ts">08:50:02</span>
+                    <span class="otoe-text log-level is-info">info</span>
+                    <span class="otoe-text log-message">listening for EAPOL frames ... window=300s</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-line is-info" style="--otoe-gap:10px">
+                    <span class="otoe-text log-ts">08:50:19</span>
+                    <span class="otoe-text log-level is-info">info</span>
+                    <span class="otoe-text log-message">client 02:00:5e:00:53:7e associated with 02:00:5e:00:53:01</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-line is-info" style="--otoe-gap:10px">
+                    <span class="otoe-text log-ts">08:50:20</span>
+                    <span class="otoe-text log-level is-info">info</span>
+                    <span class="otoe-text log-message">EAPOL M1 observed (AP -&gt; STA)</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-line is-info" style="--otoe-gap:10px">
+                    <span class="otoe-text log-ts">08:50:20</span>
+                    <span class="otoe-text log-level is-info">info</span>
+                    <span class="otoe-text log-message">EAPOL M2 observed (STA -&gt; AP)</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-line is-ok" style="--otoe-gap:10px">
+                    <span class="otoe-text log-ts">08:50:21</span>
+                    <span class="otoe-text log-level is-ok">ok</span>
+                    <span class="otoe-text log-message">EAPOL M4 observed - 4-way handshake complete</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-line is-sig" style="--otoe-gap:10px">
+                    <span class="otoe-text log-ts">08:50:21</span>
+                    <span class="otoe-text log-level is-sig">sig</span>
+                    <span class="otoe-text log-message">HANDSHAKE CAPTURED / frames=4 / quality=CLEAN</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-line is-info" style="--otoe-gap:10px">
+                    <span class="otoe-text log-ts">08:50:22</span>
+                    <span class="otoe-text log-level is-info">info</span>
+                    <span class="otoe-text log-message">evidence: hs_demo_0001_20260422T085022Z.pcapng - 14.3 KB</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-line is-ok" style="--otoe-gap:10px">
+                    <span class="otoe-text log-ts">08:50:23</span>
+                    <span class="otoe-text log-level is-ok">ok</span>
+                    <span class="otoe-text log-message">loot.ingest: 1 handshake -&gt; loot/wifi/handshakes/DEMO-GUEST</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-line is-warn" style="--otoe-gap:10px">
+                    <span class="otoe-text log-ts">08:51:04</span>
+                    <span class="otoe-text log-level is-warn">warn</span>
+                    <span class="otoe-text log-message">beacon anomaly: RSSI delta -18dBm (possible client roam)</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-line is-sig" style="--otoe-gap:10px">
+                    <span class="otoe-text log-ts">08:51:12</span>
+                    <span class="otoe-text log-level is-sig">sig</span>
+                    <span class="otoe-text log-message">finding: WPA2 handshake captured - escalated to workbench queue</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="otoe-panel exec-events-panel">
+            <div class="otoe-stack otoe-vstack exec-events" style="--otoe-gap:8px">
+              <div class="otoe-stack otoe-hstack exec-toolbar-head">
+                <span class="otoe-text section-heading">EVENT TIMELINE</span>
+                <span class="otoe-text exec-count">7 events</span>
+              </div>
+              <div class="otoe-fragment otoe-for">
+                <div class="otoe-stack otoe-hstack event-row is-ok" style="--otoe-gap:10px">
+                  <span class="otoe-text event-ts">08:50:00</span>
+                  <span class="otoe-text event-tag is-ok">SCOPE</span>
+                  <span class="otoe-text event-message">Policy guard approved DEMO-SCOPE-001</span>
+                </div>
+                <div class="otoe-stack otoe-hstack event-row is-ok" style="--otoe-gap:10px">
+                  <span class="otoe-text event-ts">08:50:01</span>
+                  <span class="otoe-text event-tag is-ok">CHAMELEON</span>
+                  <span class="otoe-text event-message">MAC rotation confirmed</span>
+                </div>
+                <div class="otoe-stack otoe-hstack event-row is-ok" style="--otoe-gap:10px">
+                  <span class="otoe-text event-ts">08:50:02</span>
+                  <span class="otoe-text event-tag is-ok">RADIO</span>
+                  <span class="otoe-text event-message">Monitor mode on wlan1mon / ch11</span>
+                </div>
+                <div class="otoe-stack otoe-hstack event-row is-ok" style="--otoe-gap:10px">
+                  <span class="otoe-text event-ts">08:50:20</span>
+                  <span class="otoe-text event-tag is-ok">EAPOL</span>
+                  <span class="otoe-text event-message">4-way handshake progression 1-4</span>
+                </div>
+                <div class="otoe-stack otoe-hstack event-row is-ok" style="--otoe-gap:10px">
+                  <span class="otoe-text event-ts">08:50:21</span>
+                  <span class="otoe-text event-tag is-ok">CAPTURE</span>
+                  <span class="otoe-text event-message">Handshake sealed to vault</span>
+                </div>
+                <div class="otoe-stack otoe-hstack event-row is-warn" style="--otoe-gap:10px">
+                  <span class="otoe-text event-ts">08:51:04</span>
+                  <span class="otoe-text event-tag is-warn">RADIO</span>
+                  <span class="otoe-text event-message">RSSI delta - possible client roam</span>
+                </div>
+                <div class="otoe-stack otoe-hstack event-row is-warn" style="--otoe-gap:10px">
+                  <span class="otoe-text event-ts">08:51:12</span>
+                  <span class="otoe-text event-tag is-warn">FINDING</span>
+                  <span class="otoe-text event-message">Escalated to workbench queue</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+</body>
+</html>
+

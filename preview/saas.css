@@ -1,0 +1,660 @@
+:root {
+  color-scheme: light;
+  --bg: #f6f7fb;
+  --panel: #ffffff;
+  --panel-soft: #fbfcff;
+  --surface: #f0f4ff;
+  --surface-strong: #e8eefb;
+  --line: #e4e8f0;
+  --line-strong: #d2d9e6;
+  --text: #172033;
+  --muted: #687385;
+  --quiet: #98a2b3;
+  --accent: #5b6ee1;
+  --accent-strong: #4657c8;
+  --green: #1f9d68;
+  --blue: #1688d4;
+  --yellow: #b98212;
+  --red: #d94a57;
+  --shadow: rgba(36, 48, 77, 0.11);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    linear-gradient(135deg, rgba(91, 110, 225, 0.12), transparent 34%),
+    linear-gradient(45deg, rgba(31, 157, 104, 0.08), transparent 42%),
+    var(--bg);
+  color: var(--text);
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  line-height: 1.45;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.saas-app {
+  width: min(1240px, 100%);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 24px 28px 32px;
+}
+
+.otoe-stack {
+  gap: var(--otoe-gap, 0);
+  padding: var(--otoe-padding, 0);
+}
+
+.otoe-vstack {
+  display: flex;
+  flex-direction: column;
+}
+
+.otoe-hstack {
+  display: flex;
+  align-items: center;
+}
+
+.otoe-panel {
+  min-width: 0;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 8px;
+  box-shadow: 0 20px 48px var(--shadow);
+  backdrop-filter: blur(14px);
+}
+
+.otoe-panel-title {
+  display: none;
+}
+
+.otoe-text {
+  min-width: 0;
+}
+
+.otoe-button {
+  min-height: 40px;
+  border: 1px solid transparent;
+  background: var(--accent);
+  color: #ffffff;
+  padding: 0 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 750;
+  transition:
+    transform 140ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.otoe-button:hover,
+.otoe-button:focus-visible {
+  background: var(--accent-strong);
+  box-shadow: 0 10px 22px rgba(91, 110, 225, 0.25);
+  outline: none;
+}
+
+.otoe-button:active {
+  transform: translateY(1px);
+}
+
+.otoe-input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  background: #ffffff;
+  color: var(--text);
+  padding: 0 14px;
+  border-radius: 8px;
+  outline: none;
+  font-size: 14px;
+}
+
+.otoe-input::placeholder {
+  color: var(--quiet);
+}
+
+.otoe-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(91, 110, 225, 0.12);
+}
+
+.otoe-fragment {
+  display: contents;
+}
+
+.saas-topbar {
+  min-height: 60px;
+  margin-bottom: 20px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  box-shadow: 0 18px 44px var(--shadow);
+  backdrop-filter: blur(16px);
+}
+
+.saas-brand {
+  width: 118px;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.saas-workspace {
+  flex: 1;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.saas-status {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #e9f8f0;
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.saas-invite {
+  min-width: 92px;
+}
+
+.saas-layout {
+  align-items: stretch;
+}
+
+.saas-sidebar {
+  width: 208px;
+  flex: 0 0 208px;
+  padding: 10px;
+}
+
+.saas-nav {
+  padding: 0;
+}
+
+.nav-item {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 750;
+  text-align: left;
+}
+
+.nav-item.is-active {
+  background: var(--surface);
+  color: var(--accent-strong);
+}
+
+.nav-item:hover,
+.nav-item:focus-visible {
+  background: var(--surface);
+  color: var(--accent-strong);
+  box-shadow: none;
+}
+
+.saas-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.page-header {
+  align-items: center;
+  min-height: 74px;
+}
+
+.page-heading {
+  flex: 1;
+}
+
+.page-title {
+  display: block;
+  color: var(--text);
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.page-subtitle {
+  display: block;
+  max-width: 560px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.saas-search {
+  max-width: 340px;
+  flex: 0 0 340px;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.saas-metric-card {
+  background: #ffffff;
+}
+
+.metric-body {
+  min-height: 132px;
+  padding: 18px;
+  justify-content: space-between;
+}
+
+.metric-label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.metric-value {
+  display: block;
+  margin-top: 8px;
+  color: var(--text);
+  font-size: 30px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.metric-delta {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 12px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.metric-delta.good {
+  background: #e9f8f0;
+  color: var(--green);
+}
+
+.metric-delta.info {
+  background: #e9f4fd;
+  color: var(--blue);
+}
+
+.content-grid {
+  align-items: stretch;
+  display: grid;
+  grid-template-columns: minmax(0, 1.28fr) minmax(300px, 0.72fr);
+}
+
+.section-body {
+  min-width: 0;
+}
+
+.pipeline-panel,
+.customer-panel {
+  padding: 16px;
+}
+
+.section-header {
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.section-heading {
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.ghost-button {
+  min-height: 36px;
+  background: var(--surface);
+  color: var(--accent-strong);
+}
+
+.ghost-button:hover,
+.ghost-button:focus-visible {
+  background: var(--surface-strong);
+  box-shadow: none;
+}
+
+.pipeline-list {
+  padding: 0;
+}
+
+.pipeline-card {
+  box-shadow: none;
+  background: var(--panel-soft);
+  border-color: var(--line);
+}
+
+.deal-body {
+  min-height: 138px;
+  padding: 15px;
+  justify-content: space-between;
+}
+
+.deal-meta {
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.deal-stage,
+.deal-confidence {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.deal-stage {
+  background: var(--surface);
+  color: var(--accent-strong);
+}
+
+.deal-confidence {
+  background: #e9f8f0;
+  color: var(--green);
+}
+
+.deal-name {
+  display: block;
+  margin-top: 14px;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.deal-owner {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.deal-amount {
+  display: block;
+  margin-top: 14px;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 950;
+}
+
+.customer-list {
+  padding: 0;
+  margin-top: 0;
+}
+
+.customer-row {
+  min-height: 58px;
+  gap: 10px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.customer-name {
+  flex: 1;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.customer-plan {
+  color: var(--quiet);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.customer-health {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.customer-health.good {
+  background: #e9f8f0;
+  color: var(--green);
+}
+
+.customer-health.warn {
+  background: #fff5db;
+  color: var(--yellow);
+}
+
+.customer-health.danger {
+  background: #fdecee;
+  color: var(--red);
+}
+
+.view-panel,
+.forecast-panel,
+.queue-panel {
+  padding: 16px;
+}
+
+.customer-table {
+  padding: 0;
+}
+
+.customer-table-head,
+.customer-table-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) minmax(90px, 0.45fr) minmax(110px, 0.55fr) minmax(180px, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.customer-table-head {
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.customer-table-row {
+  min-height: 58px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.table-head {
+  color: var(--quiet);
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.table-cell {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.table-cell.account {
+  color: var(--text);
+  font-weight: 900;
+}
+
+.split-view {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.75fr) minmax(0, 1.25fr);
+  align-items: stretch;
+}
+
+.forecast-card {
+  min-height: 220px;
+  justify-content: space-between;
+}
+
+.forecast-value {
+  display: block;
+  color: var(--text);
+  font-size: 34px;
+  font-weight: 950;
+  line-height: 1.05;
+}
+
+.forecast-note {
+  display: block;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.queue-list {
+  margin-top: 14px;
+}
+
+.queue-row,
+.automation-row,
+.settings-row {
+  min-height: 58px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.queue-name {
+  flex: 1;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.queue-amount {
+  color: var(--accent-strong);
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.automation-list,
+.settings-list {
+  padding: 0;
+}
+
+.automation-copy {
+  flex: 1;
+}
+
+.automation-title,
+.settings-label {
+  display: block;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.automation-description,
+.settings-value {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.automation-state {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.settings-row {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+@media (max-width: 980px) {
+  .saas-layout,
+  .page-header {
+    flex-direction: column;
+  }
+
+  .saas-sidebar,
+  .saas-search {
+    width: 100%;
+    max-width: none;
+    flex: auto;
+  }
+
+  .metric-grid,
+  .content-grid,
+  .split-view,
+  .customer-table-head,
+  .customer-table-row {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-table-head {
+    display: none;
+  }
+
+  .page-header {
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 620px) {
+  .saas-app {
+    padding: 12px;
+  }
+
+  .saas-topbar {
+    min-height: auto;
+    flex-wrap: wrap;
+    padding: 12px;
+  }
+
+  .saas-brand,
+  .saas-workspace,
+  .saas-status,
+  .saas-invite {
+    width: 100%;
+  }
+
+  .page-title {
+    font-size: 26px;
+  }
+}

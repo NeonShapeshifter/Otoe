@@ -1,0 +1,220 @@
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+from typing import Any
+
+
+SUPPORTED_PROPERTIES = {
+    "align-items": "alignItems",
+    "background": "background",
+    "border-color": "borderColor",
+    "border-radius": "borderRadius",
+    "border-width": "borderWidth",
+    "color": "color",
+    "display": "display",
+    "font-size": "fontSize",
+    "font-weight": "fontWeight",
+    "gap": "gap",
+    "height": "height",
+    "justify-content": "justifyContent",
+    "margin": "margin",
+    "max-height": "maxHeight",
+    "max-width": "maxWidth",
+    "min-height": "minHeight",
+    "min-width": "minWidth",
+    "opacity": "opacity",
+    "padding": "padding",
+    "width": "width",
+}
+
+HTML_PROPERTIES = {value: key for key, value in SUPPORTED_PROPERTIES.items()}
+DIMENSION_PROPERTIES = {
+    "borderRadius",
+    "borderWidth",
+    "fontSize",
+    "gap",
+    "height",
+    "margin",
+    "maxHeight",
+    "maxWidth",
+    "minHeight",
+    "minWidth",
+    "padding",
+    "width",
+}
+TOKEN_PROPERTIES = {"background", "borderColor", "color"}
+RAW_KEYWORDS = {
+    "auto",
+    "block",
+    "bold",
+    "center",
+    "column",
+    "flex",
+    "grid",
+    "hidden",
+    "inherit",
+    "initial",
+    "inline",
+    "inline-flex",
+    "none",
+    "normal",
+    "row",
+    "solid",
+    "transparent",
+}
+
+
+class StyleError(ValueError):
+    pass
+
+
+class StyleSyntaxError(StyleError):
+    pass
+
+
+class UnknownStyleClassError(StyleError):
+    pass
+
+
+@dataclass(frozen=True)
+class Token:
+    name: str
+
+
+@dataclass(frozen=True)
+class Size:
+    value: int | float
+    unit: str = "px"
+
+
+@dataclass(frozen=True)
+class StyleRule:
+    selector: str
+    declarations: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class StyleSheet:
+    rules: dict[str, StyleRule]
+    tokens: dict[str, Any]
+
+    def resolve(self, class_name: str | None, *, strict: bool = True) -> dict[str, Any]:
+        styles: dict[str, Any] = {}
+        for name in _class_names(class_name):
+            selector = f".{name}"
+            if selector not in self.rules:
+                if strict:
+                    raise UnknownStyleClassError(f"Unknown style class {name!r}.")
+                continue
+            styles.update(self.rules[selector].declarations)
+        return styles
+
+    def inline_style(self, class_name: str | None, *, strict: bool = True) -> str:
+        resolved = self.resolve(class_name, strict=strict)
+        return ";".join(
+            f"{HTML_PROPERTIES[prop]}:{_html_value(prop, value, self.tokens)}"
+            for prop, value in resolved.items()
+        )
+
+
+def css(source: str, *, tokens: dict[str, Any] | None = None) -> StyleSheet:
+    rules: dict[str, StyleRule] = {}
+    cleaned = _strip_comments(source)
+    for selector, body in _rule_blocks(cleaned):
+        selector = selector.strip()
+        if not selector.startswith(".") or " " in selector:
+            raise StyleSyntaxError(
+                f"Only single class selectors are supported; got {selector!r}."
+            )
+        declarations = _declarations(body)
+        rules[selector] = StyleRule(selector=selector, declarations=declarations)
+    return StyleSheet(rules=rules, tokens=tokens or {})
+
+
+def merge_inline_styles(*styles: str | None) -> str:
+    parts = [style.strip().rstrip(";") for style in styles if style]
+    return ";".join(part for part in parts if part)
+
+
+def _strip_comments(source: str) -> str:
+    return re.sub(r"/\*.*?\*/", "", source, flags=re.S)
+
+
+def _rule_blocks(source: str) -> list[tuple[str, str]]:
+    blocks = re.findall(r"([^{}]+)\{([^{}]*)\}", source, flags=re.S)
+    remainder = re.sub(r"([^{}]+)\{([^{}]*)\}", "", source, flags=re.S).strip()
+    if remainder:
+        raise StyleSyntaxError(f"Unexpected style content {remainder!r}.")
+    return blocks
+
+
+def _declarations(body: str) -> dict[str, Any]:
+    declarations = {}
+    for raw_declaration in body.split(";"):
+        declaration = raw_declaration.strip()
+        if not declaration:
+            continue
+        if ":" not in declaration:
+            raise StyleSyntaxError(f"Invalid style declaration {declaration!r}.")
+        raw_name, raw_value = declaration.split(":", 1)
+        name = raw_name.strip()
+        if name not in SUPPORTED_PROPERTIES:
+            raise StyleSyntaxError(f"Unknown style property {name!r}.")
+        prop = SUPPORTED_PROPERTIES[name]
+        declarations[prop] = _parse_value(prop, raw_value.strip())
+    return declarations
+
+
+def _parse_value(prop: str, value: str) -> Any:
+    if not value:
+        raise StyleSyntaxError(f"Missing value for style property {prop!r}.")
+    if len(value) >= 2 and value[0] in {"'", '"'} and value[-1] == value[0]:
+        return value[1:-1]
+    if value in {"true", "false"}:
+        return value == "true"
+    if _is_number(value):
+        number = float(value) if "." in value else int(value)
+        return Size(number) if prop in DIMENSION_PROPERTIES else number
+    size_match = re.fullmatch(r"(-?\d+(?:\.\d+)?)(px|%)", value)
+    if size_match:
+        raw_number = size_match.group(1)
+        number = float(raw_number) if "." in raw_number else int(raw_number)
+        return Size(number, size_match.group(2))
+    if value.startswith("#") or value in RAW_KEYWORDS:
+        return value
+    if prop in TOKEN_PROPERTIES:
+        return Token(value)
+    return value
+
+
+def _html_value(prop: str, value: Any, tokens: dict[str, Any]) -> str:
+    if isinstance(value, Size):
+        return f"{_format_number(value.value)}{value.unit}"
+    if isinstance(value, Token):
+        if value.name in tokens:
+            return _html_value(prop, tokens[value.name], tokens)
+        return f"var(--{value.name})"
+    if isinstance(value, (int, float)) and prop in DIMENSION_PROPERTIES:
+        return f"{_format_number(value)}px"
+    return str(value)
+
+
+def _format_number(value: int | float) -> str:
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return str(value)
+
+
+def _class_names(class_name: str | None) -> list[str]:
+    if not class_name:
+        return []
+    return [name for name in class_name.split() if name]
+
+
+def _is_number(value: str) -> bool:
+    try:
+        float(value)
+    except ValueError:
+        return False
+    return True
