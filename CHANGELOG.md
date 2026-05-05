@@ -11,6 +11,10 @@
 - Added `DataTable`, `Dialog`, `Toast`, and `TableColumn` primitives.
 - Migrated the SaaS Customers view to `DataTable` and Settings status to `Toast`.
 - Migrated the Wraith Mission Exec surface onto shared `otoe.ui` primitives.
+- Added `CommandPalette` and a UI kit kitchen-sink preview for shared
+  component validation.
+- Added live UI kit preview tests for command filtering, selection, dialog
+  opening, empty states, and reactive toast classes.
 
 ## v0.0.1 - Technical Preview
 

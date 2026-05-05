@@ -61,6 +61,31 @@ def _render_widget(
         }
         if widget.props.get("disabled"):
             attrs["disabled"] = "disabled"
+        if widget.children:
+            children = [
+                _render_widget(
+                    child,
+                    pretty=pretty,
+                    indent=indent + 2,
+                    attributes=attributes,
+                    stylesheet=stylesheet,
+                    strict_styles=strict_styles,
+                )
+                for child in widget.children
+            ]
+            return _block(
+                "button",
+                _widget_attrs(
+                    widget,
+                    attrs,
+                    attributes,
+                    stylesheet,
+                    strict_styles,
+                ),
+                children,
+                pretty,
+                indent,
+            )
         return _inline(
             pretty,
             indent,

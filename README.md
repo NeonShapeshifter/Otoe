@@ -19,8 +19,9 @@ stable public framework or a production desktop renderer.
 - Optional JSX-like `template(...)` syntax that returns the same `Node` tree.
 - Experimental portable `css(...)` / `StyleSheet` API.
 - First `otoe.ui` primitives: cards, badges, action buttons, tabs, toolbars,
-  stat cards, data tables, dialogs, and toasts.
+  stat cards, data tables, dialogs, toasts, and command palettes.
 - Wraith-shaped and SaaS-shaped case studies using the same UI primitives.
+- UI kit kitchen-sink preview for validating primitives outside one product shape.
 
 ## What Is Not Ready Yet
 
@@ -64,6 +65,21 @@ PYTHONPATH=src:. python -m examples.saas.live_preview
 
 Then open <http://127.0.0.1:8766>.
 
+Generate the static UI kit preview:
+
+```bash
+PYTHONPATH=src:. python -m examples.ui.preview > preview/ui.html
+```
+
+Run the live UI kit preview:
+
+```bash
+PYTHONPATH=src:. python -m examples.ui.live_preview
+```
+
+Then open <http://127.0.0.1:8768>. Use the command search and command rows to
+verify live filtering, selection, dialog mounting, and toast updates.
+
 ## Tiny Example
 
 ```python
@@ -100,6 +116,7 @@ Otoe is intentionally split into layers:
 - `src/otoe/` - runtime package.
 - `examples/wraith/` - Wraith-shaped components and live previews.
 - `examples/saas/` - SaaS-shaped generality case study.
+- `examples/ui/` - shared UI primitive kitchen-sink preview.
 - `preview/` - generated HTML/CSS preview artifacts.
 - `tests/` - runtime and preview regression tests.
 - `ADR-*.md` - design decisions.

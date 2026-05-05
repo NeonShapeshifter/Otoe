@@ -7,7 +7,7 @@ from .component import component
 from .control import For, Show
 from .node import Node
 from .reactive import computed, is_reactive
-from .widgets import Button, HStack, Panel, Text, VStack
+from .widgets import Button, HStack, Input, Panel, Text, VStack
 
 
 @dataclass(frozen=True)
@@ -206,6 +206,7 @@ def Toast(
     tone: str = "neutral",
     className: str | None = None,
 ):
+    tone_label = computed(lambda: str(_value(tone)).upper()) if is_reactive(tone) else str(tone).upper()
     return HStack(
         VStack(
             Text(title, className="ui-toast-title"),
@@ -216,9 +217,47 @@ def Toast(
             className="ui-toast-copy",
             gap=3,
         ),
-        Badge(tone.upper(), tone=tone, className="ui-toast-badge"),
-        className=class_names("ui-toast", f"is-{tone}", className),
+        Badge(tone_label, tone=tone, className="ui-toast-badge"),
+        className=_variant_class("ui-toast", tone, className),
         gap=12,
+    )
+
+
+@component
+def CommandPalette(
+    *,
+    query,
+    commands,
+    on_query,
+    on_select,
+    placeholder: str = "Search commands...",
+    className: str | None = None,
+    empty="No commands",
+):
+    visible_commands = computed(
+        lambda: _filter_commands(commands, query.value)
+    )
+    fallback = empty if isinstance(empty, Node) else Text(empty, className="ui-command-empty")
+
+    return Card(
+        VStack(
+            Text("Command palette", className="ui-command-title"),
+            Input(
+                value=query,
+                placeholder=placeholder,
+                className="ui-command-input",
+                onChange=on_query,
+            ),
+            For(
+                each=visible_commands,
+                key=lambda command: command["id"],
+                children=lambda command: _command_item(command, on_select),
+                fallback=fallback,
+            ),
+            className="ui-command",
+            gap=10,
+        ),
+        className=class_names("ui-command-card", className),
     )
 
 
@@ -286,3 +325,43 @@ def _row_value(row: Any, key: str) -> Any:
     if isinstance(row, dict):
         return row.get(key, "")
     return getattr(row, key)
+
+
+def _filter_commands(commands, query: str) -> list[dict[str, Any]]:
+    items = _list_value(commands)
+    needle = query.strip().lower()
+    if not needle:
+        return items
+    return [
+        command
+        for command in items
+        if needle in command["label"].lower()
+        or needle in command.get("description", "").lower()
+        or needle in command.get("group", "").lower()
+    ]
+
+
+def _command_item(command: dict[str, Any], on_select) -> Node:
+    return Button(
+        "",
+        HStack(
+            VStack(
+                Text(command["label"], className="ui-command-label"),
+                Text(command.get("description", ""), className="ui-command-description"),
+                className="ui-command-copy",
+                gap=3,
+            ),
+            Text(command.get("shortcut", ""), className="ui-command-shortcut"),
+            className="ui-command-row",
+            gap=12,
+        ),
+        className="ui-command-item",
+        onClick=lambda: on_select(command["id"]),
+    )
+
+
+def _list_value(value) -> list[Any]:
+    resolved = _value(value)
+    if resolved is None:
+        return []
+    return list(resolved)

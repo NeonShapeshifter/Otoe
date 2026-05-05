@@ -106,7 +106,10 @@ Wraith remains the production app until an isolated Otoe surface proves equivale
 - `DataTable`, `Dialog`, `Toast`, and `TableColumn` added to `otoe.ui`.
 - SaaS Customers view migrated to `DataTable`; Settings status migrated to `Toast`.
 - Wraith Mission Exec panels, controls, filters, badges, and toolbar migrated onto `otoe.ui`.
-- Baseline tests: `68 passed`.
+- `CommandPalette` added to `otoe.ui`.
+- UI kit kitchen-sink preview added for validating shared primitives outside one case study.
+- UI kit live preview proves command filtering, command selection, dialog mounting, empty state, and reactive toast classes.
+- Baseline tests: `74 passed`.
 
 ### Current Sprint
 
@@ -114,7 +117,7 @@ Wraith remains the production app until an isolated Otoe surface proves equivale
 2. Tighten Mission Exec spacing, hierarchy, and interaction states until it feels better than the current Wraith UI.
 3. Compare a non-trivial Mission Exec change in Otoe versus the Wraith Kivy/front prototype and record the friction points.
 4. Decide whether the next Wraith-shaped benchmark is routing/app shell, overlay/modal, or runtime polling.
-5. Expand `otoe.ui` with command palette and richer modal/dialog behavior.
+5. Review the UI kit kitchen-sink preview visually and decide the next primitive: menu, sidebar shell, select, or richer dialog controls.
 6. Add screenshot/GIF assets for the public README once the preview polish stabilizes.
 7. Keep snapshots plus live-render tests as the renderer contract while the backend is still moving.
 

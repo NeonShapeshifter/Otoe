@@ -2,6 +2,7 @@ from otoe import (
     ActionButton,
     Badge,
     Card,
+    CommandPalette,
     DataTable,
     Dialog,
     StatCard,
@@ -190,3 +191,67 @@ def test_toast_hides_empty_description():
     assert toast.props["className"] == "ui-toast is-success"
     assert copy.children[0].props["content"] == "Saved"
     assert description_show.children == []
+
+
+def test_toast_reacts_to_tone_signal():
+    tone = signal("neutral")
+    toast = root_widget(mount(Toast("Command state", tone=tone)))
+    badge = toast.children[1]
+
+    assert toast.props["className"] == "ui-toast is-neutral"
+    assert badge.props["className"] == "ui-badge is-neutral ui-toast-badge"
+    assert badge.props["content"] == "NEUTRAL"
+
+    tone.set("success")
+
+    assert toast.props["className"] == "ui-toast is-success"
+    assert badge.props["className"] == "ui-badge is-success ui-toast-badge"
+    assert badge.props["content"] == "SUCCESS"
+
+
+def test_command_palette_filters_and_dispatches_selection():
+    query = signal("")
+    selected = signal(None)
+    commands = [
+        {
+            "id": "mission",
+            "label": "Open Mission Exec",
+            "description": "Jump to the active Wraith mission.",
+            "group": "Wraith",
+            "shortcut": "M",
+        },
+        {
+            "id": "customers",
+            "label": "Open Customers",
+            "description": "Review account health.",
+            "group": "SaaS",
+            "shortcut": "C",
+        },
+    ]
+
+    palette = root_widget(
+        mount(
+            CommandPalette(
+                query=query,
+                commands=commands,
+                on_query=lambda value: query.set(value),
+                on_select=lambda command_id: selected.set(command_id),
+            )
+        )
+    )
+
+    assert palette.props["className"] == "ui-card is-default ui-command-card"
+    body = palette.children[0]
+    command_list = body.children[2]
+    assert len(command_list.children) == 2
+
+    query.set("mission")
+
+    assert len(command_list.children) == 1
+    item = command_list.children[0]
+    assert item.name == "Button"
+    assert item.children[0].children[0].children[0].props["content"] == "Open Mission Exec"
+
+    item.trigger("onClick")
+
+    assert selected.value == "mission"
