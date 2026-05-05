@@ -65,8 +65,9 @@ PYTHONPATH=src:. python -m examples.ui.live_preview
 Then open <http://127.0.0.1:8768>.
 Use the sidebar, command launcher, `Ctrl+K`/`Meta+K`, command search, Enter key,
 `Escape`, and single-key command shortcuts to verify the live command overlay
-and route switching. The command input is marked for autofocus when the overlay
-opens.
+and route switching. The UI kit route also includes a controlled select and
+action menu to verify open state, disabled options, and selection events. The
+command input is marked for autofocus when the overlay opens.
 
 Otoe also has an optional JSX-like `template(...)` authoring path. It returns
 the same `Node` tree as Python components, so it is syntax sugar rather than a

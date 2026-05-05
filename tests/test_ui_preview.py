@@ -23,6 +23,9 @@ def test_ui_kit_preview_contains_component_kitchen_sink():
     assert "ui-sidebar-nav ui-demo-sidebar" in html
     assert "Command palette" in html
     assert "Review Customers" in html
+    assert "Controlled inputs" in html
+    assert "ui-select-popover" in html
+    assert "Inspect surface" in html
     assert "Renderer boundary ready" in html
     assert 'data-otoe-autofocus="true"' in html
     assert "ui-command-card ui-demo-command" in html
@@ -161,3 +164,30 @@ def test_ui_kit_live_preview_shows_empty_command_state():
     assert 'value="nothing-matches"' in html
     assert "No commands" in html
     assert "Review Customers" not in html
+
+
+def test_ui_kit_live_preview_select_and_menu_update_state():
+    app = UIKitLivePreview()
+    html = app.render_fragment()
+    select_id = _attr_near(html, "Balanced", "data-otoe-click")
+
+    html = app.dispatch_event(select_id)
+
+    assert "Roomy" in html
+
+    roomy_id = _attr_near(html, "Roomy", "data-otoe-click")
+    html = app.dispatch_event(roomy_id)
+
+    assert "Density: Roomy; action: None" in html
+    assert "Softer SaaS dashboard spacing." in html
+
+    menu_id = _attr_near(html, "Open Action Menu", "data-otoe-click")
+    html = app.dispatch_event(menu_id)
+
+    assert "Duplicate view" in html
+
+    duplicate_id = _attr_near(html, "Duplicate view", "data-otoe-click")
+    html = app.dispatch_event(duplicate_id)
+
+    assert "Density: Roomy; action: Duplicate view" in html
+    assert "Fork the current app route." not in html

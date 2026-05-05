@@ -32,6 +32,10 @@ class UIKitLivePreview:
         self.selected = signal(None)
         self.dialog_open = signal(False)
         self.palette_open = signal(False)
+        self.menu_open = signal(False)
+        self.menu_action = signal(None)
+        self.density = signal("balanced")
+        self.density_open = signal(False)
         self.active_route = signal("ui")
 
         self.app = mount(
@@ -40,11 +44,19 @@ class UIKitLivePreview:
                 selected=self.selected,
                 dialog_open=self.dialog_open,
                 palette_open=self.palette_open,
+                menu_open=self.menu_open,
+                menu_action=self.menu_action,
+                density=self.density,
+                density_open=self.density_open,
                 active_route=self.active_route,
                 on_query=self._query,
                 on_select=self._select,
                 on_open_palette=self._open_palette,
                 on_toggle_dialog=self._toggle_dialog,
+                on_toggle_menu=self._toggle_menu,
+                on_menu_select=self._menu_select,
+                on_density_change=self._density_change,
+                on_density_open_change=self._density_open_change,
                 on_navigate=self._navigate,
                 on_shortcut=self._shortcut,
             )
@@ -79,9 +91,24 @@ class UIKitLivePreview:
     def _toggle_dialog(self) -> None:
         self.dialog_open.set(not self.dialog_open.value)
 
+    def _toggle_menu(self) -> None:
+        self.menu_open.set(not self.menu_open.value)
+
+    def _menu_select(self, item_id: str) -> None:
+        self.menu_action.set(item_id)
+        self.menu_open.set(False)
+
+    def _density_change(self, value: str) -> None:
+        self.density.set(value)
+
+    def _density_open_change(self, value: bool) -> None:
+        self.density_open.set(value)
+
     def _navigate(self, route_id: str) -> None:
         self.active_route.set(route_id)
         self.palette_open.set(False)
+        self.menu_open.set(False)
+        self.density_open.set(False)
 
     def _shortcut(self, payload: dict[str, Any]) -> None:
         key = str(payload.get("key", ""))
@@ -91,10 +118,14 @@ class UIKitLivePreview:
             self.query.set("")
             self.palette_open.set(True)
             self.dialog_open.set(False)
+            self.menu_open.set(False)
+            self.density_open.set(False)
             return
         if key == "Escape":
             self.palette_open.set(False)
             self.dialog_open.set(False)
+            self.menu_open.set(False)
+            self.density_open.set(False)
             self.query.set("")
             return
         command = COMMAND_REGISTRY.find_shortcut(key)

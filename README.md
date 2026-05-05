@@ -20,7 +20,8 @@ stable public framework or a production desktop renderer.
 - Experimental portable `css(...)` / `StyleSheet` API.
 - First `otoe.ui` primitives: cards, badges, action buttons, tabs, toolbars,
   stat cards, data tables, dialogs, toasts, command palettes, app shells,
-  sidebar navigation, route views, command registries, and shortcut scopes.
+  sidebar navigation, route views, command registries, shortcut scopes, menus,
+  and controlled selects.
 - Live autofocus support for command overlays and other focused inputs.
 - Wraith-shaped and SaaS-shaped case studies using the same UI primitives.
 - UI kit kitchen-sink preview for validating primitives outside one product shape.

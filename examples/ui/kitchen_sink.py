@@ -11,9 +11,13 @@ from otoe.ui import (
     CommandRegistry,
     DataTable,
     Dialog,
+    Menu,
+    MenuItem,
     NavRoute,
     RouteView,
     ShortcutScope,
+    Select,
+    SelectOption,
     SidebarNav,
     StatCard,
     TabButton,
@@ -25,7 +29,7 @@ from otoe.ui import (
 
 
 ROUTES = [
-    NavRoute("ui", "UI Kit", "Shared primitives", badge="15", tone="info"),
+    NavRoute("ui", "UI Kit", "Shared primitives", badge="19", tone="info"),
     NavRoute("saas", "SaaS", "Commercial dashboard", badge="Live", tone="success"),
     NavRoute("wraith", "Wraith", "Operational surface", badge="Ops", tone="warn"),
 ]
@@ -100,6 +104,18 @@ TELEMETRY = [
     {"id": "export", "event": "Evidence bundle staged", "state": "CMD", "age": "00:12"},
 ]
 
+MENU_ITEMS = [
+    MenuItem("inspect", "Inspect surface", "Open the current node contract.", "I", tone="info"),
+    MenuItem("duplicate", "Duplicate view", "Fork the current app route.", "D", tone="success"),
+    MenuItem("archive", "Archive draft", "Disabled until persistence lands.", "A", tone="warn", disabled=True),
+]
+
+DENSITY_OPTIONS = [
+    SelectOption("compact", "Compact", "Dense workspace rhythm.", tone="info"),
+    SelectOption("balanced", "Balanced", "Default app shell spacing.", tone="success"),
+    SelectOption("roomy", "Roomy", "Softer SaaS dashboard spacing.", tone="warn"),
+]
+
 
 @component
 def UIKitKitchenSink(
@@ -108,11 +124,19 @@ def UIKitKitchenSink(
     selected,
     dialog_open,
     palette_open,
+    menu_open,
+    menu_action,
+    density,
+    density_open,
     active_route,
     on_query,
     on_select,
     on_open_palette,
     on_toggle_dialog,
+    on_toggle_menu,
+    on_menu_select,
+    on_density_change,
+    on_density_open_change,
     on_navigate,
     on_shortcut,
 ):
@@ -153,9 +177,17 @@ def UIKitKitchenSink(
                     selected=selected,
                     dialog_open=dialog_open,
                     palette_open=palette_open,
+                    menu_open=menu_open,
+                    menu_action=menu_action,
+                    density=density,
+                    density_open=density_open,
                     on_query=on_query,
                     on_select=on_select,
                     on_open_palette=on_open_palette,
+                    on_toggle_menu=on_toggle_menu,
+                    on_menu_select=on_menu_select,
+                    on_density_change=on_density_change,
+                    on_density_open_change=on_density_open_change,
                 ),
                 className="ui-demo-route",
             ),
@@ -172,9 +204,17 @@ def _route_surface(
     selected,
     dialog_open,
     palette_open,
+    menu_open,
+    menu_action,
+    density,
+    density_open,
     on_query,
     on_select,
     on_open_palette,
+    on_toggle_menu,
+    on_menu_select,
+    on_density_change,
+    on_density_open_change,
 ):
     if route.id == "saas":
         return SaaSRoute()
@@ -185,22 +225,49 @@ def _route_surface(
         selected=selected,
         dialog_open=dialog_open,
         palette_open=palette_open,
+        menu_open=menu_open,
+        menu_action=menu_action,
+        density=density,
+        density_open=density_open,
         on_query=on_query,
         on_select=on_select,
         on_open_palette=on_open_palette,
+        on_toggle_menu=on_toggle_menu,
+        on_menu_select=on_menu_select,
+        on_density_change=on_density_change,
+        on_density_open_change=on_density_open_change,
     )
 
 
 @component
-def UIKitRoute(*, query, selected, dialog_open, palette_open, on_query, on_select, on_open_palette):
+def UIKitRoute(
+    *,
+    query,
+    selected,
+    dialog_open,
+    palette_open,
+    menu_open,
+    menu_action,
+    density,
+    density_open,
+    on_query,
+    on_select,
+    on_open_palette,
+    on_toggle_menu,
+    on_menu_select,
+    on_density_change,
+    on_density_open_change,
+):
     selected_label = computed(lambda: _selected_label(selected.value))
     selected_tone = computed(lambda: "success" if selected.value else "neutral")
+    menu_label = computed(lambda: _menu_action_label(menu_action.value))
+    density_label = computed(lambda: _density_label(density.value))
 
     return VStack(
         HStack(
             StatCard(
                 label="Primitives",
-                value="15",
+                value="19",
                 detail="Shared surface",
                 tone="good",
                 className="ui-demo-stat",
@@ -214,7 +281,7 @@ def UIKitRoute(*, query, selected, dialog_open, palette_open, on_query, on_selec
             ),
             StatCard(
                 label="Tests",
-                value="89",
+                value="94",
                 detail="Runtime covered",
                 tone="good",
                 className="ui-demo-stat",
@@ -242,6 +309,34 @@ def UIKitRoute(*, query, selected, dialog_open, palette_open, on_query, on_selec
                     description=computed(lambda: f"Selected: {_selected_label(selected.value)}"),
                     tone=selected_tone,
                     className="ui-demo-toast",
+                ),
+                Card(
+                    VStack(
+                        Text("Controlled inputs", className="ui-route-title"),
+                        Select(
+                            options=DENSITY_OPTIONS,
+                            value=density,
+                            open=density_open,
+                            on_change=on_density_change,
+                            on_open_change=on_density_open_change,
+                            placeholder="Choose density",
+                        ),
+                        ActionButton("Open Action Menu", variant="ghost", onClick=on_toggle_menu),
+                        Menu(
+                            items=MENU_ITEMS,
+                            open=menu_open,
+                            active=menu_action,
+                            on_select=on_menu_select,
+                        ),
+                        Toast(
+                            "Primitive state",
+                            description=computed(lambda: f"Density: {density_label.value}; action: {menu_label.value}"),
+                            tone="info",
+                        ),
+                        className="ui-controls-demo",
+                        gap=12,
+                    ),
+                    className="ui-controls-card",
                 ),
                 className="ui-demo-left",
                 gap=14,
@@ -423,6 +518,22 @@ def _route_label(route_id):
         if route.id == route_id:
             return str(route.label)
     return str(route_id)
+
+
+def _menu_action_label(action_id):
+    if not action_id:
+        return "None"
+    for item in MENU_ITEMS:
+        if item.id == action_id:
+            return str(item.label)
+    return str(action_id)
+
+
+def _density_label(density_id):
+    for option in DENSITY_OPTIONS:
+        if option.value == density_id:
+            return str(option.label)
+    return str(density_id)
 
 
 def _surface_cell(row, column):

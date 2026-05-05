@@ -8,9 +8,13 @@ from otoe import (
     CommandRegistry,
     DataTable,
     Dialog,
+    Menu,
+    MenuItem,
     NavRoute,
     RouteView,
     ShortcutScope,
+    Select,
+    SelectOption,
     SidebarNav,
     StatCard,
     TabButton,
@@ -345,6 +349,132 @@ def test_command_registry_normalizes_filters_and_matches_shortcuts():
     assert registry.find("customers").label == "Review Customers"
     assert registry.find_shortcut("c").id == "customers"
     assert registry.find_shortcut("x") is None
+
+
+def test_menu_renders_active_items_and_ignores_disabled_selection():
+    selected = signal(None)
+    active = signal("edit")
+    menu = root_widget(
+        mount(
+            Menu(
+                items=[
+                    MenuItem("edit", "Edit view", "Tune current surface.", "E", tone="info"),
+                    {"id": "delete", "label": "Delete view", "disabled": True, "tone": "danger"},
+                ],
+                active=active,
+                on_select=lambda item_id: selected.set(item_id),
+            )
+        )
+    )
+
+    panel = menu.children[0]
+    list_widget = panel.children[0].children[0]
+    first, second = list_widget.children
+
+    assert panel.props["className"] == "ui-card is-default ui-menu"
+    assert first.props["className"] == "ui-menu-item is-info is-active"
+    assert first.children[0].children[0].children[0].props["content"] == "Edit view"
+    assert second.props["className"] == "ui-menu-item is-danger is-disabled"
+    assert second.props["disabled"] is True
+
+    second.trigger("onClick")
+
+    assert selected.value is None
+
+    first.trigger("onClick")
+
+    assert selected.value == "edit"
+
+
+def test_menu_tracks_open_signal():
+    open_menu = signal(False)
+    menu = root_widget(
+        mount(
+            Menu(
+                items=[{"id": "edit", "label": "Edit view"}],
+                open=open_menu,
+                on_select=lambda item_id: None,
+            )
+        )
+    )
+
+    assert menu.children == []
+
+    open_menu.set(True)
+
+    button = menu.children[0].children[0].children[0].children[0]
+    assert button.children[0].children[0].children[0].props["content"] == "Edit view"
+
+
+def test_select_renders_selected_option_and_dispatches_change():
+    selected = signal("compact")
+    open_select = signal(False)
+    select = root_widget(
+        mount(
+            Select(
+                options=[
+                    SelectOption("compact", "Compact", "Dense operational rhythm.", tone="info"),
+                    {"value": "roomy", "label": "Roomy", "description": "More air for SaaS pages.", "tone": "success"},
+                ],
+                value=selected,
+                open=open_select,
+                on_change=lambda value: selected.set(value),
+                on_open_change=lambda value: open_select.set(value),
+                placeholder="Choose density",
+            )
+        )
+    )
+
+    trigger = select.children[0]
+    assert select.props["className"] == "ui-select"
+    assert trigger.props["className"] == "ui-select-trigger"
+    assert trigger.children[0].children[0].children[0].props["content"] == "Compact"
+    assert len(select.children[1].children) == 0
+
+    trigger.trigger("onClick")
+
+    assert open_select.value is True
+    assert trigger.props["className"] == "ui-select-trigger is-active"
+
+    popover = select.children[1].children[0]
+    list_widget = popover.children[0].children[0]
+    compact, roomy = list_widget.children
+    assert compact.props["className"] == "ui-select-option is-active"
+    assert roomy.children[0].children[0].children[0].props["content"] == "Roomy"
+
+    roomy.trigger("onClick")
+
+    assert selected.value == "roomy"
+    assert open_select.value is False
+    assert trigger.children[0].children[0].children[0].props["content"] == "Roomy"
+
+
+def test_select_ignores_disabled_options():
+    selected = signal("compact")
+    open_select = signal(True)
+    select = root_widget(
+        mount(
+            Select(
+                options=[
+                    {"value": "compact", "label": "Compact"},
+                    {"value": "locked", "label": "Locked", "disabled": True},
+                ],
+                value=selected,
+                open=open_select,
+                on_change=lambda value: selected.set(value),
+                on_open_change=lambda value: open_select.set(value),
+            )
+        )
+    )
+    locked = select.children[1].children[0].children[0].children[0].children[1]
+
+    assert locked.props["className"] == "ui-select-option is-disabled"
+    assert locked.props["disabled"] is True
+
+    locked.trigger("onClick")
+
+    assert selected.value == "compact"
+    assert open_select.value is True
 
 
 def test_shortcut_scope_registers_global_keydown_handler():

@@ -440,6 +440,116 @@ input {
   font-weight: 900;
 }
 
+.ui-controls-card {
+  padding: 16px;
+}
+
+.ui-controls-demo {
+  min-height: 360px;
+}
+
+.ui-select-trigger,
+.ui-select-option,
+.ui-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: stretch;
+  border: 1px solid var(--line);
+  background: var(--panel-soft);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.ui-select-trigger {
+  min-height: 58px;
+  padding: 0 12px;
+}
+
+.ui-select-trigger:hover,
+.ui-select-trigger:focus-visible,
+.ui-select-trigger.is-active,
+.ui-select-option:hover,
+.ui-select-option:focus-visible,
+.ui-select-option.is-active,
+.ui-menu-item:hover,
+.ui-menu-item:focus-visible,
+.ui-menu-item.is-active {
+  border-color: var(--surface-strong);
+  background: #ffffff;
+  color: var(--accent-strong);
+}
+
+.ui-select-trigger-row,
+.ui-select-option-row,
+.ui-menu-row {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.ui-select-copy,
+.ui-select-option-copy,
+.ui-menu-copy {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.ui-select-label,
+.ui-select-option-label,
+.ui-menu-label {
+  color: inherit;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.ui-select-description,
+.ui-select-option-description,
+.ui-menu-description,
+.ui-select-state {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ui-select-state,
+.ui-menu-shortcut {
+  min-width: 46px;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.ui-select-popover,
+.ui-menu {
+  padding: 8px;
+  box-shadow: none;
+}
+
+.ui-select-option,
+.ui-menu-item {
+  min-height: 62px;
+  padding: 0 10px;
+}
+
+.ui-select-option.is-disabled,
+.ui-menu-item.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ui-select-option-badge {
+  min-width: 64px;
+  justify-content: center;
+  text-transform: uppercase;
+}
+
 .ui-table {
   padding: 14px;
 }

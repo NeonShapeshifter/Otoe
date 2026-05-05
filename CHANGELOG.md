@@ -33,6 +33,9 @@
   launcher card, overlay dialog, and Escape close behavior.
 - Added `Input(autoFocus=...)` support plus live-preview autofocus after
   rerender, so command overlays can focus their search field immediately.
+- Added `Menu`, `MenuItem`, `Select`, and `SelectOption` primitives with
+  controlled open/selection state.
+- Expanded the UI kit preview with controlled select and action menu examples.
 
 ## v0.0.1 - Technical Preview
 

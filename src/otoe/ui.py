@@ -27,6 +27,27 @@ class Command:
     className: str | None = None
 
 
+@dataclass(frozen=True)
+class MenuItem:
+    id: str
+    label: Any
+    description: Any = None
+    shortcut: Any = None
+    tone: Any = "neutral"
+    disabled: bool = False
+    className: str | None = None
+
+
+@dataclass(frozen=True)
+class SelectOption:
+    value: str
+    label: Any
+    description: Any = None
+    tone: Any = "neutral"
+    disabled: bool = False
+    className: str | None = None
+
+
 class CommandRegistry:
     def __init__(self, commands) -> None:
         self._commands = tuple(_normalize_command(command) for command in _list_value(commands))
@@ -352,6 +373,97 @@ def CommandPalette(
 
 
 @component
+def Menu(
+    *,
+    items,
+    on_select,
+    open=True,
+    active=None,
+    className: str | None = None,
+    empty="No actions",
+):
+    normalized_items = computed(lambda: [_normalize_menu_item(item) for item in _list_value(items)])
+    fallback = empty if isinstance(empty, Node) else Text(empty, className="ui-menu-empty")
+
+    return Show(
+        Card(
+            VStack(
+                For(
+                    each=normalized_items,
+                    key=lambda item: item.id,
+                    children=lambda item: _menu_item(item, on_select, active),
+                    fallback=fallback,
+                ),
+                className="ui-menu-list",
+                gap=6,
+            ),
+            className=class_names("ui-menu", className),
+        ),
+        when=open,
+    )
+
+
+@component
+def Select(
+    *,
+    options,
+    value,
+    on_change,
+    open,
+    on_open_change,
+    placeholder="Select...",
+    className: str | None = None,
+    empty="No options",
+):
+    normalized_options = computed(lambda: [_normalize_select_option(option) for option in _list_value(options)])
+    selected_option = computed(lambda: _selected_option(normalized_options.value, _value(value)))
+    fallback = empty if isinstance(empty, Node) else Text(empty, className="ui-select-empty")
+
+    return VStack(
+        Button(
+            "",
+            HStack(
+                VStack(
+                    Text(computed(lambda: _select_label(selected_option.value, placeholder)), className="ui-select-label"),
+                    Show(
+                        Text(
+                            computed(lambda: _select_description(selected_option.value)),
+                            className="ui-select-description",
+                        ),
+                        when=computed(lambda: _has_value(_select_description(selected_option.value))),
+                    ),
+                    className="ui-select-copy",
+                    gap=2,
+                ),
+                Text(computed(lambda: "Close" if _value(open) else "Open"), className="ui-select-state"),
+                className="ui-select-trigger-row",
+                gap=10,
+            ),
+            className=_active_class("ui-select-trigger", open, None),
+            onClick=lambda: on_open_change(not bool(_value(open))),
+        ),
+        Show(
+            Card(
+                VStack(
+                    For(
+                        each=normalized_options,
+                        key=lambda option: option.value,
+                        children=lambda option: _select_option_button(option, value, on_change, on_open_change),
+                        fallback=fallback,
+                    ),
+                    className="ui-select-list",
+                    gap=6,
+                ),
+                className="ui-select-popover",
+            ),
+            when=open,
+        ),
+        className=class_names("ui-select", className),
+        gap=8,
+    )
+
+
+@component
 def SidebarNav(
     *,
     routes,
@@ -511,6 +623,39 @@ def _normalize_command(command: Any) -> Command:
     raise TypeError(f"Commands must be Command or dict; got {type(command).__name__}.")
 
 
+def _normalize_menu_item(item: Any) -> MenuItem:
+    if isinstance(item, MenuItem):
+        return item
+    if isinstance(item, dict):
+        item_id = str(item["id"])
+        return MenuItem(
+            id=item_id,
+            label=item.get("label", item_id),
+            description=item.get("description"),
+            shortcut=item.get("shortcut"),
+            tone=item.get("tone", "neutral"),
+            disabled=bool(item.get("disabled", False)),
+            className=item.get("className"),
+        )
+    raise TypeError(f"Menu items must be MenuItem or dict; got {type(item).__name__}.")
+
+
+def _normalize_select_option(option: Any) -> SelectOption:
+    if isinstance(option, SelectOption):
+        return option
+    if isinstance(option, dict):
+        option_value = str(option["value"])
+        return SelectOption(
+            value=option_value,
+            label=option.get("label", option_value),
+            description=option.get("description"),
+            tone=option.get("tone", "neutral"),
+            disabled=bool(option.get("disabled", False)),
+            className=option.get("className"),
+        )
+    raise TypeError(f"Select options must be SelectOption or dict; got {type(option).__name__}.")
+
+
 def _normalize_route(route: Any) -> NavRoute:
     if isinstance(route, NavRoute):
         return route
@@ -576,6 +721,68 @@ def _command_item(command: Command, on_select) -> Node:
     )
 
 
+def _menu_item(item: MenuItem, on_select, active) -> Node:
+    return Button(
+        "",
+        HStack(
+            VStack(
+                Text(item.label, className="ui-menu-label"),
+                Show(
+                    Text(item.description, className="ui-menu-description"),
+                    when=computed(lambda: _has_value(item.description)),
+                ),
+                className="ui-menu-copy",
+                gap=2,
+            ),
+            Show(
+                Text(item.shortcut, className="ui-menu-shortcut"),
+                when=computed(lambda: _has_value(item.shortcut)),
+            ),
+            className="ui-menu-row",
+            gap=12,
+        ),
+        className=_state_class(
+            "ui-menu-item",
+            active=computed(lambda: item.id == _value(active)) if active is not None else False,
+            disabled=item.disabled,
+            extra=class_names(f"is-{item.tone}", item.className),
+        ),
+        disabled=item.disabled,
+        onClick=lambda item_id=item.id: None if item.disabled else on_select(item_id),
+    )
+
+
+def _select_option_button(option: SelectOption, value, on_change, on_open_change) -> Node:
+    return Button(
+        "",
+        HStack(
+            VStack(
+                Text(option.label, className="ui-select-option-label"),
+                Show(
+                    Text(option.description, className="ui-select-option-description"),
+                    when=computed(lambda: _has_value(option.description)),
+                ),
+                className="ui-select-option-copy",
+                gap=2,
+            ),
+            Show(
+                Badge("Current", tone=option.tone, className="ui-select-option-badge"),
+                when=computed(lambda: option.value == _value(value)),
+            ),
+            className="ui-select-option-row",
+            gap=10,
+        ),
+        className=_state_class(
+            "ui-select-option",
+            active=computed(lambda: option.value == _value(value)),
+            disabled=option.disabled,
+            extra=option.className,
+        ),
+        disabled=option.disabled,
+        onClick=lambda option_value=option.value: _select_option(option_value, option.disabled, on_change, on_open_change),
+    )
+
+
 def _submit_first_command(key: str, commands: list[Command], on_select) -> None:
     if key != "Enter" or not commands:
         return
@@ -612,3 +819,47 @@ def _list_value(value) -> list[Any]:
     if resolved is None:
         return []
     return list(resolved)
+
+
+def _state_class(base: str, *, active=False, disabled=False, extra: str | None = None):
+    if is_reactive(active) or is_reactive(disabled) or is_reactive(extra):
+        return computed(
+            lambda: class_names(
+                base,
+                _value(extra),
+                "is-active" if _value(active) else None,
+                "is-disabled" if _value(disabled) else None,
+            )
+        )
+    return class_names(
+        base,
+        extra,
+        "is-active" if active else None,
+        "is-disabled" if disabled else None,
+    )
+
+
+def _selected_option(options: list[SelectOption], value: str) -> SelectOption | None:
+    for option in options:
+        if option.value == value:
+            return option
+    return None
+
+
+def _select_label(option: SelectOption | None, placeholder) -> Any:
+    if option is not None:
+        return option.label
+    return _value(placeholder)
+
+
+def _select_description(option: SelectOption | None) -> Any:
+    if option is None:
+        return None
+    return option.description
+
+
+def _select_option(option_value: str, disabled: bool, on_change, on_open_change) -> None:
+    if disabled:
+        return
+    on_change(option_value)
+    on_open_change(False)
