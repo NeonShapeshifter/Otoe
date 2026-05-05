@@ -7,214 +7,216 @@
   <link rel="stylesheet" href="ui.css">
 </head>
 <body>
-    <div class="otoe-stack otoe-vstack ui-app-shell ui-demo-shell" style="--otoe-gap:0px">
-      <div class="otoe-stack otoe-hstack ui-app-header">
-        <div class="otoe-stack otoe-hstack ui-toolbar ui-demo-topbar" style="--otoe-gap:12px">
-          <span class="otoe-text ui-demo-brand">Otoe UI</span>
-          <span class="otoe-text ui-demo-copy">Signal-routed app shell over shared primitives.</span>
-          <span class="otoe-text ui-badge is-info ui-demo-status">UI Kit</span>
-          <button class="otoe-button ui-button is-ghost is-md" type="button">Toggle Dialog</button>
-        </div>
-      </div>
-      <div class="otoe-stack otoe-hstack ui-app-main" style="--otoe-gap:0px">
-        <div class="otoe-stack otoe-vstack ui-app-sidebar">
-          <div class="otoe-stack otoe-vstack ui-sidebar-nav ui-demo-sidebar" style="--otoe-gap:8px">
-            <div class="otoe-stack otoe-vstack ui-sidebar-brand">
-              <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
-                <span class="otoe-text ui-demo-sidebar-brand-title">Otoe</span>
-                <span class="otoe-text ui-demo-sidebar-brand-copy">Framework shell</span>
-              </div>
-            </div>
-            <div class="otoe-fragment otoe-for">
-              <button class="otoe-button ui-nav-item is-active" type="button">
-                <div class="otoe-stack otoe-hstack ui-nav-row" style="--otoe-gap:10px">
-                  <div class="otoe-stack otoe-vstack ui-nav-copy" style="--otoe-gap:2px">
-                    <span class="otoe-text ui-nav-label">UI Kit</span>
-                    <div class="otoe-fragment otoe-show">
-                      <span class="otoe-text ui-nav-description">Shared primitives</span>
-                    </div>
-                  </div>
-                  <div class="otoe-fragment otoe-show">
-                    <span class="otoe-text ui-badge is-info ui-nav-badge">15</span>
-                  </div>
-                </div>
-              </button>
-              <button class="otoe-button ui-nav-item" type="button">
-                <div class="otoe-stack otoe-hstack ui-nav-row" style="--otoe-gap:10px">
-                  <div class="otoe-stack otoe-vstack ui-nav-copy" style="--otoe-gap:2px">
-                    <span class="otoe-text ui-nav-label">SaaS</span>
-                    <div class="otoe-fragment otoe-show">
-                      <span class="otoe-text ui-nav-description">Commercial dashboard</span>
-                    </div>
-                  </div>
-                  <div class="otoe-fragment otoe-show">
-                    <span class="otoe-text ui-badge is-success ui-nav-badge">Live</span>
-                  </div>
-                </div>
-              </button>
-              <button class="otoe-button ui-nav-item" type="button">
-                <div class="otoe-stack otoe-hstack ui-nav-row" style="--otoe-gap:10px">
-                  <div class="otoe-stack otoe-vstack ui-nav-copy" style="--otoe-gap:2px">
-                    <span class="otoe-text ui-nav-label">Wraith</span>
-                    <div class="otoe-fragment otoe-show">
-                      <span class="otoe-text ui-nav-description">Operational surface</span>
-                    </div>
-                  </div>
-                  <div class="otoe-fragment otoe-show">
-                    <span class="otoe-text ui-badge is-warn ui-nav-badge">Ops</span>
-                  </div>
-                </div>
-              </button>
-            </div>
-            <div class="otoe-stack otoe-vstack ui-sidebar-footer">
-              <span class="otoe-text ui-demo-sidebar-footnote">Route: UI Kit</span>
-            </div>
+    <div class="otoe-shortcut-scope ui-shortcut-scope">
+      <div class="otoe-stack otoe-vstack ui-app-shell ui-demo-shell" style="--otoe-gap:0px">
+        <div class="otoe-stack otoe-hstack ui-app-header">
+          <div class="otoe-stack otoe-hstack ui-toolbar ui-demo-topbar" style="--otoe-gap:12px">
+            <span class="otoe-text ui-demo-brand">Otoe UI</span>
+            <span class="otoe-text ui-demo-copy">Signal-routed app shell over shared primitives.</span>
+            <span class="otoe-text ui-badge is-info ui-demo-status">UI Kit</span>
+            <button class="otoe-button ui-button is-ghost is-md" type="button">Toggle Dialog</button>
           </div>
         </div>
-        <div class="otoe-stack otoe-vstack ui-app-content">
-          <div class="otoe-stack otoe-vstack ui-route-view ui-demo-route" style="--otoe-gap:0px">
-            <div class="otoe-fragment otoe-for">
-              <div class="otoe-stack otoe-vstack ui-demo-surface ui-demo-ui-route" style="--otoe-gap:16px">
-                <div class="otoe-stack otoe-hstack ui-demo-stats" style="--otoe-gap:14px">
-                  <section class="otoe-panel ui-card is-default ui-stat-card ui-demo-stat">
-                    <div class="otoe-stack otoe-vstack ui-stat-body">
-                      <span class="otoe-text ui-stat-label">Primitives</span>
-                      <span class="otoe-text ui-stat-value">15</span>
-                      <div class="otoe-fragment otoe-show">
-                        <span class="otoe-text ui-stat-detail is-good">Shared surface</span>
-                      </div>
-                    </div>
-                  </section>
-                  <section class="otoe-panel ui-card is-default ui-stat-card ui-demo-stat">
-                    <div class="otoe-stack otoe-vstack ui-stat-body">
-                      <span class="otoe-text ui-stat-label">Routes</span>
-                      <span class="otoe-text ui-stat-value">3</span>
-                      <div class="otoe-fragment otoe-show">
-                        <span class="otoe-text ui-stat-detail is-info">Signal switched</span>
-                      </div>
-                    </div>
-                  </section>
-                  <section class="otoe-panel ui-card is-default ui-stat-card ui-demo-stat">
-                    <div class="otoe-stack otoe-vstack ui-stat-body">
-                      <span class="otoe-text ui-stat-label">Tests</span>
-                      <span class="otoe-text ui-stat-value">81</span>
-                      <div class="otoe-fragment otoe-show">
-                        <span class="otoe-text ui-stat-detail is-good">Runtime covered</span>
-                      </div>
-                    </div>
-                  </section>
+        <div class="otoe-stack otoe-hstack ui-app-main" style="--otoe-gap:0px">
+          <div class="otoe-stack otoe-vstack ui-app-sidebar">
+            <div class="otoe-stack otoe-vstack ui-sidebar-nav ui-demo-sidebar" style="--otoe-gap:8px">
+              <div class="otoe-stack otoe-vstack ui-sidebar-brand">
+                <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                  <span class="otoe-text ui-demo-sidebar-brand-title">Otoe</span>
+                  <span class="otoe-text ui-demo-sidebar-brand-copy">Framework shell</span>
                 </div>
-                <div class="otoe-stack otoe-hstack ui-demo-grid" style="--otoe-gap:16px">
-                  <div class="otoe-stack otoe-vstack ui-demo-left" style="--otoe-gap:14px">
-                    <section class="otoe-panel ui-card is-default ui-command-card ui-demo-command">
-                      <div class="otoe-stack otoe-vstack ui-command" style="--otoe-gap:10px">
-                        <span class="otoe-text ui-command-title">Command palette</span>
-                        <input class="otoe-input ui-command-input" placeholder="Search Wraith, SaaS, export...">
-                        <div class="otoe-fragment otoe-for">
-                          <button class="otoe-button ui-command-item" type="button">
-                            <div class="otoe-stack otoe-hstack ui-command-row" style="--otoe-gap:12px">
-                              <div class="otoe-stack otoe-vstack ui-command-copy" style="--otoe-gap:3px">
-                                <span class="otoe-text ui-command-label">Open Mission Exec</span>
-                                <span class="otoe-text ui-command-description">Jump to the Wraith operational surface.</span>
-                              </div>
-                              <span class="otoe-text ui-command-shortcut">M</span>
-                            </div>
-                          </button>
-                          <button class="otoe-button ui-command-item" type="button">
-                            <div class="otoe-stack otoe-hstack ui-command-row" style="--otoe-gap:12px">
-                              <div class="otoe-stack otoe-vstack ui-command-copy" style="--otoe-gap:3px">
-                                <span class="otoe-text ui-command-label">Review Customers</span>
-                                <span class="otoe-text ui-command-description">Open account health and next-step table.</span>
-                              </div>
-                              <span class="otoe-text ui-command-shortcut">C</span>
-                            </div>
-                          </button>
-                          <button class="otoe-button ui-command-item" type="button">
-                            <div class="otoe-stack otoe-hstack ui-command-row" style="--otoe-gap:12px">
-                              <div class="otoe-stack otoe-vstack ui-command-copy" style="--otoe-gap:3px">
-                                <span class="otoe-text ui-command-label">Export Evidence</span>
-                                <span class="otoe-text ui-command-description">Prepare a review bundle for handoff.</span>
-                              </div>
-                              <span class="otoe-text ui-command-shortcut">E</span>
-                            </div>
-                          </button>
-                          <button class="otoe-button ui-command-item" type="button">
-                            <div class="otoe-stack otoe-hstack ui-command-row" style="--otoe-gap:12px">
-                              <div class="otoe-stack otoe-vstack ui-command-copy" style="--otoe-gap:3px">
-                                <span class="otoe-text ui-command-label">Workspace Settings</span>
-                                <span class="otoe-text ui-command-description">Open team access and defaults.</span>
-                              </div>
-                              <span class="otoe-text ui-command-shortcut">,</span>
-                            </div>
-                          </button>
-                        </div>
+              </div>
+              <div class="otoe-fragment otoe-for">
+                <button class="otoe-button ui-nav-item is-active" type="button">
+                  <div class="otoe-stack otoe-hstack ui-nav-row" style="--otoe-gap:10px">
+                    <div class="otoe-stack otoe-vstack ui-nav-copy" style="--otoe-gap:2px">
+                      <span class="otoe-text ui-nav-label">UI Kit</span>
+                      <div class="otoe-fragment otoe-show">
+                        <span class="otoe-text ui-nav-description">Shared primitives</span>
                       </div>
-                    </section>
-                    <div class="otoe-stack otoe-hstack ui-toast is-success ui-demo-toast" style="--otoe-gap:12px">
-                      <div class="otoe-stack otoe-vstack ui-toast-copy" style="--otoe-gap:3px">
-                        <span class="otoe-text ui-toast-title">Command state</span>
-                        <div class="otoe-fragment otoe-show">
-                          <span class="otoe-text ui-toast-description">Selected: Open Mission Exec</span>
-                        </div>
-                      </div>
-                      <span class="otoe-text ui-badge is-success ui-toast-badge">SUCCESS</span>
+                    </div>
+                    <div class="otoe-fragment otoe-show">
+                      <span class="otoe-text ui-badge is-info ui-nav-badge">15</span>
                     </div>
                   </div>
-                  <div class="otoe-stack otoe-vstack ui-demo-right" style="--otoe-gap:14px">
-                    <section class="otoe-panel ui-card is-default ui-demo-tabs-card">
-                      <div class="otoe-stack otoe-hstack ui-tabs is-horizontal ui-demo-tabs" style="--otoe-gap:6px">
-                        <button class="otoe-button ui-tab is-active" type="button">Overview</button>
-                        <button class="otoe-button ui-tab" type="button">Runtime</button>
-                        <button class="otoe-button ui-tab" type="button">Design</button>
+                </button>
+                <button class="otoe-button ui-nav-item" type="button">
+                  <div class="otoe-stack otoe-hstack ui-nav-row" style="--otoe-gap:10px">
+                    <div class="otoe-stack otoe-vstack ui-nav-copy" style="--otoe-gap:2px">
+                      <span class="otoe-text ui-nav-label">SaaS</span>
+                      <div class="otoe-fragment otoe-show">
+                        <span class="otoe-text ui-nav-description">Commercial dashboard</span>
                       </div>
-                    </section>
-                    <section class="otoe-panel ui-card is-default ui-demo-table-card">
-                      <div class="otoe-stack otoe-vstack ui-table ui-demo-table" style="--otoe-gap:8px">
-                        <div class="otoe-stack otoe-hstack ui-table-head">
-                          <span class="otoe-text ui-table-head-cell surface">Surface</span>
-                          <span class="otoe-text ui-table-head-cell">Status</span>
-                          <span class="otoe-text ui-table-head-cell">Owner</span>
-                        </div>
-                        <div class="otoe-fragment otoe-for">
-                          <div class="otoe-stack otoe-hstack ui-table-row">
-                            <span class="otoe-text ui-table-cell surface">Mission Exec</span>
-                            <span class="otoe-text ui-badge is-success ui-demo-status-pill">Operational</span>
-                            <span class="otoe-text ui-table-cell">Wraith</span>
-                          </div>
-                          <div class="otoe-stack otoe-hstack ui-table-row">
-                            <span class="otoe-text ui-table-cell surface">SaaS Dashboard</span>
-                            <span class="otoe-text ui-badge is-info ui-demo-status-pill">Product</span>
-                            <span class="otoe-text ui-table-cell">Otoe</span>
-                          </div>
-                          <div class="otoe-stack otoe-hstack ui-table-row">
-                            <span class="otoe-text ui-table-cell surface">UI Kit</span>
-                            <span class="otoe-text ui-badge is-warn ui-demo-status-pill">Growing</span>
-                            <span class="otoe-text ui-table-cell">Core</span>
-                          </div>
-                        </div>
-                      </div>
-                    </section>
+                    </div>
                     <div class="otoe-fragment otoe-show">
-                      <div class="otoe-stack otoe-hstack ui-dialog-backdrop">
-                        <section class="otoe-panel ui-card is-default ui-dialog-panel ui-demo-dialog">
-                          <div class="otoe-stack otoe-vstack ui-dialog-body" style="--otoe-gap:12px">
-                            <div class="otoe-fragment otoe-show">
-                              <span class="otoe-text ui-dialog-title">Renderer boundary ready</span>
-                            </div>
-                            <div class="otoe-fragment otoe-show">
-                              <span class="otoe-text ui-dialog-description">Composite UI primitives now sit inside a routed app shell.</span>
-                            </div>
-                            <div class="otoe-stack otoe-hstack ui-toast is-info" style="--otoe-gap:12px">
-                              <div class="otoe-stack otoe-vstack ui-toast-copy" style="--otoe-gap:3px">
-                                <span class="otoe-text ui-toast-title">Dialog body</span>
-                                <div class="otoe-fragment otoe-show">
-                                  <span class="otoe-text ui-toast-description">Dialog is mounted through the same control-flow primitives.</span>
+                      <span class="otoe-text ui-badge is-success ui-nav-badge">Live</span>
+                    </div>
+                  </div>
+                </button>
+                <button class="otoe-button ui-nav-item" type="button">
+                  <div class="otoe-stack otoe-hstack ui-nav-row" style="--otoe-gap:10px">
+                    <div class="otoe-stack otoe-vstack ui-nav-copy" style="--otoe-gap:2px">
+                      <span class="otoe-text ui-nav-label">Wraith</span>
+                      <div class="otoe-fragment otoe-show">
+                        <span class="otoe-text ui-nav-description">Operational surface</span>
+                      </div>
+                    </div>
+                    <div class="otoe-fragment otoe-show">
+                      <span class="otoe-text ui-badge is-warn ui-nav-badge">Ops</span>
+                    </div>
+                  </div>
+                </button>
+              </div>
+              <div class="otoe-stack otoe-vstack ui-sidebar-footer">
+                <span class="otoe-text ui-demo-sidebar-footnote">Route: UI Kit</span>
+              </div>
+            </div>
+          </div>
+          <div class="otoe-stack otoe-vstack ui-app-content">
+            <div class="otoe-stack otoe-vstack ui-route-view ui-demo-route" style="--otoe-gap:0px">
+              <div class="otoe-fragment otoe-for">
+                <div class="otoe-stack otoe-vstack ui-demo-surface ui-demo-ui-route" style="--otoe-gap:16px">
+                  <div class="otoe-stack otoe-hstack ui-demo-stats" style="--otoe-gap:14px">
+                    <section class="otoe-panel ui-card is-default ui-stat-card ui-demo-stat">
+                      <div class="otoe-stack otoe-vstack ui-stat-body">
+                        <span class="otoe-text ui-stat-label">Primitives</span>
+                        <span class="otoe-text ui-stat-value">15</span>
+                        <div class="otoe-fragment otoe-show">
+                          <span class="otoe-text ui-stat-detail is-good">Shared surface</span>
+                        </div>
+                      </div>
+                    </section>
+                    <section class="otoe-panel ui-card is-default ui-stat-card ui-demo-stat">
+                      <div class="otoe-stack otoe-vstack ui-stat-body">
+                        <span class="otoe-text ui-stat-label">Routes</span>
+                        <span class="otoe-text ui-stat-value">3</span>
+                        <div class="otoe-fragment otoe-show">
+                          <span class="otoe-text ui-stat-detail is-info">Signal switched</span>
+                        </div>
+                      </div>
+                    </section>
+                    <section class="otoe-panel ui-card is-default ui-stat-card ui-demo-stat">
+                      <div class="otoe-stack otoe-vstack ui-stat-body">
+                        <span class="otoe-text ui-stat-label">Tests</span>
+                        <span class="otoe-text ui-stat-value">87</span>
+                        <div class="otoe-fragment otoe-show">
+                          <span class="otoe-text ui-stat-detail is-good">Runtime covered</span>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+                  <div class="otoe-stack otoe-hstack ui-demo-grid" style="--otoe-gap:16px">
+                    <div class="otoe-stack otoe-vstack ui-demo-left" style="--otoe-gap:14px">
+                      <section class="otoe-panel ui-card is-default ui-command-card ui-demo-command">
+                        <div class="otoe-stack otoe-vstack ui-command" style="--otoe-gap:10px">
+                          <span class="otoe-text ui-command-title">Command palette</span>
+                          <input class="otoe-input ui-command-input" placeholder="Search Wraith, SaaS, export...">
+                          <div class="otoe-fragment otoe-for">
+                            <button class="otoe-button ui-command-item" type="button">
+                              <div class="otoe-stack otoe-hstack ui-command-row" style="--otoe-gap:12px">
+                                <div class="otoe-stack otoe-vstack ui-command-copy" style="--otoe-gap:3px">
+                                  <span class="otoe-text ui-command-label">Open Mission Exec</span>
+                                  <span class="otoe-text ui-command-description">Jump to the Wraith operational surface.</span>
                                 </div>
+                                <span class="otoe-text ui-command-shortcut">M</span>
                               </div>
-                              <span class="otoe-text ui-badge is-info ui-toast-badge">INFO</span>
+                            </button>
+                            <button class="otoe-button ui-command-item" type="button">
+                              <div class="otoe-stack otoe-hstack ui-command-row" style="--otoe-gap:12px">
+                                <div class="otoe-stack otoe-vstack ui-command-copy" style="--otoe-gap:3px">
+                                  <span class="otoe-text ui-command-label">Review Customers</span>
+                                  <span class="otoe-text ui-command-description">Open account health and next-step table.</span>
+                                </div>
+                                <span class="otoe-text ui-command-shortcut">C</span>
+                              </div>
+                            </button>
+                            <button class="otoe-button ui-command-item" type="button">
+                              <div class="otoe-stack otoe-hstack ui-command-row" style="--otoe-gap:12px">
+                                <div class="otoe-stack otoe-vstack ui-command-copy" style="--otoe-gap:3px">
+                                  <span class="otoe-text ui-command-label">Export Evidence</span>
+                                  <span class="otoe-text ui-command-description">Prepare a review bundle for handoff.</span>
+                                </div>
+                                <span class="otoe-text ui-command-shortcut">E</span>
+                              </div>
+                            </button>
+                            <button class="otoe-button ui-command-item" type="button">
+                              <div class="otoe-stack otoe-hstack ui-command-row" style="--otoe-gap:12px">
+                                <div class="otoe-stack otoe-vstack ui-command-copy" style="--otoe-gap:3px">
+                                  <span class="otoe-text ui-command-label">Workspace Settings</span>
+                                  <span class="otoe-text ui-command-description">Open team access and defaults.</span>
+                                </div>
+                                <span class="otoe-text ui-command-shortcut">,</span>
+                              </div>
+                            </button>
+                          </div>
+                        </div>
+                      </section>
+                      <div class="otoe-stack otoe-hstack ui-toast is-success ui-demo-toast" style="--otoe-gap:12px">
+                        <div class="otoe-stack otoe-vstack ui-toast-copy" style="--otoe-gap:3px">
+                          <span class="otoe-text ui-toast-title">Command state</span>
+                          <div class="otoe-fragment otoe-show">
+                            <span class="otoe-text ui-toast-description">Selected: Open Mission Exec</span>
+                          </div>
+                        </div>
+                        <span class="otoe-text ui-badge is-success ui-toast-badge">SUCCESS</span>
+                      </div>
+                    </div>
+                    <div class="otoe-stack otoe-vstack ui-demo-right" style="--otoe-gap:14px">
+                      <section class="otoe-panel ui-card is-default ui-demo-tabs-card">
+                        <div class="otoe-stack otoe-hstack ui-tabs is-horizontal ui-demo-tabs" style="--otoe-gap:6px">
+                          <button class="otoe-button ui-tab is-active" type="button">Overview</button>
+                          <button class="otoe-button ui-tab" type="button">Runtime</button>
+                          <button class="otoe-button ui-tab" type="button">Design</button>
+                        </div>
+                      </section>
+                      <section class="otoe-panel ui-card is-default ui-demo-table-card">
+                        <div class="otoe-stack otoe-vstack ui-table ui-demo-table" style="--otoe-gap:8px">
+                          <div class="otoe-stack otoe-hstack ui-table-head">
+                            <span class="otoe-text ui-table-head-cell surface">Surface</span>
+                            <span class="otoe-text ui-table-head-cell">Status</span>
+                            <span class="otoe-text ui-table-head-cell">Owner</span>
+                          </div>
+                          <div class="otoe-fragment otoe-for">
+                            <div class="otoe-stack otoe-hstack ui-table-row">
+                              <span class="otoe-text ui-table-cell surface">Mission Exec</span>
+                              <span class="otoe-text ui-badge is-success ui-demo-status-pill">Operational</span>
+                              <span class="otoe-text ui-table-cell">Wraith</span>
+                            </div>
+                            <div class="otoe-stack otoe-hstack ui-table-row">
+                              <span class="otoe-text ui-table-cell surface">SaaS Dashboard</span>
+                              <span class="otoe-text ui-badge is-info ui-demo-status-pill">Product</span>
+                              <span class="otoe-text ui-table-cell">Otoe</span>
+                            </div>
+                            <div class="otoe-stack otoe-hstack ui-table-row">
+                              <span class="otoe-text ui-table-cell surface">UI Kit</span>
+                              <span class="otoe-text ui-badge is-warn ui-demo-status-pill">Growing</span>
+                              <span class="otoe-text ui-table-cell">Core</span>
                             </div>
                           </div>
-                        </section>
+                        </div>
+                      </section>
+                      <div class="otoe-fragment otoe-show">
+                        <div class="otoe-stack otoe-hstack ui-dialog-backdrop">
+                          <section class="otoe-panel ui-card is-default ui-dialog-panel ui-demo-dialog">
+                            <div class="otoe-stack otoe-vstack ui-dialog-body" style="--otoe-gap:12px">
+                              <div class="otoe-fragment otoe-show">
+                                <span class="otoe-text ui-dialog-title">Renderer boundary ready</span>
+                              </div>
+                              <div class="otoe-fragment otoe-show">
+                                <span class="otoe-text ui-dialog-description">Composite UI primitives now sit inside a routed app shell.</span>
+                              </div>
+                              <div class="otoe-stack otoe-hstack ui-toast is-info" style="--otoe-gap:12px">
+                                <div class="otoe-stack otoe-vstack ui-toast-copy" style="--otoe-gap:3px">
+                                  <span class="otoe-text ui-toast-title">Dialog body</span>
+                                  <div class="otoe-fragment otoe-show">
+                                    <span class="otoe-text ui-toast-description">Dialog is mounted through the same control-flow primitives.</span>
+                                  </div>
+                                </div>
+                                <span class="otoe-text ui-badge is-info ui-toast-badge">INFO</span>
+                              </div>
+                            </div>
+                          </section>
+                        </div>
                       </div>
                     </div>
                   </div>

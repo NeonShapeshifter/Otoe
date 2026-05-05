@@ -3,11 +3,14 @@ from otoe import (
     AppShell,
     Badge,
     Card,
+    Command,
     CommandPalette,
+    CommandRegistry,
     DataTable,
     Dialog,
     NavRoute,
     RouteView,
+    ShortcutScope,
     SidebarNav,
     StatCard,
     TabButton,
@@ -303,6 +306,42 @@ def test_command_palette_enter_selects_first_visible_command():
     input_widget.trigger("onKeyDown", "Enter")
 
     assert selected.value == "customers"
+
+
+def test_command_registry_normalizes_filters_and_matches_shortcuts():
+    registry = CommandRegistry(
+        [
+            Command("mission", "Open Mission Exec", "Jump to Wraith.", "Wraith", "M"),
+            {"id": "customers", "label": "Review Customers", "group": "SaaS", "shortcut": "C"},
+        ]
+    )
+
+    assert [command.id for command in registry.commands] == ["mission", "customers"]
+    assert registry.first("wraith").id == "mission"
+    assert registry.find("customers").label == "Review Customers"
+    assert registry.find_shortcut("c").id == "customers"
+    assert registry.find_shortcut("x") is None
+
+
+def test_shortcut_scope_registers_global_keydown_handler():
+    payload = signal(None)
+    scope = root_widget(
+        mount(
+            ShortcutScope(
+                Text("App"),
+                onKeyDown=lambda event: payload.set(event),
+                className="workspace",
+            )
+        )
+    )
+
+    assert scope.name == "ShortcutScope"
+    assert scope.props["className"] == "ui-shortcut-scope workspace"
+    assert scope.children[0].props["content"] == "App"
+
+    scope.trigger("onGlobalKeyDown", {"key": "k", "ctrlKey": True})
+
+    assert payload.value == {"key": "k", "ctrlKey": True}
 
 
 def test_app_shell_composes_header_sidebar_and_content_slots():

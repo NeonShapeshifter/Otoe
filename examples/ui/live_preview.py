@@ -10,7 +10,7 @@ from examples.live_server import (
     render_live_page,
     run_live_preview,
 )
-from examples.ui.kitchen_sink import UIKitKitchenSink
+from examples.ui.kitchen_sink import COMMAND_REGISTRY, UIKitKitchenSink
 from otoe import LiveHtmlRenderer, mount, signal
 
 
@@ -43,6 +43,7 @@ class UIKitLivePreview:
                 on_select=self._select,
                 on_toggle_dialog=self._toggle_dialog,
                 on_navigate=self._navigate,
+                on_shortcut=self._shortcut,
             )
         )
 
@@ -72,6 +73,22 @@ class UIKitLivePreview:
 
     def _navigate(self, route_id: str) -> None:
         self.active_route.set(route_id)
+
+    def _shortcut(self, payload: dict[str, Any]) -> None:
+        key = str(payload.get("key", ""))
+        is_modifier_command = bool(payload.get("ctrlKey") or payload.get("metaKey"))
+        if is_modifier_command and key.lower() == "k":
+            self.active_route.set("ui")
+            self.query.set("")
+            self.dialog_open.set(False)
+            return
+        if key == "Escape":
+            self.dialog_open.set(False)
+            self.query.set("")
+            return
+        command = COMMAND_REGISTRY.find_shortcut(key)
+        if command is not None:
+            self._select(command.id)
 
 
 def _route_for_command(command_id: str) -> str:

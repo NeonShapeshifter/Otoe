@@ -18,6 +18,7 @@ def test_ui_kit_preview_contains_component_kitchen_sink():
 
     assert "<!doctype html>" in html
     assert "<title>Otoe UI Kit Preview</title>" in html
+    assert "otoe-shortcut-scope ui-shortcut-scope" in html
     assert "ui-app-shell ui-demo-shell" in html
     assert "ui-sidebar-nav ui-demo-sidebar" in html
     assert "Command palette" in html
@@ -71,6 +72,55 @@ def test_ui_kit_live_preview_enter_selects_first_filtered_command():
     assert "Commercial dashboard" in html
     assert "Route: SaaS" in html
     assert "Command palette" not in html
+
+
+def test_ui_kit_live_preview_ctrl_k_returns_to_command_surface():
+    app = UIKitLivePreview()
+    html = app.render_fragment()
+    nav_id = _attr_near(html, "Wraith", "data-otoe-click")
+    html = app.dispatch_event(nav_id)
+    shortcut_id = _attr_near(html, "ui-shortcut-scope", "data-otoe-global-keydown")
+
+    html = app.dispatch_event(
+        shortcut_id,
+        {"key": "k", "ctrlKey": True, "metaKey": False, "altKey": False, "shiftKey": False},
+    )
+
+    assert "Command palette" in html
+    assert "Route: UI Kit" in html
+    assert "Wraith route loaded" not in html
+
+
+def test_ui_kit_live_preview_global_shortcut_runs_command():
+    app = UIKitLivePreview()
+    html = app.render_fragment()
+    shortcut_id = _attr_near(html, "ui-shortcut-scope", "data-otoe-global-keydown")
+
+    html = app.dispatch_event(
+        shortcut_id,
+        {"key": "m", "ctrlKey": False, "metaKey": False, "altKey": False, "shiftKey": False},
+    )
+
+    assert "Wraith route loaded" in html
+    assert "Route: Wraith" in html
+    assert "Command palette" not in html
+
+
+def test_ui_kit_live_preview_escape_clears_dialog_state():
+    app = UIKitLivePreview()
+    html = app.render_fragment()
+    click_id = _attr_near(html, "Toggle Dialog", "data-otoe-click")
+    html = app.dispatch_event(click_id)
+    assert "Renderer boundary ready" in html
+    shortcut_id = _attr_near(html, "ui-shortcut-scope", "data-otoe-global-keydown")
+
+    html = app.dispatch_event(
+        shortcut_id,
+        {"key": "Escape", "ctrlKey": False, "metaKey": False, "altKey": False, "shiftKey": False},
+    )
+
+    assert "Renderer boundary ready" not in html
+    assert "Command palette" in html
 
 
 def test_ui_kit_live_preview_sidebar_navigation_switches_routes():

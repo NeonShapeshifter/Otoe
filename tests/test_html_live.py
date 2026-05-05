@@ -1,6 +1,6 @@
 import re
 
-from otoe import Button, HStack, Input, LiveHtmlRenderer, Text, mount, signal
+from otoe import Button, HStack, Input, LiveHtmlRenderer, ShortcutScope, Text, mount, signal
 
 
 def _event_id(html, attr):
@@ -62,3 +62,20 @@ def test_live_html_renderer_dispatches_keydown_payloads():
     renderer.dispatch(keydown_id, "Enter")
 
     assert key.value == "Enter"
+
+
+def test_live_html_renderer_dispatches_global_keydown_payloads():
+    payload = signal(None)
+    mounted = mount(
+        ShortcutScope(
+            Text("App"),
+            onKeyDown=lambda value: payload.set(value),
+        )
+    )
+    renderer = LiveHtmlRenderer()
+    html = renderer.render(mounted)
+    global_keydown_id = _event_id(html, "data-otoe-global-keydown")
+
+    renderer.dispatch(global_keydown_id, {"key": "k", "ctrlKey": True})
+
+    assert payload.value == {"key": "k", "ctrlKey": True}

@@ -15,6 +15,7 @@ def build_preview_html() -> str:
             on_select=lambda command_id: None,
             on_toggle_dialog=lambda: None,
             on_navigate=lambda route_id: None,
+            on_shortcut=lambda payload: None,
         )
     )
     body = render_html(app, pretty=True, indent=4)

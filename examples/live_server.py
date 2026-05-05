@@ -71,6 +71,28 @@ LIVE_SCRIPT = r"""
     );
   };
 
+  const keyPayload = (event) => ({
+    key: event.key,
+    ctrlKey: event.ctrlKey,
+    metaKey: event.metaKey,
+    altKey: event.altKey,
+    shiftKey: event.shiftKey,
+  });
+
+  const isEditableTarget = (target) => {
+    if (!target) {
+      return false;
+    }
+    return target.matches("input, textarea, [contenteditable='true']");
+  };
+
+  const shouldSendGlobalKey = (event) => {
+    if (event.ctrlKey || event.metaKey || event.key === "Escape") {
+      return true;
+    }
+    return event.key.length === 1 && !isEditableTarget(event.target);
+  };
+
   document.addEventListener("click", (event) => {
     const target = event.target.closest("[data-otoe-click]");
     if (!target) {
@@ -90,10 +112,15 @@ LIVE_SCRIPT = r"""
 
   document.addEventListener("keydown", (event) => {
     const target = event.target.closest("[data-otoe-keydown]");
-    if (!target) {
+    if (target) {
+      sendEvent(target.dataset.otoeKeydown, [event.key], target);
+    }
+    const globalTarget = root.querySelector("[data-otoe-global-keydown]");
+    if (!globalTarget || !shouldSendGlobalKey(event)) {
       return;
     }
-    sendEvent(target.dataset.otoeKeydown, [event.key], target);
+    event.preventDefault();
+    sendEvent(globalTarget.dataset.otoeGlobalKeydown, [keyPayload(event)]);
   });
 })();
 """

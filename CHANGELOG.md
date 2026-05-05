@@ -21,6 +21,11 @@
   SaaS, and Wraith-shaped surfaces.
 - Added live `onKeyDown` dispatch and `CommandPalette` Enter-key selection for
   the first visible command.
+- Added `Command`, `CommandRegistry`, and `ShortcutScope` for command metadata
+  and global key handling.
+- Added UI kit global shortcuts: `Ctrl+K`/`Meta+K` returns to the command
+  surface, `Escape` clears transient state, and command shortcut keys execute
+  registered commands.
 
 ## v0.0.1 - Technical Preview
 

@@ -52,6 +52,8 @@ class LiveHtmlRenderer:
             attrs["data-otoe-change"] = self._register(widget, "onChange")
         if "onKeyDown" in widget.events:
             attrs["data-otoe-keydown"] = self._register(widget, "onKeyDown")
+        if "onGlobalKeyDown" in widget.events:
+            attrs["data-otoe-global-keydown"] = self._register(widget, "onGlobalKeyDown")
         return attrs
 
     def _register(self, widget: FakeWidget, event_name: str) -> str:

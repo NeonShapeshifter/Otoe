@@ -198,6 +198,17 @@ def _render_widget(
             stylesheet,
             strict_styles,
         )
+    if name == "ShortcutScope":
+        return _container(
+            "div",
+            widget,
+            "otoe-shortcut-scope",
+            pretty,
+            indent,
+            attributes,
+            stylesheet,
+            strict_styles,
+        )
     if name in {"Show", "For"}:
         return _container(
             "div",

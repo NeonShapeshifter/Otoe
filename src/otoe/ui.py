@@ -7,7 +7,7 @@ from .component import component
 from .control import For, Show
 from .node import Node
 from .reactive import computed, is_reactive
-from .widgets import Button, HStack, Input, Panel, Text, VStack
+from .widgets import Button, HStack, Input, Panel, ShortcutScope as ShortcutScopeWidget, Text, VStack
 
 
 @dataclass(frozen=True)
@@ -15,6 +15,48 @@ class TableColumn:
     key: str
     label: str
     className: str | None = None
+
+
+@dataclass(frozen=True)
+class Command:
+    id: str
+    label: Any
+    description: Any = ""
+    group: Any = ""
+    shortcut: str | None = None
+    className: str | None = None
+
+
+class CommandRegistry:
+    def __init__(self, commands) -> None:
+        self._commands = tuple(_normalize_command(command) for command in _list_value(commands))
+
+    @property
+    def commands(self) -> list[Command]:
+        return list(self._commands)
+
+    def __iter__(self):
+        return iter(self._commands)
+
+    def visible(self, query: str) -> list[Command]:
+        return _filter_commands(self._commands, query)
+
+    def first(self, query: str = "") -> Command | None:
+        visible = self.visible(query)
+        return visible[0] if visible else None
+
+    def find(self, command_id: str) -> Command | None:
+        for command in self._commands:
+            if command.id == command_id:
+                return command
+        return None
+
+    def find_shortcut(self, key: str) -> Command | None:
+        normalized_key = _shortcut_key(key)
+        for command in self._commands:
+            if command.shortcut and _shortcut_key(command.shortcut) == normalized_key:
+                return command
+        return None
 
 
 @dataclass(frozen=True)
@@ -34,6 +76,15 @@ def class_names(*parts: Any) -> str:
             continue
         names.extend(str(part).split())
     return " ".join(dict.fromkeys(names))
+
+
+@component
+def ShortcutScope(*children, onKeyDown, className: str | None = None):
+    return ShortcutScopeWidget(
+        *children,
+        className=class_names("ui-shortcut-scope", className),
+        onGlobalKeyDown=onKeyDown,
+    )
 
 
 @component
@@ -287,7 +338,7 @@ def CommandPalette(
             ),
             For(
                 each=visible_commands,
-                key=lambda command: command["id"],
+                key=lambda command: command.id,
                 children=lambda command: _command_item(command, on_select),
                 fallback=fallback,
             ),
@@ -442,6 +493,22 @@ def _normalize_column(column: Any) -> TableColumn:
     raise TypeError(f"DataTable columns must be TableColumn or dict; got {type(column).__name__}.")
 
 
+def _normalize_command(command: Any) -> Command:
+    if isinstance(command, Command):
+        return command
+    if isinstance(command, dict):
+        command_id = str(command["id"])
+        return Command(
+            id=command_id,
+            label=command.get("label", command_id),
+            description=command.get("description", ""),
+            group=command.get("group", ""),
+            shortcut=command.get("shortcut"),
+            className=command.get("className"),
+        )
+    raise TypeError(f"Commands must be Command or dict; got {type(command).__name__}.")
+
+
 def _normalize_route(route: Any) -> NavRoute:
     if isinstance(route, NavRoute):
         return route
@@ -474,43 +541,47 @@ def _row_value(row: Any, key: str) -> Any:
     return getattr(row, key)
 
 
-def _filter_commands(commands, query: str) -> list[dict[str, Any]]:
-    items = _list_value(commands)
+def _filter_commands(commands, query: str) -> list[Command]:
+    items = [_normalize_command(command) for command in _list_value(commands)]
     needle = query.strip().lower()
     if not needle:
         return items
     return [
         command
         for command in items
-        if needle in command["label"].lower()
-        or needle in command.get("description", "").lower()
-        or needle in command.get("group", "").lower()
+        if needle in str(command.label).lower()
+        or needle in str(command.description).lower()
+        or needle in str(command.group).lower()
     ]
 
 
-def _command_item(command: dict[str, Any], on_select) -> Node:
+def _command_item(command: Command, on_select) -> Node:
     return Button(
         "",
         HStack(
             VStack(
-                Text(command["label"], className="ui-command-label"),
-                Text(command.get("description", ""), className="ui-command-description"),
+                Text(command.label, className="ui-command-label"),
+                Text(command.description, className="ui-command-description"),
                 className="ui-command-copy",
                 gap=3,
             ),
-            Text(command.get("shortcut", ""), className="ui-command-shortcut"),
+            Text(command.shortcut or "", className="ui-command-shortcut"),
             className="ui-command-row",
             gap=12,
         ),
-        className="ui-command-item",
-        onClick=lambda: on_select(command["id"]),
+        className=class_names("ui-command-item", command.className),
+        onClick=lambda: on_select(command.id),
     )
 
 
-def _submit_first_command(key: str, commands: list[dict[str, Any]], on_select) -> None:
+def _submit_first_command(key: str, commands: list[Command], on_select) -> None:
     if key != "Enter" or not commands:
         return
-    on_select(commands[0]["id"])
+    on_select(commands[0].id)
+
+
+def _shortcut_key(key: str) -> str:
+    return key.strip().lower()
 
 
 def _matching_routes(routes: list[NavRoute], route_id: str) -> list[NavRoute]:

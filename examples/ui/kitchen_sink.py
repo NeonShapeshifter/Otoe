@@ -6,11 +6,14 @@ from otoe.ui import (
     AppShell,
     Badge,
     Card,
+    Command,
     CommandPalette,
+    CommandRegistry,
     DataTable,
     Dialog,
     NavRoute,
     RouteView,
+    ShortcutScope,
     SidebarNav,
     StatCard,
     TabButton,
@@ -27,36 +30,39 @@ ROUTES = [
     NavRoute("wraith", "Wraith", "Operational surface", badge="Ops", tone="warn"),
 ]
 
-COMMANDS = [
-    {
-        "id": "mission",
-        "label": "Open Mission Exec",
-        "description": "Jump to the Wraith operational surface.",
-        "group": "Wraith",
-        "shortcut": "M",
-    },
-    {
-        "id": "customers",
-        "label": "Review Customers",
-        "description": "Open account health and next-step table.",
-        "group": "SaaS",
-        "shortcut": "C",
-    },
-    {
-        "id": "export",
-        "label": "Export Evidence",
-        "description": "Prepare a review bundle for handoff.",
-        "group": "Wraith",
-        "shortcut": "E",
-    },
-    {
-        "id": "settings",
-        "label": "Workspace Settings",
-        "description": "Open team access and defaults.",
-        "group": "SaaS",
-        "shortcut": ",",
-    },
-]
+COMMAND_REGISTRY = CommandRegistry(
+    [
+        Command(
+            "mission",
+            "Open Mission Exec",
+            "Jump to the Wraith operational surface.",
+            "Wraith",
+            "M",
+        ),
+        Command(
+            "customers",
+            "Review Customers",
+            "Open account health and next-step table.",
+            "SaaS",
+            "C",
+        ),
+        Command(
+            "export",
+            "Export Evidence",
+            "Prepare a review bundle for handoff.",
+            "Wraith",
+            "E",
+        ),
+        Command(
+            "settings",
+            "Workspace Settings",
+            "Open team access and defaults.",
+            "SaaS",
+            ",",
+        ),
+    ]
+)
+COMMANDS = COMMAND_REGISTRY.commands
 
 SURFACE_COLUMNS = [
     TableColumn("surface", "Surface", "surface"),
@@ -106,47 +112,51 @@ def UIKitKitchenSink(
     on_select,
     on_toggle_dialog,
     on_navigate,
+    on_shortcut,
 ):
     active_label = computed(lambda: _route_label(active_route.value))
 
-    return AppShell(
-        header=Toolbar(
-            Text("Otoe UI", className="ui-demo-brand"),
-            Text("Signal-routed app shell over shared primitives.", className="ui-demo-copy"),
-            Badge(active_label, tone="info", className="ui-demo-status"),
-            ActionButton("Toggle Dialog", variant="ghost", onClick=on_toggle_dialog),
-            className="ui-demo-topbar",
-            gap=12,
-        ),
-        sidebar=SidebarNav(
-            routes=ROUTES,
-            active=active_route,
-            on_navigate=on_navigate,
-            brand=VStack(
-                Text("Otoe", className="ui-demo-sidebar-brand-title"),
-                Text("Framework shell", className="ui-demo-sidebar-brand-copy"),
-                gap=2,
+    return ShortcutScope(
+        AppShell(
+            header=Toolbar(
+                Text("Otoe UI", className="ui-demo-brand"),
+                Text("Signal-routed app shell over shared primitives.", className="ui-demo-copy"),
+                Badge(active_label, tone="info", className="ui-demo-status"),
+                ActionButton("Toggle Dialog", variant="ghost", onClick=on_toggle_dialog),
+                className="ui-demo-topbar",
+                gap=12,
             ),
-            footer=Text(
-                computed(lambda: f"Route: {_route_label(active_route.value)}"),
-                className="ui-demo-sidebar-footnote",
+            sidebar=SidebarNav(
+                routes=ROUTES,
+                active=active_route,
+                on_navigate=on_navigate,
+                brand=VStack(
+                    Text("Otoe", className="ui-demo-sidebar-brand-title"),
+                    Text("Framework shell", className="ui-demo-sidebar-brand-copy"),
+                    gap=2,
+                ),
+                footer=Text(
+                    computed(lambda: f"Route: {_route_label(active_route.value)}"),
+                    className="ui-demo-sidebar-footnote",
+                ),
+                className="ui-demo-sidebar",
             ),
-            className="ui-demo-sidebar",
-        ),
-        content=RouteView(
-            route=active_route,
-            routes=ROUTES,
-            render=lambda route: _route_surface(
-                route,
-                query=query,
-                selected=selected,
-                dialog_open=dialog_open,
-                on_query=on_query,
-                on_select=on_select,
+            content=RouteView(
+                route=active_route,
+                routes=ROUTES,
+                render=lambda route: _route_surface(
+                    route,
+                    query=query,
+                    selected=selected,
+                    dialog_open=dialog_open,
+                    on_query=on_query,
+                    on_select=on_select,
+                ),
+                className="ui-demo-route",
             ),
-            className="ui-demo-route",
+            className="ui-demo-shell",
         ),
-        className="ui-demo-shell",
+        onKeyDown=on_shortcut,
     )
 
 
@@ -187,7 +197,7 @@ def UIKitRoute(*, query, selected, dialog_open, on_query, on_select):
             ),
             StatCard(
                 label="Tests",
-                value="81",
+                value="87",
                 detail="Runtime covered",
                 tone="good",
                 className="ui-demo-stat",
@@ -366,8 +376,8 @@ def _selected_label(command_id):
     if not command_id:
         return "No command"
     for command in COMMANDS:
-        if command["id"] == command_id:
-            return command["label"]
+        if command.id == command_id:
+            return command.label
     return str(command_id)
 
 

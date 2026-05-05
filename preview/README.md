@@ -63,8 +63,9 @@ PYTHONPATH=src:. python -m examples.ui.live_preview
 ```
 
 Then open <http://127.0.0.1:8768>.
-Use the sidebar, command palette, and Enter key to verify live route switching
-between UI Kit, SaaS, and Wraith-shaped surfaces.
+Use the sidebar, command palette, Enter key, `Ctrl+K`/`Meta+K`, `Escape`, and
+single-key command shortcuts to verify live route switching between UI Kit,
+SaaS, and Wraith-shaped surfaces.
 
 Otoe also has an optional JSX-like `template(...)` authoring path. It returns
 the same `Node` tree as Python components, so it is syntax sugar rather than a
