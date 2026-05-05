@@ -20,7 +20,7 @@ stable public framework or a production desktop renderer.
 - Experimental portable `css(...)` / `StyleSheet` API.
 - First `otoe.ui` primitives: cards, badges, action buttons, tabs, toolbars,
   stat cards, data tables, dialogs, and toasts.
-- Wraith-shaped and SaaS-shaped case studies.
+- Wraith-shaped and SaaS-shaped case studies using the same UI primitives.
 
 ## What Is Not Ready Yet
 

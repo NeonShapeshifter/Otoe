@@ -105,7 +105,8 @@ Wraith remains the production app until an isolated Otoe surface proves equivale
 - SaaS preview topbar, nav, actions, and metrics migrated onto `otoe.ui`.
 - `DataTable`, `Dialog`, `Toast`, and `TableColumn` added to `otoe.ui`.
 - SaaS Customers view migrated to `DataTable`; Settings status migrated to `Toast`.
-- Baseline tests: `67 passed`.
+- Wraith Mission Exec panels, controls, filters, badges, and toolbar migrated onto `otoe.ui`.
+- Baseline tests: `68 passed`.
 
 ### Current Sprint
 

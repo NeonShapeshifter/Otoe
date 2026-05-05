@@ -30,7 +30,7 @@ def class_names(*parts: Any) -> str:
 def Card(*children, className: str | None = None, tone: str = "default", title=None):
     return Panel(
         *children,
-        className=class_names("ui-card", f"is-{tone}", className),
+        className=_variant_class("ui-card", tone, className),
         title=title,
     )
 
@@ -39,7 +39,7 @@ def Card(*children, className: str | None = None, tone: str = "default", title=N
 def Badge(label, *, tone: str = "neutral", className: str | None = None):
     return Text(
         label,
-        className=class_names("ui-badge", f"is-{tone}", className),
+        className=_variant_class("ui-badge", tone, className),
     )
 
 
@@ -54,7 +54,7 @@ def ActionButton(
     onClick=None,
 ):
     props = {
-        "className": class_names("ui-button", f"is-{variant}", f"is-{size}", className),
+        "className": _multi_variant_class("ui-button", variant, size, className),
         "disabled": disabled,
     }
     if onClick is not None:
@@ -81,7 +81,7 @@ def Tabs(
     container = VStack if orientation == "vertical" else HStack
     return container(
         *children,
-        className=class_names("ui-tabs", f"is-{orientation}", className),
+        className=_variant_class("ui-tabs", orientation, className),
         gap=gap,
     )
 
@@ -226,6 +226,31 @@ def _active_class(base: str, active, extra: str | None):
     if is_reactive(active):
         return computed(lambda: class_names(base, extra, "is-active" if active.value else None))
     return class_names(base, extra, "is-active" if active else None)
+
+
+def _variant_class(base: str, variant, extra: str | None = None):
+    if is_reactive(variant) or is_reactive(extra):
+        return computed(lambda: class_names(base, f"is-{_value(variant)}", _value(extra)))
+    return class_names(base, f"is-{variant}", extra)
+
+
+def _multi_variant_class(base: str, variant, size, extra: str | None = None):
+    if is_reactive(variant) or is_reactive(size) or is_reactive(extra):
+        return computed(
+            lambda: class_names(
+                base,
+                f"is-{_value(variant)}",
+                f"is-{_value(size)}",
+                _value(extra),
+            )
+        )
+    return class_names(base, f"is-{variant}", f"is-{size}", extra)
+
+
+def _value(value):
+    if is_reactive(value):
+        return value.value
+    return value
 
 
 def _has_value(value: Any) -> bool:

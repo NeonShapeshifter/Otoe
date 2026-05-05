@@ -23,6 +23,9 @@ def test_wraith_mission_exec_preview_contains_extracted_surface():
     assert "SIMULATE FRAME" in html
     assert "PREFLIGHT" in html
     assert "ABORT MISSION" in html
+    assert "ui-card is-default exec-terminal-panel" in html
+    assert "ui-button is-danger is-md danger-button" in html
+    assert "ui-tab filter-button is-active" in html
     assert "MissionExecSurface" not in html
 
 
@@ -36,7 +39,7 @@ def test_wraith_mission_exec_live_filters_telemetry():
     assert "1 lines" in html
     assert "beacon anomaly" in html
     assert "attach interface wlan1mon" not in html
-    assert "filter-button is-active" in html
+    assert "ui-tab filter-button is-active" in html
 
 
 def test_wraith_mission_exec_live_pause_and_abort_actions():

@@ -44,6 +44,17 @@ def test_badge_and_action_button_mount_with_ui_classes_and_events():
     assert clicked.value is True
 
 
+def test_badge_reacts_to_tone_signal():
+    tone = signal("neutral")
+    badge = root_widget(mount(Badge("State", tone=tone)))
+
+    assert badge.props["className"] == "ui-badge is-neutral"
+
+    tone.set("success")
+
+    assert badge.props["className"] == "ui-badge is-success"
+
+
 def test_card_tabs_and_stat_card_compose_primitives():
     card = root_widget(
         mount(

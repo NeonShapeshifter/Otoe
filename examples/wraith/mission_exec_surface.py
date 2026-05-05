@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from otoe import Button, For, HStack, Panel, ScrollView, Text, VStack, component, computed
+from otoe import For, HStack, ScrollView, Text, VStack, component, computed
+from otoe.ui import ActionButton, Badge, Card, TabButton, Tabs, Toolbar
 
 
 FILTERS = ["ALL", "INFO", "OK", "WARN", "SIG", "CMD"]
@@ -32,23 +33,20 @@ def MissionExecSurface(
     )
     probe_frame = computed(lambda: f"FRAME {runtime_probe.value['frame']:03d}")
     probe_badge = computed(lambda: runtime_probe.value["tone"].upper())
-    probe_badge_class = computed(
-        lambda: f"exec-probe-badge is-{runtime_probe.value['tone']}"
-    )
 
     return VStack(
-        HStack(
+        Toolbar(
             Text("WRAITH OS", className="brand"),
             Text("Mission Exec / Handshake Hunter", className="campaign"),
-            Text(status, className="indicator"),
-            Text(elapsed, className="indicator"),
+            Badge(status, tone="success", className="indicator"),
+            Badge(elapsed, tone="neutral", className="indicator"),
             className="topbar",
             gap=8,
         ),
         HStack(
             VStack(
                 MissionBrief(mission=mission),
-                Panel(
+                Card(
                     HStack(
                         VStack(
                             Text("STATUS", className="eyebrow"),
@@ -66,11 +64,21 @@ def MissionExecSurface(
                     className="exec-status-panel",
                 ),
                 PreflightPanel(mission=mission),
-                Panel(
+                Card(
                     VStack(
                         Text("EMERGENCY CONTROLS", className="danger-label"),
-                        Button("ABORT MISSION", className="danger-button", onClick=on_abort),
-                        Button(pause_label, className="ghost-button", onClick=on_pause),
+                        ActionButton(
+                            "ABORT MISSION",
+                            variant="danger",
+                            className="danger-button",
+                            onClick=on_abort,
+                        ),
+                        ActionButton(
+                            pause_label,
+                            variant="ghost",
+                            className="ghost-button",
+                            onClick=on_pause,
+                        ),
                         className="exec-actions",
                         gap=10,
                     ),
@@ -80,12 +88,16 @@ def MissionExecSurface(
                 gap=12,
             ),
             VStack(
-                Panel(
+                Card(
                     HStack(
                         VStack(
                             HStack(
                                 Text("CAPTURE FEED", className="section-heading"),
-                                Text(probe_badge, className=probe_badge_class),
+                                Badge(
+                                    probe_badge,
+                                    tone=computed(lambda: runtime_probe.value["tone"]),
+                                    className="exec-probe-badge",
+                                ),
                                 className="exec-probe-head",
                                 gap=8,
                             ),
@@ -101,20 +113,25 @@ def MissionExecSurface(
                             className="exec-probe-main",
                             gap=4,
                         ),
-                        Button("SIMULATE FRAME", className="probe-button", onClick=on_simulate),
+                        ActionButton(
+                            "SIMULATE FRAME",
+                            variant="info",
+                            className="probe-button",
+                            onClick=on_simulate,
+                        ),
                         className="exec-probe",
                         gap=14,
                     ),
                     className="exec-probe-panel",
                 ),
-                Panel(
+                Card(
                     VStack(
                         HStack(
                             Text("LIVE TELEMETRY / wlan1mon", className="section-heading"),
-                            Text(filtered_count, className="exec-count"),
+                            Badge(filtered_count, tone="neutral", className="exec-count"),
                             className="exec-toolbar-head",
                         ),
-                        HStack(
+                        Tabs(
                             *[
                                 FilterButton(
                                     label=label,
@@ -123,8 +140,20 @@ def MissionExecSurface(
                                 )
                                 for label in FILTERS
                             ],
-                            Button("CLEAR", className="ghost-button compact", onClick=on_clear),
-                            Button("EXPORT", className="ghost-button compact", onClick=on_export),
+                            ActionButton(
+                                "CLEAR",
+                                variant="ghost",
+                                size="sm",
+                                className="ghost-button compact",
+                                onClick=on_clear,
+                            ),
+                            ActionButton(
+                                "EXPORT",
+                                variant="ghost",
+                                size="sm",
+                                className="ghost-button compact",
+                                onClick=on_export,
+                            ),
                             className="exec-filters",
                             gap=8,
                         ),
@@ -141,11 +170,15 @@ def MissionExecSurface(
                     ),
                     className="exec-terminal-panel",
                 ),
-                Panel(
+                Card(
                     VStack(
                         HStack(
                             Text("EVENT TIMELINE", className="section-heading"),
-                            Text(computed(lambda: f"{len(events.value)} events"), className="exec-count"),
+                            Badge(
+                                computed(lambda: f"{len(events.value)} events"),
+                                tone="neutral",
+                                className="exec-count",
+                            ),
                             className="exec-toolbar-head",
                         ),
                         For(
@@ -171,7 +204,7 @@ def MissionExecSurface(
 
 @component
 def MissionBrief(*, mission):
-    return Panel(
+    return Card(
         VStack(
             Text(
                 computed(
@@ -216,11 +249,11 @@ def MissionFact(*, label, value):
 
 @component
 def PreflightPanel(*, mission):
-    return Panel(
+    return Card(
         VStack(
             HStack(
                 Text("PREFLIGHT", className="section-heading"),
-                Text("5/5 READY", className="ready-pill"),
+                Badge("5/5 READY", tone="success", className="ready-pill"),
                 className="exec-toolbar-head",
             ),
             CheckRow(label="Policy guard", value=computed(lambda: f"{mission.value['scope']} approved")),
@@ -247,10 +280,12 @@ def CheckRow(*, label, value):
 
 
 def FilterButton(*, label, active_filter, on_filter):
-    class_name = computed(
-        lambda: "filter-button is-active" if active_filter.value == label else "filter-button"
+    return TabButton(
+        label,
+        active=computed(lambda: active_filter.value == label),
+        className="filter-button",
+        onClick=lambda: on_filter(label),
     )
-    return Button(label, className=class_name, onClick=lambda: on_filter(label))
 
 
 @component
