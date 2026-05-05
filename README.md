@@ -19,7 +19,7 @@ stable public framework or a production desktop renderer.
 - Optional JSX-like `template(...)` syntax that returns the same `Node` tree.
 - Experimental portable `css(...)` / `StyleSheet` API.
 - First `otoe.ui` primitives: cards, badges, action buttons, tabs, toolbars,
-  and stat cards.
+  stat cards, data tables, dialogs, and toasts.
 - Wraith-shaped and SaaS-shaped case studies.
 
 ## What Is Not Ready Yet

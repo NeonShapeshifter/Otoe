@@ -8,6 +8,8 @@
 - Added the first `otoe.ui` primitives: `Card`, `Badge`, `ActionButton`,
   `Toolbar`, `Tabs`, `TabButton`, and `StatCard`.
 - Migrated the SaaS preview topbar, nav, actions, and metrics onto `otoe.ui`.
+- Added `DataTable`, `Dialog`, `Toast`, and `TableColumn` primitives.
+- Migrated the SaaS Customers view to `DataTable` and Settings status to `Toast`.
 
 ## v0.0.1 - Technical Preview
 

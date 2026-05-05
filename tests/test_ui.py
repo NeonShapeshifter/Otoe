@@ -2,9 +2,13 @@ from otoe import (
     ActionButton,
     Badge,
     Card,
+    DataTable,
+    Dialog,
     StatCard,
     TabButton,
+    TableColumn,
     Tabs,
+    Toast,
     class_names,
     mount,
     root_widget,
@@ -99,3 +103,79 @@ def test_stat_card_hides_reactive_empty_detail():
     detail.set("+6")
 
     assert detail_show.children[0].props["content"] == "+6"
+
+
+def test_data_table_renders_columns_rows_and_custom_cells():
+    rows = signal(
+        [
+            {"id": "one", "name": "Arcadia", "health": "Healthy"},
+        ]
+    )
+
+    def render_cell(row, column):
+        if column.key == "health":
+            return Badge(row["health"], tone="success", className="health")
+        return None
+
+    def safe_cell(row, column):
+        custom = render_cell(row, column)
+        if custom is not None:
+            return custom
+        return Badge(row[column.key], tone="neutral")
+
+    table = root_widget(
+        mount(
+            DataTable(
+                columns=[
+                    TableColumn("name", "Account", "account"),
+                    {"key": "health", "label": "Health"},
+                ],
+                rows=rows,
+                key=lambda row: row["id"],
+                render_cell=safe_cell,
+            )
+        )
+    )
+
+    assert table.props["className"] == "ui-table"
+    assert table.children[0].props["className"] == "ui-table-head"
+    row_list = table.children[1]
+    row = row_list.children[0]
+    assert row.props["className"] == "ui-table-row"
+    assert row.children[0].props["content"] == "Arcadia"
+    assert row.children[1].props["className"] == "ui-badge is-success health"
+
+
+def test_dialog_tracks_open_signal():
+    open_dialog = signal(False)
+    dialog = root_widget(
+        mount(
+            Dialog(
+                Badge("Synced", tone="success"),
+                open=open_dialog,
+                title="Workspace settings",
+                description="Defaults updated.",
+            )
+        )
+    )
+
+    assert dialog.children == []
+
+    open_dialog.set(True)
+
+    backdrop = dialog.children[0]
+    panel = backdrop.children[0]
+    body = panel.children[0]
+    assert backdrop.props["className"] == "ui-dialog-backdrop"
+    assert body.children[0].children[0].props["content"] == "Workspace settings"
+    assert body.children[2].props["content"] == "Synced"
+
+
+def test_toast_hides_empty_description():
+    toast = root_widget(mount(Toast("Saved", tone="success")))
+    copy = toast.children[0]
+    description_show = copy.children[1]
+
+    assert toast.props["className"] == "ui-toast is-success"
+    assert copy.children[0].props["content"] == "Saved"
+    assert description_show.children == []

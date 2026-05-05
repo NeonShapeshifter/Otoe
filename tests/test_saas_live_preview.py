@@ -58,6 +58,8 @@ def test_saas_live_preview_dispatches_nav_click():
     assert "Mercury Labs" in html
     assert "Share expansion brief" in html
     assert 'nav-item is-active" type="button" data-otoe-click' in html
+    assert "ui-table customer-table" in html
+    assert "ui-badge is-good customer-health" in html
 
 
 def test_saas_live_preview_dispatches_all_section_views():
@@ -75,3 +77,14 @@ def test_saas_live_preview_dispatches_all_section_views():
         html = app.dispatch_event(click_id)
 
         assert marker in html
+
+
+def test_saas_live_preview_settings_uses_toast_primitive():
+    app = SaaSLivePreview()
+    html = app.render_fragment()
+    click_id = _button_click_id(html, "Settings")
+
+    html = app.dispatch_event(click_id)
+
+    assert "ui-toast is-success settings-toast" in html
+    assert "Workspace saved" in html

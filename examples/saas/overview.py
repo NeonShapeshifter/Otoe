@@ -1,8 +1,25 @@
 from otoe import For, HStack, Input, Panel, Show, Text, VStack, component, computed
-from otoe.ui import ActionButton, Badge, Card, StatCard, TabButton, Tabs, Toolbar
+from otoe.ui import (
+    ActionButton,
+    Badge,
+    Card,
+    DataTable,
+    StatCard,
+    TabButton,
+    TableColumn,
+    Tabs,
+    Toast,
+    Toolbar,
+)
 
 
 NAV_ITEMS = ["Overview", "Customers", "Revenue", "Automations", "Settings"]
+CUSTOMER_COLUMNS = [
+    TableColumn("name", "Account", "account"),
+    TableColumn("plan", "Plan"),
+    TableColumn("health", "Health"),
+    TableColumn("next_step", "Next step", "next-step"),
+]
 
 PAGE_COPY = {
     "Overview": (
@@ -135,28 +152,14 @@ def OverviewView(*, deals, customers, on_invite):
 def CustomersView(*, customers):
     return Panel(
         VStack(
-            HStack(
-                Text("Account", className="table-head account"),
-                Text("Plan", className="table-head"),
-                Text("Health", className="table-head"),
-                Text("Next step", className="table-head next-step"),
-                className="customer-table-head",
-            ),
-            For(
-                each=customers,
+            DataTable(
+                columns=CUSTOMER_COLUMNS,
+                rows=customers,
                 key=lambda customer: customer["id"],
-                children=lambda customer: HStack(
-                    Text(customer["name"], className="table-cell account"),
-                    Text(customer["plan"], className="table-cell"),
-                    Text(
-                        customer["health"],
-                        className=f"customer-health {customer['tone']}",
-                    ),
-                    Text(_next_step(customer), className="table-cell next-step"),
-                    className="customer-table-row",
-                ),
+                render_cell=_customer_cell,
+                className="customer-table",
             ),
-            className="customer-table",
+            className="customer-table-wrap",
             gap=8,
         ),
         className="view-panel",
@@ -240,6 +243,12 @@ def AutomationRule(*, title, description, state):
 def SettingsView():
     return Panel(
         VStack(
+            Toast(
+                "Workspace saved",
+                description="Notification and region defaults are synced.",
+                tone="success",
+                className="settings-toast",
+            ),
             SettingsRow(label="Workspace name", value="Growth workspace"),
             SettingsRow(label="Default owner", value="Revenue operations"),
             SettingsRow(label="Notifications", value="Digest and critical alerts"),
@@ -390,3 +399,15 @@ def _next_step(customer):
     if customer["tone"] == "warn":
         return "Schedule success check"
     return "Escalate retention plan"
+
+
+def _customer_cell(customer, column):
+    if column.key == "name":
+        return Text(customer["name"], className="ui-table-cell table-cell account")
+    if column.key == "plan":
+        return Text(customer["plan"], className="ui-table-cell table-cell")
+    if column.key == "health":
+        return Badge(customer["health"], tone=customer["tone"], className="customer-health")
+    if column.key == "next_step":
+        return Text(_next_step(customer), className="ui-table-cell table-cell next-step")
+    return Text("", className="ui-table-cell table-cell")

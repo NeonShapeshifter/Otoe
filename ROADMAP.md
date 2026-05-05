@@ -103,7 +103,9 @@ Wraith remains the production app until an isolated Otoe surface proves equivale
 - Shared live-preview server helper used by Wraith, Mission Exec, and SaaS demos.
 - First `otoe.ui` primitives: `Card`, `Badge`, `ActionButton`, `Toolbar`, `Tabs`, `TabButton`, and `StatCard`.
 - SaaS preview topbar, nav, actions, and metrics migrated onto `otoe.ui`.
-- Baseline tests: `63 passed`.
+- `DataTable`, `Dialog`, `Toast`, and `TableColumn` added to `otoe.ui`.
+- SaaS Customers view migrated to `DataTable`; Settings status migrated to `Toast`.
+- Baseline tests: `67 passed`.
 
 ### Current Sprint
 
@@ -111,7 +113,7 @@ Wraith remains the production app until an isolated Otoe surface proves equivale
 2. Tighten Mission Exec spacing, hierarchy, and interaction states until it feels better than the current Wraith UI.
 3. Compare a non-trivial Mission Exec change in Otoe versus the Wraith Kivy/front prototype and record the friction points.
 4. Decide whether the next Wraith-shaped benchmark is routing/app shell, overlay/modal, or runtime polling.
-5. Expand `otoe.ui` with modal/dialog, table, command palette, and toast primitives.
+5. Expand `otoe.ui` with command palette and richer modal/dialog behavior.
 6. Add screenshot/GIF assets for the public README once the preview polish stabilizes.
 7. Keep snapshots plus live-render tests as the renderer contract while the backend is still moving.
 
