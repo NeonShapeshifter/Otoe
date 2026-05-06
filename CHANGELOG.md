@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.0.5 - Native Renderer Spike
+
 - Fixed keyed `For` updates when an item keeps the same key but changes data.
 - Added async event handler regression coverage for coroutine functions,
   coroutine-returning sync handlers, and running-loop dispatch.
