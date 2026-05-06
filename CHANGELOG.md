@@ -15,6 +15,9 @@
   flows using existing dialog/focus primitives.
 - Added live Mission Exec remote snapshot recovery benchmark with restored
   telemetry, runtime status, elapsed time, and pending approval state.
+- Added ADR-006 for the native renderer/layout boundary.
+- Added the first headless native layout adapter with deterministic boxes for
+  stacks, text, buttons, inputs, panels, and resolved style dimensions.
 - Added `BENCHMARKS.md` to track concrete Otoe-vs-Wraith UI change friction.
 - Expanded CI to build the package and run `twine check` on generated
   distributions.

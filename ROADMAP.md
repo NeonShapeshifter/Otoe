@@ -150,14 +150,16 @@ framework milestone.
 - Mission Exec event timeline severity filter added as the first recorded Otoe-vs-Wraith change benchmark.
 - Mission Exec combo approval modal added as a second Wraith/Kivy benchmark for overlays, focus scope, and critical action state.
 - Mission Exec remote snapshot recovery added as a third Wraith/Kivy benchmark for runtime reattach, restored logs, elapsed state, and pending approval state.
+- ADR-006 native renderer/layout boundary drafted.
+- First headless native layout adapter added with deterministic boxes for stacks, text, buttons, inputs, panels, resolved dimensions, and reactive prop updates.
 - `BENCHMARKS.md` added for concrete change-friction notes against Wraith/Kivy.
 - CI now builds release distributions and runs `twine check` on package metadata.
-- Baseline tests: `112 passed`.
+- Baseline tests: `117 passed`.
 
 ### Current Sprint
 
-1. Write the renderer/layout boundary for `Native Renderer Spike 001`: tree input, style subset, layout output, paint output, hit-test output.
-2. Add a headless layout adapter for a small generic subset: `VStack`, `HStack`, `Text`, `Button`, `Input`, `Card`, padding, gap, fixed size, min/max, and flex.
+1. Write the renderer/layout boundary for `Native Renderer Spike 001`: tree input, style subset, layout output, paint output, hit-test output. **ADR-006 drafted.**
+2. Add a headless layout adapter for a small generic subset: `VStack`, `HStack`, `Text`, `Button`, `Input`, `Card`/`Panel`, padding, gap, fixed size, min/max, and flex. **Initial deterministic adapter added.**
 3. Add a headless paint adapter that can render boxes, text, backgrounds, borders, and radius to a PNG.
 4. Add a framework-neutral native demo surface that proves layout, state update, button dispatch, and rerender without using Wraith fixtures.
 5. Add hit-testing for coordinates -> mounted node -> event dispatch.

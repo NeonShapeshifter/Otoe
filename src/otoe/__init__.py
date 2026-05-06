@@ -9,6 +9,7 @@ from .errors import (
 from .html import render_html
 from .html_live import LiveEvent, LiveHtmlRenderer
 from .mount import FakeWidget, MountedNode, mount, root_widget, unmount
+from .native import LayoutBox, NativeLayout, NativeLayoutError, layout_native
 from .node import Node, Widget
 from .reactive import Computed, Effect, Signal, computed, effect, signal
 from .scheduler import batch
@@ -76,11 +77,14 @@ __all__ = [
     "HStack",
     "Input",
     "Interval",
+    "LayoutBox",
     "LiveEvent",
     "LiveHtmlRenderer",
     "MountedNode",
     "Menu",
     "MenuItem",
+    "NativeLayout",
+    "NativeLayoutError",
     "NavItem",
     "NavRoute",
     "Node",
@@ -120,6 +124,7 @@ __all__ = [
     "css",
     "effect",
     "interval",
+    "layout_native",
     "mount",
     "on_cleanup",
     "on_mount",
