@@ -42,7 +42,7 @@ stable public framework or a production desktop renderer.
 
 Use Python 3.11 or newer.
 
-Install from PyPI:
+Install from PyPI after the next successful package release:
 
 ```bash
 python -m pip install otoe

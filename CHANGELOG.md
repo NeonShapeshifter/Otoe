@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Fixed keyed `For` updates when an item keeps the same key but changes data.
+- Added async event handler regression coverage for coroutine functions,
+  coroutine-returning sync handlers, and running-loop dispatch.
+- Expanded CI to build the package and run `twine check` on generated
+  distributions.
+
 ## v0.0.3 - Controlled UI Primitives
 
 - Prepared PyPI package metadata and Trusted Publishing release automation.

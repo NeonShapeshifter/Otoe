@@ -122,7 +122,10 @@ Wraith remains the production app until an isolated Otoe surface proves equivale
 - Button-backed controls now support live `onKeyDown`.
 - Menu and select primitives now support keyboard movement, submit, and Escape close behavior.
 - `FocusScope` added with live-preview Tab trapping and focus restoration for dialogs and popovers.
-- Baseline tests: `102 passed`.
+- Keyed `For` now refreshes changed item data for existing keys while preserving stable keyed reorders.
+- Async event handler regression tests added for coroutine functions, coroutine-returning sync handlers, and running-loop dispatch.
+- CI now builds release distributions and runs `twine check` on package metadata.
+- Baseline tests: `106 passed`.
 
 ### Current Sprint
 

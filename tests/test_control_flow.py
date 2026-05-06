@@ -88,6 +88,39 @@ def test_for_renders_keyed_items_and_reorders_without_remounting():
     assert mounted_ids == ["wifi", "bt", "rf"]
 
 
+def test_for_updates_same_key_when_item_data_changes():
+    missions = signal([{"id": "wifi", "name": "WiFi Scan"}])
+    events = []
+
+    @component
+    def MissionRow(*, mission):
+        events.append(f"mount:{mission['name']}")
+        on_cleanup(lambda: events.append(f"cleanup:{mission['name']}"))
+        return Text(mission["name"])
+
+    mounted = mount(
+        For(
+            each=missions,
+            key=lambda mission: mission["id"],
+            children=lambda mission: MissionRow(mission=mission),
+        )
+    )
+    root = root_widget(mounted)
+    first_widget = root.children[0]
+
+    assert first_widget.props["content"] == "WiFi Scan"
+
+    missions.set([{"id": "wifi", "name": "WiFi Survey"}])
+
+    assert root.children[0].props["content"] == "WiFi Survey"
+    assert root.children[0] is not first_widget
+    assert events == [
+        "mount:WiFi Scan",
+        "cleanup:WiFi Scan",
+        "mount:WiFi Survey",
+    ]
+
+
 def test_for_disposes_removed_key_and_renders_fallback():
     missions = signal([{"id": "wifi", "name": "WiFi Scan"}])
     events = []
@@ -113,4 +146,3 @@ def test_for_disposes_removed_key_and_renders_fallback():
 
     assert root.children[0].props["content"] == "No missions"
     assert events == ["cleanup:wifi"]
-

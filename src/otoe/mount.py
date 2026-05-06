@@ -131,6 +131,7 @@ def _mount_for(node: Node) -> MountedNode:
     widget = FakeWidget(node.tag)
     mounted = MountedNode(node=node, widget=widget)
     mounted._keyed_children = {}  # type: ignore[attr-defined]
+    mounted._keyed_items = {}  # type: ignore[attr-defined]
     mounted._fallback_mounted = None  # type: ignore[attr-defined]
 
     key_fn = node.props["key"]
@@ -140,6 +141,7 @@ def _mount_for(node: Node) -> MountedNode:
     def refresh() -> None:
         items = list_from_value(node.props["each"])
         keyed_children: dict[Any, MountedNode] = mounted._keyed_children  # type: ignore[attr-defined]
+        keyed_items: dict[Any, Any] = mounted._keyed_items  # type: ignore[attr-defined]
         next_keys = [key_fn(item) for item in items]
         next_key_set = set(next_keys)
 
@@ -151,6 +153,7 @@ def _mount_for(node: Node) -> MountedNode:
             for existing in keyed_children.values():
                 unmount(existing)
             keyed_children.clear()
+            keyed_items.clear()
             mounted.children.clear()
             widget.children.clear()
             if fallback is not None:
@@ -164,10 +167,16 @@ def _mount_for(node: Node) -> MountedNode:
         for existing_key in list(keyed_children):
             if existing_key not in next_key_set:
                 unmount(keyed_children.pop(existing_key))
+                keyed_items.pop(existing_key, None)
 
         for item, item_key in zip(items, next_keys):
             if item_key not in keyed_children:
                 keyed_children[item_key] = _mount(render(item))
+                keyed_items[item_key] = item
+            elif not _items_equal(keyed_items.get(item_key), item):
+                unmount(keyed_children[item_key])
+                keyed_children[item_key] = _mount(render(item))
+                keyed_items[item_key] = item
 
         mounted.children = [keyed_children[item_key] for item_key in next_keys]
         widget.children = [root_widget(child) for child in mounted.children]
@@ -212,6 +221,14 @@ def _assign_prop(mounted: MountedNode, widget: FakeWidget, name: str, value: Any
             owner.add_cleanup(subscription.dispose)
     else:
         widget.set_prop(name, value)
+
+
+def _items_equal(left: Any, right: Any) -> bool:
+    try:
+        result = left == right
+    except Exception:
+        return left is right
+    return result if isinstance(result, bool) else left is right
 
 
 def unmount(mounted: MountedNode) -> None:

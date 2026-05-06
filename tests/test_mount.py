@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 from otoe import (
@@ -30,6 +32,58 @@ def test_widget_schema_classifies_events_before_reactive_props():
 
     assert widget.props["label"] == "Save"
     assert clicks == ["clicked"]
+
+
+def test_async_event_handler_runs_to_completion_without_running_loop():
+    events = []
+
+    async def handle_click(label):
+        await asyncio.sleep(0)
+        events.append(label)
+        return "done"
+
+    widget = root_widget(mount(Button("Run", onClick=handle_click)))
+
+    result = widget.trigger("onClick", "async")
+
+    assert result == "done"
+    assert events == ["async"]
+
+
+def test_sync_event_handler_returning_coroutine_runs_to_completion():
+    events = []
+
+    async def record():
+        await asyncio.sleep(0)
+        events.append("recorded")
+        return "done"
+
+    widget = root_widget(mount(Button("Run", onClick=lambda: record())))
+
+    result = widget.trigger("onClick")
+
+    assert result == "done"
+    assert events == ["recorded"]
+
+
+def test_async_event_handler_returns_task_inside_running_loop():
+    events = []
+
+    async def handle_click():
+        await asyncio.sleep(0)
+        events.append("done")
+        return "result"
+
+    async def run_in_loop():
+        widget = root_widget(mount(Button("Run", onClick=handle_click)))
+        task = widget.trigger("onClick")
+
+        assert isinstance(task, asyncio.Task)
+        assert await task == "result"
+
+    asyncio.run(run_in_loop())
+
+    assert events == ["done"]
 
 
 def test_unknown_props_raise_developer_facing_error():
@@ -103,4 +157,3 @@ def test_computed_prop_updates_when_dependency_changes():
     active.set(True)
 
     assert widget.props["className"] == "on"
-
