@@ -1,54 +1,75 @@
 # Otoe Roadmap
 
-**Status:** Phase 1 / Runtime Slice  
-**Updated:** May 5, 2026  
-**Reference case study:** Wraith OS Kivy UI
+**Status:** Phase 2 / Native Renderer Spike
+**Updated:** May 6, 2026
+**Reference case study:** Framework-neutral native renderer/layout spike
 
 ---
 
 ## Product Thesis
 
-Otoe is a professional Python desktop UI framework. Wraith is the flagship case study: the real app that proves whether the framework is useful, maintainable, and visually strong enough.
+Otoe is a professional Python desktop UI framework. Its core promise is that a
+Python component tree can produce predictable state, layout, pixels, and input
+behavior without inheriting the mutation-heavy ergonomics of legacy desktop UI.
 
-Secondary case studies are allowed when they test generality without distracting from Wraith. A SaaS-style dashboard is useful because it proves Otoe's primitives can support a softer commercial product surface, not only a dense operational/security UI.
+Case studies are validation tools, not the product itself. Wraith validates a
+dense operational/security surface; the SaaS preview validates a softer
+commercial product surface; framework-neutral examples validate that Otoe can be
+used without knowing either app exists.
 
-The framework exists because Wraith needs a better UI layer now, but the bar is framework-quality from the beginning: modern component patterns, explicit data flow, typed widget contracts, predictable runtime behavior, and a developer experience closer to React/Solid than to legacy desktop UI.
+The current framework question is no longer whether signals, components,
+control flow, and HTML previews can work. They do. The next question is whether
+the same Otoe tree can leave the browser preview path and render through a real
+layout/paint boundary.
 
-The order matters. Otoe should be framework-first in architecture and Wraith-first in validation. It should solve real Wraith screens before chasing public-framework polish, but it should avoid Wraith-specific shortcuts that would make the core impossible to reuse.
+The order matters. Otoe should be framework-first in architecture and
+case-study-validated in practice. Wraith should continue to pressure-test the
+API, but the roadmap should not treat Wraith migration as the framework's next
+milestone.
 
-Wraith is the first case study. The goal is not to build a toy counter demo; it is to make screens like Wraith's `TopBar`, `ArsenalView`, app shell, overlays, runtime status, and mission workflows easier to express, test, and maintain than their Kivy equivalents.
+The immediate goal is a native renderer spike: Otoe tree -> layout boxes ->
+pixels -> hit-tested events. If that path works, CLI/devtools and app migration
+work become much more meaningful because they sit on top of a real desktop
+backend, not only an HTML preview.
 
 ---
 
 ## Roadmap Principles
 
-1. **Professional framework, Wraith case study.** Otoe's core API should stand on its own; Wraith proves whether it works under real product pressure.
-2. **Wraith-shaped, not Wraith-coupled.** Every major API decision must survive at least one Wraith-shaped example, but the core cannot import or assume Wraith internals.
+1. **Professional framework first.** Otoe's core API should stand on its own; case studies prove pressure, not ownership.
+2. **Case-study-shaped, not case-study-coupled.** Major API decisions should survive Wraith-shaped, SaaS-shaped, and framework-neutral examples, but the core cannot import or assume app internals.
 3. **Framework-quality from day one.** Even for personal use, the core needs clean contracts, tests, errors, and separation boundaries.
 4. **Runtime before syntax sugar.** Signals, owners, lifecycle, events, `Show`, and `For` come before any JSX-like transpiler.
 5. **Deterministic widget contracts.** Widgets declare `props`, `events`, and optional `primary_prop`; unknown props are errors.
 6. **No hidden event magic.** Handlers are classified by widget schema before data-prop reactivity.
-7. **No renderer lock-in too early.** The first runtime should mount into fake widgets before committing to Skia, Taffy, Kivy interop, or another backend.
-8. **Migration is incremental.** Otoe should be able to prove itself beside Wraith before replacing any Wraith screen.
+7. **Renderer boundary before renderer lock-in.** The spike may use Taffy and Skia, but public APIs should describe layout, paint, input, and accessibility contracts rather than one backend's quirks.
+8. **Migration is earned later.** Otoe should prove native layout, paint, and input before replacing any production app surface.
 
 ---
 
 ## Operating Model
 
-Phases 0-3 are Wraith-first internal R&D. They are successful if Otoe makes Wraith's UI easier to build, test, and improve. Public adoption, GitHub stars, conference talks, and community roadmap goals are not success criteria before Phase 6.
+Phases 0-2 are framework-first internal R&D. They are successful if Otoe proves
+that its component/runtime model can support real app surfaces, deterministic
+layout, rendered pixels, and input dispatch. Public adoption, GitHub stars,
+conference talks, and community roadmap goals are not success criteria before
+Phase 6.
 
 Otoe can start now, but the time budget must be explicit. Phase 1 is not a "small docs cleanup"; the fake-widget runtime with signals, computed values, effects, owners, mounting, events, `Show`, `For`, batching, and tests is a real implementation slice.
 
 Planning estimate:
 
-- **Phase 0:** 8-16 focused hours for ADR-002/ADR-003 and Wraith-shaped component sketches.
+- **Phase 0:** 8-16 focused hours for ADR-002/ADR-003 and case-study component sketches.
 - **Phase 1:** 40-60 focused hours for the pure runtime slice and tests.
-- **Phase 2:** 40-80 focused hours depending on renderer path.
-- **Phase 3:** 20-40 focused hours for the first Wraith surface demo once Phase 2 exists.
+- **Phase 2:** 40-80 focused hours for layout, paint, hit-testing, and the first headless native renderer spike.
+- **Phase 3:** 20-40 focused hours for an interactive native demo once Phase 2 exists.
 
 At 2-4 hours/week, Phase 1 is a multi-month calendar project. At 8-10 hours/week, it can become a 1-2 month slice. If those hours come from Wraith feature work, that is an explicit priority shift, not background work.
 
-Wraith remains the production app until an isolated Otoe surface proves equivalent behavior and better maintainability. Otoe should not replace a Wraith surface by default; replacement is earned by the Phase 3 comparison.
+Existing production apps remain unchanged until Otoe proves equivalent behavior
+and better maintainability through isolated native surfaces. Migration is a
+consumer decision after the renderer/runtime boundary works, not the current
+framework milestone.
 
 ---
 
@@ -135,26 +156,29 @@ Wraith remains the production app until an isolated Otoe surface proves equivale
 
 ### Current Sprint
 
-1. Review the Mission Exec live preview visually in a browser against the Wraith source.
-2. Tighten Mission Exec spacing, hierarchy, and interaction states until it feels better than the current Wraith UI.
-3. Compare a non-trivial Mission Exec change in Otoe versus the Wraith Kivy/front prototype and record the friction points. **Done for event timeline filtering; see `BENCHMARKS.md`.**
-4. Decide whether the next Wraith-shaped benchmark is approval-modal depth, runtime polling/recovery, or a full app-shell migration. **Approval-modal depth and runtime snapshot recovery done; full app-shell migration or renderer/layout spike is next.**
-5. Review the routed UI kit preview visually and decide whether `v0.0.3` is ready or needs a focused visual cleanup pass first.
-6. Add screenshot/GIF assets for the public README once the preview polish stabilizes.
-7. Keep snapshots plus live-render tests as the renderer contract while the backend is still moving.
+1. Write the renderer/layout boundary for `Native Renderer Spike 001`: tree input, style subset, layout output, paint output, hit-test output.
+2. Add a headless layout adapter for a small generic subset: `VStack`, `HStack`, `Text`, `Button`, `Input`, `Card`, padding, gap, fixed size, min/max, and flex.
+3. Add a headless paint adapter that can render boxes, text, backgrounds, borders, and radius to a PNG.
+4. Add a framework-neutral native demo surface that proves layout, state update, button dispatch, and rerender without using Wraith fixtures.
+5. Add hit-testing for coordinates -> mounted node -> event dispatch.
+6. Add deterministic tests for layout boxes, non-empty PNG output, and simulated click state changes.
+7. Document what the native spike supports, what it rejects, and what is deferred to windowing/accessibility.
 
 ---
 
 ## Phase 0 — Case Study and First Slice
 
-**Goal:** turn the ADR into the smallest buildable slice that can attack Wraith's UI pain immediately.
+**Goal:** turn the ADR into the smallest buildable slice that can attack real desktop UI pain immediately.
 
-Wraith already proves the domain. It can perform real recon and runtime work; the blocker is that the Kivy UI is too expensive to evolve and does not meet the product bar visually. Otoe work can start now, as long as the first slices stay isolated from Wraith's production runtime until they prove value.
+The early case studies proved the domain pressure: dense operational UI,
+commercial dashboard UI, overlays, routing, commands, keyboard handling, and
+stateful previews. The next slices must stay isolated from production apps until
+the native backend proves value.
 
 ### Scope
 
 - Keep `ADR-001` authoritative for component model, signals, lifecycle, node tree, and events.
-- Write Wraith-shaped pseudo-components for:
+- Write case-study pseudo-components for:
   - `TopBar`
   - `BaseScreen` / app shell
   - `ArsenalView`
@@ -175,12 +199,12 @@ Wraith already proves the domain. It can perform real recon and runtime work; th
 - Start a small prototype package once the first runtime slice is clear:
   - fake-widget mount first
   - visible demo second
-  - Wraith data adapter only after the demo works with fixtures
+  - production app adapters only after the demo works with fixtures
 
 ### Exit Criteria
 
 - At least 10 example components exist and read naturally.
-- `TopBar` and `ArsenalView` can be expressed without manual widget mutation, `bind(...)`, or layout bookkeeping in user code.
+- Dense dashboard and operational surfaces can be expressed without manual widget mutation, `bind(...)`, or layout bookkeeping in user code.
 - The public API for `Signal`, `Computed`, `Effect`, widget schema, events, `Show`, and `For` is stable enough to implement.
 - A first prototype path is chosen: either fake-widget runtime first, or a very thin visible adapter if that gets feedback faster.
 - The renderer decision is narrowed to one primary research path and one fallback path.
@@ -241,89 +265,94 @@ This phase starts immediately after the first Phase 0 API slice is coherent enou
 
 ## Phase 2 — Layout, Styling, and Renderer Spike
 
-**Goal:** prove that the runtime can create a visible desktop UI without compromising the API.
+**Goal:** prove that the runtime can produce deterministic layout, pixels, and
+hit-tested events without compromising the public component API.
 
 ### Scope
 
-- Choose initial renderer path:
+- Choose initial renderer path for the spike:
   - primary candidate: Taffy layout + Skia rendering
-  - fallback candidate: adapter layer over an existing Python UI backend for validation only
+  - fallback candidate: a small pure-Python layout/paint adapter for tests only
+- Define the renderer boundary:
+  - mounted tree input
+  - resolved style subset
+  - layout box output
+  - paint command output
+  - hit-test index output
+  - unsupported feature diagnostics
 - Implement a minimal layout bridge:
   - flex direction
   - gap
   - padding
   - width / height
   - min / max
-  - scroll container
+  - basic scroll container bounds
 - Implement a minimal widget catalog:
-  - `Window`
   - `VStack`
   - `HStack`
   - `Text`
   - `Button`
   - `Input`
-  - `ScrollView`
   - `Card` or `Panel`
+  - `ScrollView` bounds without full scrolling behavior
 - Styling baseline:
   - token dictionary
   - `className`
   - utility parser for the small Phase 2 subset
   - deterministic unsupported-class warnings
-- Input loop:
-  - click
-  - text input
-  - keyboard
-  - focus
+- Headless paint:
+  - backgrounds
+  - borders
+  - radius
+  - text
+  - simple clipping
+- Headless input:
+  - coordinate hit-testing
+  - click dispatch
+  - rerender after state change
+- Defer real windowing until the headless renderer is proven.
 
 ### Exit Criteria
 
-- A visible local demo renders without Kivy user-code patterns.
-- Props update from signals live.
-- Buttons and inputs dispatch through Otoe's event system.
-- Styling is expressive enough to build Wraith-like dense operational panels.
+- A framework-neutral demo renders to a non-empty PNG.
+- Layout boxes are deterministic and testable.
+- Props update from signals and produce a changed render tree.
+- A simulated click dispatches through Otoe's event system and updates state.
+- Styling is expressive enough to build both dense operational panels and calmer product dashboards.
 - Unsupported styling fails clearly instead of silently.
 
 ---
 
-## Phase 3 — Wraith Surface Demo
+## Phase 3 — Interactive Native Demo
 
-**Goal:** rebuild one real Wraith surface in Otoe and compare maintainability.
+**Goal:** turn the headless renderer spike into a small interactive native app
+that feels like a framework demo rather than a screenshot generator.
 
-This is the first product milestone. If this phase does not make Wraith feel materially better, Otoe is not succeeding, even if the internals are elegant.
+This is the first native product milestone. If this phase cannot handle state,
+layout, paint, input, focus, and rerender in one generic app surface, Otoe is
+not ready to talk about app migrations.
 
 ### Scope
 
-- Build a standalone Otoe demo of:
+- Build a standalone Otoe native demo of:
   - app shell
-  - top bar
-  - status bar
-  - `ArsenalView`
-  - mission cards
+  - toolbar
+  - cards/panels
+  - form controls
+  - data list or table
   - search
-  - tags
-  - pagination
   - empty/loading states
-- Use Wraith-like fixture data first.
-- Add an optional adapter to read real Wraith mission registry data once the standalone demo is stable.
-- Compare against current Kivy implementation:
-  - time to implement the same non-trivial UI change
-  - files touched for that change
-  - tests required to validate the change
-  - regressions or visual breakage introduced
-  - manual mutation points
-  - number of explicit bindings
-  - number of custom redraw handlers
-  - lines of UI code as a secondary metric only
-  - test readability
-- Run at least two change benchmarks against both implementations:
-  - add or modify a meaningful `ArsenalView` filter or visibility rule
-  - add a new mission-card state, top-bar indicator, or status treatment
+  - modal or popover
+- Add a minimal windowing adapter only after headless layout/paint/hit-testing passes.
+- Support click, keyboard, focus, and text input for the minimal widget subset.
+- Add app-level rerender scheduling that does not require user code to manage invalidation.
+- Compare the same app against the HTML preview only to verify behavior parity, not visual exactness.
 
 ### Exit Criteria
 
-- `ArsenalView` behavior matches Wraith's current contract.
-- UI code is materially smaller and clearer than the Kivy version.
-- Non-trivial UI changes are materially faster in Otoe than in Kivy, with fewer mutation points and clearer tests.
+- The demo runs outside a browser.
+- Button, input, modal, and list interactions work through the Otoe event system.
+- Non-trivial UI changes are materially faster than equivalent manual widget mutation patterns.
 - No screen-level canvas/redraw code is needed.
 - Tests can assert state and rendered structure without booting the full app.
 
@@ -333,7 +362,9 @@ This is the first product milestone. If this phase does not make Wraith feel mat
 
 **Goal:** make Otoe pleasant and reliable enough for repeated app development.
 
-This phase is where Otoe starts becoming more than a Wraith support library. The target is a small but coherent framework surface that another Python desktop app could use without knowing Wraith exists.
+This phase turns the native runtime into a usable framework surface. The target
+is a small but coherent Python desktop framework that another app can use
+without knowing any case-study context.
 
 ### Scope
 
@@ -346,17 +377,22 @@ This phase is where Otoe starts becoming more than a Wraith support library. The
   - mutation during mount
 - Documentation:
   - mental model
-  - Wraith migration examples
   - component cookbook
   - styling subset
+  - renderer/layout subset
   - event signatures
-- Dev server or preview runner.
+- CLI:
+  - `otoe dev`
+  - `otoe render`
+  - `otoe check`
+  - optional `otoe new`
 - Snapshot testing for mounted trees.
-- Optional watch mode for examples.
+- Optional watch mode for examples/previews.
 - Example corpus:
   - concise idiomatic components
-  - bad-to-good Kivy migration examples
-  - Wraith case-study examples
+  - native renderer examples
+  - HTML preview examples
+  - case-study examples
 
 ### Exit Criteria
 
@@ -366,24 +402,25 @@ This phase is where Otoe starts becoming more than a Wraith support library. The
 
 ---
 
-## Phase 5 — Wraith Migration Option
+## Phase 5 — Case Study Migration Option
 
-**Goal:** decide whether Otoe should become a real Wraith UI dependency.
+**Goal:** decide whether Otoe should become a real dependency for one existing
+app surface.
 
 ### Scope
 
-- Do not migrate Wraith wholesale.
-- Pick one low-risk Wraith surface after the standalone Otoe demo proves the UI/runtime model.
+- Do not migrate any app wholesale.
+- Pick one low-risk surface after the standalone native demo proves the UI/runtime model.
 - Keep service/runtime/data boundaries unchanged.
-- Build an adapter that lets Otoe screens consume Wraith services without importing Kivy.
-- Run Otoe and Kivy surfaces side by side where possible.
-- Preserve Wraith's operational behavior and tests.
+- Build an adapter that lets Otoe screens consume app services without importing the legacy UI backend.
+- Run Otoe and legacy surfaces side by side where possible.
+- Preserve operational behavior and tests.
 
 ### Exit Criteria
 
-- One Wraith surface can be implemented in Otoe without weakening runtime safety.
+- One real app surface can be implemented in Otoe without weakening runtime safety.
 - The migration reduces maintenance burden enough to justify dependency risk.
-- Wraith can still ship without Otoe if Otoe is not ready.
+- The app can still ship without Otoe if Otoe is not ready.
 
 ---
 
@@ -393,10 +430,10 @@ This phase is where Otoe starts becoming more than a Wraith support library. The
 
 ### Scope
 
-- Keep Wraith as the flagship app and regression suite.
-- Remove accidental Wraith assumptions from public APIs.
+- Keep case studies as regression suites.
+- Remove accidental app assumptions from public APIs.
 - Stabilize package structure and import paths.
-- Write non-Wraith examples:
+- Write framework-neutral examples:
   - dashboard app
   - settings/admin app
   - local database CRUD app
@@ -407,9 +444,9 @@ This phase is where Otoe starts becoming more than a Wraith support library. The
 
 ### Exit Criteria
 
-- At least three non-Wraith examples can be built without new framework primitives.
-- Public docs explain Otoe without referencing Wraith as required context.
-- The framework remains good for Wraith after generalization.
+- At least three framework-neutral examples can be built without new framework primitives.
+- Public docs explain Otoe without referencing any one case study as required context.
+- The framework remains useful for the original case studies after generalization.
 - The API feels like a Python-native relative of React/Solid, not a clone and not a Kivy wrapper.
 - LLM-generated examples, if tested, follow the schema/event/reactivity rules without special prompting.
 
@@ -418,18 +455,19 @@ This phase is where Otoe starts becoming more than a Wraith support library. The
 ## Non-Goals For Now
 
 - No JSX/transpiler in Phase 1.
-- No full Wraith rewrite until one Otoe surface proves better maintainability and equivalent behavior.
+- No full production app rewrite until one Otoe surface proves better maintainability and equivalent behavior.
 - No generic virtual DOM.
 - No event bubbling in Phase 1.
 - No broad Tailwind clone before a small utility subset works.
 - No custom animation system before layout, input, and lifecycle are stable.
-- No public branding push before a Wraith-shaped visual demo exists.
-- No public framework promises until Wraith proves the core under real use.
+- No public branding push before a native renderer demo exists.
+- No public framework stability promises until native layout, paint, input, and diagnostics are proven.
 
 ---
 
 ## Immediate Next Actions
 
-1. Review `preview/wraith.html`.
-2. Decide whether the next slice is static visual polish or a thin interactive backend.
-3. If static polish wins, generate preview HTML from `examples.wraith.preview` instead of maintaining the convenience artifact by hand.
+1. Draft `ADR-006` for the native renderer/layout boundary.
+2. Add the first headless layout adapter and deterministic box tests.
+3. Add the first headless paint adapter and non-empty PNG test.
+4. Add simulated hit-testing for click dispatch against a framework-neutral demo.
