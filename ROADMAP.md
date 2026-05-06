@@ -124,8 +124,10 @@ Wraith remains the production app until an isolated Otoe surface proves equivale
 - `FocusScope` added with live-preview Tab trapping and focus restoration for dialogs and popovers.
 - Keyed `For` now refreshes changed item data for existing keys while preserving stable keyed reorders.
 - Async event handler regression tests added for coroutine functions, coroutine-returning sync handlers, and running-loop dispatch.
+- Async event error regression tests added for no-loop and running-loop dispatch paths.
+- `otoe.ui` internals split into private helper, model, and keyboard modules while preserving public imports.
 - CI now builds release distributions and runs `twine check` on package metadata.
-- Baseline tests: `106 passed`.
+- Baseline tests: `108 passed`.
 
 ### Current Sprint
 

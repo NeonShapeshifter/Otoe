@@ -86,6 +86,33 @@ def test_async_event_handler_returns_task_inside_running_loop():
     assert events == ["done"]
 
 
+def test_async_event_handler_error_propagates_without_running_loop():
+    async def handle_click():
+        await asyncio.sleep(0)
+        raise RuntimeError("async failure")
+
+    widget = root_widget(mount(Button("Run", onClick=handle_click)))
+
+    with pytest.raises(RuntimeError, match="async failure"):
+        widget.trigger("onClick")
+
+
+def test_async_event_handler_error_is_observable_from_running_loop():
+    async def handle_click():
+        await asyncio.sleep(0)
+        raise RuntimeError("loop failure")
+
+    async def run_in_loop():
+        widget = root_widget(mount(Button("Run", onClick=handle_click)))
+        task = widget.trigger("onClick")
+
+        assert isinstance(task, asyncio.Task)
+        with pytest.raises(RuntimeError, match="loop failure"):
+            await task
+
+    asyncio.run(run_in_loop())
+
+
 def test_unknown_props_raise_developer_facing_error():
     with pytest.raises(UnknownPropError, match="unknown prop"):
         mount(Text("Hello", typo=True))

@@ -5,6 +5,10 @@
 - Fixed keyed `For` updates when an item keeps the same key but changes data.
 - Added async event handler regression coverage for coroutine functions,
   coroutine-returning sync handlers, and running-loop dispatch.
+- Added async event error regression coverage for no-loop and running-loop
+  dispatch paths.
+- Split `otoe.ui` internals into private helper, model, and keyboard modules
+  while preserving the public `otoe.ui` import surface.
 - Expanded CI to build the package and run `twine check` on generated
   distributions.
 

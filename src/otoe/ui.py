@@ -1,8 +1,40 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
+from ._ui_helpers import (
+    _active_class,
+    _as_node,
+    _has_value,
+    _list_value,
+    _multi_variant_class,
+    _slot_node,
+    _state_class,
+    _value,
+    _variant_class,
+    class_names,
+)
+from ._ui_keyboard import (
+    _focused_id,
+    _menu_key_down,
+    _select_option,
+    _select_option_key_down,
+    _select_trigger_key_down,
+    _submit_first_command,
+)
+from ._ui_models import (
+    Command,
+    CommandRegistry,
+    MenuItem,
+    NavRoute,
+    SelectOption,
+    TableColumn,
+    _filter_commands,
+    _normalize_column,
+    _normalize_menu_item,
+    _normalize_route,
+    _normalize_select_option,
+)
 from .component import component
 from .control import For, Show
 from .node import Node
@@ -17,95 +49,6 @@ from .widgets import (
     Text,
     VStack,
 )
-
-
-@dataclass(frozen=True)
-class TableColumn:
-    key: str
-    label: str
-    className: str | None = None
-
-
-@dataclass(frozen=True)
-class Command:
-    id: str
-    label: Any
-    description: Any = ""
-    group: Any = ""
-    shortcut: str | None = None
-    className: str | None = None
-
-
-@dataclass(frozen=True)
-class MenuItem:
-    id: str
-    label: Any
-    description: Any = None
-    shortcut: Any = None
-    tone: Any = "neutral"
-    disabled: bool = False
-    className: str | None = None
-
-
-@dataclass(frozen=True)
-class SelectOption:
-    value: str
-    label: Any
-    description: Any = None
-    tone: Any = "neutral"
-    disabled: bool = False
-    className: str | None = None
-
-
-class CommandRegistry:
-    def __init__(self, commands) -> None:
-        self._commands = tuple(_normalize_command(command) for command in _list_value(commands))
-
-    @property
-    def commands(self) -> list[Command]:
-        return list(self._commands)
-
-    def __iter__(self):
-        return iter(self._commands)
-
-    def visible(self, query: str) -> list[Command]:
-        return _filter_commands(self._commands, query)
-
-    def first(self, query: str = "") -> Command | None:
-        visible = self.visible(query)
-        return visible[0] if visible else None
-
-    def find(self, command_id: str) -> Command | None:
-        for command in self._commands:
-            if command.id == command_id:
-                return command
-        return None
-
-    def find_shortcut(self, key: str) -> Command | None:
-        normalized_key = _shortcut_key(key)
-        for command in self._commands:
-            if command.shortcut and _shortcut_key(command.shortcut) == normalized_key:
-                return command
-        return None
-
-
-@dataclass(frozen=True)
-class NavRoute:
-    id: str
-    label: Any
-    description: Any = None
-    badge: Any = None
-    tone: Any = "neutral"
-    className: str | None = None
-
-
-def class_names(*parts: Any) -> str:
-    names: list[str] = []
-    for part in parts:
-        if not part:
-            continue
-        names.extend(str(part).split())
-    return " ".join(dict.fromkeys(names))
 
 
 @component
@@ -615,121 +558,6 @@ def RouteView(
     )
 
 
-def _active_class(base: str, active, extra: str | None):
-    if is_reactive(active):
-        return computed(lambda: class_names(base, extra, "is-active" if active.value else None))
-    return class_names(base, extra, "is-active" if active else None)
-
-
-def _variant_class(base: str, variant, extra: str | None = None):
-    if is_reactive(variant) or is_reactive(extra):
-        return computed(lambda: class_names(base, f"is-{_value(variant)}", _value(extra)))
-    return class_names(base, f"is-{variant}", extra)
-
-
-def _multi_variant_class(base: str, variant, size, extra: str | None = None):
-    if is_reactive(variant) or is_reactive(size) or is_reactive(extra):
-        return computed(
-            lambda: class_names(
-                base,
-                f"is-{_value(variant)}",
-                f"is-{_value(size)}",
-                _value(extra),
-            )
-        )
-    return class_names(base, f"is-{variant}", f"is-{size}", extra)
-
-
-def _value(value):
-    if is_reactive(value):
-        return value.value
-    return value
-
-
-def _has_value(value: Any) -> bool:
-    if is_reactive(value):
-        return value.value is not None
-    return value is not None
-
-
-def _normalize_column(column: Any) -> TableColumn:
-    if isinstance(column, TableColumn):
-        return column
-    if isinstance(column, dict):
-        key = column["key"]
-        return TableColumn(
-            key=key,
-            label=column.get("label", key),
-            className=column.get("className"),
-        )
-    raise TypeError(f"DataTable columns must be TableColumn or dict; got {type(column).__name__}.")
-
-
-def _normalize_command(command: Any) -> Command:
-    if isinstance(command, Command):
-        return command
-    if isinstance(command, dict):
-        command_id = str(command["id"])
-        return Command(
-            id=command_id,
-            label=command.get("label", command_id),
-            description=command.get("description", ""),
-            group=command.get("group", ""),
-            shortcut=command.get("shortcut"),
-            className=command.get("className"),
-        )
-    raise TypeError(f"Commands must be Command or dict; got {type(command).__name__}.")
-
-
-def _normalize_menu_item(item: Any) -> MenuItem:
-    if isinstance(item, MenuItem):
-        return item
-    if isinstance(item, dict):
-        item_id = str(item["id"])
-        return MenuItem(
-            id=item_id,
-            label=item.get("label", item_id),
-            description=item.get("description"),
-            shortcut=item.get("shortcut"),
-            tone=item.get("tone", "neutral"),
-            disabled=bool(item.get("disabled", False)),
-            className=item.get("className"),
-        )
-    raise TypeError(f"Menu items must be MenuItem or dict; got {type(item).__name__}.")
-
-
-def _normalize_select_option(option: Any) -> SelectOption:
-    if isinstance(option, SelectOption):
-        return option
-    if isinstance(option, dict):
-        option_value = str(option["value"])
-        return SelectOption(
-            value=option_value,
-            label=option.get("label", option_value),
-            description=option.get("description"),
-            tone=option.get("tone", "neutral"),
-            disabled=bool(option.get("disabled", False)),
-            className=option.get("className"),
-        )
-    raise TypeError(f"Select options must be SelectOption or dict; got {type(option).__name__}.")
-
-
-def _normalize_route(route: Any) -> NavRoute:
-    if isinstance(route, NavRoute):
-        return route
-    if isinstance(route, dict):
-        route_id = str(route["id"])
-        return NavRoute(
-            id=route_id,
-            label=route.get("label", route_id),
-            description=route.get("description"),
-            badge=route.get("badge"),
-            tone=route.get("tone", "neutral"),
-            className=route.get("className"),
-        )
-    raise TypeError(f"Routes must be NavRoute or dict; got {type(route).__name__}.")
-
-
 def _render_cell(row: Any, column: TableColumn, render_cell) -> Node:
     if render_cell is not None:
         cell = render_cell(row, column)
@@ -744,20 +572,6 @@ def _row_value(row: Any, key: str) -> Any:
     if isinstance(row, dict):
         return row.get(key, "")
     return getattr(row, key)
-
-
-def _filter_commands(commands, query: str) -> list[Command]:
-    items = [_normalize_command(command) for command in _list_value(commands)]
-    needle = query.strip().lower()
-    if not needle:
-        return items
-    return [
-        command
-        for command in items
-        if needle in str(command.label).lower()
-        or needle in str(command.description).lower()
-        or needle in str(command.group).lower()
-    ]
 
 
 def _command_item(command: Command, on_select) -> Node:
@@ -857,16 +671,6 @@ def _select_option_button(option: SelectOption, options, value, on_change, on_op
     )
 
 
-def _submit_first_command(key: str, commands: list[Command], on_select) -> None:
-    if key != "Enter" or not commands:
-        return
-    on_select(commands[0].id)
-
-
-def _shortcut_key(key: str) -> str:
-    return key.strip().lower()
-
-
 def _matching_routes(routes: list[NavRoute], route_id: str) -> list[NavRoute]:
     return [route for route in routes if route.id == route_id]
 
@@ -876,41 +680,6 @@ def _render_route(route: NavRoute, render) -> Node:
     if not isinstance(view, Node):
         raise TypeError("RouteView render must return a Node.")
     return view
-
-
-def _slot_node(value, className: str) -> Node:
-    return VStack(_as_node(value), className=className)
-
-
-def _as_node(value) -> Node:
-    if isinstance(value, Node):
-        return value
-    return Text(value)
-
-
-def _list_value(value) -> list[Any]:
-    resolved = _value(value)
-    if resolved is None:
-        return []
-    return list(resolved)
-
-
-def _state_class(base: str, *, active=False, disabled=False, extra: str | None = None):
-    if is_reactive(active) or is_reactive(disabled) or is_reactive(extra):
-        return computed(
-            lambda: class_names(
-                base,
-                _value(extra),
-                "is-active" if _value(active) else None,
-                "is-disabled" if _value(disabled) else None,
-            )
-        )
-    return class_names(
-        base,
-        extra,
-        "is-active" if active else None,
-        "is-disabled" if disabled else None,
-    )
 
 
 def _selected_option(options: list[SelectOption], value: str) -> SelectOption | None:
@@ -930,135 +699,3 @@ def _select_description(option: SelectOption | None) -> Any:
     if option is None:
         return None
     return option.description
-
-
-def _select_option(option_value: str, disabled: bool, on_change, on_open_change) -> None:
-    if disabled:
-        return
-    on_change(option_value)
-    on_open_change(False)
-
-
-def _focused_id(focused, fallback: str) -> str:
-    if focused is None:
-        return fallback
-    value = _value(focused)
-    return fallback if value is None else str(value)
-
-
-def _menu_key_down(
-    key: str,
-    items: list[MenuItem],
-    focused_id: str,
-    on_select,
-    on_focus,
-    on_open_change,
-) -> None:
-    if key == "Escape":
-        _call_optional(on_open_change, False)
-        return
-    if key in {"ArrowDown", "ArrowUp", "Home", "End"}:
-        target = _next_menu_item(items, focused_id, key)
-        if target is not None:
-            _call_optional(on_focus, target.id)
-        return
-    if _is_submit_key(key):
-        target = _find_menu_item(items, focused_id)
-        if target is not None and not target.disabled:
-            on_select(target.id)
-            _call_optional(on_open_change, False)
-
-
-def _next_menu_item(items: list[MenuItem], focused_id: str, key: str) -> MenuItem | None:
-    enabled = [item for item in items if not item.disabled]
-    if not enabled:
-        return None
-    if key == "Home":
-        return enabled[0]
-    if key == "End":
-        return enabled[-1]
-    current_index = _item_index(enabled, focused_id, "id")
-    if current_index is None:
-        return enabled[0]
-    step = 1 if key == "ArrowDown" else -1
-    return enabled[(current_index + step) % len(enabled)]
-
-
-def _find_menu_item(items: list[MenuItem], item_id: str) -> MenuItem | None:
-    for item in items:
-        if item.id == item_id:
-            return item
-    return None
-
-
-def _select_trigger_key_down(
-    key: str,
-    options: list[SelectOption],
-    value: str,
-    open: bool,
-    on_change,
-    on_open_change,
-) -> None:
-    if key == "Escape":
-        on_open_change(False)
-        return
-    if _is_submit_key(key):
-        on_open_change(not open)
-        return
-    if key in {"ArrowDown", "ArrowUp", "Home", "End"}:
-        target = _next_select_option(options, value, key)
-        if target is not None:
-            on_change(target.value)
-        on_open_change(True)
-
-
-def _select_option_key_down(
-    key: str,
-    options: list[SelectOption],
-    option_value: str,
-    disabled: bool,
-    on_change,
-    on_open_change,
-) -> None:
-    if key == "Escape":
-        on_open_change(False)
-        return
-    if _is_submit_key(key):
-        _select_option(option_value, disabled, on_change, on_open_change)
-        return
-    if key in {"ArrowDown", "ArrowUp", "Home", "End"}:
-        target = _next_select_option(options, option_value, key)
-        if target is not None:
-            on_change(target.value)
-        on_open_change(True)
-
-
-def _next_select_option(options: list[SelectOption], value: str, key: str) -> SelectOption | None:
-    enabled = [option for option in options if not option.disabled]
-    if not enabled:
-        return None
-    if key == "Home":
-        return enabled[0]
-    if key == "End":
-        return enabled[-1]
-    current_index = _item_index(enabled, value, "value")
-    if current_index is None:
-        return enabled[0]
-    step = 1 if key == "ArrowDown" else -1
-    return enabled[(current_index + step) % len(enabled)]
-
-
-def _item_index(items: list[Any], value: str, attr: str) -> int | None:
-    for index, item in enumerate(items):
-        if getattr(item, attr) == value:
-            return index
-    return None
-
-
-def _is_submit_key(key: str) -> bool:
-    return key in {"Enter", " ", "Spacebar"}
-
-
-def _call_optional(callback, *args) -> None:
-    if callback is not None:
-        callback(*args)
