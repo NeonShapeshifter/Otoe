@@ -148,6 +148,38 @@ def render_native_png(
     return paint
 
 
+def hit_test_native(
+    layout: NativeLayout,
+    x: int,
+    y: int,
+    *,
+    event: str = "onClick",
+) -> LayoutBox | None:
+    containing = [box for box in layout.boxes if box.contains(x, y)]
+    if not containing:
+        return None
+
+    deepest = max(containing, key=lambda box: len(box.path))
+    for path in _ancestor_paths(deepest.path):
+        box = layout.by_path(path)
+        if event in box.events:
+            return box
+    return None
+
+
+def dispatch_native_click(
+    target: FakeWidget | MountedNode,
+    layout: NativeLayout,
+    x: int,
+    y: int,
+) -> Any:
+    hit = hit_test_native(layout, x, y, event="onClick")
+    if hit is None:
+        return None
+    widget = root_widget(target) if isinstance(target, MountedNode) else target
+    return _widget_by_path(widget, hit.path).trigger("onClick")
+
+
 def _layout_widget(
     widget: FakeWidget,
     *,
@@ -510,6 +542,20 @@ def _flatten(box: LayoutBox) -> list[LayoutBox]:
     for child in box.children:
         boxes.extend(_flatten(child))
     return boxes
+
+
+def _ancestor_paths(path: tuple[int, ...]) -> list[tuple[int, ...]]:
+    return [path[:index] for index in range(len(path), -1, -1)]
+
+
+def _widget_by_path(widget: FakeWidget, path: tuple[int, ...]) -> FakeWidget:
+    current = widget
+    for index in path:
+        try:
+            current = current.children[index]
+        except IndexError as exc:
+            raise KeyError(f"No widget exists at path {path!r}.") from exc
+    return current
 
 
 def _optional_string(value: Any) -> str | None:

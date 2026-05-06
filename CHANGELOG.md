@@ -20,6 +20,8 @@
   stacks, text, buttons, inputs, panels, and resolved style dimensions.
 - Added the first headless native paint adapter with deterministic rect/text
   commands and a stdlib PNG writer for non-empty image output.
+- Added native hit-testing and click dispatch that maps coordinates to mounted
+  event handlers and supports state-changing rerender flows.
 - Added `BENCHMARKS.md` to track concrete Otoe-vs-Wraith UI change friction.
 - Expanded CI to build the package and run `twine check` on generated
   distributions.
