@@ -158,9 +158,10 @@ framework milestone.
 - Native renderer spike support/rejection/deferred-work contract documented.
 - `NativeSurface` added as the headless renderer surface API for mount -> layout -> paint -> click -> rerender flows.
 - Headless `NativeSurface` focus and keyboard handling added for autofocus, click-to-focus, Tab traversal, focused keydown, button submit keys, and global shortcut payloads.
+- Headless controlled input text dispatch added through `NativeSurface.input_text(...)`.
 - `BENCHMARKS.md` added for concrete change-friction notes against Wraith/Kivy.
 - CI now builds release distributions and runs `twine check` on package metadata.
-- Baseline tests: `139 passed`.
+- Baseline tests: `142 passed`.
 
 ### Current Sprint
 
@@ -173,6 +174,7 @@ framework milestone.
 7. Document what the native spike supports, what it rejects, and what is deferred to windowing/accessibility. **Native spike support contract added.**
 8. Package the headless native renderer behind a framework-facing surface object so examples do not manually stitch mount/layout/paint/input. **`NativeSurface` added.**
 9. Add a headless focus and keyboard subset before windowing: autofocus, click-to-focus, Tab traversal, focused keydown, submit keys, and global shortcuts. **Initial `NativeSurface` support added.**
+10. Add controlled headless input text dispatch before windowing. **`NativeSurface.input_text(...)` added.**
 
 ---
 
@@ -324,6 +326,7 @@ hit-tested events without compromising the public component API.
   - focused keydown
   - button submit keys
   - global shortcut payloads
+  - controlled input text dispatch
 - Headless surface:
   - one object owns mounted tree, current layout, current paint, frame count, click dispatch, and PNG rendering
 - Defer real windowing until the headless renderer is proven.
@@ -336,6 +339,7 @@ hit-tested events without compromising the public component API.
 - A simulated click dispatches through Otoe's event system and updates state.
 - A headless surface API lets framework users render and dispatch input without manually wiring each renderer stage.
 - Focus and keyboard behavior can be tested without a window.
+- Controlled input changes can be tested without a browser.
 - Styling is expressive enough to build both dense operational panels and calmer product dashboards.
 - Unsupported styling fails clearly instead of silently.
 

@@ -120,9 +120,12 @@ The `NativeSurface` focus and keyboard subset supports:
 - `Enter`, space, and `Spacebar` activation for focused buttons.
 - `ShortcutScope` global key payload dispatch with the same `{key, ctrlKey,
   metaKey, altKey, shiftKey}` shape used by the live HTML preview backend.
+- Controlled input text dispatch through `NativeSurface.input_text(...)`, which
+  sends the new value to the focused or explicitly targeted `Input.onChange`
+  handler and refreshes the next headless frame.
 
-Text editing, pointer movement, IME, drag, wheel, gesture, and
-bubbling/capture semantics are deferred.
+Uncontrolled input mutation, text selection, pointer movement, IME, drag,
+wheel, gesture, and bubbling/capture semantics are deferred.
 
 ## Rejected For This Spike
 

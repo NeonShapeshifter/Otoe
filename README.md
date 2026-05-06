@@ -36,6 +36,7 @@ stable public framework or a production desktop renderer.
 - Headless native focus and keyboard handling for autofocus, click-to-focus,
   Tab traversal, focused keydown handlers, button submit keys, and global
   shortcut payloads.
+- Headless controlled input text dispatch through `NativeSurface.input_text(...)`.
 
 ## What Is Not Ready Yet
 

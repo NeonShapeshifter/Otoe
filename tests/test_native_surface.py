@@ -218,3 +218,46 @@ def test_native_surface_global_key_down_matches_live_preview_shape():
             "shiftKey": False,
         },
     ]
+
+
+def test_native_surface_input_text_dispatches_change_and_refreshes():
+    value = signal("")
+    surface = NativeSurface(
+        Input(value=value, autoFocus=True, onChange=lambda next_value: value.set(next_value))
+    )
+
+    surface.input_text("relay")
+
+    assert value.value == "relay"
+    assert surface.box(()).text == "relay"
+
+
+def test_native_surface_input_text_can_target_an_unfocused_input():
+    value = signal("")
+    surface = NativeSurface(
+        VStack(
+            Button("Run", onClick=lambda: None),
+            Input(value=value, onChange=lambda next_value: value.set(next_value)),
+            padding=4,
+            gap=4,
+        )
+    )
+
+    surface.input_text("search", path=(1,))
+
+    assert surface.focused_path == (1,)
+    assert value.value == "search"
+    assert surface.box((1,)).text == "search"
+
+
+def test_native_surface_input_text_rejects_non_input_focus():
+    surface = NativeSurface(Button("Run", onClick=lambda: None))
+
+    surface.focus(())
+
+    try:
+        surface.input_text("nope")
+    except KeyError as exc:
+        assert "No enabled native input" in str(exc)
+    else:
+        raise AssertionError("Expected input_text to reject non-input focus.")

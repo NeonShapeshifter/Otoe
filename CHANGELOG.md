@@ -9,6 +9,8 @@
 - Added headless `NativeSurface` focus and keyboard handling: autofocus,
   click-to-focus, Tab traversal, focused `onKeyDown`, button submit keys, and
   global shortcut payload dispatch.
+- Added headless `NativeSurface.input_text(...)` dispatch for controlled input
+  `onChange` flows.
 - Fixed keyed `For` updates when an item keeps the same key but changes data.
 - Added async event handler regression coverage for coroutine functions,
   coroutine-returning sync handlers, and running-loop dispatch.
