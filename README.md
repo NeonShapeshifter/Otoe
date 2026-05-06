@@ -122,7 +122,7 @@ tree = mount(Counter())
 Otoe is intentionally split into layers:
 
 - **Core runtime:** nodes, components, signals, effects, events, owners, control flow.
-- **Renderer boundary:** fake widgets, HTML preview, and an early headless native layout spike.
+- **Renderer boundary:** fake widgets, HTML preview, and an early headless native layout/paint spike.
 - **Style system:** portable style representation and CSS preview adapter.
 - **UI kits:** current `otoe.ui` primitives, growing toward libraries inspired by systems like shadcn or Horizon UI.
 - **Case studies:** Wraith validates dense operational UI; SaaS validates softer product UI.

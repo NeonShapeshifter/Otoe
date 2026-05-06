@@ -18,6 +18,8 @@
 - Added ADR-006 for the native renderer/layout boundary.
 - Added the first headless native layout adapter with deterministic boxes for
   stacks, text, buttons, inputs, panels, and resolved style dimensions.
+- Added the first headless native paint adapter with deterministic rect/text
+  commands and a stdlib PNG writer for non-empty image output.
 - Added `BENCHMARKS.md` to track concrete Otoe-vs-Wraith UI change friction.
 - Expanded CI to build the package and run `twine check` on generated
   distributions.

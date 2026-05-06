@@ -152,15 +152,16 @@ framework milestone.
 - Mission Exec remote snapshot recovery added as a third Wraith/Kivy benchmark for runtime reattach, restored logs, elapsed state, and pending approval state.
 - ADR-006 native renderer/layout boundary drafted.
 - First headless native layout adapter added with deterministic boxes for stacks, text, buttons, inputs, panels, resolved dimensions, and reactive prop updates.
+- First headless native paint adapter added with deterministic rect/text commands and stdlib PNG output.
 - `BENCHMARKS.md` added for concrete change-friction notes against Wraith/Kivy.
 - CI now builds release distributions and runs `twine check` on package metadata.
-- Baseline tests: `117 passed`.
+- Baseline tests: `121 passed`.
 
 ### Current Sprint
 
 1. Write the renderer/layout boundary for `Native Renderer Spike 001`: tree input, style subset, layout output, paint output, hit-test output. **ADR-006 drafted.**
 2. Add a headless layout adapter for a small generic subset: `VStack`, `HStack`, `Text`, `Button`, `Input`, `Card`/`Panel`, padding, gap, fixed size, min/max, and flex. **Initial deterministic adapter added.**
-3. Add a headless paint adapter that can render boxes, text, backgrounds, borders, and radius to a PNG.
+3. Add a headless paint adapter that can render boxes, text, backgrounds, borders, and radius to a PNG. **Initial command/PNG adapter added.**
 4. Add a framework-neutral native demo surface that proves layout, state update, button dispatch, and rerender without using Wraith fixtures.
 5. Add hit-testing for coordinates -> mounted node -> event dispatch.
 6. Add deterministic tests for layout boxes, non-empty PNG output, and simulated click state changes.
@@ -469,7 +470,7 @@ app surface.
 
 ## Immediate Next Actions
 
-1. Draft `ADR-006` for the native renderer/layout boundary.
-2. Add the first headless layout adapter and deterministic box tests.
-3. Add the first headless paint adapter and non-empty PNG test.
+1. Draft `ADR-006` for the native renderer/layout boundary. **Done.**
+2. Add the first headless layout adapter and deterministic box tests. **Done.**
+3. Add the first headless paint adapter and non-empty PNG test. **Done.**
 4. Add simulated hit-testing for click dispatch against a framework-neutral demo.

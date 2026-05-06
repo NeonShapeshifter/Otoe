@@ -9,7 +9,18 @@ from .errors import (
 from .html import render_html
 from .html_live import LiveEvent, LiveHtmlRenderer
 from .mount import FakeWidget, MountedNode, mount, root_widget, unmount
-from .native import LayoutBox, NativeLayout, NativeLayoutError, layout_native
+from .native import (
+    LayoutBox,
+    NativeLayout,
+    NativeLayoutError,
+    NativePaint,
+    NativePaintError,
+    PaintCommand,
+    layout_native,
+    paint_native,
+    render_native_png,
+    write_native_png,
+)
 from .node import Node, Widget
 from .reactive import Computed, Effect, Signal, computed, effect, signal
 from .scheduler import batch
@@ -85,12 +96,16 @@ __all__ = [
     "MenuItem",
     "NativeLayout",
     "NativeLayoutError",
+    "NativePaint",
+    "NativePaintError",
     "NavItem",
     "NavRoute",
     "Node",
     "OtoeError",
     "Panel",
+    "PaintCommand",
     "render_html",
+    "render_native_png",
     "RouteView",
     "ScrollView",
     "ShortcutScope",
@@ -128,10 +143,12 @@ __all__ = [
     "mount",
     "on_cleanup",
     "on_mount",
+    "paint_native",
     "root_widget",
     "signal",
     "snapshot",
     "snapshot_text",
     "template",
     "unmount",
+    "write_native_png",
 ]
