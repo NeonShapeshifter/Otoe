@@ -4,6 +4,7 @@ from otoe import (
     Input,
     NativeSurface,
     ShortcutScope,
+    Show,
     Text,
     VStack,
     css,
@@ -60,16 +61,41 @@ def test_native_surface_click_dispatches_and_refreshes_after_state_change(tmp_pa
     assert before.read_bytes() != after.read_bytes()
 
 
-def test_native_surface_refresh_captures_external_signal_updates():
+def test_native_surface_auto_refreshes_external_signal_updates():
     label = signal("A")
     surface = NativeSurface(VStack(Text(label), padding=4))
     initial_frame = surface.frame
 
     label.set("AAAA")
-    surface.refresh()
 
-    assert surface.frame == initial_frame + 1
     assert surface.box((0,)).text == "AAAA"
+    assert surface.frame == initial_frame + 1
+
+    current_frame = surface.frame
+    assert surface.layout.by_path((0,)).text == "AAAA"
+    assert surface.frame == current_frame
+
+
+def test_native_surface_auto_refreshes_external_control_flow_updates():
+    visible = signal(False)
+    surface = NativeSurface(
+        VStack(
+            Show(
+                Text("Visible"),
+                when=visible,
+                fallback=Text("Hidden"),
+            ),
+            padding=4,
+        )
+    )
+
+    assert surface.box((0, 0)).text == "Hidden"
+    initial_frame = surface.frame
+
+    visible.set(True)
+
+    assert surface.box((0, 0)).text == "Visible"
+    assert surface.frame == initial_frame + 1
 
 
 def test_native_surface_accepts_existing_mounted_node():

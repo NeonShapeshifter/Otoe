@@ -36,9 +36,10 @@ surface.render_png("next-frame.png")
 ```
 
 `NativeSurface` keeps the current `layout`, `paint`, and `frame` count, exposes
-`box(path)` for deterministic tests, tracks a focused path, and refreshes
-layout/paint after click or keyboard dispatch. It is still headless; it does
-not create windows or run an OS event loop.
+`box(path)` for deterministic tests, tracks a focused path, refreshes
+layout/paint after click or keyboard dispatch, and lazily refreshes when
+reactive prop or control-flow updates mutate the mounted fake-widget tree. It
+is still headless; it does not create windows or run an OS event loop.
 
 The native spike consumes `MountedNode` or `FakeWidget` trees. Components,
 `Show`, and `For` are already resolved by `mount(...)`, so the renderer only
@@ -113,6 +114,9 @@ The input spike supports click dispatch:
   refreshes layout/paint for the next headless frame.
 - Low-level callers own rerendering by running layout/paint again after state
   changes.
+- `NativeSurface.layout`, `NativeSurface.paint`, and `NativeSurface.box(...)`
+  lazily refresh if external signal updates changed reactive props or
+  `Show`/`For` child structure outside direct surface events.
 
 The `NativeSurface` focus and keyboard subset supports:
 

@@ -160,9 +160,10 @@ framework milestone.
 - Headless `NativeSurface` focus and keyboard handling added for autofocus, click-to-focus, Tab traversal, focused keydown, button submit keys, and global shortcut payloads.
 - Headless controlled input text dispatch added through `NativeSurface.input_text(...)`.
 - Framework-neutral native task board demo added for app shell, search, filtered list, empty state, modal state, shortcuts, and PNG frame output.
+- Lazy `NativeSurface` auto-refresh added for external reactive prop and control-flow updates.
 - `BENCHMARKS.md` added for concrete change-friction notes against Wraith/Kivy.
 - CI now builds release distributions and runs `twine check` on package metadata.
-- Baseline tests: `147 passed`.
+- Baseline tests: `148 passed`.
 
 ### Current Sprint
 
@@ -177,6 +178,7 @@ framework milestone.
 9. Add a headless focus and keyboard subset before windowing: autofocus, click-to-focus, Tab traversal, focused keydown, submit keys, and global shortcuts. **Initial `NativeSurface` support added.**
 10. Add controlled headless input text dispatch before windowing. **`NativeSurface.input_text(...)` added.**
 11. Add a framework-neutral native app demo with shell, search, list, empty state, modal, and shortcuts. **Native task board demo added.**
+12. Add lazy invalidation so external reactive updates refresh `NativeSurface` without manual `refresh()`. **Added for reactive props and control-flow tree changes.**
 
 ---
 
@@ -339,6 +341,7 @@ hit-tested events without compromising the public component API.
 - A framework-neutral app-shaped demo exercises search, list filtering, empty state, modal state, shortcuts, and multiple frames.
 - Layout boxes are deterministic and testable.
 - Props update from signals and produce a changed render tree.
+- External signal and control-flow updates invalidate the headless surface without manual app code.
 - A simulated click dispatches through Otoe's event system and updates state.
 - A headless surface API lets framework users render and dispatch input without manually wiring each renderer stage.
 - Focus and keyboard behavior can be tested without a window.

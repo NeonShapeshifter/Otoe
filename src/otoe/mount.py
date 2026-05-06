@@ -19,12 +19,19 @@ class FakeWidget:
         self.props: dict[str, Any] = {}
         self.events: dict[str, Callable[..., Any]] = {}
         self.children: list["FakeWidget"] = []
+        self.revision = 0
 
     def set_prop(self, name: str, value: Any) -> None:
+        missing = object()
+        previous = self.props.get(name, missing)
+        if previous is not missing and previous == value:
+            return
         self.props[name] = value
+        self.revision += 1
 
     def set_event(self, name: str, handler: Callable[..., Any]) -> None:
         self.events[name] = handler
+        self.revision += 1
 
     def trigger(self, name: str, *args: Any) -> Any:
         if name not in self.events:

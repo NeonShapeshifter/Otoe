@@ -39,6 +39,8 @@ stable public framework or a production desktop renderer.
 - Headless controlled input text dispatch through `NativeSurface.input_text(...)`.
 - Framework-neutral native task board demo with search, filtered rows, empty
   state, modal state, shortcuts, and PNG frame output.
+- Lazy `NativeSurface` refresh when reactive props or control-flow branches
+  change outside direct surface events.
 
 ## What Is Not Ready Yet
 

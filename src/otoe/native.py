@@ -100,6 +100,7 @@ class NativeSurface:
         )
         self._layout: NativeLayout | None = None
         self._paint: NativePaint | None = None
+        self._tree_revision: tuple[Any, ...] | None = None
         self.refresh()
         self.focused_path = self._first_autofocus_path()
 
@@ -117,15 +118,13 @@ class NativeSurface:
 
     @property
     def layout(self) -> NativeLayout:
-        if self._layout is None:
-            self.refresh()
+        self._ensure_fresh()
         assert self._layout is not None
         return self._layout
 
     @property
     def paint(self) -> NativePaint:
-        if self._paint is None:
-            self.refresh()
+        self._ensure_fresh()
         assert self._paint is not None
         return self._paint
 
@@ -145,6 +144,7 @@ class NativeSurface:
             strict_styles=self.strict_styles,
         )
         self._paint = paint_native(self._layout, background=self.background)
+        self._tree_revision = _tree_revision(_surface_root_widget(self._target))
         self._sync_focus_after_refresh()
         self.frame += 1
         return self._paint
@@ -263,7 +263,13 @@ class NativeSurface:
             unmount(self._mounted)
         self._layout = None
         self._paint = None
+        self._tree_revision = None
         self.focused_path = None
+
+    def _ensure_fresh(self) -> None:
+        current_revision = _tree_revision(_surface_root_widget(self._target))
+        if self._layout is None or self._paint is None or current_revision != self._tree_revision:
+            self.refresh()
 
     def _sync_focus_after_refresh(self) -> None:
         if self.focused_path is None:
@@ -482,6 +488,14 @@ def _walk_widgets(widget: FakeWidget) -> list[FakeWidget]:
     for child in widget.children:
         widgets.extend(_walk_widgets(child))
     return widgets
+
+
+def _tree_revision(widget: FakeWidget) -> tuple[Any, ...]:
+    return (
+        id(widget),
+        widget.revision,
+        tuple(_tree_revision(child) for child in widget.children),
+    )
 
 
 def _layout_widget(
