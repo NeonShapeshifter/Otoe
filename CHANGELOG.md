@@ -24,6 +24,8 @@
   event handlers and supports state-changing rerender flows.
 - Added a framework-neutral native counter demo proving state -> layout ->
   paint -> input -> state without Wraith fixtures.
+- Documented the native renderer spike support matrix, explicit rejections,
+  and deferred backend work.
 - Added `BENCHMARKS.md` to track concrete Otoe-vs-Wraith UI change friction.
 - Expanded CI to build the package and run `twine check` on generated
   distributions.

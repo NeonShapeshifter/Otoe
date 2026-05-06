@@ -155,6 +155,7 @@ framework milestone.
 - First headless native paint adapter added with deterministic rect/text commands and stdlib PNG output.
 - Native hit-testing and click dispatch added for coordinate -> mounted event handler -> state update flows.
 - Framework-neutral native counter demo added for state -> layout -> paint -> input -> state.
+- Native renderer spike support/rejection/deferred-work contract documented.
 - `BENCHMARKS.md` added for concrete change-friction notes against Wraith/Kivy.
 - CI now builds release distributions and runs `twine check` on package metadata.
 - Baseline tests: `128 passed`.
@@ -167,7 +168,7 @@ framework milestone.
 4. Add a framework-neutral native demo surface that proves layout, state update, button dispatch, and rerender without using Wraith fixtures. **Native counter demo added.**
 5. Add hit-testing for coordinates -> mounted node -> event dispatch. **Initial click dispatch added.**
 6. Add deterministic tests for layout boxes, non-empty PNG output, and simulated click state changes. **Initial coverage added.**
-7. Document what the native spike supports, what it rejects, and what is deferred to windowing/accessibility.
+7. Document what the native spike supports, what it rejects, and what is deferred to windowing/accessibility. **Native spike support contract added.**
 
 ---
 

@@ -76,3 +76,6 @@ backend changes or fails, Otoe's renderer contract can survive.
 The first implementation should ship with tests for deterministic layout boxes,
 non-empty image output, and simulated click dispatch. Only after that should
 Otoe add a windowing adapter.
+
+The current implemented support matrix lives in `NATIVE_RENDERER_SPIKE.md` so
+the ADR can stay focused on the architectural decision while the spike evolves.

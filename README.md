@@ -29,10 +29,12 @@ stable public framework or a production desktop renderer.
 - Live autofocus support for command overlays and other focused inputs.
 - Wraith-shaped and SaaS-shaped case studies using the same UI primitives.
 - UI kit kitchen-sink preview for validating primitives outside one product shape.
+- Headless native layout, paint, PNG output, hit-testing, and click dispatch
+  for the first renderer spike.
 
 ## What Is Not Ready Yet
 
-- Native desktop rendering.
+- Native windows or production desktop rendering.
 - GPU rendering, layout engine integration, or accessibility tree output.
 - Stable public API guarantees.
 - Full component library or shadcn/Horizon-style UI kit.
@@ -96,6 +98,15 @@ Then open <http://127.0.0.1:8768>. Use the sidebar, command launcher,
 `Ctrl+K`/`Meta+K`, command search, Enter key, `Escape`, and single-key command
 shortcuts to verify the live command overlay and route switching.
 
+Generate the framework-neutral native counter PNG frames:
+
+```bash
+PYTHONPATH=src:. python -m examples.native.counter_demo
+```
+
+This writes `preview/native/native_counter_before.png` and
+`preview/native/native_counter_after.png`.
+
 ## Tiny Example
 
 ```python
@@ -138,6 +149,7 @@ Otoe is intentionally split into layers:
 - `tests/` - runtime and preview regression tests.
 - `ADR-*.md` - design decisions.
 - `BENCHMARKS.md` - concrete Otoe-vs-Wraith UI change benchmarks.
+- `NATIVE_RENDERER_SPIKE.md` - current native renderer support and deferred work.
 - `ROADMAP.md` - current status and phase plan.
 
 ## Fixture Data
