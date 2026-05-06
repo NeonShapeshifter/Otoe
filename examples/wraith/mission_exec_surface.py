@@ -31,6 +31,7 @@ def MissionExecSurface(
     on_clear,
     on_export,
     on_simulate,
+    on_recover_snapshot,
 ):
     visible_lines = computed(lambda: _visible_lines(log_lines.value, active_filter.value))
     visible_events = computed(lambda: _visible_events(events.value, active_event_filter.value))
@@ -135,6 +136,12 @@ def MissionExecSurface(
                                 variant="ghost",
                                 className="probe-button approval-queue-button",
                                 onClick=on_request_approval,
+                            ),
+                            ActionButton(
+                                "RECOVER SNAPSHOT",
+                                variant="ghost",
+                                className="probe-button recovery-button",
+                                onClick=on_recover_snapshot,
                             ),
                             className="probe-actions",
                             gap=8,

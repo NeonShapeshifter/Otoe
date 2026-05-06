@@ -13,6 +13,8 @@
   recorded Wraith/Kivy change benchmark.
 - Added live Mission Exec combo approval modal benchmark with approve and deny
   flows using existing dialog/focus primitives.
+- Added live Mission Exec remote snapshot recovery benchmark with restored
+  telemetry, runtime status, elapsed time, and pending approval state.
 - Added `BENCHMARKS.md` to track concrete Otoe-vs-Wraith UI change friction.
 - Expanded CI to build the package and run `twine check` on generated
   distributions.

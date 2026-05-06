@@ -31,6 +31,7 @@ def test_wraith_mission_exec_preview_contains_extracted_surface():
     assert "exec-event-filters" in html
     assert "QUEUE APPROVAL" in html
     assert "SIMULATE FRAME" in html
+    assert "RECOVER SNAPSHOT" in html
     assert "PREFLIGHT" in html
     assert "ABORT MISSION" in html
     assert "ui-card is-default exec-terminal-panel" in html
@@ -97,6 +98,30 @@ def test_wraith_mission_exec_live_approval_modal_deny_flow():
     assert "ABORTED" in html
     assert "Approval denied for &#x27;pivot-auth&#x27;. Aborting combo." in html
     assert "Combo step pivot-auth was denied." in html
+    assert "Operator approval required" not in html
+
+
+def test_wraith_mission_exec_live_recovers_remote_snapshot_with_pending_approval():
+    app = MissionExecLivePreview()
+    html = app.render_fragment()
+
+    html = app.dispatch_event(_button_click_id(html, "RECOVER SNAPSHOT"))
+
+    assert "AWAITING APPROVAL" in html
+    assert "00:03:04" in html
+    assert "remote line one: runtime host reattached" in html
+    assert "remote line two: combo step pivot-escalate waiting for approval" in html
+    assert "Remote snapshot recovered" in html
+    assert "Runtime host snapshot restored output and approval state." in html
+    assert "Recovered combo step &#x27;pivot-escalate&#x27; is waiting for operator approval." in html
+    assert "Runtime host snapshot arrived after UI reconnect" in html
+    assert "Recovered approval gate for pivot-escalate" in html
+    assert "ui-dialog-backdrop" in html
+
+    html = app.dispatch_event(_button_click_id(html, "APPROVE STEP"))
+
+    assert "Approval granted for &#x27;pivot-escalate&#x27;." in html
+    assert "Combo step pivot-escalate may continue." in html
     assert "Operator approval required" not in html
 
 

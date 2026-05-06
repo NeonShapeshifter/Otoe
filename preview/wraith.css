@@ -664,7 +664,7 @@ input {
 
 .probe-actions {
   align-self: center;
-  min-width: 170px;
+  min-width: 190px;
 }
 
 .exec-probe-main {
@@ -730,6 +730,12 @@ input {
   color: var(--accent);
 }
 
+.recovery-button {
+  background: rgba(84, 199, 184, 0.08);
+  border-color: rgba(84, 199, 184, 0.34);
+  color: var(--info);
+}
+
 .probe-button:hover,
 .probe-button:focus-visible {
   background: #6ee1d1;
@@ -740,6 +746,12 @@ input {
 .approval-queue-button:focus-visible {
   background: rgba(240, 200, 102, 0.14);
   border-color: rgba(240, 200, 102, 0.5);
+}
+
+.recovery-button:hover,
+.recovery-button:focus-visible {
+  background: rgba(84, 199, 184, 0.16);
+  border-color: rgba(84, 199, 184, 0.52);
 }
 
 .ui-dialog-backdrop {

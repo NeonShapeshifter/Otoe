@@ -130,3 +130,76 @@ shape.
 The next benchmark should test runtime polling/recovery, because that is where
 Wraith's real mission execution host and remote snapshot behavior become harder
 than local component state.
+
+## Benchmark 003 - Mission Exec Remote Snapshot Recovery
+
+**Date:** May 5, 2026
+**Surface:** Wraith Mission Exec
+**Change:** simulate reconnecting to a remote mission runtime, apply a recovered
+snapshot, restore output lines and elapsed time, and reopen any pending combo
+approval gate.
+
+### Otoe Implementation
+
+Touched production-preview code:
+
+- `examples/wraith/mission_exec_surface.py`
+- `examples/wraith/mission_exec_live_preview.py`
+- `examples/wraith/mission_exec_preview.py`
+- `preview/wraith.css`
+
+Behavioral shape:
+
+- Add one `RECOVER SNAPSHOT` runtime action beside live frame simulation.
+- Apply a snapshot object with `active`, `status`, `elapsed_seconds`,
+  `output_lines`, and `pending_approval`.
+- Replace visible telemetry with recovered remote output lines.
+- Restore elapsed time from the snapshot.
+- Reopen the existing approval dialog from recovered pending approval state.
+- Append recovery and approval-gate events to the timeline.
+- Add a live regression test proving the recovered dialog can be approved and
+  cleared through the same approval flow as a locally queued gate.
+
+This benchmark is intentionally still a preview simulation, not a real remote
+host adapter. The useful signal is that the surface does not need custom widget
+reconstruction for the recovered state: the snapshot updates signals, and the
+same terminal, status panel, timeline, probe, and modal projections rerender.
+
+### Wraith/Kivy Equivalent
+
+Current relevant files:
+
+- `wraith/src/services/mission_execution.py`
+- `wraith/src/screens/mission_exec.py`
+
+The current Wraith runtime has the real domain behavior in
+`RemoteMissionExecutionController._apply_snapshot`,
+`_sync_pending_approval`, `_recover_remote_snapshot`, and
+`_handle_remote_poll_failure`. The screen restoration path is in
+`MissionExec._restore_active_execution`.
+
+The Kivy implementation has to coordinate several mutable UI surfaces during
+reattach:
+
+- Replace terminal output lines.
+- Restore log and execution ids.
+- Restore status and start/elapsed timer state.
+- Rebuild pending approval status and modal state.
+- Rehydrate event timeline from runtime messages.
+- Continue or stop polling depending on remote `active` and terminal status.
+
+That complexity is legitimate because Wraith owns the real remote process,
+but the UI state is spread across screen attributes, modal references, output
+widgets, timeline widgets, labels, and controller callbacks.
+
+### Result
+
+Otoe wins the preview-level recovery benchmark on state projection. The same
+signals that power local interactions also accept recovered remote state, so
+the UI can rehydrate without a separate imperative rebuild path. This does not
+mean Otoe is ready to replace Wraith's execution controller; it means the
+surface API is compatible with the shape of Wraith's remote snapshots.
+
+The next meaningful test should either wrap this preview in a broader Wraith
+app shell, or spike the renderer/layout boundary so the framework can start
+answering native desktop constraints instead of only HTML-preview ergonomics.

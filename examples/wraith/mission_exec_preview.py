@@ -35,6 +35,7 @@ def build_preview_html() -> str:
             on_clear=lambda: None,
             on_export=lambda: None,
             on_simulate=lambda: None,
+            on_recover_snapshot=lambda: None,
         )
     )
     body = render_html(surface, pretty=True, indent=4)

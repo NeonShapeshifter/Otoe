@@ -128,16 +128,17 @@ Wraith remains the production app until an isolated Otoe surface proves equivale
 - `otoe.ui` internals split into private helper, model, and keyboard modules while preserving public imports.
 - Mission Exec event timeline severity filter added as the first recorded Otoe-vs-Wraith change benchmark.
 - Mission Exec combo approval modal added as a second Wraith/Kivy benchmark for overlays, focus scope, and critical action state.
+- Mission Exec remote snapshot recovery added as a third Wraith/Kivy benchmark for runtime reattach, restored logs, elapsed state, and pending approval state.
 - `BENCHMARKS.md` added for concrete change-friction notes against Wraith/Kivy.
 - CI now builds release distributions and runs `twine check` on package metadata.
-- Baseline tests: `111 passed`.
+- Baseline tests: `112 passed`.
 
 ### Current Sprint
 
 1. Review the Mission Exec live preview visually in a browser against the Wraith source.
 2. Tighten Mission Exec spacing, hierarchy, and interaction states until it feels better than the current Wraith UI.
 3. Compare a non-trivial Mission Exec change in Otoe versus the Wraith Kivy/front prototype and record the friction points. **Done for event timeline filtering; see `BENCHMARKS.md`.**
-4. Decide whether the next Wraith-shaped benchmark is approval-modal depth, runtime polling/recovery, or a full app-shell migration. **Approval-modal depth done; runtime polling/recovery is next.**
+4. Decide whether the next Wraith-shaped benchmark is approval-modal depth, runtime polling/recovery, or a full app-shell migration. **Approval-modal depth and runtime snapshot recovery done; full app-shell migration or renderer/layout spike is next.**
 5. Review the routed UI kit preview visually and decide whether `v0.0.3` is ready or needs a focused visual cleanup pass first.
 6. Add screenshot/GIF assets for the public README once the preview polish stabilizes.
 7. Keep snapshots plus live-render tests as the renderer contract while the backend is still moving.

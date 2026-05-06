@@ -71,6 +71,7 @@ class MissionExecLivePreview:
                 on_clear=self._clear,
                 on_export=self._export,
                 on_simulate=self._simulate_frame,
+                on_recover_snapshot=self._recover_snapshot,
             )
         )
 
@@ -179,6 +180,88 @@ class MissionExecLivePreview:
             message,
             frame=frame,
         )
+
+    def _recover_snapshot(self) -> None:
+        snapshot = {
+            "active": True,
+            "execution_kind": "combo",
+            "status": "RUNNING",
+            "elapsed_seconds": 184,
+            "output_lines": [
+                "remote line one: runtime host reattached",
+                "remote line two: combo step pivot-escalate waiting for approval",
+                "remote line three: bridge spool heartbeat ok",
+            ],
+            "pending_approval": {
+                "approval_id": "approval-recovered-1",
+                "step_id": "pivot-escalate",
+                "summary": (
+                    "Recovered combo step 'pivot-escalate' is waiting for "
+                    "operator approval."
+                ),
+                "detail": (
+                    "Runtime host snapshot arrived after UI reconnect; approve "
+                    "to continue the combo."
+                ),
+            },
+        }
+        self._apply_recovered_snapshot(snapshot)
+
+    def _apply_recovered_snapshot(self, snapshot: dict[str, Any]) -> None:
+        self.elapsed_seconds = int(snapshot.get("elapsed_seconds") or self.elapsed_seconds)
+        self.elapsed.set(self._format_elapsed())
+
+        pending_approval = snapshot.get("pending_approval")
+        self.log_lines.set(self._snapshot_log_lines(snapshot.get("output_lines") or []))
+        self.pending_approval.set(dict(pending_approval) if pending_approval else None)
+
+        if pending_approval:
+            self.status.set("AWAITING APPROVAL")
+            self.paused.set(True)
+        elif snapshot.get("active"):
+            self.status.set("REATTACHED")
+            self.paused.set(False)
+        else:
+            self.status.set(str(snapshot.get("status") or "RECOVERY REQUIRED"))
+            self.paused.set(True)
+
+        recovered_events = [
+            {
+                "id": "event-recover-snapshot",
+                "ts": "08:55:00",
+                "tag": "RECOVER",
+                "sev": "ok",
+                "msg": "Remote runtime snapshot restored",
+            }
+        ]
+        if pending_approval:
+            step_id = pending_approval.get("step_id") or "step"
+            recovered_events.append(
+                {
+                    "id": "event-recover-approval",
+                    "ts": "08:55:01",
+                    "tag": "WAIT",
+                    "sev": "warn",
+                    "msg": f"Recovered approval gate for {step_id}",
+                }
+            )
+        self.events.set([*self.events.value, *recovered_events][-16:])
+        self._set_probe(
+            "warn" if pending_approval else "ok",
+            "Remote snapshot recovered",
+            "Runtime host snapshot restored output and approval state.",
+        )
+
+    def _snapshot_log_lines(self, lines: list[str]) -> list[dict[str, str]]:
+        return [
+            {
+                "id": f"snapshot-{index}",
+                "ts": f"08:55:{index:02d}",
+                "lvl": "warn" if "waiting" in line else "info",
+                "msg": line,
+            }
+            for index, line in enumerate(lines, start=1)
+        ]
 
     def _append_log(self, level: str, message: str) -> None:
         self.next_line += 1
