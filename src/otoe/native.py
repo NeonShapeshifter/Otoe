@@ -636,6 +636,7 @@ def _draw_text_marker(
             glyph_width,
             glyph_height,
             color,
+            ord(character),
         )
 
 
@@ -648,10 +649,17 @@ def _draw_text_glyph(
     width: int,
     height: int,
     color: tuple[int, int, int, int],
+    seed: int,
 ) -> None:
     for px in range(max(x, 0), min(x + width, image_width)):
         for py in range(max(y, 0), min(y + height, image_height)):
-            if py in {y, y + height - 1} or px in {x, x + width - 1}:
+            local_x = px - x
+            local_y = py - y
+            if (
+                py in {y, y + height - 1}
+                or px in {x, x + width - 1}
+                or (seed + local_x * 3 + local_y * 5) % 11 == 0
+            ):
                 _set_pixel(image, image_width, px, py, color)
 
 

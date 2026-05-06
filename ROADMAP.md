@@ -154,16 +154,17 @@ framework milestone.
 - First headless native layout adapter added with deterministic boxes for stacks, text, buttons, inputs, panels, resolved dimensions, and reactive prop updates.
 - First headless native paint adapter added with deterministic rect/text commands and stdlib PNG output.
 - Native hit-testing and click dispatch added for coordinate -> mounted event handler -> state update flows.
+- Framework-neutral native counter demo added for state -> layout -> paint -> input -> state.
 - `BENCHMARKS.md` added for concrete change-friction notes against Wraith/Kivy.
 - CI now builds release distributions and runs `twine check` on package metadata.
-- Baseline tests: `125 passed`.
+- Baseline tests: `128 passed`.
 
 ### Current Sprint
 
 1. Write the renderer/layout boundary for `Native Renderer Spike 001`: tree input, style subset, layout output, paint output, hit-test output. **ADR-006 drafted.**
 2. Add a headless layout adapter for a small generic subset: `VStack`, `HStack`, `Text`, `Button`, `Input`, `Card`/`Panel`, padding, gap, fixed size, min/max, and flex. **Initial deterministic adapter added.**
 3. Add a headless paint adapter that can render boxes, text, backgrounds, borders, and radius to a PNG. **Initial command/PNG adapter added.**
-4. Add a framework-neutral native demo surface that proves layout, state update, button dispatch, and rerender without using Wraith fixtures.
+4. Add a framework-neutral native demo surface that proves layout, state update, button dispatch, and rerender without using Wraith fixtures. **Native counter demo added.**
 5. Add hit-testing for coordinates -> mounted node -> event dispatch. **Initial click dispatch added.**
 6. Add deterministic tests for layout boxes, non-empty PNG output, and simulated click state changes. **Initial coverage added.**
 7. Document what the native spike supports, what it rejects, and what is deferred to windowing/accessibility.
