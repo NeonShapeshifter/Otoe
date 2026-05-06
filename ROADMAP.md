@@ -159,9 +159,10 @@ framework milestone.
 - `NativeSurface` added as the headless renderer surface API for mount -> layout -> paint -> click -> rerender flows.
 - Headless `NativeSurface` focus and keyboard handling added for autofocus, click-to-focus, Tab traversal, focused keydown, button submit keys, and global shortcut payloads.
 - Headless controlled input text dispatch added through `NativeSurface.input_text(...)`.
+- Framework-neutral native task board demo added for app shell, search, filtered list, empty state, modal state, shortcuts, and PNG frame output.
 - `BENCHMARKS.md` added for concrete change-friction notes against Wraith/Kivy.
 - CI now builds release distributions and runs `twine check` on package metadata.
-- Baseline tests: `142 passed`.
+- Baseline tests: `147 passed`.
 
 ### Current Sprint
 
@@ -175,6 +176,7 @@ framework milestone.
 8. Package the headless native renderer behind a framework-facing surface object so examples do not manually stitch mount/layout/paint/input. **`NativeSurface` added.**
 9. Add a headless focus and keyboard subset before windowing: autofocus, click-to-focus, Tab traversal, focused keydown, submit keys, and global shortcuts. **Initial `NativeSurface` support added.**
 10. Add controlled headless input text dispatch before windowing. **`NativeSurface.input_text(...)` added.**
+11. Add a framework-neutral native app demo with shell, search, list, empty state, modal, and shortcuts. **Native task board demo added.**
 
 ---
 
@@ -334,6 +336,7 @@ hit-tested events without compromising the public component API.
 ### Exit Criteria
 
 - A framework-neutral demo renders to a non-empty PNG.
+- A framework-neutral app-shaped demo exercises search, list filtering, empty state, modal state, shortcuts, and multiple frames.
 - Layout boxes are deterministic and testable.
 - Props update from signals and produce a changed render tree.
 - A simulated click dispatches through Otoe's event system and updates state.

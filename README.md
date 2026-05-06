@@ -37,6 +37,8 @@ stable public framework or a production desktop renderer.
   Tab traversal, focused keydown handlers, button submit keys, and global
   shortcut payloads.
 - Headless controlled input text dispatch through `NativeSurface.input_text(...)`.
+- Framework-neutral native task board demo with search, filtered rows, empty
+  state, modal state, shortcuts, and PNG frame output.
 
 ## What Is Not Ready Yet
 
@@ -113,6 +115,14 @@ PYTHONPATH=src:. python -m examples.native.counter_demo
 
 This writes `preview/native/native_counter_before.png` and
 `preview/native/native_counter_after.png`.
+
+Generate the framework-neutral native task board PNG frames:
+
+```bash
+PYTHONPATH=src:. python -m examples.native.task_board_demo
+```
+
+This writes initial, filtered, and modal frames under `preview/native/`.
 
 ## Tiny Example
 

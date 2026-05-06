@@ -9,6 +9,11 @@ Otoe proves that a mounted component tree can produce layout boxes, paint
 commands, PNG pixels, hit-tested input, and rerendered state without using the
 HTML preview backend.
 
+The `examples.native.counter_demo` and `examples.native.task_board_demo`
+modules are the current framework-neutral validation surfaces. The task board
+demo is intentionally app-shaped: shell, search, filtered rows, empty state,
+modal state, shortcuts, controlled input, and multi-frame PNG output.
+
 ## Current Pipeline
 
 The supported path is:

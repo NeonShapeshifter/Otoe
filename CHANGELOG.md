@@ -11,6 +11,8 @@
   global shortcut payload dispatch.
 - Added headless `NativeSurface.input_text(...)` dispatch for controlled input
   `onChange` flows.
+- Added a framework-neutral native task board demo with app shell, search,
+  filtered list, empty state, modal, shortcuts, and multi-frame PNG output.
 - Fixed keyed `For` updates when an item keeps the same key but changes data.
 - Added async event handler regression coverage for coroutine functions,
   coroutine-returning sync handlers, and running-loop dispatch.
