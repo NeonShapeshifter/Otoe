@@ -662,6 +662,11 @@ input {
   align-items: stretch;
 }
 
+.probe-actions {
+  align-self: center;
+  min-width: 170px;
+}
+
 .exec-probe-main {
   min-width: 0;
   flex: 1;
@@ -713,17 +718,86 @@ input {
 }
 
 .probe-button {
-  align-self: center;
-  min-width: 160px;
+  width: 100%;
   color: #101419;
   background: var(--info);
   border-color: var(--info);
+}
+
+.approval-queue-button {
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(240, 200, 102, 0.32);
+  color: var(--accent);
 }
 
 .probe-button:hover,
 .probe-button:focus-visible {
   background: #6ee1d1;
   border-color: #6ee1d1;
+}
+
+.approval-queue-button:hover,
+.approval-queue-button:focus-visible {
+  background: rgba(240, 200, 102, 0.14);
+  border-color: rgba(240, 200, 102, 0.5);
+}
+
+.ui-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(5, 8, 12, 0.78);
+  backdrop-filter: blur(16px);
+}
+
+.ui-dialog-focus-scope {
+  width: min(560px, 100%);
+}
+
+.ui-dialog-panel {
+  border-color: rgba(240, 200, 102, 0.44);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+}
+
+.ui-dialog-title {
+  color: var(--accent);
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.ui-dialog-description,
+.approval-copy {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.approval-step {
+  color: var(--text);
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.approval-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.approval-approve {
+  background: var(--good);
+  border-color: var(--good);
+  color: #101419;
+}
+
+.approval-deny {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #101419;
 }
 
 .exec-terminal {

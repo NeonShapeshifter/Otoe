@@ -29,6 +29,7 @@ def test_wraith_mission_exec_preview_contains_extracted_surface():
     assert "CAPTURE FEED" in html
     assert "EVENT TIMELINE" in html
     assert "exec-event-filters" in html
+    assert "QUEUE APPROVAL" in html
     assert "SIMULATE FRAME" in html
     assert "PREFLIGHT" in html
     assert "ABORT MISSION" in html
@@ -63,6 +64,40 @@ def test_wraith_mission_exec_live_filters_event_timeline():
     assert "Escalated to workbench queue" in html
     assert "Policy guard approved DEMO-SCOPE-001" not in html
     assert "WARN event filter active" in html
+
+
+def test_wraith_mission_exec_live_approval_modal_approve_flow():
+    app = MissionExecLivePreview()
+    html = app.render_fragment()
+
+    html = app.dispatch_event(_button_click_id(html, "QUEUE APPROVAL"))
+
+    assert "AWAITING APPROVAL" in html
+    assert "Operator approval required" in html
+    assert "Combo step &#x27;pivot-auth&#x27; is waiting for operator approval." in html
+    assert "ui-dialog-backdrop" in html
+    assert "APPROVE STEP" in html
+    assert "DENY / ABORT" in html
+
+    html = app.dispatch_event(_button_click_id(html, "APPROVE STEP"))
+
+    assert "Approval granted for &#x27;pivot-auth&#x27;." in html
+    assert "Combo step pivot-auth may continue." in html
+    assert "Operator approval required" not in html
+    assert "AWAITING APPROVAL" not in html
+
+
+def test_wraith_mission_exec_live_approval_modal_deny_flow():
+    app = MissionExecLivePreview()
+    html = app.render_fragment()
+
+    html = app.dispatch_event(_button_click_id(html, "QUEUE APPROVAL"))
+    html = app.dispatch_event(_button_click_id(html, "DENY / ABORT"))
+
+    assert "ABORTED" in html
+    assert "Approval denied for &#x27;pivot-auth&#x27;. Aborting combo." in html
+    assert "Combo step pivot-auth was denied." in html
+    assert "Operator approval required" not in html
 
 
 def test_wraith_mission_exec_live_pause_and_abort_actions():

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from otoe import For, HStack, ScrollView, Text, VStack, component, computed
-from otoe.ui import ActionButton, Badge, Card, TabButton, Tabs, Toolbar
+from otoe.ui import ActionButton, Badge, Card, Dialog, TabButton, Tabs, Toolbar
 
 
 FILTERS = ["ALL", "INFO", "OK", "WARN", "SIG", "CMD"]
@@ -16,12 +16,16 @@ def MissionExecSurface(
     events,
     active_filter,
     active_event_filter,
+    pending_approval,
     status,
     elapsed,
     paused,
     runtime_probe,
     on_filter,
     on_event_filter,
+    on_request_approval,
+    on_approve_approval,
+    on_deny_approval,
     on_abort,
     on_pause,
     on_clear,
@@ -38,6 +42,7 @@ def MissionExecSurface(
     )
     probe_frame = computed(lambda: f"FRAME {runtime_probe.value['frame']:03d}")
     probe_badge = computed(lambda: runtime_probe.value["tone"].upper())
+    approval_open = computed(lambda: pending_approval.value is not None)
 
     return VStack(
         Toolbar(
@@ -118,11 +123,21 @@ def MissionExecSurface(
                             className="exec-probe-main",
                             gap=4,
                         ),
-                        ActionButton(
-                            "SIMULATE FRAME",
-                            variant="info",
-                            className="probe-button",
-                            onClick=on_simulate,
+                        VStack(
+                            ActionButton(
+                                "SIMULATE FRAME",
+                                variant="info",
+                                className="probe-button",
+                                onClick=on_simulate,
+                            ),
+                            ActionButton(
+                                "QUEUE APPROVAL",
+                                variant="ghost",
+                                className="probe-button approval-queue-button",
+                                onClick=on_request_approval,
+                            ),
+                            className="probe-actions",
+                            gap=8,
                         ),
                         className="exec-probe",
                         gap=14,
@@ -210,6 +225,12 @@ def MissionExecSurface(
             className="mission-exec",
             gap=16,
         ),
+        ApprovalDialog(
+            approval=pending_approval,
+            open=approval_open,
+            on_approve=on_approve_approval,
+            on_deny=on_deny_approval,
+        ),
         className="mission-exec-shell",
         gap=0,
     )
@@ -292,6 +313,38 @@ def CheckRow(*, label, value):
     )
 
 
+@component
+def ApprovalDialog(*, approval, open, on_approve, on_deny):
+    return Dialog(
+        VStack(
+            Text(computed(lambda: f"STEP / {_approval_value(approval, 'step_id', '--')}"), className="approval-step"),
+            Text(computed(lambda: _approval_value(approval, "detail", "")), className="approval-copy"),
+            HStack(
+                ActionButton(
+                    "APPROVE STEP",
+                    variant="success",
+                    className="approval-approve",
+                    onClick=on_approve,
+                ),
+                ActionButton(
+                    "DENY / ABORT",
+                    variant="danger",
+                    className="approval-deny",
+                    onClick=on_deny,
+                ),
+                className="approval-actions",
+                gap=10,
+            ),
+            className="approval-body",
+            gap=12,
+        ),
+        open=open,
+        title="Operator approval required",
+        description=computed(lambda: _approval_value(approval, "summary", "Combo step is waiting.")),
+        className="approval-dialog",
+    )
+
+
 def FilterButton(*, label, active_filter, on_filter):
     return TabButton(
         label,
@@ -335,3 +388,10 @@ def _visible_events(events, active_filter):
         return list(events)
     tone = active_filter.lower()
     return [event for event in events if event["sev"] == tone]
+
+
+def _approval_value(approval, key, default):
+    current = approval.value
+    if not current:
+        return default
+    return current.get(key) or default

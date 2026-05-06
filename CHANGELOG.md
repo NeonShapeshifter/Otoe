@@ -11,6 +11,8 @@
   while preserving the public `otoe.ui` import surface.
 - Added live Mission Exec event timeline severity filtering as the first
   recorded Wraith/Kivy change benchmark.
+- Added live Mission Exec combo approval modal benchmark with approve and deny
+  flows using existing dialog/focus primitives.
 - Added `BENCHMARKS.md` to track concrete Otoe-vs-Wraith UI change friction.
 - Expanded CI to build the package and run `twine check` on generated
   distributions.

@@ -114,7 +114,10 @@
                 <span class="otoe-text exec-probe-label">Fixture telemetry loaded</span>
                 <span class="otoe-text exec-probe-copy">Handshake capture stream is staged for replay.</span>
               </div>
-              <button class="otoe-button ui-button is-info is-md probe-button" type="button">SIMULATE FRAME</button>
+              <div class="otoe-stack otoe-vstack probe-actions" style="--otoe-gap:8px">
+                <button class="otoe-button ui-button is-info is-md probe-button" type="button">SIMULATE FRAME</button>
+                <button class="otoe-button ui-button is-ghost is-md probe-button approval-queue-button" type="button">QUEUE APPROVAL</button>
+              </div>
             </div>
           </section>
           <section class="otoe-panel ui-card is-default exec-terminal-panel">
@@ -276,6 +279,7 @@
           </section>
         </div>
       </div>
+      <div class="otoe-fragment otoe-show"></div>
     </div>
 </body>
 </html>

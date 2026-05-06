@@ -36,6 +36,7 @@ class MissionExecLivePreview:
         self.events = signal([dict(event) for event in EVENTS])
         self.active_filter = signal("ALL")
         self.active_event_filter = signal("ALL")
+        self.pending_approval = signal(None)
         self.status = signal("ENGAGED")
         self.elapsed = signal(self._format_elapsed())
         self.paused = signal(False)
@@ -55,12 +56,16 @@ class MissionExecLivePreview:
                 events=self.events,
                 active_filter=self.active_filter,
                 active_event_filter=self.active_event_filter,
+                pending_approval=self.pending_approval,
                 status=self.status,
                 elapsed=self.elapsed,
                 paused=self.paused,
                 runtime_probe=self.runtime_probe,
                 on_filter=self._set_filter,
                 on_event_filter=self._set_event_filter,
+                on_request_approval=self._queue_approval,
+                on_approve_approval=self._approve_approval,
+                on_deny_approval=self._deny_approval,
                 on_abort=self._abort,
                 on_pause=self._toggle_pause,
                 on_clear=self._clear,
@@ -89,6 +94,39 @@ class MissionExecLivePreview:
     def _set_event_filter(self, value: str) -> None:
         self.active_event_filter.set(value)
         self._set_probe("ok", f"{value} event filter active", "Event timeline viewport changed.")
+
+    def _queue_approval(self) -> None:
+        approval = {
+            "step_id": "pivot-auth",
+            "summary": "Combo step 'pivot-auth' is waiting for operator approval.",
+            "detail": "The next step will reuse captured credentials against the scoped demo host.",
+        }
+        self.pending_approval.set(approval)
+        self.status.set("AWAITING APPROVAL")
+        self.paused.set(True)
+        self._append_log("warn", "[?] Approval required for combo step 'pivot-auth'.")
+        self._append_event("WAIT", "warn", "Approval required for combo step pivot-auth")
+        self._set_probe("warn", "Approval required", "Combo step pivot-auth is waiting.")
+
+    def _approve_approval(self) -> None:
+        approval = self.pending_approval.value or {}
+        step_id = approval.get("step_id") or "step"
+        self.pending_approval.set(None)
+        self.status.set("ENGAGED")
+        self.paused.set(False)
+        self._append_log("ok", f"[+] Approval granted for '{step_id}'.")
+        self._append_event("APPROVE", "ok", f"Approval granted for {step_id}")
+        self._set_probe("ok", "Approval granted", f"Combo step {step_id} may continue.")
+
+    def _deny_approval(self) -> None:
+        approval = self.pending_approval.value or {}
+        step_id = approval.get("step_id") or "step"
+        self.pending_approval.set(None)
+        self.status.set("ABORTED")
+        self.paused.set(True)
+        self._append_log("warn", f"[!] Approval denied for '{step_id}'. Aborting combo.")
+        self._append_event("ABORT", "warn", f"Approval denied for {step_id}")
+        self._set_probe("warn", "Approval denied", f"Combo step {step_id} was denied.")
 
     def _toggle_pause(self) -> None:
         next_value = not self.paused.value
