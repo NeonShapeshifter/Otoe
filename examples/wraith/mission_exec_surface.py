@@ -5,6 +5,7 @@ from otoe.ui import ActionButton, Badge, Card, TabButton, Tabs, Toolbar
 
 
 FILTERS = ["ALL", "INFO", "OK", "WARN", "SIG", "CMD"]
+EVENT_FILTERS = ["ALL", "OK", "WARN"]
 
 
 @component
@@ -14,11 +15,13 @@ def MissionExecSurface(
     log_lines,
     events,
     active_filter,
+    active_event_filter,
     status,
     elapsed,
     paused,
     runtime_probe,
     on_filter,
+    on_event_filter,
     on_abort,
     on_pause,
     on_clear,
@@ -26,7 +29,9 @@ def MissionExecSurface(
     on_simulate,
 ):
     visible_lines = computed(lambda: _visible_lines(log_lines.value, active_filter.value))
+    visible_events = computed(lambda: _visible_events(events.value, active_event_filter.value))
     filtered_count = computed(lambda: f"{len(visible_lines.value)} lines")
+    filtered_event_count = computed(lambda: f"{len(visible_events.value)} events")
     pause_label = computed(lambda: "RESUME CAPTURE" if paused.value else "PAUSE CAPTURE")
     status_class = computed(
         lambda: "exec-status-value is-paused" if paused.value else "exec-status-value"
@@ -174,15 +179,23 @@ def MissionExecSurface(
                     VStack(
                         HStack(
                             Text("EVENT TIMELINE", className="section-heading"),
-                            Badge(
-                                computed(lambda: f"{len(events.value)} events"),
-                                tone="neutral",
-                                className="exec-count",
-                            ),
+                            Badge(filtered_event_count, tone="neutral", className="exec-count"),
                             className="exec-toolbar-head",
                         ),
+                        Tabs(
+                            *[
+                                FilterButton(
+                                    label=label,
+                                    active_filter=active_event_filter,
+                                    on_filter=on_event_filter,
+                                )
+                                for label in EVENT_FILTERS
+                            ],
+                            className="exec-filters exec-event-filters",
+                            gap=8,
+                        ),
                         For(
-                            each=events,
+                            each=visible_events,
                             key=lambda event: event["id"],
                             children=lambda event: EventRow(event=event),
                         ),
@@ -315,3 +328,10 @@ def _visible_lines(lines, active_filter):
         return list(lines)
     tone = active_filter.lower()
     return [line for line in lines if line["lvl"] == tone]
+
+
+def _visible_events(events, active_filter):
+    if active_filter == "ALL":
+        return list(events)
+    tone = active_filter.lower()
+    return [event for event in events if event["sev"] == tone]

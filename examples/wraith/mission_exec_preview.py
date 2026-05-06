@@ -12,6 +12,7 @@ def build_preview_html() -> str:
             log_lines=signal(LOG_LINES),
             events=signal(EVENTS),
             active_filter=signal("ALL"),
+            active_event_filter=signal("ALL"),
             status=signal("ENGAGED"),
             elapsed=signal("00:01:16"),
             paused=signal(False),
@@ -24,6 +25,7 @@ def build_preview_html() -> str:
                 }
             ),
             on_filter=lambda value: None,
+            on_event_filter=lambda value: None,
             on_abort=lambda: None,
             on_pause=lambda: None,
             on_clear=lambda: None,

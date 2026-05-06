@@ -136,6 +136,7 @@ Otoe is intentionally split into layers:
 - `preview/` - generated HTML/CSS preview artifacts.
 - `tests/` - runtime and preview regression tests.
 - `ADR-*.md` - design decisions.
+- `BENCHMARKS.md` - concrete Otoe-vs-Wraith UI change benchmarks.
 - `ROADMAP.md` - current status and phase plan.
 
 ## Fixture Data

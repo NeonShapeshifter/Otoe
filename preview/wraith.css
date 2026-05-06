@@ -653,6 +653,10 @@ input {
   flex-wrap: wrap;
 }
 
+.exec-event-filters {
+  padding-top: 2px;
+}
+
 .exec-probe {
   justify-content: space-between;
   align-items: stretch;

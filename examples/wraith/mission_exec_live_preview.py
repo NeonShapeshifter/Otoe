@@ -35,6 +35,7 @@ class MissionExecLivePreview:
         self.log_lines = signal([dict(line) for line in LOG_LINES])
         self.events = signal([dict(event) for event in EVENTS])
         self.active_filter = signal("ALL")
+        self.active_event_filter = signal("ALL")
         self.status = signal("ENGAGED")
         self.elapsed = signal(self._format_elapsed())
         self.paused = signal(False)
@@ -53,11 +54,13 @@ class MissionExecLivePreview:
                 log_lines=self.log_lines,
                 events=self.events,
                 active_filter=self.active_filter,
+                active_event_filter=self.active_event_filter,
                 status=self.status,
                 elapsed=self.elapsed,
                 paused=self.paused,
                 runtime_probe=self.runtime_probe,
                 on_filter=self._set_filter,
+                on_event_filter=self._set_event_filter,
                 on_abort=self._abort,
                 on_pause=self._toggle_pause,
                 on_clear=self._clear,
@@ -82,6 +85,10 @@ class MissionExecLivePreview:
     def _set_filter(self, value: str) -> None:
         self.active_filter.set(value)
         self._set_probe("ok", f"{value} filter active", "Telemetry viewport changed.")
+
+    def _set_event_filter(self, value: str) -> None:
+        self.active_event_filter.set(value)
+        self._set_probe("ok", f"{value} event filter active", "Event timeline viewport changed.")
 
     def _toggle_pause(self) -> None:
         next_value = not self.paused.value

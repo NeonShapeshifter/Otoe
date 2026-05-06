@@ -9,6 +9,9 @@
   dispatch paths.
 - Split `otoe.ui` internals into private helper, model, and keyboard modules
   while preserving the public `otoe.ui` import surface.
+- Added live Mission Exec event timeline severity filtering as the first
+  recorded Wraith/Kivy change benchmark.
+- Added `BENCHMARKS.md` to track concrete Otoe-vs-Wraith UI change friction.
 - Expanded CI to build the package and run `twine check` on generated
   distributions.
 

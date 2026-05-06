@@ -126,15 +126,17 @@ Wraith remains the production app until an isolated Otoe surface proves equivale
 - Async event handler regression tests added for coroutine functions, coroutine-returning sync handlers, and running-loop dispatch.
 - Async event error regression tests added for no-loop and running-loop dispatch paths.
 - `otoe.ui` internals split into private helper, model, and keyboard modules while preserving public imports.
+- Mission Exec event timeline severity filter added as the first recorded Otoe-vs-Wraith change benchmark.
+- `BENCHMARKS.md` added for concrete change-friction notes against Wraith/Kivy.
 - CI now builds release distributions and runs `twine check` on package metadata.
-- Baseline tests: `108 passed`.
+- Baseline tests: `109 passed`.
 
 ### Current Sprint
 
 1. Review the Mission Exec live preview visually in a browser against the Wraith source.
 2. Tighten Mission Exec spacing, hierarchy, and interaction states until it feels better than the current Wraith UI.
-3. Compare a non-trivial Mission Exec change in Otoe versus the Wraith Kivy/front prototype and record the friction points.
-4. Decide whether the next Wraith-shaped benchmark is overlay/modal depth, runtime polling, or a full app-shell migration.
+3. Compare a non-trivial Mission Exec change in Otoe versus the Wraith Kivy/front prototype and record the friction points. **Done for event timeline filtering; see `BENCHMARKS.md`.**
+4. Decide whether the next Wraith-shaped benchmark is approval-modal depth, runtime polling/recovery, or a full app-shell migration.
 5. Review the routed UI kit preview visually and decide whether `v0.0.3` is ready or needs a focused visual cleanup pass first.
 6. Add screenshot/GIF assets for the public README once the preview polish stabilizes.
 7. Keep snapshots plus live-render tests as the renderer contract while the backend is still moving.
