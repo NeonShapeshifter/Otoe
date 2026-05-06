@@ -90,6 +90,7 @@ class NativeSurface:
         self.strict_styles = strict_styles
         self.background = background
         self.frame = 0
+        self.focused_path: tuple[int, ...] | None = None
         self._owns_mount = isinstance(target, Node)
         self._mounted = mount(target) if self._owns_mount else None
         self._target: FakeWidget | MountedNode = (
@@ -100,6 +101,7 @@ class NativeSurface:
         self._layout: NativeLayout | None = None
         self._paint: NativePaint | None = None
         self.refresh()
+        self.focused_path = self._first_autofocus_path()
 
     @property
     def mounted(self) -> MountedNode | None:
@@ -127,6 +129,15 @@ class NativeSurface:
         assert self._paint is not None
         return self._paint
 
+    @property
+    def focused_box(self) -> LayoutBox | None:
+        if self.focused_path is None:
+            return None
+        try:
+            return self.layout.by_path(self.focused_path)
+        except KeyError:
+            return None
+
     def refresh(self) -> NativePaint:
         self._layout = layout_native(
             self._target,
@@ -134,6 +145,7 @@ class NativeSurface:
             strict_styles=self.strict_styles,
         )
         self._paint = paint_native(self._layout, background=self.background)
+        self._sync_focus_after_refresh()
         self.frame += 1
         return self._paint
 
@@ -152,7 +164,80 @@ class NativeSurface:
         return hit_test_native(self.layout, x, y, event=event)
 
     def click(self, x: int, y: int) -> Any:
+        focus_hit = self._hit_test_focusable(x, y)
+        if focus_hit is not None:
+            self.focus(focus_hit.path)
         result = dispatch_native_click(self._target, self.layout, x, y)
+        self.refresh()
+        return result
+
+    def focus(self, path: tuple[int, ...] | None) -> None:
+        if path == self.focused_path:
+            return
+        if path is not None and not self._is_focusable_path(path):
+            raise KeyError(f"No focusable native box exists at path {path!r}.")
+
+        previous_path = self.focused_path
+        self.focused_path = path
+        if previous_path is not None:
+            self._trigger_path_event(previous_path, "onBlur")
+        if path is not None:
+            self._trigger_path_event(path, "onFocus")
+        self.refresh()
+
+    def focus_next(self, *, reverse: bool = False) -> LayoutBox | None:
+        focusable = self._focusable_paths()
+        if not focusable:
+            self.focus(None)
+            return None
+
+        if self.focused_path not in focusable:
+            next_path = focusable[-1] if reverse else focusable[0]
+        else:
+            index = focusable.index(self.focused_path)
+            step = -1 if reverse else 1
+            next_path = focusable[(index + step) % len(focusable)]
+        self.focus(next_path)
+        return self.focused_box
+
+    def key_down(
+        self,
+        key: str,
+        *,
+        shift: bool = False,
+        ctrl: bool = False,
+        meta: bool = False,
+        alt: bool = False,
+    ) -> Any:
+        if key == "Tab":
+            return self.focus_next(reverse=shift)
+
+        if self.focused_path is None:
+            self.focus_next()
+
+        result = None
+        if self.focused_path is not None:
+            result = self._trigger_path_event(self.focused_path, "onKeyDown", key)
+            widget = _widget_by_path(
+                _surface_root_widget(self._target),
+                self.focused_path,
+            )
+            if widget.name == "Button" and key in {"Enter", " ", "Spacebar"}:
+                result = self._trigger_path_event(self.focused_path, "onClick")
+
+        if self._should_send_global_key(key, shift=shift, ctrl=ctrl, meta=meta, alt=alt):
+            global_result = self._trigger_global_key_down(
+                {
+                    "key": key,
+                    "ctrlKey": ctrl,
+                    "metaKey": meta,
+                    "altKey": alt,
+                    "shiftKey": shift,
+                }
+            )
+            if global_result is not None:
+                result = global_result
+
         self.refresh()
         return result
 
@@ -164,6 +249,95 @@ class NativeSurface:
             unmount(self._mounted)
         self._layout = None
         self._paint = None
+        self.focused_path = None
+
+    def _sync_focus_after_refresh(self) -> None:
+        if self.focused_path is None:
+            return
+        if self._is_focusable_path(self.focused_path):
+            return
+        self.focused_path = self._first_autofocus_path()
+
+    def _first_autofocus_path(self) -> tuple[int, ...] | None:
+        widget = _surface_root_widget(self._target)
+        for box in self.layout.boxes:
+            candidate = _widget_by_path(widget, box.path)
+            if candidate.props.get("autoFocus") and self._is_focusable_widget(candidate):
+                return box.path
+        return None
+
+    def _focusable_paths(self) -> list[tuple[int, ...]]:
+        widget = _surface_root_widget(self._target)
+        return [
+            box.path
+            for box in self.layout.boxes
+            if self._is_focusable_widget(_widget_by_path(widget, box.path))
+        ]
+
+    def _hit_test_focusable(self, x: int, y: int) -> LayoutBox | None:
+        widget = _surface_root_widget(self._target)
+        containing = [
+            box
+            for box in self.layout.boxes
+            if box.contains(x, y)
+            and self._is_focusable_widget(_widget_by_path(widget, box.path))
+        ]
+        if not containing:
+            return None
+        return max(containing, key=lambda box: len(box.path))
+
+    def _is_focusable_path(self, path: tuple[int, ...]) -> bool:
+        try:
+            widget = _widget_by_path(_surface_root_widget(self._target), path)
+        except KeyError:
+            return False
+        return self._is_focusable_widget(widget)
+
+    def _is_focusable_widget(self, widget: FakeWidget) -> bool:
+        if widget.props.get("disabled"):
+            return False
+        return widget.name in {"Button", "Input"}
+
+    def _trigger_path_event(self, path: tuple[int, ...], event: str, *args: Any) -> Any:
+        try:
+            widget = _widget_by_path(_surface_root_widget(self._target), path)
+        except KeyError:
+            return None
+        if event not in widget.events:
+            return None
+        return widget.trigger(event, *args)
+
+    def _trigger_global_key_down(self, payload: dict[str, Any]) -> Any:
+        for widget in _walk_widgets(_surface_root_widget(self._target)):
+            if "onGlobalKeyDown" in widget.events:
+                return widget.trigger("onGlobalKeyDown", payload)
+        return None
+
+    def _should_send_global_key(
+        self,
+        key: str,
+        *,
+        shift: bool,
+        ctrl: bool,
+        meta: bool,
+        alt: bool,
+    ) -> bool:
+        has_global = any(
+            "onGlobalKeyDown" in widget.events
+            for widget in _walk_widgets(_surface_root_widget(self._target))
+        )
+        if not has_global:
+            return False
+        if ctrl or meta or key == "Escape":
+            return True
+        if len(key) != 1:
+            return False
+        if self.focused_path is None:
+            return True
+        focused = _widget_by_path(_surface_root_widget(self._target), self.focused_path)
+        if focused.name == "Input":
+            return False
+        return True
 
 
 def layout_native(
@@ -283,6 +457,17 @@ def _native_surface_target(
 
 def _mounted_or_none(target: FakeWidget | MountedNode) -> MountedNode | None:
     return target if isinstance(target, MountedNode) else None
+
+
+def _surface_root_widget(target: FakeWidget | MountedNode) -> FakeWidget:
+    return root_widget(target) if isinstance(target, MountedNode) else target
+
+
+def _walk_widgets(widget: FakeWidget) -> list[FakeWidget]:
+    widgets = [widget]
+    for child in widget.children:
+        widgets.extend(_walk_widgets(child))
+    return widgets
 
 
 def _layout_widget(

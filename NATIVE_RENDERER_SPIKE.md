@@ -31,9 +31,9 @@ surface.render_png("next-frame.png")
 ```
 
 `NativeSurface` keeps the current `layout`, `paint`, and `frame` count, exposes
-`box(path)` for deterministic tests, and refreshes layout/paint after click
-dispatch. It is still headless; it does not create windows or run an OS event
-loop.
+`box(path)` for deterministic tests, tracks a focused path, and refreshes
+layout/paint after click or keyboard dispatch. It is still headless; it does
+not create windows or run an OS event loop.
 
 The native spike consumes `MountedNode` or `FakeWidget` trees. Components,
 `Show`, and `For` are already resolved by `mount(...)`, so the renderer only
@@ -109,8 +109,20 @@ The input spike supports click dispatch:
 - Low-level callers own rerendering by running layout/paint again after state
   changes.
 
-Keyboard input, pointer movement, focus traversal, text entry, IME, drag, wheel,
-gesture, and bubbling/capture semantics are deferred.
+The `NativeSurface` focus and keyboard subset supports:
+
+- Initial `Input(autoFocus=True)` focus.
+- Click-to-focus for buttons and inputs.
+- `onFocus` and `onBlur` dispatch when focus changes.
+- `Tab` and `Shift+Tab` traversal across enabled buttons and inputs.
+- Focused `onKeyDown` dispatch with the same string key shape used by the live
+  HTML preview backend.
+- `Enter`, space, and `Spacebar` activation for focused buttons.
+- `ShortcutScope` global key payload dispatch with the same `{key, ctrlKey,
+  metaKey, altKey, shiftKey}` shape used by the live HTML preview backend.
+
+Text editing, pointer movement, IME, drag, wheel, gesture, and
+bubbling/capture semantics are deferred.
 
 ## Rejected For This Spike
 

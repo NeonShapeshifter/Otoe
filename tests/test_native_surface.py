@@ -1,4 +1,15 @@
-from otoe import Button, NativeSurface, Text, VStack, css, mount, signal
+from otoe import (
+    Button,
+    HStack,
+    Input,
+    NativeSurface,
+    ShortcutScope,
+    Text,
+    VStack,
+    css,
+    mount,
+    signal,
+)
 
 
 def test_native_surface_mounts_and_renders_png(tmp_path):
@@ -85,3 +96,125 @@ def test_native_surface_uses_stylesheet_and_background():
     assert surface.paint.commands[0].fill == "#ffffff"
     assert surface.paint.by_path(())[0].fill == "#ffffff"
     assert surface.paint.by_path(())[1].fill == "#f8fafc"
+
+
+def test_native_surface_tracks_autofocus_input():
+    surface = NativeSurface(
+        VStack(
+            Button("Run", onClick=lambda: None),
+            Input(value="", autoFocus=True),
+            padding=4,
+            gap=4,
+        )
+    )
+
+    assert surface.focused_path == (1,)
+    assert surface.focused_box is not None
+    assert surface.focused_box.name == "Input"
+
+
+def test_native_surface_click_moves_focus_and_runs_focus_events():
+    events = []
+    surface = NativeSurface(
+        VStack(
+            Input(
+                value="",
+                onFocus=lambda: events.append("input-focus"),
+                onBlur=lambda: events.append("input-blur"),
+            ),
+            Button(
+                "Run",
+                onClick=lambda: events.append("button-click"),
+                onFocus=lambda: events.append("button-focus"),
+            ),
+            padding=4,
+            gap=4,
+        )
+    )
+
+    input_box = surface.box((0,))
+    button_box = surface.box((1,))
+    surface.click(input_box.x + 2, input_box.y + 2)
+    surface.click(button_box.x + 2, button_box.y + 2)
+
+    assert surface.focused_path == (1,)
+    assert events == [
+        "input-focus",
+        "input-blur",
+        "button-focus",
+        "button-click",
+    ]
+
+
+def test_native_surface_tab_cycles_focusable_controls_and_skips_disabled():
+    surface = NativeSurface(
+        HStack(
+            Button("One", onClick=lambda: None),
+            Button("Disabled", disabled=True, onClick=lambda: None),
+            Input(value=""),
+            gap=4,
+            padding=4,
+        )
+    )
+
+    first = surface.key_down("Tab")
+    second = surface.key_down("Tab")
+    third = surface.key_down("Tab")
+    reverse = surface.key_down("Tab", shift=True)
+
+    assert first is not None and first.path == (0,)
+    assert second is not None and second.path == (2,)
+    assert third is not None and third.path == (0,)
+    assert reverse is not None and reverse.path == (2,)
+
+
+def test_native_surface_key_down_dispatches_to_focused_widget():
+    keys = []
+    surface = NativeSurface(Input(value="", autoFocus=True, onKeyDown=keys.append))
+
+    surface.key_down("Escape")
+
+    assert keys == ["Escape"]
+
+
+def test_native_surface_enter_activates_focused_button():
+    label = signal("OFF")
+    surface = NativeSurface(Button("Toggle", onClick=lambda: label.set("ON")))
+
+    surface.focus(())
+    surface.key_down("Enter")
+
+    assert label.value == "ON"
+
+
+def test_native_surface_global_key_down_matches_live_preview_shape():
+    payloads = []
+    surface = NativeSurface(
+        ShortcutScope(
+            Input(value="", autoFocus=True),
+            Button("Run", onClick=lambda: None),
+            onKeyDown=payloads.append,
+        )
+    )
+
+    surface.key_down("k")
+    surface.key_down("k", ctrl=True)
+    surface.focus((1,))
+    surface.key_down("x")
+
+    assert payloads == [
+        {
+            "key": "k",
+            "ctrlKey": True,
+            "metaKey": False,
+            "altKey": False,
+            "shiftKey": False,
+        },
+        {
+            "key": "x",
+            "ctrlKey": False,
+            "metaKey": False,
+            "altKey": False,
+            "shiftKey": False,
+        },
+    ]

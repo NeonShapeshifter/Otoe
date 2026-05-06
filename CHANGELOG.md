@@ -6,6 +6,9 @@
 
 - Added `NativeSurface` to package mount/layout/paint/click/rerender into one
   headless renderer surface API.
+- Added headless `NativeSurface` focus and keyboard handling: autofocus,
+  click-to-focus, Tab traversal, focused `onKeyDown`, button submit keys, and
+  global shortcut payload dispatch.
 - Fixed keyed `For` updates when an item keeps the same key but changes data.
 - Added async event handler regression coverage for coroutine functions,
   coroutine-returning sync handlers, and running-loop dispatch.
