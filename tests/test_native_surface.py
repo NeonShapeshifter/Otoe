@@ -194,6 +194,24 @@ def test_native_surface_tab_cycles_focusable_controls_and_skips_disabled():
     assert reverse is not None and reverse.path == (2,)
 
 
+def test_native_surface_click_ignores_disabled_button_without_focus_change():
+    clicks = []
+    surface = NativeSurface(
+        HStack(
+            Input(value="", autoFocus=True),
+            Button("Disabled", disabled=True, onClick=lambda: clicks.append("run")),
+            gap=4,
+            padding=4,
+        )
+    )
+    button = surface.box((1,))
+
+    surface.click(button.x + 2, button.y + 2)
+
+    assert clicks == []
+    assert surface.focused_path == (0,)
+
+
 def test_native_surface_key_down_dispatches_to_focused_widget():
     keys = []
     surface = NativeSurface(Input(value="", autoFocus=True, onKeyDown=keys.append))

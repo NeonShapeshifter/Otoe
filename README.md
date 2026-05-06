@@ -41,6 +41,7 @@ stable public framework or a production desktop renderer.
   state, modal state, shortcuts, and PNG frame output.
 - Lazy `NativeSurface` refresh when reactive props or control-flow branches
   change outside direct surface events.
+- Disabled widgets are skipped for native focus and click dispatch.
 
 ## What Is Not Ready Yet
 

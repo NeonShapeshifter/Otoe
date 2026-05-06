@@ -161,9 +161,10 @@ framework milestone.
 - Headless controlled input text dispatch added through `NativeSurface.input_text(...)`.
 - Framework-neutral native task board demo added for app shell, search, filtered list, empty state, modal state, shortcuts, and PNG frame output.
 - Lazy `NativeSurface` auto-refresh added for external reactive prop and control-flow updates.
+- Native click dispatch now respects disabled widgets.
 - `BENCHMARKS.md` added for concrete change-friction notes against Wraith/Kivy.
 - CI now builds release distributions and runs `twine check` on package metadata.
-- Baseline tests: `148 passed`.
+- Baseline tests: `150 passed`.
 
 ### Current Sprint
 
@@ -179,6 +180,7 @@ framework milestone.
 10. Add controlled headless input text dispatch before windowing. **`NativeSurface.input_text(...)` added.**
 11. Add a framework-neutral native app demo with shell, search, list, empty state, modal, and shortcuts. **Native task board demo added.**
 12. Add lazy invalidation so external reactive updates refresh `NativeSurface` without manual `refresh()`. **Added for reactive props and control-flow tree changes.**
+13. Align native disabled control semantics with focus/click dispatch. **Disabled widgets no longer receive native click handlers.**
 
 ---
 
@@ -343,6 +345,7 @@ hit-tested events without compromising the public component API.
 - Props update from signals and produce a changed render tree.
 - External signal and control-flow updates invalidate the headless surface without manual app code.
 - A simulated click dispatches through Otoe's event system and updates state.
+- Disabled widgets do not receive native focus or click dispatch.
 - A headless surface API lets framework users render and dispatch input without manually wiring each renderer stage.
 - Focus and keyboard behavior can be tested without a window.
 - Controlled input changes can be tested without a browser.

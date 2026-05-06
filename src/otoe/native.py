@@ -461,7 +461,10 @@ def dispatch_native_click(
     if hit is None:
         return None
     widget = root_widget(target) if isinstance(target, MountedNode) else target
-    return _widget_by_path(widget, hit.path).trigger("onClick")
+    target_widget = _widget_by_path(widget, hit.path)
+    if target_widget.props.get("disabled"):
+        return None
+    return target_widget.trigger("onClick")
 
 
 def _native_surface_target(

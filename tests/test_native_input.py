@@ -56,6 +56,17 @@ def test_native_click_dispatch_runs_button_handler():
     assert clicks == ["run"]
 
 
+def test_native_click_dispatch_ignores_disabled_button():
+    clicks = []
+    mounted = mount(Button("Run", disabled=True, onClick=lambda: clicks.append("run")))
+    layout = layout_native(mounted)
+
+    result = dispatch_native_click(mounted, layout, 4, 4)
+
+    assert result is None
+    assert clicks == []
+
+
 def test_native_click_dispatch_updates_state_and_next_png(tmp_path):
     label = signal("OFF")
 

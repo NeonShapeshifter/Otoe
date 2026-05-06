@@ -112,6 +112,7 @@ The input spike supports click dispatch:
   handler through the existing event system.
 - `NativeSurface.click(x, y)` dispatches through the current layout and then
   refreshes layout/paint for the next headless frame.
+- Disabled widgets are skipped for focus and do not fire native click handlers.
 - Low-level callers own rerendering by running layout/paint again after state
   changes.
 - `NativeSurface.layout`, `NativeSurface.paint`, and `NativeSurface.box(...)`
