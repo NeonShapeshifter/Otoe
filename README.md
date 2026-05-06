@@ -31,6 +31,8 @@ stable public framework or a production desktop renderer.
 - UI kit kitchen-sink preview for validating primitives outside one product shape.
 - Headless native layout, paint, PNG output, hit-testing, and click dispatch
   for the first renderer spike.
+- `NativeSurface` for mounting a tree, rendering PNG frames, dispatching
+  clicks, and refreshing the headless native frame from one object.
 
 ## What Is Not Ready Yet
 
@@ -98,7 +100,8 @@ Then open <http://127.0.0.1:8768>. Use the sidebar, command launcher,
 `Ctrl+K`/`Meta+K`, command search, Enter key, `Escape`, and single-key command
 shortcuts to verify the live command overlay and route switching.
 
-Generate the framework-neutral native counter PNG frames:
+Generate the framework-neutral native counter PNG frames through
+`NativeSurface`:
 
 ```bash
 PYTHONPATH=src:. python -m examples.native.counter_demo
@@ -133,7 +136,8 @@ tree = mount(Counter())
 Otoe is intentionally split into layers:
 
 - **Core runtime:** nodes, components, signals, effects, events, owners, control flow.
-- **Renderer boundary:** fake widgets, HTML preview, and an early headless native layout/paint/input spike.
+- **Renderer boundary:** fake widgets, HTML preview, `NativeSurface`, and an
+  early headless native layout/paint/input spike.
 - **Style system:** portable style representation and CSS preview adapter.
 - **UI kits:** current `otoe.ui` primitives, growing toward libraries inspired by systems like shadcn or Horizon UI.
 - **Case studies:** Wraith validates dense operational UI; SaaS validates softer product UI.

@@ -156,9 +156,10 @@ framework milestone.
 - Native hit-testing and click dispatch added for coordinate -> mounted event handler -> state update flows.
 - Framework-neutral native counter demo added for state -> layout -> paint -> input -> state.
 - Native renderer spike support/rejection/deferred-work contract documented.
+- `NativeSurface` added as the headless renderer surface API for mount -> layout -> paint -> click -> rerender flows.
 - `BENCHMARKS.md` added for concrete change-friction notes against Wraith/Kivy.
 - CI now builds release distributions and runs `twine check` on package metadata.
-- Baseline tests: `128 passed`.
+- Baseline tests: `133 passed`.
 
 ### Current Sprint
 
@@ -169,6 +170,7 @@ framework milestone.
 5. Add hit-testing for coordinates -> mounted node -> event dispatch. **Initial click dispatch added.**
 6. Add deterministic tests for layout boxes, non-empty PNG output, and simulated click state changes. **Initial coverage added.**
 7. Document what the native spike supports, what it rejects, and what is deferred to windowing/accessibility. **Native spike support contract added.**
+8. Package the headless native renderer behind a framework-facing surface object so examples do not manually stitch mount/layout/paint/input. **`NativeSurface` added.**
 
 ---
 
@@ -316,6 +318,8 @@ hit-tested events without compromising the public component API.
   - coordinate hit-testing
   - click dispatch
   - rerender after state change
+- Headless surface:
+  - one object owns mounted tree, current layout, current paint, frame count, click dispatch, and PNG rendering
 - Defer real windowing until the headless renderer is proven.
 
 ### Exit Criteria
@@ -324,6 +328,7 @@ hit-tested events without compromising the public component API.
 - Layout boxes are deterministic and testable.
 - Props update from signals and produce a changed render tree.
 - A simulated click dispatches through Otoe's event system and updates state.
+- A headless surface API lets framework users render and dispatch input without manually wiring each renderer stage.
 - Styling is expressive enough to build both dense operational panels and calmer product dashboards.
 - Unsupported styling fails clearly instead of silently.
 

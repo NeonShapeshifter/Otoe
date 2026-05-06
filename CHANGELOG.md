@@ -4,6 +4,8 @@
 
 ## v0.0.5 - Native Renderer Spike
 
+- Added `NativeSurface` to package mount/layout/paint/click/rerender into one
+  headless renderer surface API.
 - Fixed keyed `For` updates when an item keeps the same key but changes data.
 - Added async event handler regression coverage for coroutine functions,
   coroutine-returning sync handlers, and running-loop dispatch.

@@ -5,14 +5,11 @@ from pathlib import Path
 from otoe import (
     Button,
     HStack,
+    NativeSurface,
     Text,
     VStack,
     computed,
     css,
-    dispatch_native_click,
-    layout_native,
-    mount,
-    render_native_png,
     signal,
 )
 
@@ -71,30 +68,33 @@ COUNTER_STYLES = css(
 class NativeCounterDemo:
     def __init__(self, initial: int = 0) -> None:
         self.count = signal(initial)
-        self.mounted = mount(self._view())
+        self.surface = NativeSurface(self._view(), stylesheet=COUNTER_STYLES)
 
     def layout(self):
-        return layout_native(self.mounted, stylesheet=COUNTER_STYLES)
+        self.surface.refresh()
+        return self.surface.layout
 
     def render(self, path: str | Path):
-        return render_native_png(self.layout(), path)
+        return self.surface.render_png(path)
 
     def click_decrement(self):
-        layout = self.layout()
-        button = layout.by_path((2, 0))
-        return dispatch_native_click(self.mounted, layout, button.x + 4, button.y + 4)
+        button = self.surface.box((2, 0))
+        return self.surface.click(button.x + 4, button.y + 4)
 
     def click_increment(self):
-        layout = self.layout()
-        button = layout.by_path((2, 1))
-        return dispatch_native_click(self.mounted, layout, button.x + 4, button.y + 4)
+        button = self.surface.box((2, 1))
+        return self.surface.click(button.x + 4, button.y + 4)
 
     def _view(self):
         return VStack(
             Text("Native Counter", className="title"),
             Text(computed(lambda: f"Count: {self.count.value}"), className="status"),
             HStack(
-                Button("Decrement", className="button secondary", onClick=self._decrement),
+                Button(
+                    "Decrement",
+                    className="button secondary",
+                    onClick=self._decrement,
+                ),
                 Button("Increment", className="button", onClick=self._increment),
                 className="actions",
             ),

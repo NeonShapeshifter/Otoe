@@ -20,6 +20,21 @@ Node tree -> mount(...) -> layout_native(...) -> paint_native(...) -> write_nati
                          hit_test_native(...) / dispatch_native_click(...)
 ```
 
+The framework-facing helper for that path is `NativeSurface`. It owns the
+headless frame loop for one mounted tree:
+
+```python
+surface = NativeSurface(App(), stylesheet=APP_STYLES)
+surface.render_png("frame.png")
+surface.click(x, y)
+surface.render_png("next-frame.png")
+```
+
+`NativeSurface` keeps the current `layout`, `paint`, and `frame` count, exposes
+`box(path)` for deterministic tests, and refreshes layout/paint after click
+dispatch. It is still headless; it does not create windows or run an OS event
+loop.
+
 The native spike consumes `MountedNode` or `FakeWidget` trees. Components,
 `Show`, and `For` are already resolved by `mount(...)`, so the renderer only
 sees widget names, resolved props, event handlers, and ordered children.
@@ -89,7 +104,10 @@ The input spike supports click dispatch:
   contains the coordinate, then walks ancestors until it finds a matching event.
 - `dispatch_native_click(mounted, layout, x, y)` triggers the matched Otoe
   handler through the existing event system.
-- The caller owns rerendering by running layout/paint again after state changes.
+- `NativeSurface.click(x, y)` dispatches through the current layout and then
+  refreshes layout/paint for the next headless frame.
+- Low-level callers own rerendering by running layout/paint again after state
+  changes.
 
 Keyboard input, pointer movement, focus traversal, text entry, IME, drag, wheel,
 gesture, and bubbling/capture semantics are deferred.

@@ -7,7 +7,8 @@ from math import ceil
 from pathlib import Path
 from typing import Any
 
-from .mount import FakeWidget, MountedNode, root_widget
+from .mount import FakeWidget, MountedNode, mount, root_widget, unmount
+from .node import Node
 from .style import Size, StyleSheet, Token
 
 
@@ -74,6 +75,95 @@ class NativePaint:
 
     def by_path(self, path: tuple[int, ...]) -> tuple[PaintCommand, ...]:
         return tuple(command for command in self.commands if command.path == path)
+
+
+class NativeSurface:
+    def __init__(
+        self,
+        target: Node | FakeWidget | MountedNode,
+        *,
+        stylesheet: StyleSheet | None = None,
+        strict_styles: bool = True,
+        background: str = "#ffffff",
+    ) -> None:
+        self.stylesheet = stylesheet
+        self.strict_styles = strict_styles
+        self.background = background
+        self.frame = 0
+        self._owns_mount = isinstance(target, Node)
+        self._mounted = mount(target) if self._owns_mount else None
+        self._target: FakeWidget | MountedNode = (
+            self._mounted
+            if self._mounted is not None
+            else _native_surface_target(target)
+        )
+        self._layout: NativeLayout | None = None
+        self._paint: NativePaint | None = None
+        self.refresh()
+
+    @property
+    def mounted(self) -> MountedNode | None:
+        return (
+            self._mounted
+            if self._mounted is not None
+            else _mounted_or_none(self._target)
+        )
+
+    @property
+    def target(self) -> FakeWidget | MountedNode:
+        return self._target
+
+    @property
+    def layout(self) -> NativeLayout:
+        if self._layout is None:
+            self.refresh()
+        assert self._layout is not None
+        return self._layout
+
+    @property
+    def paint(self) -> NativePaint:
+        if self._paint is None:
+            self.refresh()
+        assert self._paint is not None
+        return self._paint
+
+    def refresh(self) -> NativePaint:
+        self._layout = layout_native(
+            self._target,
+            stylesheet=self.stylesheet,
+            strict_styles=self.strict_styles,
+        )
+        self._paint = paint_native(self._layout, background=self.background)
+        self.frame += 1
+        return self._paint
+
+    def render_png(self, path: str | Path) -> NativePaint:
+        paint = self.refresh()
+        write_native_png(paint, path)
+        return paint
+
+    def hit_test(
+        self,
+        x: int,
+        y: int,
+        *,
+        event: str = "onClick",
+    ) -> LayoutBox | None:
+        return hit_test_native(self.layout, x, y, event=event)
+
+    def click(self, x: int, y: int) -> Any:
+        result = dispatch_native_click(self._target, self.layout, x, y)
+        self.refresh()
+        return result
+
+    def box(self, path: tuple[int, ...]) -> LayoutBox:
+        return self.layout.by_path(path)
+
+    def dispose(self) -> None:
+        if self._owns_mount and self._mounted is not None:
+            unmount(self._mounted)
+        self._layout = None
+        self._paint = None
 
 
 def layout_native(
@@ -178,6 +268,21 @@ def dispatch_native_click(
         return None
     widget = root_widget(target) if isinstance(target, MountedNode) else target
     return _widget_by_path(widget, hit.path).trigger("onClick")
+
+
+def _native_surface_target(
+    target: Node | FakeWidget | MountedNode,
+) -> FakeWidget | MountedNode:
+    if isinstance(target, (FakeWidget, MountedNode)):
+        return target
+    raise TypeError(
+        "NativeSurface target must be a Node, FakeWidget, or MountedNode; "
+        f"got {type(target).__name__}."
+    )
+
+
+def _mounted_or_none(target: FakeWidget | MountedNode) -> MountedNode | None:
+    return target if isinstance(target, MountedNode) else None
 
 
 def _layout_widget(
