@@ -2,7 +2,7 @@
 
 **Status:** Phase 3 started / renderer hardening and DX diagnostics started
 **Updated:** May 7, 2026
-**Current baseline:** 201 tests passing
+**Current baseline:** 203 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -169,7 +169,7 @@ This track can run alongside Phase 3, but it should not expand the public API un
 - Define the next text-rendering plan. **Done in ADR-008:**
   - current marker text is deterministic, not real font rasterization
   - future backend needs text measurement, shaping, font selection, and DPI behavior
-- Define accessibility metadata expectations from `LayoutBox` without implementing a full accessibility tree yet.
+- Define accessibility metadata expectations from `LayoutBox` without implementing a full accessibility tree yet. **Done in ADR-009.**
 - Evaluate backend candidates only after the contract split is stable.
 
 #### Exit Criteria
@@ -293,6 +293,6 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 ## Immediate Next Actions
 
-1. Define accessibility metadata expectations from `LayoutBox`.
-2. Add mutation-during-mount diagnostics.
+1. Add mutation-during-mount diagnostics.
+2. Draft the first CLI shape for `otoe dev`, `otoe render`, and `otoe check`.
 3. Keep `NATIVE_RENDERER_SPIKE.md` aligned as the renderer contract changes.

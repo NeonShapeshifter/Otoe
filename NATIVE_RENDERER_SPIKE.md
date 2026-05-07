@@ -120,6 +120,17 @@ Each `LayoutBox` carries a `context` string when it comes from a component tree,
 for example `TaskList > VStack`. Native layout and paint diagnostics use that
 context for unsupported dimensions, style keys, and paint colors where possible.
 
+## Accessibility Metadata Expectations
+
+The native spike does not implement a platform accessibility tree yet.
+`LayoutBox` is the current seed contract for that future work. It must preserve
+widget `name`, tree `path`, optional `id`, visible `text`, event names, widget
+state, component `context`, bounds, and child hierarchy.
+
+`ADR-009-native-accessibility-metadata.md` documents this boundary. Backend
+work can derive provisional roles from widget names later, but Otoe does not
+expose public role, label, or OS accessibility APIs yet.
+
 ## Native Style Support Matrix
 
 The native backend has an executable style matrix in `otoe._native_shared`.
