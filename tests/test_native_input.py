@@ -1,8 +1,10 @@
 from otoe import (
     Button,
     HStack,
+    ScrollView,
     Text,
     VStack,
+    css,
     dispatch_native_click,
     hit_test_native,
     layout_native,
@@ -65,6 +67,30 @@ def test_native_click_dispatch_ignores_disabled_button():
 
     assert result is None
     assert clicks == []
+
+
+def test_native_click_dispatch_respects_scrollview_bounds():
+    clicks = []
+    sheet = css(".scroll { width: 120; height: 40; padding: 4; gap: 4; }")
+    mounted = mount(
+        ScrollView(
+            Button("Visible", onClick=lambda: clicks.append("visible")),
+            Button("Clipped", onClick=lambda: clicks.append("clipped")),
+            className="scroll",
+        )
+    )
+    layout = layout_native(mounted, stylesheet=sheet)
+
+    visible = layout.by_path((0,))
+    clipped = layout.by_path((1,))
+
+    assert hit_test_native(layout, visible.x + 2, visible.y + 2) == visible
+    assert hit_test_native(layout, clipped.x + 2, clipped.y + 2) is None
+
+    dispatch_native_click(mounted, layout, visible.x + 2, visible.y + 2)
+    dispatch_native_click(mounted, layout, clipped.x + 2, clipped.y + 2)
+
+    assert clicks == ["visible"]
 
 
 def test_native_click_dispatch_updates_state_and_next_png(tmp_path):

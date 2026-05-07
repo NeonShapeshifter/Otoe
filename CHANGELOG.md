@@ -15,6 +15,8 @@
   filtered list, empty state, modal, shortcuts, and multi-frame PNG output.
 - Added lazy `NativeSurface` auto-refresh when external signal or control-flow
   updates mutate the mounted fake-widget tree.
+- Added native `ScrollView` viewport clipping for paint output, PNG rendering,
+  and hit-tested click dispatch.
 - Fixed native click dispatch so disabled widgets do not fire click handlers.
 - Fixed keyed `For` updates when an item keeps the same key but changes data.
 - Added async event handler regression coverage for coroutine functions,

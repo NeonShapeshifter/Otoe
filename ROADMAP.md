@@ -162,9 +162,10 @@ framework milestone.
 - Framework-neutral native task board demo added for app shell, search, filtered list, empty state, modal state, shortcuts, and PNG frame output.
 - Lazy `NativeSurface` auto-refresh added for external reactive prop and control-flow updates.
 - Native click dispatch now respects disabled widgets.
+- Native `ScrollView` bounds now clip descendant paint output, PNG rendering, and hit-tested clicks.
 - `BENCHMARKS.md` added for concrete change-friction notes against Wraith/Kivy.
 - CI now builds release distributions and runs `twine check` on package metadata.
-- Baseline tests: `150 passed`.
+- Baseline tests: `155 passed`.
 
 ### Current Sprint
 
@@ -181,6 +182,7 @@ framework milestone.
 11. Add a framework-neutral native app demo with shell, search, list, empty state, modal, and shortcuts. **Native task board demo added.**
 12. Add lazy invalidation so external reactive updates refresh `NativeSurface` without manual `refresh()`. **Added for reactive props and control-flow tree changes.**
 13. Align native disabled control semantics with focus/click dispatch. **Disabled widgets no longer receive native click handlers.**
+14. Add minimal `ScrollView` bounds semantics for paint and hit-testing. **Descendant paint and click targets are clipped to the viewport bounds.**
 
 ---
 
@@ -350,6 +352,7 @@ hit-tested events without compromising the public component API.
 - Focus and keyboard behavior can be tested without a window.
 - Controlled input changes can be tested without a browser.
 - Styling is expressive enough to build both dense operational panels and calmer product dashboards.
+- `ScrollView` paint and click dispatch are clipped to viewport bounds.
 - Unsupported styling fails clearly instead of silently.
 
 ---

@@ -55,7 +55,9 @@ The current layout adapter has explicit behavior for:
 - `Button`: text-sized leaf box with default padding, fill, border, and click
   event support.
 - `Input`: text-sized leaf box with default width, padding, fill, and border.
-- `Panel`, `ScrollView`, `FocusScope`, and `ShortcutScope`: container boxes.
+- `Panel`, `FocusScope`, and `ShortcutScope`: container boxes.
+- `ScrollView`: bounded container box with clipped descendant paint and
+  hit-testing.
 - `Show` and `For`: container boxes after mount-time control-flow resolution.
 
 Unknown widgets are treated as column containers for now. That keeps the spike
@@ -77,11 +79,12 @@ The layout adapter currently supports:
 - `min-width`, `min-height`, `max-width`, and `max-height`.
 - Text measurement approximation from string length and `font-size`.
 - Reactive prop updates through rerunning `layout_native(...)`.
+- `ScrollView` viewport bounds for constrained children.
 - Strict class resolution through `StyleSheet.resolve(...)`.
 
 All layout dimensions must be numeric pixels. Percent units, `auto`, flex
-distribution, wrapping, alignment, margins, scroll offsets, clipping, and
-intrinsic platform text measurement are intentionally not implemented yet.
+distribution, wrapping, alignment, margins, scroll offsets, and intrinsic
+platform text measurement are intentionally not implemented yet.
 
 ## Supported Paint
 
@@ -97,6 +100,8 @@ The current painter supports:
 - Text marker output from box text, `color`, and `font-size`.
 - Default button and input colors when styles are not provided.
 - Token-resolved colors from `css(..., tokens={...})`.
+- `ScrollView` descendant clipping through paint command clip rects, including
+  stdlib PNG output.
 
 The text output is a deterministic marker, not font rasterization. It is good
 enough for non-empty image tests and state-change detection, but it is not a
@@ -112,6 +117,8 @@ The input spike supports click dispatch:
   handler through the existing event system.
 - `NativeSurface.click(x, y)` dispatches through the current layout and then
   refreshes layout/paint for the next headless frame.
+- Hit-testing respects `ScrollView` viewport bounds, so clipped descendants do
+  not receive clicks.
 - Disabled widgets are skipped for focus and do not fire native click handlers.
 - Low-level callers own rerendering by running layout/paint again after state
   changes.

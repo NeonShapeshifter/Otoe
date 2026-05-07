@@ -42,6 +42,7 @@ stable public framework or a production desktop renderer.
 - Lazy `NativeSurface` refresh when reactive props or control-flow branches
   change outside direct surface events.
 - Disabled widgets are skipped for native focus and click dispatch.
+- `ScrollView` bounds clip native paint output and hit-tested clicks.
 
 ## What Is Not Ready Yet
 

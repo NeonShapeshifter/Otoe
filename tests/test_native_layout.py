@@ -4,6 +4,7 @@ from otoe import (
     Button,
     HStack,
     NativeLayoutError,
+    ScrollView,
     Text,
     VStack,
     css,
@@ -103,3 +104,21 @@ def test_native_layout_reflects_reactive_prop_updates():
 
     assert before.root.width == 16
     assert after.root.width == 39
+
+
+def test_native_layout_scrollview_bounds_do_not_reflow_children():
+    sheet = css(".scroll { width: 120; height: 40; padding: 4; gap: 4; }")
+    mounted = mount(
+        ScrollView(
+            Button("Visible", onClick=lambda: None),
+            Button("Clipped", onClick=lambda: None),
+            className="scroll",
+        )
+    )
+
+    layout = layout_native(mounted, stylesheet=sheet)
+    scroll = layout.root
+    clipped = layout.by_path((1,))
+
+    assert (scroll.name, scroll.width, scroll.height) == ("ScrollView", 120, 40)
+    assert clipped.y >= scroll.y + scroll.height

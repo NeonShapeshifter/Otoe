@@ -65,6 +65,7 @@ class PaintCommand:
     text: str | None = None
     color: str | None = None
     font_size: int = 14
+    clip: tuple[int, int, int, int] | None = None
 
 
 @dataclass(frozen=True)
@@ -300,6 +301,7 @@ class NativeSurface:
             box
             for box in self.layout.boxes
             if box.contains(x, y)
+            and _visible_through_scroll_ancestors(self.layout, box, x, y)
             and self._is_focusable_widget(_widget_by_path(widget, box.path))
         ]
         if not containing:
@@ -439,7 +441,11 @@ def hit_test_native(
     *,
     event: str = "onClick",
 ) -> LayoutBox | None:
-    containing = [box for box in layout.boxes if box.contains(x, y)]
+    containing = [
+        box
+        for box in layout.boxes
+        if box.contains(x, y) and _visible_through_scroll_ancestors(layout, box, x, y)
+    ]
     if not containing:
         return None
 
@@ -578,22 +584,36 @@ def _layout_widget(
     )
 
 
-def _paint_box(box: LayoutBox) -> list[PaintCommand]:
+def _paint_box(
+    box: LayoutBox,
+    *,
+    clip: tuple[int, int, int, int] | None = None,
+) -> list[PaintCommand]:
     style = dict(box.style)
     commands: list[PaintCommand] = []
-    rect = _rect_command(box, style)
+    rect = _rect_command(box, style, clip=clip)
     if rect is not None:
         commands.append(rect)
 
     if box.text:
-        commands.append(_text_command(box, style))
+        commands.append(_text_command(box, style, clip=clip))
 
+    child_clip = (
+        _intersect_rects(clip, _box_rect(box))
+        if box.name == "ScrollView"
+        else clip
+    )
     for child in box.children:
-        commands.extend(_paint_box(child))
+        commands.extend(_paint_box(child, clip=child_clip))
     return commands
 
 
-def _rect_command(box: LayoutBox, style: dict[str, Any]) -> PaintCommand | None:
+def _rect_command(
+    box: LayoutBox,
+    style: dict[str, Any],
+    *,
+    clip: tuple[int, int, int, int] | None,
+) -> PaintCommand | None:
     fill = _box_fill(box, style)
     stroke = _box_stroke(box, style)
     stroke_width = _dimension(style, "borderWidth", default=_default_border_width(box))
@@ -612,10 +632,16 @@ def _rect_command(box: LayoutBox, style: dict[str, Any]) -> PaintCommand | None:
         stroke=stroke,
         stroke_width=stroke_width,
         radius=radius,
+        clip=clip,
     )
 
 
-def _text_command(box: LayoutBox, style: dict[str, Any]) -> PaintCommand:
+def _text_command(
+    box: LayoutBox,
+    style: dict[str, Any],
+    *,
+    clip: tuple[int, int, int, int] | None,
+) -> PaintCommand:
     font_size = _dimension(style, "fontSize", default=14)
     padding = _text_padding(box, style)
     width = max(1, ceil(len(box.text or "") * font_size * 0.55))
@@ -630,6 +656,7 @@ def _text_command(box: LayoutBox, style: dict[str, Any]) -> PaintCommand:
         text=box.text or "",
         color=_color_value(style.get("color"), default=_default_text_color(box)),
         font_size=font_size,
+        clip=clip,
     )
 
 
@@ -869,6 +896,36 @@ def _ancestor_paths(path: tuple[int, ...]) -> list[tuple[int, ...]]:
     return [path[:index] for index in range(len(path), -1, -1)]
 
 
+def _visible_through_scroll_ancestors(
+    layout: NativeLayout,
+    box: LayoutBox,
+    x: int,
+    y: int,
+) -> bool:
+    for path in _ancestor_paths(box.path):
+        ancestor = layout.by_path(path)
+        if ancestor.name == "ScrollView" and not ancestor.contains(x, y):
+            return False
+    return True
+
+
+def _box_rect(box: LayoutBox) -> tuple[int, int, int, int]:
+    return (box.x, box.y, max(box.width, 0), max(box.height, 0))
+
+
+def _intersect_rects(
+    first: tuple[int, int, int, int] | None,
+    second: tuple[int, int, int, int],
+) -> tuple[int, int, int, int]:
+    if first is None:
+        return second
+    x1 = max(first[0], second[0])
+    y1 = max(first[1], second[1])
+    x2 = min(first[0] + first[2], second[0] + second[2])
+    y2 = min(first[1] + first[3], second[1] + second[3])
+    return (x1, y1, max(0, x2 - x1), max(0, y2 - y1))
+
+
 def _widget_by_path(widget: FakeWidget, path: tuple[int, ...]) -> FakeWidget:
     current = widget
     for index in path:
@@ -899,10 +956,15 @@ def _draw_rounded_rect(
     stroke = _parse_color(command.stroke) if command.stroke is not None else None
     stroke_width = max(command.stroke_width, 0)
     radius = max(command.radius, 0)
-    x1 = max(command.x, 0)
-    y1 = max(command.y, 0)
-    x2 = min(command.x + command.width, image_width)
-    y2 = min(command.y + command.height, image_height)
+    clip_x, clip_y, clip_width, clip_height = _clip_bounds(
+        command.clip,
+        image_width,
+        image_height,
+    )
+    x1 = max(command.x, 0, clip_x)
+    y1 = max(command.y, 0, clip_y)
+    x2 = min(command.x + command.width, image_width, clip_x + clip_width)
+    y2 = min(command.y + command.height, image_height, clip_y + clip_height)
 
     for y in range(y1, y2):
         for x in range(x1, x2):
@@ -940,6 +1002,7 @@ def _draw_text_marker(
     command: PaintCommand,
 ) -> None:
     color = _parse_color(command.color)
+    clip = _clip_bounds(command.clip, image_width, image_height)
     glyph_width = max(2, command.font_size // 3)
     glyph_height = max(6, int(command.font_size * 0.85))
     step = glyph_width + 2
@@ -958,6 +1021,7 @@ def _draw_text_marker(
             glyph_height,
             color,
             ord(character),
+            clip,
         )
 
 
@@ -971,9 +1035,11 @@ def _draw_text_glyph(
     height: int,
     color: tuple[int, int, int, int],
     seed: int,
+    clip: tuple[int, int, int, int],
 ) -> None:
-    for px in range(max(x, 0), min(x + width, image_width)):
-        for py in range(max(y, 0), min(y + height, image_height)):
+    clip_x, clip_y, clip_width, clip_height = clip
+    for px in range(max(x, 0, clip_x), min(x + width, image_width, clip_x + clip_width)):
+        for py in range(max(y, 0, clip_y), min(y + height, image_height, clip_y + clip_height)):
             local_x = px - x
             local_y = py - y
             if (
@@ -982,6 +1048,21 @@ def _draw_text_glyph(
                 or (seed + local_x * 3 + local_y * 5) % 11 == 0
             ):
                 _set_pixel(image, image_width, px, py, color)
+
+
+def _clip_bounds(
+    clip: tuple[int, int, int, int] | None,
+    image_width: int,
+    image_height: int,
+) -> tuple[int, int, int, int]:
+    if clip is None:
+        return (0, 0, image_width, image_height)
+    x, y, width, height = clip
+    x1 = max(x, 0)
+    y1 = max(y, 0)
+    x2 = min(x + width, image_width)
+    y2 = min(y + height, image_height)
+    return (x1, y1, max(0, x2 - x1), max(0, y2 - y1))
 
 
 def _inside_rounded_rect(

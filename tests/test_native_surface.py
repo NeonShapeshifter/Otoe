@@ -3,6 +3,7 @@ from otoe import (
     HStack,
     Input,
     NativeSurface,
+    ScrollView,
     ShortcutScope,
     Show,
     Text,
@@ -210,6 +211,25 @@ def test_native_surface_click_ignores_disabled_button_without_focus_change():
 
     assert clicks == []
     assert surface.focused_path == (0,)
+
+
+def test_native_surface_click_respects_scrollview_bounds_for_focus_and_click():
+    clicks = []
+    sheet = css(".scroll { width: 120; height: 40; padding: 4; gap: 4; }")
+    surface = NativeSurface(
+        ScrollView(
+            Button("Visible", onClick=lambda: clicks.append("visible")),
+            Button("Clipped", onClick=lambda: clicks.append("clipped")),
+            className="scroll",
+        ),
+        stylesheet=sheet,
+    )
+    clipped = surface.box((1,))
+
+    surface.click(clipped.x + 2, clipped.y + 2)
+
+    assert clicks == []
+    assert surface.focused_path is None
 
 
 def test_native_surface_key_down_dispatches_to_focused_widget():
