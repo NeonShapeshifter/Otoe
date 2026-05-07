@@ -9,6 +9,7 @@ from ._native_shared import (
     constrain,
     dimension,
     flatten,
+    NATIVE_CONTAINER_WIDGETS,
     optional_string,
     resolve_style,
     state_items,
@@ -78,7 +79,7 @@ def _layout_widget(
             default_padding=8,
             default_width=180,
         )
-    if name in {"HStack", "VStack", "Panel", "ScrollView", "FocusScope", "ShortcutScope"}:
+    if name in NATIVE_CONTAINER_WIDGETS:
         direction = "row" if name == "HStack" else "column"
         return _container_box(
             widget,
@@ -87,17 +88,6 @@ def _layout_widget(
             y=y,
             style=style,
             direction=direction,
-            stylesheet=stylesheet,
-            strict_styles=strict_styles,
-        )
-    if name in {"Show", "For"}:
-        return _container_box(
-            widget,
-            path=path,
-            x=x,
-            y=y,
-            style=style,
-            direction="column",
             stylesheet=stylesheet,
             strict_styles=strict_styles,
         )

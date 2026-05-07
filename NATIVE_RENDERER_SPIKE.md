@@ -82,6 +82,10 @@ The current layout adapter has explicit behavior for:
 
 Unknown widgets are treated as column containers for now. That keeps the spike
 useful for generic trees while the formal native widget set is still small.
+This behavior is intentional and covered by the executable widget matrix in
+`otoe._native_shared`: `Text` is a text leaf, `Button` and `Input` are controls,
+known stack/scope/control-flow wrappers are containers, and unknown widgets are
+fallback containers.
 
 ## Supported Layout
 

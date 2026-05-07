@@ -9,12 +9,18 @@ from otoe import (
     StyleSheet,
     Text,
     VStack,
+    Widget,
     css,
     layout_native,
     mount,
     signal,
 )
-from otoe._native_shared import NATIVE_STYLE_SUPPORT, native_style_support
+from otoe._native_shared import (
+    NATIVE_STYLE_SUPPORT,
+    NATIVE_WIDGET_SUPPORT,
+    native_style_support,
+    native_widget_support,
+)
 from otoe.style import SUPPORTED_PROPERTIES
 
 
@@ -105,6 +111,46 @@ def test_native_style_support_matrix_covers_css_properties():
     assert native_style_support("borderWidth") == "layout+paint"
     assert native_style_support("margin") == "ignored"
     assert native_style_support("lineHeight") is None
+
+
+def test_native_widget_support_matrix_documents_layout_behavior():
+    assert native_widget_support("Text") == "text"
+    assert native_widget_support("Button") == "control"
+    assert native_widget_support("Input") == "control"
+    assert native_widget_support("VStack") == "container"
+    assert native_widget_support("HStack") == "container"
+    assert native_widget_support("ScrollView") == "container"
+    assert native_widget_support("FocusScope") == "container"
+    assert native_widget_support("ShortcutScope") == "container"
+    assert native_widget_support("Show") == "container"
+    assert native_widget_support("For") == "container"
+    assert native_widget_support("Hero") == "fallback-container"
+
+    assert set(NATIVE_WIDGET_SUPPORT) == {
+        "Button",
+        "FocusScope",
+        "For",
+        "HStack",
+        "Input",
+        "Panel",
+        "ScrollView",
+        "ShortcutScope",
+        "Show",
+        "Text",
+        "VStack",
+    }
+
+
+def test_native_layout_unknown_widgets_use_documented_container_fallback():
+    class Hero(Widget):
+        props = {"className"}
+
+    mounted = mount(Hero(Text("Launch"), className="hero"))
+
+    layout = layout_native(mounted)
+
+    assert layout.root.name == "Hero"
+    assert layout.root.children[0].text == "Launch"
 
 
 def test_native_layout_accepts_documented_ignored_styles_without_effect():

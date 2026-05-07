@@ -52,6 +52,26 @@ NATIVE_STYLE_SUPPORT = {
 for _name in NATIVE_LAYOUT_STYLE_PROPERTIES & NATIVE_PAINT_STYLE_PROPERTIES:
     NATIVE_STYLE_SUPPORT[_name] = "layout+paint"
 
+NATIVE_TEXT_WIDGETS = frozenset({"Text"})
+NATIVE_CONTROL_WIDGETS = frozenset({"Button", "Input"})
+NATIVE_CONTAINER_WIDGETS = frozenset(
+    {
+        "FocusScope",
+        "For",
+        "HStack",
+        "Panel",
+        "ScrollView",
+        "ShortcutScope",
+        "Show",
+        "VStack",
+    }
+)
+NATIVE_WIDGET_SUPPORT = {
+    **{name: "text" for name in NATIVE_TEXT_WIDGETS},
+    **{name: "control" for name in NATIVE_CONTROL_WIDGETS},
+    **{name: "container" for name in NATIVE_CONTAINER_WIDGETS},
+}
+
 
 def native_surface_target(
     target: Node | FakeWidget | MountedNode,
@@ -111,6 +131,10 @@ def resolve_style(
 
 def native_style_support(name: str) -> str | None:
     return NATIVE_STYLE_SUPPORT.get(name)
+
+
+def native_widget_support(name: str) -> str:
+    return NATIVE_WIDGET_SUPPORT.get(name, "fallback-container")
 
 
 def _validate_native_style_keys(style: dict[str, Any]) -> None:
