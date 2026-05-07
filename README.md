@@ -33,6 +33,8 @@ stable public framework or a production desktop renderer.
   for the first renderer spike.
 - `NativeSurface` for mounting a tree, rendering PNG frames, dispatching
   clicks, and refreshing the headless native frame from one object.
+- `NativeWindowDriver` for testable native-window event dispatch over a
+  `NativeSurface`, plus an optional Tk wrapper for local experiments.
 - Headless native focus and keyboard handling for autofocus, click-to-focus,
   Tab traversal, focused keydown handlers, button submit keys, and global
   shortcut payloads.

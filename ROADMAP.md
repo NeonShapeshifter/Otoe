@@ -164,9 +164,12 @@ framework milestone.
 - Native click dispatch now respects disabled widgets.
 - Native `ScrollView` bounds now clip descendant paint output, PNG rendering, and hit-tested clicks.
 - Native paint now includes disabled control defaults and focused control rings.
+- Native window driver added for testable click, keyboard, text-input, and PNG
+  frame dispatch over `NativeSurface`, with an optional Tk wrapper for local
+  experiments.
 - `BENCHMARKS.md` added for concrete change-friction notes against Wraith/Kivy.
 - CI now builds release distributions and runs `twine check` on package metadata.
-- Baseline tests: `159 passed`.
+- Baseline tests: `164 passed`.
 
 ### Current Sprint
 
@@ -185,6 +188,7 @@ framework milestone.
 13. Align native disabled control semantics with focus/click dispatch. **Disabled widgets no longer receive native click handlers.**
 14. Add minimal `ScrollView` bounds semantics for paint and hit-testing. **Descendant paint and click targets are clipped to the viewport bounds.**
 15. Add visible native control states for disabled and focused controls. **Disabled defaults and focus rings are covered in paint tests.**
+16. Add a testable native window driver before picking a production backend. **`NativeWindowDriver` added, with optional Tk wrapper.**
 
 ---
 

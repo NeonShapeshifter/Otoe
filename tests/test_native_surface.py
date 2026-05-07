@@ -304,6 +304,26 @@ def test_native_surface_input_text_dispatches_change_and_refreshes():
     assert surface.box(()).text == "relay"
 
 
+def test_native_surface_input_value_reads_focused_or_explicit_input():
+    first = signal("alpha")
+    second = signal("beta")
+    surface = NativeSurface(
+        VStack(
+            Input(
+                value=first,
+                autoFocus=True,
+                onChange=lambda next_value: first.set(next_value),
+            ),
+            Input(value=second, onChange=lambda next_value: second.set(next_value)),
+            padding=4,
+            gap=4,
+        )
+    )
+
+    assert surface.input_value() == "alpha"
+    assert surface.input_value(path=(1,)) == "beta"
+
+
 def test_native_surface_input_text_can_target_an_unfocused_input():
     value = signal("")
     surface = NativeSurface(

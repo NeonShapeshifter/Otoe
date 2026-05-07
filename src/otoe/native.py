@@ -255,17 +255,19 @@ class NativeSurface:
 
     def input_text(self, value: str, *, path: tuple[int, ...] | None = None) -> Any:
         target_path = self.focused_path if path is None else path
-        if target_path is None:
-            raise KeyError("NativeSurface has no focused input for text entry.")
-        widget = _widget_by_path(_surface_root_widget(self._target), target_path)
-        if widget.name != "Input" or widget.props.get("disabled"):
-            raise KeyError(f"No enabled native input exists at path {target_path!r}.")
+        self._enabled_input_widget(target_path)
 
         if target_path != self.focused_path:
+            assert target_path is not None
             self.focus(target_path)
         result = self._trigger_path_event(target_path, "onChange", value)
         self.refresh()
         return result
+
+    def input_value(self, *, path: tuple[int, ...] | None = None) -> str:
+        target_path = self.focused_path if path is None else path
+        widget = self._enabled_input_widget(target_path)
+        return str(widget.props.get("value") or "")
 
     def box(self, path: tuple[int, ...]) -> LayoutBox:
         return self.layout.by_path(path)
@@ -330,6 +332,14 @@ class NativeSurface:
         if widget.props.get("disabled"):
             return False
         return widget.name in {"Button", "Input"}
+
+    def _enabled_input_widget(self, path: tuple[int, ...] | None) -> FakeWidget:
+        if path is None:
+            raise KeyError("NativeSurface has no focused input for text entry.")
+        widget = _widget_by_path(_surface_root_widget(self._target), path)
+        if widget.name != "Input" or widget.props.get("disabled"):
+            raise KeyError(f"No enabled native input exists at path {path!r}.")
+        return widget
 
     def _trigger_path_event(self, path: tuple[int, ...], event: str, *args: Any) -> Any:
         try:

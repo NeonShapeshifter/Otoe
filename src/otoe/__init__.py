@@ -69,6 +69,7 @@ from .ui import (
     class_names,
 )
 from .widgets import Button, HStack, Input, Panel, ScrollView, Text, VStack
+from .window import NativeWindowDriver, NativeWindowEvent, TkNativeWindow
 
 __all__ = [
     "ActionButton",
@@ -102,6 +103,8 @@ __all__ = [
     "NativePaint",
     "NativePaintError",
     "NativeSurface",
+    "NativeWindowDriver",
+    "NativeWindowEvent",
     "NavItem",
     "NavRoute",
     "Node",
@@ -132,6 +135,7 @@ __all__ = [
     "Token",
     "Toast",
     "Toolbar",
+    "TkNativeWindow",
     "UnknownPropError",
     "UnknownStyleClassError",
     "VStack",

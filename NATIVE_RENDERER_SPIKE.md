@@ -1,6 +1,6 @@
 # Native Renderer Spike
 
-**Status:** experimental headless spike
+**Status:** experimental headless spike with optional local window wrapper
 **Updated:** May 6, 2026
 
 This document describes the renderer boundary that exists today. It is not a
@@ -40,6 +40,13 @@ surface.render_png("next-frame.png")
 layout/paint after click or keyboard dispatch, and lazily refreshes when
 reactive prop or control-flow updates mutate the mounted fake-widget tree. It
 is still headless; it does not create windows or run an OS event loop.
+
+`NativeWindowDriver` is the testable window-facing wrapper over `NativeSurface`.
+It accepts high-level click, key-down, and controlled text-input events, then
+delegates to the surface and exposes the resulting frame, paint, size, focus,
+and PNG output. `TkNativeWindow` is an optional local experiment layer on top of
+that driver; it imports `tkinter` only when constructed and is not part of the
+production renderer contract.
 
 The native spike consumes `MountedNode` or `FakeWidget` trees. Components,
 `Show`, and `For` are already resolved by `mount(...)`, so the renderer only
@@ -143,6 +150,10 @@ The `NativeSurface` focus and keyboard subset supports:
 - Controlled input text dispatch through `NativeSurface.input_text(...)`, which
   sends the new value to the focused or explicitly targeted `Input.onChange`
   handler and refreshes the next headless frame.
+- `NativeWindowDriver` event dispatch for high-level `click`, `key_down`, and
+  `input_text` events over the current `NativeSurface`.
+- Optional `TkNativeWindow` wrapper for local manual experiments with OS mouse
+  and keyboard events translated into `NativeWindowDriver` events.
 
 Uncontrolled input mutation, text selection, pointer movement, IME, drag,
 wheel, gesture, and bubbling/capture semantics are deferred.
@@ -151,7 +162,6 @@ wheel, gesture, and bubbling/capture semantics are deferred.
 
 These are intentionally outside the current headless boundary:
 
-- A real window or OS event loop.
 - GPU rendering.
 - Skia-specific public APIs.
 - Taffy-specific public APIs.
@@ -161,6 +171,9 @@ These are intentionally outside the current headless boundary:
 - Animation timing.
 - Production packaging.
 - Production security model for a remotely exposed preview server.
+
+The optional Tk wrapper is deliberately not a production backend. It is a thin
+manual-test adapter over the same headless surface contract.
 
 The spike should fail clearly where possible. Unsupported style classes are
 strict by default. Non-pixel layout dimensions raise `NativeLayoutError`.
