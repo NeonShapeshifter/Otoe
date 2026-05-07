@@ -2,7 +2,7 @@
 
 **Status:** Phase 3 started / renderer hardening and DX diagnostics started
 **Updated:** May 7, 2026
-**Current baseline:** 219 tests passing
+**Current baseline:** 220 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -295,4 +295,4 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 1. Decide whether `otoe dev` should accept app factories lazily per reload cycle.
 2. Add first-class CLI help text examples if the command surface grows past these three commands.
-3. Add a native CLI fixture that compares PNG output across repeated renders.
+3. Add a public native renderer status note that separates PNG preview support from production backend claims.

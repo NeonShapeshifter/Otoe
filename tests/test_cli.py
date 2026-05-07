@@ -98,6 +98,21 @@ def test_cli_render_writes_native_png(tmp_path):
     assert output.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
 
 
+def test_cli_native_png_render_is_stable_across_runs(tmp_path):
+    first = tmp_path / "first.png"
+    second = tmp_path / "second.png"
+
+    assert (
+        main(["render", "examples.quickstart:app", "--out", str(first), "--native"])
+        == 0
+    )
+    assert (
+        main(["render", "examples.quickstart:app", "--out", str(second), "--native"])
+        == 0
+    )
+    assert first.read_bytes() == second.read_bytes()
+
+
 def test_cli_render_rejects_invalid_target(tmp_path, monkeypatch, capsys):
     module = tmp_path / "bad_surface.py"
     module.write_text("app = object()\n", encoding="utf-8")
