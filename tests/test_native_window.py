@@ -4,10 +4,12 @@ from otoe import (
     NativeSurface,
     NativeWindowDriver,
     NativeWindowEvent,
+    ScrollView,
     ShortcutScope,
     Text,
     VStack,
     edit_native_input_value,
+    css,
     run_native,
     signal,
 )
@@ -32,6 +34,25 @@ def test_native_window_driver_click_dispatches_and_updates_frame():
     assert driver.surface.box((0,)).text == "ON"
     assert driver.frame > initial_frame
     assert driver.size == (driver.paint.width, driver.paint.height)
+
+
+def test_native_window_driver_wheel_dispatches_scroll():
+    scroll_y = signal(0)
+    driver = NativeWindowDriver.from_target(
+        ScrollView(
+            Button("First", onClick=lambda: None),
+            Button("Second", onClick=lambda: None),
+            scrollY=scroll_y,
+            onScroll=lambda next_scroll_y: scroll_y.set(next_scroll_y),
+            className="scroll",
+        ),
+        stylesheet=css(".scroll { width: 120; height: 40; padding: 4; gap: 4; }"),
+    )
+
+    driver.dispatch(NativeWindowEvent("wheel", x=8, y=8, delta_y=38))
+
+    assert scroll_y.value == 38
+    assert driver.surface.box((1,)).y == 4
 
 
 def test_native_window_driver_key_down_activates_focused_button():
@@ -116,11 +137,22 @@ def test_native_window_driver_rejects_invalid_events():
     driver = NativeWindowDriver.from_target(Button("Run", onClick=lambda: None))
 
     try:
-        driver.dispatch(NativeWindowEvent("wheel"))
+        driver.dispatch(NativeWindowEvent("pinch"))
     except ValueError as exc:
         assert "Unknown native window event kind" in str(exc)
     else:
         raise AssertionError("Expected NativeWindowDriver to reject unknown events.")
+
+
+def test_native_window_driver_rejects_incomplete_wheel_events():
+    driver = NativeWindowDriver.from_target(Button("Run", onClick=lambda: None))
+
+    try:
+        driver.dispatch(NativeWindowEvent("wheel"))
+    except ValueError as exc:
+        assert "wheel events require x, y, and delta_y" in str(exc)
+    else:
+        raise AssertionError("Expected NativeWindowDriver to reject incomplete wheel events.")
 
 
 def test_run_native_rejects_unknown_backend_without_opening_window():

@@ -31,8 +31,8 @@ class Input(Widget):
 
 
 class ScrollView(Widget):
-    props = {"className", "id"}
-    events = set()
+    props = {"className", "id", "scrollY"}
+    events = {"onScroll"}
 
 
 class Panel(Widget):

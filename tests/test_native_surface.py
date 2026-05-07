@@ -240,6 +240,27 @@ def test_native_surface_click_respects_scrollview_bounds_for_focus_and_click():
     assert surface.focused_path is None
 
 
+def test_native_surface_scroll_dispatches_clamped_scroll_y():
+    scroll_y = signal(0)
+    sheet = css(".scroll { width: 120; height: 40; padding: 4; gap: 4; }")
+    surface = NativeSurface(
+        ScrollView(
+            Button("First", onClick=lambda: None),
+            Button("Second", onClick=lambda: None),
+            scrollY=scroll_y,
+            onScroll=lambda next_scroll_y: scroll_y.set(next_scroll_y),
+            className="scroll",
+        ),
+        stylesheet=sheet,
+    )
+
+    surface.scroll(8, 8, 100)
+
+    assert scroll_y.value == 40
+    assert surface.box((0,)).y == -36
+    assert surface.box((1,)).y == 2
+
+
 def test_native_surface_key_down_dispatches_to_focused_widget():
     keys = []
     surface = NativeSurface(Input(value="", autoFocus=True, onKeyDown=keys.append))

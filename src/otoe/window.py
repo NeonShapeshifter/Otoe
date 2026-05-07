@@ -16,6 +16,7 @@ class NativeWindowEvent:
     kind: str
     x: int | None = None
     y: int | None = None
+    delta_y: int | None = None
     key: str | None = None
     text: str | None = None
     shift: bool = False
@@ -68,6 +69,10 @@ class NativeWindowDriver:
             if event.x is None or event.y is None:
                 raise ValueError("click events require x and y coordinates.")
             return self.click(event.x, event.y)
+        if event.kind == "wheel":
+            if event.x is None or event.y is None or event.delta_y is None:
+                raise ValueError("wheel events require x, y, and delta_y.")
+            return self.wheel(event.x, event.y, event.delta_y)
         if event.kind == "key_input":
             if event.key is None:
                 raise ValueError("key_input events require a key.")
@@ -97,6 +102,9 @@ class NativeWindowDriver:
 
     def click(self, x: int, y: int) -> Any:
         return self.surface.click(x, y)
+
+    def wheel(self, x: int, y: int, delta_y: int) -> Any:
+        return self.surface.scroll(x, y, delta_y)
 
     def key_down(
         self,
@@ -182,6 +190,9 @@ class TkNativeWindow:
         self._label = tk.Label(self.root, bd=0, highlightthickness=0)
         self._label.pack()
         self._label.bind("<Button-1>", self._on_click)
+        self._label.bind("<MouseWheel>", self._on_wheel)
+        self._label.bind("<Button-4>", self._on_wheel)
+        self._label.bind("<Button-5>", self._on_wheel)
         self.root.bind("<KeyPress>", self._on_key_press)
         self._render()
 
@@ -193,6 +204,11 @@ class TkNativeWindow:
 
     def _on_click(self, event: Any) -> str:
         self.driver.click(int(event.x), int(event.y))
+        self._render()
+        return "break"
+
+    def _on_wheel(self, event: Any) -> str:
+        self.driver.wheel(int(event.x), int(event.y), _tk_wheel_delta(event))
         self._render()
         return "break"
 
@@ -229,6 +245,19 @@ def _tk_key_name(event: Any) -> str:
     if event.keysym == "space":
         return " "
     return str(event.keysym)
+
+
+def _tk_wheel_delta(event: Any) -> int:
+    number = getattr(event, "num", None)
+    if number == 4:
+        return -48
+    if number == 5:
+        return 48
+
+    delta = int(getattr(event, "delta", 0) or 0)
+    if delta == 0:
+        return 0
+    return -int(delta / 4)
 
 
 def edit_native_input_value(

@@ -173,9 +173,13 @@ framework milestone.
   driver and optional Tk backend.
 - Driver-level `key_input(...)` editing added for printable text, Backspace,
   Delete, Enter/Tab fallback, and shortcut fallback.
+- Controlled native `ScrollView(scrollY=..., onScroll=...)` support added for
+  scroll-offset layout, clipped paint/hit-testing, surface scroll dispatch, and
+  driver wheel events. Excessive `scrollY` values are clamped to content bounds
+  during layout.
 - `BENCHMARKS.md` added for concrete change-friction notes against Wraith/Kivy.
 - CI now builds release distributions and runs `twine check` on package metadata.
-- Baseline tests: `171 passed`.
+- Baseline tests: `177 passed`.
 
 ### Current Sprint
 
@@ -197,6 +201,7 @@ framework milestone.
 16. Add a testable native window driver before picking a production backend. **`NativeWindowDriver` added, with optional Tk wrapper.**
 17. Add a manual native window demo that still works headlessly in CI. **Driver PNG frames and optional Tk launch added.**
 18. Add a framework-facing native runner and driver-level text key editing. **`run_native(...)` and `NativeWindowDriver.key_input(...)` added.**
+19. Add controlled native scroll input and wheel dispatch. **`ScrollView(scrollY=..., onScroll=...)`, `NativeSurface.scroll(...)`, and `NativeWindowDriver.wheel(...)` added.**
 
 ---
 

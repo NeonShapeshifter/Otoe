@@ -122,3 +122,38 @@ def test_native_layout_scrollview_bounds_do_not_reflow_children():
 
     assert (scroll.name, scroll.width, scroll.height) == ("ScrollView", 120, 40)
     assert clipped.y >= scroll.y + scroll.height
+
+
+def test_native_layout_scrollview_scroll_y_offsets_children():
+    sheet = css(".scroll { width: 120; height: 40; padding: 4; gap: 4; }")
+    mounted = mount(
+        ScrollView(
+            Button("First", onClick=lambda: None),
+            Button("Second", onClick=lambda: None),
+            scrollY=38,
+            className="scroll",
+        )
+    )
+
+    layout = layout_native(mounted, stylesheet=sheet)
+
+    assert layout.by_path((0,)).y == -34
+    assert layout.by_path((1,)).y == 4
+
+
+def test_native_layout_scrollview_scroll_y_is_clamped_to_content():
+    sheet = css(".scroll { width: 120; height: 40; padding: 4; gap: 4; }")
+    mounted = mount(
+        ScrollView(
+            Button("First", onClick=lambda: None),
+            Button("Second", onClick=lambda: None),
+            scrollY=999,
+            className="scroll",
+        )
+    )
+
+    layout = layout_native(mounted, stylesheet=sheet)
+
+    assert dict(layout.root.style)["scrollY"] == 40
+    assert layout.by_path((0,)).y == -36
+    assert layout.by_path((1,)).y == 2

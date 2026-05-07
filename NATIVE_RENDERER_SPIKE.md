@@ -71,8 +71,8 @@ The current layout adapter has explicit behavior for:
   event support.
 - `Input`: text-sized leaf box with default width, padding, fill, and border.
 - `Panel`, `FocusScope`, and `ShortcutScope`: container boxes.
-- `ScrollView`: bounded container box with clipped descendant paint and
-  hit-testing.
+- `ScrollView`: bounded container box with `scrollY`, clipped descendant paint,
+  hit-testing, and controlled `onScroll`.
 - `Show` and `For`: container boxes after mount-time control-flow resolution.
 
 Unknown widgets are treated as column containers for now. That keeps the spike
@@ -95,11 +95,12 @@ The layout adapter currently supports:
 - Text measurement approximation from string length and `font-size`.
 - Reactive prop updates through rerunning `layout_native(...)`.
 - `ScrollView` viewport bounds for constrained children.
+- `ScrollView(scrollY=...)` vertical child offset.
 - Strict class resolution through `StyleSheet.resolve(...)`.
 
 All layout dimensions must be numeric pixels. Percent units, `auto`, flex
-distribution, wrapping, alignment, margins, scroll offsets, and intrinsic
-platform text measurement are intentionally not implemented yet.
+distribution, wrapping, alignment, margins, horizontal scroll offsets, and
+intrinsic platform text measurement are intentionally not implemented yet.
 
 ## Supported Paint
 
@@ -158,8 +159,14 @@ The `NativeSurface` focus and keyboard subset supports:
 - Controlled input text dispatch through `NativeSurface.input_text(...)`, which
   sends the new value to the focused or explicitly targeted `Input.onChange`
   handler and refreshes the next headless frame.
+- Controlled scroll dispatch through `NativeSurface.scroll(x, y, delta_y)`,
+  which finds the containing `ScrollView`, clamps the next `scrollY`, calls
+  `onScroll(next_scroll_y)`, and refreshes the next headless frame.
+- Layout clamps excessive `scrollY` values to the current content bounds.
 - `NativeWindowDriver` event dispatch for high-level `click`, `key_down`, and
   `input_text` events over the current `NativeSurface`.
+- `NativeWindowDriver.wheel(x, y, delta_y)` and `NativeWindowEvent("wheel", ...)`
+  dispatch for controlled scroll views.
 - `NativeWindowDriver.key_input(...)` dispatch for platform keypress events:
   printable text edits focused inputs, Backspace/Delete mutate the controlled
   value, Enter/Tab fall through to `key_down`, and modified keys remain
@@ -170,7 +177,8 @@ The `NativeSurface` focus and keyboard subset supports:
   the optional Tk wrapper.
 
 Caret movement, text selection, uncontrolled input mutation, pointer movement,
-IME, drag, wheel, gesture, and bubbling/capture semantics are deferred.
+IME, drag, inertial scroll physics, gesture, and bubbling/capture semantics are
+deferred.
 
 ## Rejected For This Spike
 

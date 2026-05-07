@@ -269,6 +269,26 @@ class NativeSurface:
         widget = self._enabled_input_widget(target_path)
         return str(widget.props.get("value") or "")
 
+    def scroll(self, x: int, y: int, delta_y: int) -> Any:
+        hit = hit_test_native(self.layout, x, y, event="onScroll")
+        if hit is None:
+            return None
+        widget = _widget_by_path(_surface_root_widget(self._target), hit.path)
+        if widget.name != "ScrollView" or "onScroll" not in widget.events:
+            return None
+
+        current_scroll_y = _scroll_y(widget)
+        next_scroll_y = _clamp_scroll_y(
+            current_scroll_y + int(delta_y),
+            max_scroll_y=_max_scroll_y(hit),
+        )
+        if next_scroll_y == current_scroll_y:
+            return None
+
+        result = widget.trigger("onScroll", next_scroll_y)
+        self.refresh()
+        return result
+
     def box(self, path: tuple[int, ...]) -> LayoutBox:
         return self.layout.by_path(path)
 
@@ -781,10 +801,12 @@ def _container_box(
 ) -> LayoutBox:
     padding = _dimension(style, "padding", default=0)
     gap = _dimension(style, "gap", default=0)
+    scroll_y = _dimension(style, "scrollY", default=0) if widget.name == "ScrollView" else 0
+    scroll_y = max(scroll_y, 0)
 
     children: list[LayoutBox] = []
     cursor_x = x + padding
-    cursor_y = y + padding
+    cursor_y = y + padding - scroll_y
     content_width = 0
     content_height = 0
 
@@ -818,6 +840,15 @@ def _container_box(
     height = content_height + padding * 2
     width = _constrain(width, style, "width", "minWidth", "maxWidth")
     height = _constrain(height, style, "height", "minHeight", "maxHeight")
+    if widget.name == "ScrollView":
+        max_scroll_y = max(0, content_height + padding * 2 - height)
+        clamped_scroll_y = _clamp_scroll_y(scroll_y, max_scroll_y=max_scroll_y)
+        if clamped_scroll_y != scroll_y:
+            children = [
+                _offset_box_y(child, scroll_y - clamped_scroll_y)
+                for child in children
+            ]
+        style = {**style, "scrollY": clamped_scroll_y}
 
     return LayoutBox(
         path=path,
@@ -887,7 +918,7 @@ def _resolve_style(
                 strict=strict_styles,
             )
         )
-    for prop in ("gap", "padding"):
+    for prop in ("gap", "padding", "scrollY"):
         if prop in widget.props:
             style[prop] = widget.props[prop]
     if "color" in widget.props:
@@ -969,6 +1000,23 @@ def _flatten(box: LayoutBox) -> list[LayoutBox]:
     return boxes
 
 
+def _offset_box_y(box: LayoutBox, delta: int) -> LayoutBox:
+    return LayoutBox(
+        path=box.path,
+        name=box.name,
+        x=box.x,
+        y=box.y + delta,
+        width=box.width,
+        height=box.height,
+        id=box.id,
+        text=box.text,
+        events=box.events,
+        state=box.state,
+        style=box.style,
+        children=tuple(_offset_box_y(child, delta) for child in box.children),
+    )
+
+
 def _ancestor_paths(path: tuple[int, ...]) -> list[tuple[int, ...]]:
     return [path[:index] for index in range(len(path), -1, -1)]
 
@@ -984,6 +1032,31 @@ def _visible_through_scroll_ancestors(
         if ancestor.name == "ScrollView" and not ancestor.contains(x, y):
             return False
     return True
+
+
+def _max_scroll_y(scroll_box: LayoutBox) -> int:
+    style = dict(scroll_box.style)
+    padding = _dimension(style, "padding", default=0)
+    scroll_y = _dimension(style, "scrollY", default=0)
+    if not scroll_box.children:
+        return 0
+
+    content_top = scroll_box.y + padding - scroll_y
+    content_bottom = max(child.y + child.height for child in scroll_box.children)
+    content_height = max(0, content_bottom - content_top)
+    total_height = content_height + padding * 2
+    return max(0, total_height - scroll_box.height)
+
+
+def _scroll_y(widget: FakeWidget) -> int:
+    value = widget.props.get("scrollY", 0)
+    if isinstance(value, (int, float)):
+        return max(0, int(ceil(value)))
+    raise NativeLayoutError(f"Native layout expected numeric scrollY; got {value!r}.")
+
+
+def _clamp_scroll_y(value: int, *, max_scroll_y: int) -> int:
+    return min(max(value, 0), max_scroll_y)
 
 
 def _box_rect(box: LayoutBox) -> tuple[int, int, int, int]:

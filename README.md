@@ -39,6 +39,9 @@ stable public framework or a production desktop renderer.
   by the optional Tk wrapper.
 - Driver-level `key_input(...)` text editing for printable keys, Backspace,
   Delete, Enter/Tab fallback, and shortcut fallback.
+- Controlled native `ScrollView(scrollY=..., onScroll=...)` support with
+  clipped paint, clipped hit-testing, and wheel dispatch through the native
+  window driver.
 - Headless native focus and keyboard handling for autofocus, click-to-focus,
   Tab traversal, focused keydown handlers, button submit keys, and global
   shortcut payloads.
@@ -53,7 +56,7 @@ stable public framework or a production desktop renderer.
 
 ## What Is Not Ready Yet
 
-- Native windows or production desktop rendering.
+- Production desktop rendering/windowing.
 - GPU rendering, layout engine integration, or accessibility tree output.
 - Stable public API guarantees.
 - Full component library or shadcn/Horizon-style UI kit.

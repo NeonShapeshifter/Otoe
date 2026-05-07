@@ -93,6 +93,29 @@ def test_native_click_dispatch_respects_scrollview_bounds():
     assert clicks == ["visible"]
 
 
+def test_native_click_dispatch_uses_scrolled_scrollview_coordinates():
+    clicks = []
+    sheet = css(".scroll { width: 120; height: 40; padding: 4; gap: 4; }")
+    mounted = mount(
+        ScrollView(
+            Button("First", onClick=lambda: clicks.append("first")),
+            Button("Second", onClick=lambda: clicks.append("second")),
+            scrollY=38,
+            className="scroll",
+        )
+    )
+    layout = layout_native(mounted, stylesheet=sheet)
+    first = layout.by_path((0,))
+    second = layout.by_path((1,))
+
+    assert hit_test_native(layout, first.x + 2, 2) is None
+    assert hit_test_native(layout, second.x + 2, second.y + 2) == second
+
+    dispatch_native_click(mounted, layout, second.x + 2, second.y + 2)
+
+    assert clicks == ["second"]
+
+
 def test_native_click_dispatch_updates_state_and_next_png(tmp_path):
     label = signal("OFF")
 
