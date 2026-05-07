@@ -71,6 +71,24 @@ NATIVE_WIDGET_SUPPORT = {
     **{name: "control" for name in NATIVE_CONTROL_WIDGETS},
     **{name: "container" for name in NATIVE_CONTAINER_WIDGETS},
 }
+NATIVE_INPUT_SUPPORT = {
+    "click": "supported",
+    "focus": "supported",
+    "input_text": "supported",
+    "key_down": "supported",
+    "key_input": "supported",
+    "shortcut": "supported",
+    "tab_focus": "supported",
+    "wheel": "supported",
+    "caret_movement": "deferred",
+    "drag": "deferred",
+    "gesture": "deferred",
+    "ime": "deferred",
+    "inertial_scroll": "deferred",
+    "pointer_move": "deferred",
+    "text_selection": "deferred",
+    "uncontrolled_input": "deferred",
+}
 
 
 def native_surface_target(
@@ -135,6 +153,10 @@ def native_style_support(name: str) -> str | None:
 
 def native_widget_support(name: str) -> str:
     return NATIVE_WIDGET_SUPPORT.get(name, "fallback-container")
+
+
+def native_input_support(name: str) -> str | None:
+    return NATIVE_INPUT_SUPPORT.get(name)
 
 
 def _validate_native_style_keys(style: dict[str, Any]) -> None:

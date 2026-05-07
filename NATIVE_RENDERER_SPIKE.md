@@ -236,6 +236,12 @@ Caret movement, text selection, uncontrolled input mutation, pointer movement,
 IME, drag, inertial scroll physics, gesture, and bubbling/capture semantics are
 deferred.
 
+The native input support matrix is executable in `otoe._native_shared`.
+Currently supported categories are click, focus, Tab focus traversal, key-down,
+key-input, controlled text input, shortcuts, and wheel dispatch. Deferred
+categories include caret movement, text selection, uncontrolled input mutation,
+pointer movement, IME, drag, inertial scrolling, and gestures.
+
 ## Rejected For This Spike
 
 These are intentionally outside the current headless boundary:

@@ -13,6 +13,7 @@ from otoe import (
     run_native,
     signal,
 )
+from otoe._native_shared import NATIVE_INPUT_SUPPORT, native_input_support
 
 
 def test_native_window_driver_click_dispatches_and_updates_frame():
@@ -131,6 +132,39 @@ def test_edit_native_input_value_handles_simple_text_keys():
     assert edit_native_input_value("ab", key="Delete") == "ab"
     assert edit_native_input_value("ab", key="Enter", text="\r") is None
     assert edit_native_input_value("ab", key="k", text="k", ctrl=True) is None
+
+
+def test_native_input_support_matrix_matches_driver_behavior():
+    assert native_input_support("click") == "supported"
+    assert native_input_support("wheel") == "supported"
+    assert native_input_support("key_down") == "supported"
+    assert native_input_support("key_input") == "supported"
+    assert native_input_support("input_text") == "supported"
+    assert native_input_support("shortcut") == "supported"
+    assert native_input_support("focus") == "supported"
+    assert native_input_support("tab_focus") == "supported"
+    assert native_input_support("ime") == "deferred"
+    assert native_input_support("drag") == "deferred"
+    assert native_input_support("pinch") is None
+
+    assert set(NATIVE_INPUT_SUPPORT) == {
+        "caret_movement",
+        "click",
+        "drag",
+        "focus",
+        "gesture",
+        "ime",
+        "inertial_scroll",
+        "input_text",
+        "key_down",
+        "key_input",
+        "pointer_move",
+        "shortcut",
+        "tab_focus",
+        "text_selection",
+        "uncontrolled_input",
+        "wheel",
+    }
 
 
 def test_native_window_driver_rejects_invalid_events():
