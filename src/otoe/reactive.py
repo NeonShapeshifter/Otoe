@@ -3,8 +3,8 @@ from __future__ import annotations
 from contextvars import ContextVar
 from typing import Any, Callable
 
-from .errors import ReactiveDisposedError
-from .owner import current_owner
+from .errors import ReactiveDisposedError, ReactiveMutationError
+from .owner import current_mount_phase, current_owner
 from .scheduler import schedule
 
 
@@ -59,6 +59,7 @@ class Signal(ReactiveValue):
     def value(self, next_value: Any) -> None:
         if next_value == self._value:
             return
+        _guard_mount_mutation(self)
         self._value = next_value
         self._notify()
 
@@ -195,3 +196,14 @@ def _disposed_computed_message(owner_name: str | None) -> str:
     if owner_name is None:
         return message
     return f"{owner_name}: {message}"
+
+
+def _guard_mount_mutation(source: ReactiveValue) -> None:
+    if current_mount_phase() != "render" or not source._subscribers:
+        return
+    owner = current_owner()
+    owner_name = owner.name if owner is not None else "component render"
+    raise ReactiveMutationError(
+        f"{owner_name}: Signal value was mutated during component render while "
+        "active subscribers exist. Move the mutation to on_mount() or an event handler."
+    )

@@ -2,7 +2,7 @@
 
 **Status:** Phase 3 started / renderer hardening and DX diagnostics started
 **Updated:** May 7, 2026
-**Current baseline:** 203 tests passing
+**Current baseline:** 206 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -196,7 +196,7 @@ This track can run alongside Phase 3, but it should not expand the public API un
   - wrong event name **Started with widget/component context**
   - wrong handler arity **Started with widget/event/component context**
   - disposed reactive read **Done for computed values**
-  - mutation during mount
+  - mutation during mount **Done for subscribed-signal mutation during component render**
   - renderer unsupported feature errors with component context where possible **Started**
 - Documentation:
   - mental model
@@ -293,6 +293,6 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 ## Immediate Next Actions
 
-1. Add mutation-during-mount diagnostics.
-2. Draft the first CLI shape for `otoe dev`, `otoe render`, and `otoe check`.
+1. Draft the first CLI shape for `otoe dev`, `otoe render`, and `otoe check`.
+2. Add the minimal `otoe check` command once CLI shape is accepted.
 3. Keep `NATIVE_RENDERER_SPIKE.md` aligned as the renderer contract changes.

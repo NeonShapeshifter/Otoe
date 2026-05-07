@@ -5,6 +5,7 @@ from .errors import (
     EventHandlerError,
     OtoeError,
     ReactiveDisposedError,
+    ReactiveMutationError,
     UnknownPropError,
 )
 from .events import EventSignature, event_signature_for, format_event_signature
@@ -122,6 +123,7 @@ __all__ = [
     "Panel",
     "PaintCommand",
     "ReactiveDisposedError",
+    "ReactiveMutationError",
     "render_html",
     "render_native_png",
     "RouteView",

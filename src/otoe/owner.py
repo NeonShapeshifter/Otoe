@@ -10,6 +10,10 @@ class Disposable(Protocol):
 
 
 CURRENT_OWNER: ContextVar["Owner | None"] = ContextVar("otoe_current_owner", default=None)
+CURRENT_MOUNT_PHASE: ContextVar[str | None] = ContextVar(
+    "otoe_current_mount_phase",
+    default=None,
+)
 
 
 @dataclass
@@ -61,3 +65,6 @@ class Owner:
 def current_owner() -> Owner | None:
     return CURRENT_OWNER.get()
 
+
+def current_mount_phase() -> str | None:
+    return CURRENT_MOUNT_PHASE.get()

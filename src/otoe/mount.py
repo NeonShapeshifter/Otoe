@@ -8,7 +8,7 @@ from .control import is_control_tag, is_for_tag, is_show_tag, list_from_value, r
 from .errors import EventHandlerError, UnknownPropError
 from .events import dispatch_event, event_signature_for, format_event_catalog
 from .node import Node
-from .owner import CURRENT_OWNER, Owner, current_owner
+from .owner import CURRENT_MOUNT_PHASE, CURRENT_OWNER, Owner, current_owner
 from .reactive import ReactiveValue, is_reactive
 
 
@@ -78,7 +78,11 @@ def _mount_component(
     mounted = MountedNode(node=node, owner=owner)
     token = CURRENT_OWNER.set(owner)
     try:
-        child_node = node.tag.fn(*node.props["args"], **node.props["kwargs"])
+        phase_token = CURRENT_MOUNT_PHASE.set("render")
+        try:
+            child_node = node.tag.fn(*node.props["args"], **node.props["kwargs"])
+        finally:
+            CURRENT_MOUNT_PHASE.reset(phase_token)
         child_mounted = _mount(
             child_node,
             component_stack=component_stack + (owner.name,),

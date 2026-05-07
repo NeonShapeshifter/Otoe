@@ -16,3 +16,7 @@ class EventHandlerError(OtoeError):
 
 class ReactiveDisposedError(OtoeError):
     """Raised when code reads reactive state after its owner was disposed."""
+
+
+class ReactiveMutationError(OtoeError):
+    """Raised when reactive state is mutated from an unsafe runtime phase."""

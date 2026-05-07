@@ -2,11 +2,14 @@ import pytest
 
 from otoe import (
     ReactiveDisposedError,
+    ReactiveMutationError,
     Text,
     component,
     computed,
     effect,
     mount,
+    on_mount,
+    root_widget,
     signal,
     unmount,
 )
@@ -90,3 +93,46 @@ def test_disposed_computed_read_includes_owner_context():
         match="StatusLabel: Computed value was read after it was disposed",
     ):
         _ = leaked[0].value
+
+
+def test_mutating_subscribed_signal_during_component_render_is_developer_facing():
+    status = signal("ready")
+    mounted = mount(Text(status))
+
+    @component
+    def BadRenderMutation():
+        status.set("armed")
+        return Text("bad")
+
+    with pytest.raises(
+        ReactiveMutationError,
+        match="BadRenderMutation: Signal value was mutated during component render",
+    ):
+        mount(BadRenderMutation())
+
+    assert root_widget(mounted).props["content"] == "ready"
+
+
+def test_local_signal_initialization_during_component_render_stays_allowed():
+    @component
+    def LocalStatus():
+        status = signal("starting")
+        status.set("ready")
+        return Text(status)
+
+    mounted = mount(LocalStatus())
+
+    assert root_widget(mounted).props["content"] == "ready"
+
+
+def test_on_mount_can_mutate_subscribed_signal_after_render_phase():
+    status = signal("starting")
+
+    @component
+    def MountedStatus():
+        on_mount(lambda: status.set("ready"))
+        return Text(status)
+
+    mounted = mount(MountedStatus())
+
+    assert root_widget(mounted).props["content"] == "ready"
