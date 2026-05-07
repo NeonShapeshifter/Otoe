@@ -6,6 +6,7 @@ from .errors import (
     OtoeError,
     UnknownPropError,
 )
+from .events import EventSignature, event_signature_for, format_event_signature
 from .html import render_html
 from .html_live import LiveEvent, LiveHtmlRenderer
 from .mount import FakeWidget, MountedNode, mount, root_widget, unmount
@@ -66,6 +67,7 @@ from .ui import (
     Tabs,
     Toast,
     Toolbar,
+    UI_EVENT_SIGNATURES,
     class_names,
 )
 from .widgets import Button, HStack, Input, Panel, ScrollView, Text, VStack
@@ -92,6 +94,7 @@ __all__ = [
     "DuplicatePrimaryPropError",
     "Effect",
     "EventHandlerError",
+    "EventSignature",
     "FakeWidget",
     "FocusScope",
     "For",
@@ -142,6 +145,7 @@ __all__ = [
     "Toast",
     "Toolbar",
     "TkNativeWindow",
+    "UI_EVENT_SIGNATURES",
     "UnknownPropError",
     "UnknownStyleClassError",
     "VStack",
@@ -153,6 +157,8 @@ __all__ = [
     "css",
     "dispatch_native_click",
     "effect",
+    "event_signature_for",
+    "format_event_signature",
     "edit_native_input_value",
     "hit_test_native",
     "interval",

@@ -37,6 +37,7 @@ from ._ui_models import (
 )
 from .component import component
 from .control import For, Show
+from .events import EventSignature
 from .node import Node
 from .reactive import computed, is_reactive
 from .widgets import (
@@ -49,6 +50,22 @@ from .widgets import (
     Text,
     VStack,
 )
+
+
+UI_EVENT_SIGNATURES = {
+    "ActionButton.onClick": EventSignature(),
+    "CommandPalette.on_query": EventSignature(("value",)),
+    "CommandPalette.on_select": EventSignature(("command_id",)),
+    "Menu.on_focus": EventSignature(("item_id",)),
+    "Menu.on_open_change": EventSignature(("open",)),
+    "Menu.on_select": EventSignature(("item_id",)),
+    "NavItem.on_navigate": EventSignature(("route_id",)),
+    "Select.on_change": EventSignature(("value",)),
+    "Select.on_open_change": EventSignature(("open",)),
+    "ShortcutScope.onKeyDown": EventSignature(("event",)),
+    "SidebarNav.on_navigate": EventSignature(("route_id",)),
+    "TabButton.onClick": EventSignature(),
+}
 
 
 @component

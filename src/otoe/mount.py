@@ -6,7 +6,7 @@ from typing import Any, Callable
 from .component import is_component_tag
 from .control import is_control_tag, is_for_tag, is_show_tag, list_from_value, resolve_value
 from .errors import EventHandlerError, UnknownPropError
-from .events import dispatch_event
+from .events import dispatch_event, event_signature_for, format_event_catalog
 from .node import Node
 from .owner import CURRENT_OWNER, Owner, current_owner
 from .reactive import ReactiveValue, is_reactive
@@ -36,7 +36,12 @@ class FakeWidget:
     def trigger(self, name: str, *args: Any) -> Any:
         if name not in self.events:
             raise KeyError(f"{self.name} has no event handler for {name!r}.")
-        return dispatch_event(self.events[name], *args)
+        return dispatch_event(
+            self.events[name],
+            *args,
+            context=f"{self.name}.{name}",
+            event_signature=event_signature_for(self.tag, name),
+        )
 
 
 @dataclass
@@ -91,6 +96,8 @@ def _mount_widget(node: Node) -> MountedNode:
             _assign_prop(mounted, widget, name, value)
         else:
             kind = "event" if name.startswith("on") else "prop"
+            if kind == "event":
+                raise UnknownPropError(_unknown_event_message(widget, name, events))
             raise UnknownPropError(f"{widget.name} received unknown {kind} {name!r}.")
 
     for child in node.children:
@@ -209,6 +216,14 @@ def _register_event(widget: FakeWidget, name: str, value: Any) -> None:
     if not callable(value):
         raise EventHandlerError(f"{widget.name}.{name} must be callable.")
     widget.set_event(name, value)
+
+
+def _unknown_event_message(widget: FakeWidget, name: str, events: set[str]) -> str:
+    message = f"{widget.name} received unknown event {name!r}."
+    if not events:
+        return message
+    signatures = getattr(widget.tag, "event_signatures", {})
+    return f"{message} Known events: {format_event_catalog(events, signatures)}."
 
 
 def _assign_prop(mounted: MountedNode, widget: FakeWidget, name: str, value: Any) -> None:

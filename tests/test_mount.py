@@ -130,8 +130,32 @@ def test_event_handler_arity_errors_are_developer_facing():
 
     widget = root_widget(mount(Input(value="", onChange=handle_change)))
 
-    with pytest.raises(EventHandlerError, match="handle_change expected"):
+    with pytest.raises(
+        EventHandlerError,
+        match=r"Input\.onChange\(value\) handler handle_change expected",
+    ):
         widget.trigger("onChange")
+
+
+def test_event_handler_arity_errors_include_widget_context():
+    def handle_key():
+        return None
+
+    widget = root_widget(mount(Button("Run", onKeyDown=handle_key)))
+
+    with pytest.raises(
+        EventHandlerError,
+        match=r"Button\.onKeyDown\(key\) handler handle_key expected",
+    ):
+        widget.trigger("onKeyDown", "Enter")
+
+
+def test_unknown_event_error_lists_known_signatures():
+    with pytest.raises(
+        UnknownPropError,
+        match=r"Known events: onBlur\(\), onClick\(\), onFocus\(\), onKeyDown\(key\)",
+    ):
+        mount(Button("Save", onTap=lambda: None))
 
 
 def test_event_handler_internal_type_errors_still_propagate():

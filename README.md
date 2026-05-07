@@ -174,6 +174,36 @@ def Counter():
 tree = mount(Counter())
 ```
 
+## Event Signatures
+
+Built-in widget event handlers are plain callables. Otoe validates the handler
+arity when the event fires and includes the widget/event contract in developer
+errors.
+
+| Widget | Event | Handler shape |
+| --- | --- | --- |
+| `Button` | `onClick` | `lambda: ...` |
+| `Button` | `onKeyDown` | `lambda key: ...` |
+| `Button` | `onFocus`, `onBlur` | `lambda: ...` |
+| `Input` | `onChange` | `lambda value: ...` |
+| `Input` | `onKeyDown` | `lambda key: ...` |
+| `Input` | `onFocus`, `onBlur` | `lambda: ...` |
+| `ScrollView` | `onScroll` | `lambda next_scroll_y: ...` |
+| `ShortcutScope` | `onGlobalKeyDown` | `lambda event: ...` |
+
+The same contracts are available programmatically:
+
+```python
+from otoe import Button, event_signature_for, format_event_signature
+
+signature = event_signature_for(Button, "onKeyDown")
+assert format_event_signature("onKeyDown", signature) == "onKeyDown(key)"
+```
+
+The current `otoe.ui` callback surface follows the same style: `onClick()`,
+`on_query(value)`, `on_select(command_id | item_id)`, `on_change(value)`,
+`on_open_change(open)`, and `on_navigate(route_id)`.
+
 ## Project Shape
 
 Otoe is intentionally split into layers:
@@ -207,7 +237,8 @@ perform security operations.
 
 ## Status
 
-Current status: Phase 2 / Native Renderer Spike. See `ROADMAP.md` for the active plan.
+Current status: Phase 3 started / native demo and DX hardening. See
+`ROADMAP.md` for the active plan.
 
 ## License
 

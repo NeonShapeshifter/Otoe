@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any, ClassVar, Iterable
 
 from .errors import DuplicatePrimaryPropError
+from .events import EventSignature
 
 
 @dataclass(frozen=True)
@@ -16,6 +17,7 @@ class Node:
 class Widget:
     props: ClassVar[set[str]] = set()
     events: ClassVar[set[str]] = set()
+    event_signatures: ClassVar[dict[str, EventSignature]] = {}
     primary_prop: ClassVar[str | None] = None
 
     def __new__(cls, *args: Any, **kwargs: Any) -> Node:
@@ -51,4 +53,3 @@ def _normalize_child(parent_tag: Any, child: Any) -> Node:
 
 def _tag_name(tag: Any) -> str:
     return getattr(tag, "__name__", getattr(tag, "name", tag.__class__.__name__))
-

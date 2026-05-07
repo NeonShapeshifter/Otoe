@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .events import EventSignature
 from .node import Widget
 
 
@@ -23,16 +24,31 @@ class Button(Widget):
     primary_prop = "label"
     props = {"label", "className", "disabled", "id"}
     events = {"onClick", "onKeyDown", "onFocus", "onBlur"}
+    event_signatures = {
+        "onBlur": EventSignature(),
+        "onClick": EventSignature(),
+        "onFocus": EventSignature(),
+        "onKeyDown": EventSignature(("key",)),
+    }
 
 
 class Input(Widget):
     props = {"value", "placeholder", "className", "disabled", "autoFocus", "id"}
     events = {"onChange", "onKeyDown", "onFocus", "onBlur"}
+    event_signatures = {
+        "onBlur": EventSignature(),
+        "onChange": EventSignature(("value",)),
+        "onFocus": EventSignature(),
+        "onKeyDown": EventSignature(("key",)),
+    }
 
 
 class ScrollView(Widget):
     props = {"className", "id", "scrollY"}
     events = {"onScroll"}
+    event_signatures = {
+        "onScroll": EventSignature(("next_scroll_y",)),
+    }
 
 
 class Panel(Widget):
@@ -43,6 +59,9 @@ class Panel(Widget):
 class ShortcutScope(Widget):
     props = {"className", "id"}
     events = {"onGlobalKeyDown"}
+    event_signatures = {
+        "onGlobalKeyDown": EventSignature(("event",)),
+    }
 
 
 class FocusScope(Widget):
