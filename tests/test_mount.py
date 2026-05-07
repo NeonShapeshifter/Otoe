@@ -158,6 +158,35 @@ def test_unknown_event_error_lists_known_signatures():
         mount(Button("Save", onTap=lambda: None))
 
 
+def test_event_handler_errors_include_component_context():
+    def handle_change(value):
+        return value
+
+    @component
+    def SearchBox():
+        return Input(value="", onChange=handle_change)
+
+    widget = root_widget(mount(SearchBox()))
+
+    with pytest.raises(
+        EventHandlerError,
+        match=r"SearchBox > Input\.onChange\(value\) handler handle_change expected",
+    ):
+        widget.trigger("onChange")
+
+
+def test_unknown_event_errors_include_component_context():
+    @component
+    def BrokenButton():
+        return Button("Run", onTap=lambda: None)
+
+    with pytest.raises(
+        UnknownPropError,
+        match=r"BrokenButton > Button received unknown event 'onTap'",
+    ):
+        mount(BrokenButton())
+
+
 def test_event_handler_internal_type_errors_still_propagate():
     def handle_click():
         raise TypeError("handler body failed")

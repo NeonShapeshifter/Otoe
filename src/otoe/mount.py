@@ -13,9 +13,10 @@ from .reactive import ReactiveValue, is_reactive
 
 
 class FakeWidget:
-    def __init__(self, tag: Any):
+    def __init__(self, tag: Any, *, component_stack: tuple[str, ...] = ()):
         self.tag = tag
         self.name = _tag_name(tag)
+        self.component_stack = component_stack
         self.props: dict[str, Any] = {}
         self.events: dict[str, Callable[..., Any]] = {}
         self.children: list["FakeWidget"] = []
@@ -39,7 +40,7 @@ class FakeWidget:
         return dispatch_event(
             self.events[name],
             *args,
-            context=f"{self.name}.{name}",
+            context=_event_context(widget=self, event_name=name),
             event_signature=event_signature_for(self.tag, name),
         )
 
@@ -60,21 +61,28 @@ def mount(node: Node) -> MountedNode:
     return _mount(node)
 
 
-def _mount(node: Node) -> MountedNode:
+def _mount(node: Node, *, component_stack: tuple[str, ...] = ()) -> MountedNode:
     if is_component_tag(node.tag):
-        return _mount_component(node)
+        return _mount_component(node, component_stack=component_stack)
     if is_control_tag(node.tag):
-        return _mount_control(node)
-    return _mount_widget(node)
+        return _mount_control(node, component_stack=component_stack)
+    return _mount_widget(node, component_stack=component_stack)
 
 
-def _mount_component(node: Node) -> MountedNode:
+def _mount_component(
+    node: Node,
+    *,
+    component_stack: tuple[str, ...],
+) -> MountedNode:
     owner = Owner(_tag_name(node.tag))
     mounted = MountedNode(node=node, owner=owner)
     token = CURRENT_OWNER.set(owner)
     try:
         child_node = node.tag.fn(*node.props["args"], **node.props["kwargs"])
-        child_mounted = _mount(child_node)
+        child_mounted = _mount(
+            child_node,
+            component_stack=component_stack + (owner.name,),
+        )
         mounted.children.append(child_mounted)
         owner.run_mount()
     finally:
@@ -82,8 +90,12 @@ def _mount_component(node: Node) -> MountedNode:
     return mounted
 
 
-def _mount_widget(node: Node) -> MountedNode:
-    widget = FakeWidget(node.tag)
+def _mount_widget(
+    node: Node,
+    *,
+    component_stack: tuple[str, ...],
+) -> MountedNode:
+    widget = FakeWidget(node.tag, component_stack=component_stack)
     mounted = MountedNode(node=node, widget=widget)
 
     data_props = set(getattr(node.tag, "props", set()))
@@ -101,7 +113,7 @@ def _mount_widget(node: Node) -> MountedNode:
             raise UnknownPropError(f"{widget.name} received unknown {kind} {name!r}.")
 
     for child in node.children:
-        child_mounted = _mount(child)
+        child_mounted = _mount(child, component_stack=component_stack)
         mounted.children.append(child_mounted)
         child_widget = root_widget(child_mounted)
         widget.children.append(child_widget)
@@ -109,16 +121,16 @@ def _mount_widget(node: Node) -> MountedNode:
     return mounted
 
 
-def _mount_control(node: Node) -> MountedNode:
+def _mount_control(node: Node, *, component_stack: tuple[str, ...]) -> MountedNode:
     if is_show_tag(node.tag):
-        return _mount_show(node)
+        return _mount_show(node, component_stack=component_stack)
     if is_for_tag(node.tag):
-        return _mount_for(node)
+        return _mount_for(node, component_stack=component_stack)
     raise RuntimeError(f"Unknown control node {_tag_name(node.tag)}.")
 
 
-def _mount_show(node: Node) -> MountedNode:
-    widget = FakeWidget(node.tag)
+def _mount_show(node: Node, *, component_stack: tuple[str, ...]) -> MountedNode:
+    widget = FakeWidget(node.tag, component_stack=component_stack)
     mounted = MountedNode(node=node, widget=widget)
 
     def refresh() -> None:
@@ -132,7 +144,7 @@ def _mount_show(node: Node) -> MountedNode:
             branch_nodes = [node.props["fallback"]]
 
         for branch_node in branch_nodes:
-            child_mounted = _mount(branch_node)
+            child_mounted = _mount(branch_node, component_stack=component_stack)
             mounted.children.append(child_mounted)
             widget.children.append(root_widget(child_mounted))
 
@@ -141,8 +153,8 @@ def _mount_show(node: Node) -> MountedNode:
     return mounted
 
 
-def _mount_for(node: Node) -> MountedNode:
-    widget = FakeWidget(node.tag)
+def _mount_for(node: Node, *, component_stack: tuple[str, ...]) -> MountedNode:
+    widget = FakeWidget(node.tag, component_stack=component_stack)
     mounted = MountedNode(node=node, widget=widget)
     mounted._keyed_children = {}  # type: ignore[attr-defined]
     mounted._keyed_items = {}  # type: ignore[attr-defined]
@@ -172,7 +184,10 @@ def _mount_for(node: Node) -> MountedNode:
             widget.children.clear()
             if fallback is not None:
                 if mounted._fallback_mounted is None:  # type: ignore[attr-defined]
-                    mounted._fallback_mounted = _mount(fallback)  # type: ignore[attr-defined]
+                    mounted._fallback_mounted = _mount(  # type: ignore[attr-defined]
+                        fallback,
+                        component_stack=component_stack,
+                    )
                 fallback_mounted = mounted._fallback_mounted  # type: ignore[attr-defined]
                 mounted.children = [fallback_mounted]
                 widget.children = [root_widget(fallback_mounted)]
@@ -185,11 +200,17 @@ def _mount_for(node: Node) -> MountedNode:
 
         for item, item_key in zip(items, next_keys):
             if item_key not in keyed_children:
-                keyed_children[item_key] = _mount(render(item))
+                keyed_children[item_key] = _mount(
+                    render(item),
+                    component_stack=component_stack,
+                )
                 keyed_items[item_key] = item
             elif not _items_equal(keyed_items.get(item_key), item):
                 unmount(keyed_children[item_key])
-                keyed_children[item_key] = _mount(render(item))
+                keyed_children[item_key] = _mount(
+                    render(item),
+                    component_stack=component_stack,
+                )
                 keyed_items[item_key] = item
 
         mounted.children = [keyed_children[item_key] for item_key in next_keys]
@@ -219,11 +240,25 @@ def _register_event(widget: FakeWidget, name: str, value: Any) -> None:
 
 
 def _unknown_event_message(widget: FakeWidget, name: str, events: set[str]) -> str:
-    message = f"{widget.name} received unknown event {name!r}."
+    message = f"{_widget_context(widget)} received unknown event {name!r}."
     if not events:
         return message
     signatures = getattr(widget.tag, "event_signatures", {})
     return f"{message} Known events: {format_event_catalog(events, signatures)}."
+
+
+def _event_context(*, widget: FakeWidget, event_name: str) -> str:
+    return _join_context(widget, f"{widget.name}.{event_name}")
+
+
+def _widget_context(widget: FakeWidget) -> str:
+    return _join_context(widget, widget.name)
+
+
+def _join_context(widget: FakeWidget, leaf: str) -> str:
+    if not widget.component_stack:
+        return leaf
+    return " > ".join((*widget.component_stack, leaf))
 
 
 def _assign_prop(mounted: MountedNode, widget: FakeWidget, name: str, value: Any) -> None:

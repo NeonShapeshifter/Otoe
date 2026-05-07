@@ -2,7 +2,7 @@
 
 **Status:** Phase 3 started / renderer hardening and DX diagnostics started
 **Updated:** May 7, 2026
-**Current baseline:** 194 tests passing
+**Current baseline:** 196 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -192,8 +192,8 @@ This track can run alongside Phase 3, but it should not expand the public API un
 - Typed widget stubs and better editor support.
 - Better diagnostics:
   - unknown prop
-  - wrong event name **Started**
-  - wrong handler arity **Started with widget/event context**
+  - wrong event name **Started with widget/component context**
+  - wrong handler arity **Started with widget/event/component context**
   - disposed reactive read
   - mutation during mount
   - renderer unsupported feature errors with component context where possible
@@ -292,6 +292,6 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 ## Immediate Next Actions
 
-1. Continue handler diagnostics with component ancestry where possible.
-2. Add renderer unsupported-feature errors with component/widget context.
+1. Add renderer unsupported-feature errors with component/widget context.
+2. Add disposed reactive read diagnostics.
 3. Keep `NATIVE_RENDERER_SPIKE.md` aligned as the renderer contract changes.
