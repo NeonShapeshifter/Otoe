@@ -28,6 +28,9 @@ Repository = "https://github.com/NeonShapeshifter/Otoe"
 Issues = "https://github.com/NeonShapeshifter/Otoe/issues"
 Changelog = "https://github.com/NeonShapeshifter/Otoe/blob/main/CHANGELOG.md"
 
+[project.scripts]
+otoe = "otoe.cli:main"
+
 [project.optional-dependencies]
 dev = ["pytest>=8"]
 release = ["build>=1.2", "twine>=6"]

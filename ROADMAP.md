@@ -2,7 +2,7 @@
 
 **Status:** Phase 3 started / renderer hardening and DX diagnostics started
 **Updated:** May 7, 2026
-**Current baseline:** 215 tests passing
+**Current baseline:** 216 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -206,9 +206,9 @@ This track can run alongside Phase 3, but it should not expand the public API un
   - native renderer subset
   - event signatures **Done for built-in widgets and current UI callback surface**
 - CLI:
-  - `otoe dev` **Started through `python -m otoe dev MODULE:APP`**
-  - `otoe render` **Started through `python -m otoe render MODULE:OBJECT --out PATH`**
-  - `otoe check` **Started through `python -m otoe check`**
+  - `otoe dev` **Started through `python -m otoe dev MODULE:APP` and the installed `otoe` console script**
+  - `otoe render` **Started through `python -m otoe render MODULE:OBJECT --out PATH` and the installed `otoe` console script**
+  - `otoe check` **Started through `python -m otoe check` and the installed `otoe` console script**
   - optional `otoe new`
 - Snapshot and renderer testing guides.
 - Example corpus:
@@ -293,6 +293,6 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 ## Immediate Next Actions
 
-1. Add package entry point for `otoe` after release metadata is clean.
-2. Add `otoe render --native` once native output target semantics are settled.
-3. Add CLI docs/examples for app factories and live preview apps.
+1. Add `otoe render --native` once native output target semantics are settled.
+2. Add CLI docs/examples for app factories and live preview apps.
+3. Decide whether `otoe dev` should accept app factories lazily per reload cycle.

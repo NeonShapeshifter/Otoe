@@ -1,4 +1,12 @@
+import tomllib
+
 from otoe.cli import main
+
+
+def test_pyproject_declares_otoe_console_script():
+    metadata = tomllib.loads(open("pyproject.toml", encoding="utf-8").read())
+
+    assert metadata["project"]["scripts"]["otoe"] == "otoe.cli:main"
 
 
 def test_cli_check_compiles_requested_path(tmp_path, capsys):

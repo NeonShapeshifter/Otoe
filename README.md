@@ -88,6 +88,15 @@ python -m otoe check
 python -m otoe check --tests
 ```
 
+After installation, the same commands are available through the `otoe` console
+script:
+
+```bash
+otoe check
+otoe render my_app:app --out preview.html --pretty
+otoe dev my_live_app:app --port 8767
+```
+
 Render an importable Otoe node or zero-argument factory to HTML:
 
 ```bash
