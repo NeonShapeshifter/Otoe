@@ -131,6 +131,13 @@ PYTHONPATH=src:. python -m examples.native.task_board_demo
 
 This writes initial, filtered, and modal frames under `preview/native/`.
 
+Generate native-window driver PNG frames, or open the optional Tk wrapper:
+
+```bash
+PYTHONPATH=src:. python -m examples.native.window_demo
+PYTHONPATH=src:. python -m examples.native.window_demo --window
+```
+
 ## Tiny Example
 
 ```python

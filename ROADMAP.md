@@ -167,9 +167,11 @@ framework milestone.
 - Native window driver added for testable click, keyboard, text-input, and PNG
   frame dispatch over `NativeSurface`, with an optional Tk wrapper for local
   experiments.
+- Framework-neutral native window demo added for driver-level PNG frames and
+  optional Tk manual testing.
 - `BENCHMARKS.md` added for concrete change-friction notes against Wraith/Kivy.
 - CI now builds release distributions and runs `twine check` on package metadata.
-- Baseline tests: `164 passed`.
+- Baseline tests: `166 passed`.
 
 ### Current Sprint
 
@@ -189,6 +191,7 @@ framework milestone.
 14. Add minimal `ScrollView` bounds semantics for paint and hit-testing. **Descendant paint and click targets are clipped to the viewport bounds.**
 15. Add visible native control states for disabled and focused controls. **Disabled defaults and focus rings are covered in paint tests.**
 16. Add a testable native window driver before picking a production backend. **`NativeWindowDriver` added, with optional Tk wrapper.**
+17. Add a manual native window demo that still works headlessly in CI. **Driver PNG frames and optional Tk launch added.**
 
 ---
 
