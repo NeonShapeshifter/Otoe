@@ -293,6 +293,6 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 ## Immediate Next Actions
 
-1. Draft the first CLI shape for `otoe dev`, `otoe render`, and `otoe check`. **Done in ADR-010.**
-2. Add package entry point for `otoe` after release metadata is clean.
-3. Draft `otoe dev MODULE:APP` server semantics.
+1. Move the shared live preview server from `examples/` into `src/otoe/`.
+2. Implement `python -m otoe dev MODULE:APP`.
+3. Add package entry point for `otoe` after release metadata is clean.
