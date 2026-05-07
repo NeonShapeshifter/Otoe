@@ -293,6 +293,6 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 ## Immediate Next Actions
 
-1. Draft the first CLI shape for `otoe dev`, `otoe render`, and `otoe check`.
-2. Add the minimal `otoe check` command once CLI shape is accepted.
+1. Draft the first CLI shape for `otoe dev`, `otoe render`, and `otoe check`. **Done in ADR-010.**
+2. Add the minimal `otoe check` command without touching release metadata.
 3. Keep `NATIVE_RENDERER_SPIKE.md` aligned as the renderer contract changes.
