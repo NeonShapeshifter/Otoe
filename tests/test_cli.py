@@ -68,6 +68,17 @@ def test_cli_render_writes_html_from_callable_target(tmp_path, monkeypatch):
     assert "Callable" in output.read_text(encoding="utf-8")
 
 
+def test_cli_render_quickstart_example(tmp_path):
+    output = tmp_path / "quickstart.html"
+
+    result = main(["render", "examples.quickstart:app", "--out", str(output)])
+
+    assert result == 0
+    html = output.read_text(encoding="utf-8")
+    assert "Otoe quickstart" in html
+    assert "Primary action" in html
+
+
 def test_cli_render_rejects_invalid_target(tmp_path, monkeypatch, capsys):
     module = tmp_path / "bad_surface.py"
     module.write_text("app = object()\n", encoding="utf-8")
@@ -175,6 +186,27 @@ def test_cli_dev_runs_live_preview_for_factory_target(tmp_path, monkeypatch):
 
     assert result == 0
     assert calls[0]["app_factory"]().render_fragment() == "<p>factory</p>"
+
+
+def test_cli_dev_live_counter_example(monkeypatch):
+    calls = []
+
+    def fake_run_live_preview(**kwargs):
+        calls.append(kwargs)
+
+    monkeypatch.setattr("otoe.cli.run_live_preview", fake_run_live_preview)
+
+    result = main(["dev", "examples.live_counter:app"])
+
+    assert result == 0
+    app = calls[0]["app_factory"]()
+    assert "Count: 0" in app.render_fragment()
+    increment_event = next(
+        event.id
+        for event in app.renderer.events.values()
+        if getattr(event.handler, "__name__", "") == "increment"
+    )
+    assert "Count: 1" in app.dispatch_event(increment_event)
 
 
 def test_cli_dev_rejects_invalid_app_target(tmp_path, monkeypatch, capsys):

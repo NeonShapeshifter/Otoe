@@ -93,20 +93,20 @@ script:
 
 ```bash
 otoe check
-otoe render my_app:app --out preview.html --pretty
-otoe dev my_live_app:app --port 8767
+otoe render examples.quickstart:app --out preview.html --pretty
+otoe dev examples.live_counter:app --port 8767
 ```
 
 Render an importable Otoe node or zero-argument factory to HTML:
 
 ```bash
-python -m otoe render my_app:app --out preview.html --pretty
+python -m otoe render examples.quickstart:app --out preview.html --pretty
 ```
 
 Run an importable live preview app locally:
 
 ```bash
-python -m otoe dev my_live_app:app --port 8767
+python -m otoe dev examples.live_counter:app --port 8767
 ```
 
 Generate the static Wraith Mission Exec preview:

@@ -2,7 +2,7 @@
 
 **Status:** Phase 3 started / renderer hardening and DX diagnostics started
 **Updated:** May 7, 2026
-**Current baseline:** 216 tests passing
+**Current baseline:** 218 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -294,5 +294,5 @@ This track can run alongside Phase 3, but it should not expand the public API un
 ## Immediate Next Actions
 
 1. Add `otoe render --native` once native output target semantics are settled.
-2. Add CLI docs/examples for app factories and live preview apps.
-3. Decide whether `otoe dev` should accept app factories lazily per reload cycle.
+2. Decide whether `otoe dev` should accept app factories lazily per reload cycle.
+3. Add first-class CLI help text examples if the command surface grows past these three commands.
