@@ -116,6 +116,10 @@ All layout dimensions must be numeric pixels. Percent units, `auto`, flex
 distribution, wrapping, alignment, margins, horizontal scroll offsets, and
 intrinsic platform text measurement are intentionally not implemented yet.
 
+Each `LayoutBox` carries a `context` string when it comes from a component tree,
+for example `TaskList > VStack`. Native layout and paint diagnostics use that
+context for unsupported dimensions, style keys, and paint colors where possible.
+
 ## Native Style Support Matrix
 
 The native backend has an executable style matrix in `otoe._native_shared`.
@@ -262,6 +266,8 @@ manual-test adapter over the same headless surface contract.
 The spike should fail clearly where possible. Unsupported style classes are
 strict by default. Non-pixel layout dimensions raise `NativeLayoutError`.
 Unresolved or invalid paint colors raise `NativePaintError`.
+When a box was produced by a component, these errors include the component and
+widget context, such as `PaintPanel > VStack`.
 
 ## Deferred Backend Work
 

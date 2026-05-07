@@ -13,6 +13,7 @@ from otoe import (
     Text,
     VStack,
     css,
+    component,
     layout_native,
     mount,
     paint_native,
@@ -194,6 +195,20 @@ def test_native_paint_rejects_unresolved_color_tokens():
 
     with pytest.raises(NativePaintError, match="Unresolved paint color token"):
         paint_native(layout_native(mounted, stylesheet=sheet))
+
+
+def test_native_paint_errors_include_component_context():
+    sheet = css(".panel { background: missing; }")
+
+    @component
+    def PaintPanel():
+        return VStack(Text("Nope"), className="panel")
+
+    with pytest.raises(
+        NativePaintError,
+        match=r"PaintPanel > VStack: Unresolved paint color token 'missing'",
+    ):
+        paint_native(layout_native(mount(PaintPanel()), stylesheet=sheet))
 
 
 def test_native_paint_clips_scrollview_descendant_commands():

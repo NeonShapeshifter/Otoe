@@ -4,6 +4,7 @@ from typing import Any
 
 from ._native_contracts import LayoutBox, NativeLayout, NativePaint, PaintCommand
 from ._native_shared import (
+    box_context,
     box_rect,
     color_value,
     dimension,
@@ -71,10 +72,21 @@ def _rect_command(
     *,
     clip: tuple[int, int, int, int] | None,
 ) -> PaintCommand | None:
+    context = box_context(box)
     fill = _box_fill(box, style)
     stroke = _box_stroke(box, style)
-    stroke_width = dimension(style, "borderWidth", default=_default_border_width(box))
-    radius = dimension(style, "borderRadius", default=_default_radius(box))
+    stroke_width = dimension(
+        style,
+        "borderWidth",
+        default=_default_border_width(box),
+        context=context,
+    )
+    radius = dimension(
+        style,
+        "borderRadius",
+        default=_default_radius(box),
+        context=context,
+    )
 
     if fill is None and (stroke is None or stroke_width <= 0):
         return None
@@ -104,6 +116,7 @@ def _focus_ring_command(
         return None
     if _is_disabled(box):
         return None
+    context = box_context(box)
     return PaintCommand(
         kind="rect",
         path=box.path,
@@ -113,7 +126,13 @@ def _focus_ring_command(
         height=box.height + 4,
         stroke="#38bdf8",
         stroke_width=2,
-        radius=dimension(style, "borderRadius", default=_default_radius(box)) + 2,
+        radius=dimension(
+            style,
+            "borderRadius",
+            default=_default_radius(box),
+            context=context,
+        )
+        + 2,
         clip=clip,
     )
 
@@ -124,7 +143,8 @@ def _text_command(
     *,
     clip: tuple[int, int, int, int] | None,
 ) -> PaintCommand:
-    font_size = dimension(style, "fontSize", default=14)
+    context = box_context(box)
+    font_size = dimension(style, "fontSize", default=14, context=context)
     padding = _text_padding(box, style)
     metrics = measure_native_text(box.text or "", font_size=font_size)
     return PaintCommand(
@@ -135,7 +155,11 @@ def _text_command(
         width=metrics.width,
         height=metrics.height,
         text=box.text or "",
-        color=color_value(style.get("color"), default=_default_text_color(box)),
+        color=color_value(
+            style.get("color"),
+            default=_default_text_color(box),
+            context=context,
+        ),
         font_size=font_size,
         clip=clip,
     )
@@ -143,7 +167,7 @@ def _text_command(
 
 def _box_fill(box: LayoutBox, style: dict[str, Any]) -> str | None:
     if "background" in style:
-        return color_value(style["background"])
+        return color_value(style["background"], context=box_context(box))
     if _is_disabled(box):
         if box.name == "Button":
             return "#e5e7eb"
@@ -158,7 +182,7 @@ def _box_fill(box: LayoutBox, style: dict[str, Any]) -> str | None:
 
 def _box_stroke(box: LayoutBox, style: dict[str, Any]) -> str | None:
     if "borderColor" in style:
-        return color_value(style["borderColor"])
+        return color_value(style["borderColor"], context=box_context(box))
     if _is_disabled(box) and box.name in {"Button", "Input"}:
         return "#d1d5db"
     if box.name == "Button":
@@ -189,7 +213,7 @@ def _default_text_color(box: LayoutBox) -> str:
 
 def _text_padding(box: LayoutBox, style: dict[str, Any]) -> int:
     if "padding" in style:
-        return dimension(style, "padding", default=0)
+        return dimension(style, "padding", default=0, context=box_context(box))
     return 8 if box.name in {"Button", "Input"} else 0
 
 

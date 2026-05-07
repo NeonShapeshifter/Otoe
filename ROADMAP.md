@@ -2,7 +2,7 @@
 
 **Status:** Phase 3 started / renderer hardening and DX diagnostics started
 **Updated:** May 7, 2026
-**Current baseline:** 196 tests passing
+**Current baseline:** 199 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -165,6 +165,7 @@ This track can run alongside Phase 3, but it should not expand the public API un
 - Make the renderer support matrix executable through tests and documented through `NATIVE_RENDERER_SPIKE.md`. **Started for native style, widget, and input categories.**
 - Clarify which style properties are supported, ignored, rejected, or reserved. **Done for current native style subset.**
 - Fix the roadmap language around layout: Otoe currently supports stack layout and dimensions, not full flex distribution. **Done.**
+- Preserve widget/component debug context in `LayoutBox` for renderer diagnostics. **Started for layout and paint errors.**
 - Define the next text-rendering plan. **Done in ADR-008:**
   - current marker text is deterministic, not real font rasterization
   - future backend needs text measurement, shaping, font selection, and DPI behavior
@@ -196,7 +197,7 @@ This track can run alongside Phase 3, but it should not expand the public API un
   - wrong handler arity **Started with widget/event/component context**
   - disposed reactive read
   - mutation during mount
-  - renderer unsupported feature errors with component context where possible
+  - renderer unsupported feature errors with component context where possible **Started**
 - Documentation:
   - mental model
   - component cookbook
@@ -292,6 +293,6 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 ## Immediate Next Actions
 
-1. Add renderer unsupported-feature errors with component/widget context.
-2. Add disposed reactive read diagnostics.
+1. Add disposed reactive read diagnostics.
+2. Define accessibility metadata expectations from `LayoutBox`.
 3. Keep `NATIVE_RENDERER_SPIKE.md` aligned as the renderer contract changes.

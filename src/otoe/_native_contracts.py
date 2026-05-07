@@ -21,6 +21,7 @@ class LayoutBox:
     width: int
     height: int
     id: str | None = None
+    context: str | None = None
     text: str | None = None
     events: tuple[str, ...] = ()
     state: tuple[str, ...] = ()

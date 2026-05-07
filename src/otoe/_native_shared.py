@@ -143,7 +143,7 @@ def resolve_style(
             style[prop] = widget.props[prop]
     if "color" in widget.props:
         style["color"] = widget.props["color"]
-    _validate_native_style_keys(style)
+    _validate_native_style_keys(style, context=widget_context(widget))
     return resolve_tokens(style, stylesheet.tokens if stylesheet is not None else {})
 
 
@@ -159,11 +159,16 @@ def native_input_support(name: str) -> str | None:
     return NATIVE_INPUT_SUPPORT.get(name)
 
 
-def _validate_native_style_keys(style: dict[str, Any]) -> None:
+def _validate_native_style_keys(style: dict[str, Any], *, context: str | None) -> None:
     unsupported = sorted(name for name in style if name not in NATIVE_STYLE_SUPPORT)
     if unsupported:
         names = ", ".join(repr(name) for name in unsupported)
-        raise NativeLayoutError(f"Unsupported native style properties: {names}.")
+        raise NativeLayoutError(
+            _contextual_message(
+                context,
+                f"Unsupported native style properties: {names}.",
+            )
+        )
 
 
 def resolve_tokens(style: dict[str, Any], tokens: dict[str, Any]) -> dict[str, Any]:
@@ -178,32 +183,66 @@ def resolve_token(value: Any, tokens: dict[str, Any]) -> Any:
     return value
 
 
-def color_value(value: Any, *, default: str | None = None) -> str:
+def color_value(
+    value: Any,
+    *,
+    default: str | None = None,
+    context: str | None = None,
+) -> str:
     if value is None:
         if default is None:
-            raise NativePaintError("Missing required paint color.")
+            raise NativePaintError(
+                _contextual_message(context, "Missing required paint color.")
+            )
         return default
     if isinstance(value, Token):
-        raise NativePaintError(f"Unresolved paint color token {value.name!r}.")
+        raise NativePaintError(
+            _contextual_message(
+                context,
+                f"Unresolved paint color token {value.name!r}.",
+            )
+        )
     if not isinstance(value, str):
-        raise NativePaintError(f"Native paint expected color string; got {value!r}.")
-    parse_color(value)
+        raise NativePaintError(
+            _contextual_message(
+                context,
+                f"Native paint expected color string; got {value!r}.",
+            )
+        )
+    try:
+        parse_color(value)
+    except NativePaintError as exc:
+        raise NativePaintError(_contextual_message(context, str(exc))) from exc
     return value
 
 
-def dimension(style: dict[str, Any], name: str, *, default: int) -> int:
+def dimension(
+    style: dict[str, Any],
+    name: str,
+    *,
+    default: int,
+    context: str | None = None,
+) -> int:
     if name not in style:
         return default
     value = style[name]
     if isinstance(value, Size):
         if value.unit != "px":
             raise NativeLayoutError(
-                f"Native layout only supports px dimensions; {name} used {value.unit!r}."
+                _contextual_message(
+                    context,
+                    f"Native layout only supports px dimensions; {name} used {value.unit!r}.",
+                )
             )
         return int(ceil(value.value))
     if isinstance(value, (int, float)):
         return int(ceil(value))
-    raise NativeLayoutError(f"Native layout expected numeric {name}; got {value!r}.")
+    raise NativeLayoutError(
+        _contextual_message(
+            context,
+            f"Native layout expected numeric {name}; got {value!r}.",
+        )
+    )
 
 
 def constrain(
@@ -212,14 +251,33 @@ def constrain(
     exact_name: str,
     min_name: str,
     max_name: str,
+    *,
+    context: str | None = None,
 ) -> int:
     if exact_name in style:
-        value = dimension(style, exact_name, default=value)
+        value = dimension(style, exact_name, default=value, context=context)
     if min_name in style:
-        value = max(value, dimension(style, min_name, default=value))
+        value = max(value, dimension(style, min_name, default=value, context=context))
     if max_name in style:
-        value = min(value, dimension(style, max_name, default=value))
+        value = min(value, dimension(style, max_name, default=value, context=context))
     return value
+
+
+def widget_context(widget: FakeWidget) -> str:
+    component_stack = getattr(widget, "component_stack", ())
+    if not component_stack:
+        return widget.name
+    return " > ".join((*component_stack, widget.name))
+
+
+def box_context(box: LayoutBox) -> str:
+    return box.context or box.name
+
+
+def _contextual_message(context: str | None, message: str) -> str:
+    if context is None:
+        return message
+    return f"{context}: {message}"
 
 
 def style_items(style: dict[str, Any]) -> tuple[tuple[str, Any], ...]:
@@ -259,8 +317,9 @@ def visible_through_scroll_ancestors(
 
 def max_scroll_y(scroll_box: LayoutBox) -> int:
     style = dict(scroll_box.style)
-    padding = dimension(style, "padding", default=0)
-    scroll_y = dimension(style, "scrollY", default=0)
+    context = box_context(scroll_box)
+    padding = dimension(style, "padding", default=0, context=context)
+    scroll_y = dimension(style, "scrollY", default=0, context=context)
     if not scroll_box.children:
         return 0
 
@@ -275,7 +334,12 @@ def scroll_y(widget: FakeWidget) -> int:
     value = widget.props.get("scrollY", 0)
     if isinstance(value, (int, float)):
         return max(0, int(ceil(value)))
-    raise NativeLayoutError(f"Native layout expected numeric scrollY; got {value!r}.")
+    raise NativeLayoutError(
+        _contextual_message(
+            widget_context(widget),
+            f"Native layout expected numeric scrollY; got {value!r}.",
+        )
+    )
 
 
 def clamp_scroll_y(value: int, *, max_scroll_y: int) -> int:

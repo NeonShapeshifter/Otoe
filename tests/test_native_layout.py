@@ -11,6 +11,7 @@ from otoe import (
     VStack,
     Widget,
     css,
+    component,
     layout_native,
     mount,
     signal,
@@ -96,12 +97,37 @@ def test_native_layout_resolves_stylesheet_dimensions():
     assert layout.by_path((0,)).height == 25
 
 
+def test_native_layout_boxes_keep_component_context():
+    @component
+    def TaskList():
+        return VStack(Text("One"))
+
+    layout = layout_native(mount(TaskList()))
+
+    assert layout.root.context == "TaskList > VStack"
+    assert layout.by_path((0,)).context == "TaskList > Text"
+
+
 def test_native_layout_rejects_percent_dimensions_for_now():
     sheet = css(".box { width: 50%; }")
     mounted = mount(VStack(Text("Nope"), className="box"))
 
     with pytest.raises(NativeLayoutError, match="px dimensions"):
         layout_native(mounted, stylesheet=sheet)
+
+
+def test_native_layout_errors_include_component_context():
+    sheet = css(".box { width: 50%; }")
+
+    @component
+    def PercentBox():
+        return VStack(Text("Nope"), className="box")
+
+    with pytest.raises(
+        NativeLayoutError,
+        match=r"PercentBox > VStack: Native layout only supports px dimensions",
+    ):
+        layout_native(mount(PercentBox()), stylesheet=sheet)
 
 
 def test_native_style_support_matrix_covers_css_properties():

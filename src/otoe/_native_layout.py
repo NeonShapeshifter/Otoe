@@ -13,6 +13,7 @@ from ._native_shared import (
     resolve_style,
     state_items,
     style_items,
+    widget_context,
 )
 from ._native_text import measure_native_text
 from .mount import FakeWidget, MountedNode, root_widget
@@ -48,6 +49,7 @@ def _layout_widget(
 ) -> LayoutBox:
     style = resolve_style(widget, stylesheet, strict_styles)
     name = widget.name
+    context = widget_context(widget)
 
     if name == "Text":
         return _leaf_box(
@@ -56,6 +58,7 @@ def _layout_widget(
             x=x,
             y=y,
             style=style,
+            context=context,
             text=str(widget.props.get("content", "")),
         )
     if name == "Button":
@@ -65,6 +68,7 @@ def _layout_widget(
             x=x,
             y=y,
             style=style,
+            context=context,
             text=str(widget.props.get("label", "")),
             default_padding=8,
         )
@@ -75,6 +79,7 @@ def _layout_widget(
             x=x,
             y=y,
             style=style,
+            context=context,
             text=str(widget.props.get("value") or widget.props.get("placeholder") or ""),
             default_padding=8,
             default_width=180,
@@ -87,6 +92,7 @@ def _layout_widget(
             x=x,
             y=y,
             style=style,
+            context=context,
             direction=direction,
             stylesheet=stylesheet,
             strict_styles=strict_styles,
@@ -97,6 +103,7 @@ def _layout_widget(
         x=x,
         y=y,
         style=style,
+        context=context,
         direction="column",
         stylesheet=stylesheet,
         strict_styles=strict_styles,
@@ -110,13 +117,18 @@ def _container_box(
     x: int,
     y: int,
     style: dict[str, Any],
+    context: str,
     direction: str,
     stylesheet: StyleSheet | None,
     strict_styles: bool,
 ) -> LayoutBox:
-    padding = dimension(style, "padding", default=0)
-    gap = dimension(style, "gap", default=0)
-    scroll_y = dimension(style, "scrollY", default=0) if widget.name == "ScrollView" else 0
+    padding = dimension(style, "padding", default=0, context=context)
+    gap = dimension(style, "gap", default=0, context=context)
+    scroll_y = (
+        dimension(style, "scrollY", default=0, context=context)
+        if widget.name == "ScrollView"
+        else 0
+    )
     scroll_y = max(scroll_y, 0)
 
     children: list[LayoutBox] = []
@@ -153,8 +165,8 @@ def _container_box(
 
     width = content_width + padding * 2
     height = content_height + padding * 2
-    width = constrain(width, style, "width", "minWidth", "maxWidth")
-    height = constrain(height, style, "height", "minHeight", "maxHeight")
+    width = constrain(width, style, "width", "minWidth", "maxWidth", context=context)
+    height = constrain(height, style, "height", "minHeight", "maxHeight", context=context)
     if widget.name == "ScrollView":
         max_scroll_y = max(0, content_height + padding * 2 - height)
         clamped_scroll_y = clamp_scroll_y(scroll_y, max_scroll_y=max_scroll_y)
@@ -173,6 +185,7 @@ def _container_box(
         width=width,
         height=height,
         id=optional_string(widget.props.get("id")),
+        context=context,
         events=tuple(sorted(widget.events)),
         state=state_items(widget),
         style=style_items(style),
@@ -187,13 +200,14 @@ def _leaf_box(
     x: int,
     y: int,
     style: dict[str, Any],
+    context: str,
     text: str,
     default_padding: int = 0,
     default_width: int | None = None,
 ) -> LayoutBox:
-    padding = dimension(style, "padding", default=default_padding)
-    border_width = dimension(style, "borderWidth", default=0)
-    font_size = dimension(style, "fontSize", default=14)
+    padding = dimension(style, "padding", default=default_padding, context=context)
+    border_width = dimension(style, "borderWidth", default=0, context=context)
+    font_size = dimension(style, "fontSize", default=14, context=context)
     text_metrics = measure_native_text(text, font_size=font_size)
 
     width = text_metrics.width + padding * 2 + border_width * 2
@@ -201,8 +215,8 @@ def _leaf_box(
     if default_width is not None:
         width = max(width, default_width)
 
-    width = constrain(width, style, "width", "minWidth", "maxWidth")
-    height = constrain(height, style, "height", "minHeight", "maxHeight")
+    width = constrain(width, style, "width", "minWidth", "maxWidth", context=context)
+    height = constrain(height, style, "height", "minHeight", "maxHeight", context=context)
 
     return LayoutBox(
         path=path,
@@ -212,6 +226,7 @@ def _leaf_box(
         width=width,
         height=height,
         id=optional_string(widget.props.get("id")),
+        context=context,
         text=text,
         events=tuple(sorted(widget.events)),
         state=state_items(widget),
@@ -228,6 +243,7 @@ def _offset_box_y(box: LayoutBox, delta: int) -> LayoutBox:
         width=box.width,
         height=box.height,
         id=box.id,
+        context=box.context,
         text=box.text,
         events=box.events,
         state=box.state,
