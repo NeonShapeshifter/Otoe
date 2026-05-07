@@ -175,9 +175,12 @@ The current painter supports:
 - `ScrollView` descendant clipping through paint command clip rects, including
   stdlib PNG output.
 
-The text output is a deterministic marker, not font rasterization. It is good
-enough for non-empty image tests and state-change detection, but it is not a
-real text renderer.
+The text output is a deterministic marker, not font rasterization. Layout and
+paint share the private `measure_native_text(...)` metric contract so text box
+sizes and text paint commands agree exactly. This is good enough for non-empty
+image tests and state-change detection, but it is not a real text renderer.
+`ADR-008-native-text-rendering.md` documents why real font measurement and
+rasterization are deferred to a backend spike.
 
 ## Supported Input
 

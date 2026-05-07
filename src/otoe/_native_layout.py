@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from math import ceil
 from typing import Any
 
 from ._native_contracts import LayoutBox, NativeLayout
@@ -15,6 +14,7 @@ from ._native_shared import (
     state_items,
     style_items,
 )
+from ._native_text import measure_native_text
 from .mount import FakeWidget, MountedNode, root_widget
 from .style import StyleSheet
 
@@ -194,11 +194,10 @@ def _leaf_box(
     padding = dimension(style, "padding", default=default_padding)
     border_width = dimension(style, "borderWidth", default=0)
     font_size = dimension(style, "fontSize", default=14)
-    text_width = ceil(len(text) * font_size * 0.55)
-    text_height = ceil(font_size * 1.25)
+    text_metrics = measure_native_text(text, font_size=font_size)
 
-    width = text_width + padding * 2 + border_width * 2
-    height = text_height + padding * 2 + border_width * 2
+    width = text_metrics.width + padding * 2 + border_width * 2
+    height = text_metrics.height + padding * 2 + border_width * 2
     if default_width is not None:
         width = max(width, default_width)
 

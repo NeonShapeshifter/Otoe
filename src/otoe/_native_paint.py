@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from math import ceil
 from typing import Any
 
 from ._native_contracts import LayoutBox, NativeLayout, NativePaint, PaintCommand
@@ -10,6 +9,7 @@ from ._native_shared import (
     dimension,
     intersect_rects,
 )
+from ._native_text import measure_native_text
 
 
 def paint_native(
@@ -126,15 +126,14 @@ def _text_command(
 ) -> PaintCommand:
     font_size = dimension(style, "fontSize", default=14)
     padding = _text_padding(box, style)
-    width = max(1, ceil(len(box.text or "") * font_size * 0.55))
-    height = max(1, ceil(font_size * 1.25))
+    metrics = measure_native_text(box.text or "", font_size=font_size)
     return PaintCommand(
         kind="text",
         path=box.path,
         x=box.x + padding,
-        y=box.y + max(padding, (box.height - height) // 2),
-        width=width,
-        height=height,
+        y=box.y + max(padding, (box.height - metrics.height) // 2),
+        width=metrics.width,
+        height=metrics.height,
         text=box.text or "",
         color=color_value(style.get("color"), default=_default_text_color(box)),
         font_size=font_size,
