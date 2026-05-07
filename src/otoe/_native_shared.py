@@ -9,6 +9,50 @@ from .node import Node
 from .style import Size, StyleSheet, Token
 
 
+NATIVE_LAYOUT_STYLE_PROPERTIES = frozenset(
+    {
+        "borderWidth",
+        "fontSize",
+        "gap",
+        "height",
+        "maxHeight",
+        "maxWidth",
+        "minHeight",
+        "minWidth",
+        "padding",
+        "scrollY",
+        "width",
+    }
+)
+NATIVE_PAINT_STYLE_PROPERTIES = frozenset(
+    {
+        "background",
+        "borderColor",
+        "borderRadius",
+        "borderWidth",
+        "color",
+        "fontSize",
+    }
+)
+NATIVE_IGNORED_STYLE_PROPERTIES = frozenset(
+    {
+        "alignItems",
+        "display",
+        "fontWeight",
+        "justifyContent",
+        "margin",
+        "opacity",
+    }
+)
+NATIVE_STYLE_SUPPORT = {
+    **{name: "layout" for name in NATIVE_LAYOUT_STYLE_PROPERTIES},
+    **{name: "paint" for name in NATIVE_PAINT_STYLE_PROPERTIES},
+    **{name: "ignored" for name in NATIVE_IGNORED_STYLE_PROPERTIES},
+}
+for _name in NATIVE_LAYOUT_STYLE_PROPERTIES & NATIVE_PAINT_STYLE_PROPERTIES:
+    NATIVE_STYLE_SUPPORT[_name] = "layout+paint"
+
+
 def native_surface_target(
     target: Node | FakeWidget | MountedNode,
 ) -> FakeWidget | MountedNode:
@@ -61,7 +105,19 @@ def resolve_style(
             style[prop] = widget.props[prop]
     if "color" in widget.props:
         style["color"] = widget.props["color"]
+    _validate_native_style_keys(style)
     return resolve_tokens(style, stylesheet.tokens if stylesheet is not None else {})
+
+
+def native_style_support(name: str) -> str | None:
+    return NATIVE_STYLE_SUPPORT.get(name)
+
+
+def _validate_native_style_keys(style: dict[str, Any]) -> None:
+    unsupported = sorted(name for name in style if name not in NATIVE_STYLE_SUPPORT)
+    if unsupported:
+        names = ", ".join(repr(name) for name in unsupported)
+        raise NativeLayoutError(f"Unsupported native style properties: {names}.")
 
 
 def resolve_tokens(style: dict[str, Any], tokens: dict[str, Any]) -> dict[str, Any]:

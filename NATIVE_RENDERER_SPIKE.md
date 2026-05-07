@@ -107,6 +107,45 @@ All layout dimensions must be numeric pixels. Percent units, `auto`, flex
 distribution, wrapping, alignment, margins, horizontal scroll offsets, and
 intrinsic platform text measurement are intentionally not implemented yet.
 
+## Native Style Support Matrix
+
+The native backend has an executable style matrix in `otoe._native_shared`.
+Styles parsed by `css(...)` are not automatically native behavior.
+
+Native layout currently uses:
+
+- `gap`
+- `padding`
+- `scrollY`
+- `width` and `height`
+- `minWidth`, `minHeight`, `maxWidth`, and `maxHeight`
+- `fontSize` for approximate text measurement
+- `borderWidth` for leaf sizing
+
+Native paint currently uses:
+
+- `background`
+- `borderColor`
+- `borderWidth`
+- `borderRadius`
+- `color`
+- `fontSize`
+
+The following parsed properties are accepted and preserved in `LayoutBox.style`,
+but intentionally have no native effect yet:
+
+- `alignItems`
+- `display`
+- `fontWeight`
+- `justifyContent`
+- `margin`
+- `opacity`
+
+Unknown CSS properties still fail in `css(...)`. Unknown style keys injected
+through a manually constructed `StyleSheet` fail in the native style matrix with
+`NativeLayoutError`. Non-pixel dimensions fail in layout, and unresolved or
+invalid colors fail in paint.
+
 ## Supported Paint
 
 The paint adapter converts layout boxes into deterministic `PaintCommand`

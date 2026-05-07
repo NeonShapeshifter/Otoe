@@ -160,8 +160,8 @@ This track can run alongside Phase 3, but it should not expand the public API un
   - PNG/raster output
   - native errors/contracts
 - Preserve the current public imports from `otoe.__init__`. **Done.**
-- Make the renderer support matrix executable through tests and documented through `NATIVE_RENDERER_SPIKE.md`.
-- Clarify which style properties are supported, ignored, rejected, or reserved.
+- Make the renderer support matrix executable through tests and documented through `NATIVE_RENDERER_SPIKE.md`. **Started for native style categories.**
+- Clarify which style properties are supported, ignored, rejected, or reserved. **Done for current native style subset.**
 - Fix the roadmap language around layout: Otoe currently supports stack layout and dimensions, not full flex distribution.
 - Define the next text-rendering plan:
   - current marker text is deterministic, not real font rasterization
@@ -291,7 +291,7 @@ This track can run alongside Phase 3, but it should not expand the public API un
 ## Immediate Next Actions
 
 1. Add Phase 3 behavior-parity tests between the native task board and the live/html preview shape where useful.
-2. Clarify style support categories: supported, rejected, ignored, and reserved.
-3. Decide the next text-rendering milestone: keep marker text documented, or spike real font measurement/rasterization.
-4. Make the renderer support matrix executable through focused tests.
-5. Start the first Phase 4 DX slice: widget typing, event signature docs, or better handler diagnostics.
+2. Decide the next text-rendering milestone: keep marker text documented, or spike real font measurement/rasterization.
+3. Expand the executable renderer support matrix beyond style categories.
+4. Start the first Phase 4 DX slice: widget typing, event signature docs, or better handler diagnostics.
+5. Keep `NATIVE_RENDERER_SPIKE.md` aligned as the renderer contract changes.

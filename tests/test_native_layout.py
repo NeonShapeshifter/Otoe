@@ -5,6 +5,8 @@ from otoe import (
     HStack,
     NativeLayoutError,
     ScrollView,
+    StyleRule,
+    StyleSheet,
     Text,
     VStack,
     css,
@@ -12,6 +14,8 @@ from otoe import (
     mount,
     signal,
 )
+from otoe._native_shared import NATIVE_STYLE_SUPPORT, native_style_support
+from otoe.style import SUPPORTED_PROPERTIES
 
 
 def test_native_layout_computes_stack_boxes_deterministically():
@@ -91,6 +95,49 @@ def test_native_layout_rejects_percent_dimensions_for_now():
     mounted = mount(VStack(Text("Nope"), className="box"))
 
     with pytest.raises(NativeLayoutError, match="px dimensions"):
+        layout_native(mounted, stylesheet=sheet)
+
+
+def test_native_style_support_matrix_covers_css_properties():
+    assert set(NATIVE_STYLE_SUPPORT) == set(SUPPORTED_PROPERTIES.values()) | {"scrollY"}
+    assert native_style_support("width") == "layout"
+    assert native_style_support("background") == "paint"
+    assert native_style_support("borderWidth") == "layout+paint"
+    assert native_style_support("margin") == "ignored"
+    assert native_style_support("lineHeight") is None
+
+
+def test_native_layout_accepts_documented_ignored_styles_without_effect():
+    sheet = css(
+        """
+        .box {
+          align-items: center;
+          display: flex;
+          font-weight: 800;
+          justify-content: center;
+          margin: 99;
+          opacity: 0.5;
+          padding: 4;
+        }
+        """
+    )
+    mounted = mount(VStack(Text("Hi"), className="box"))
+
+    layout = layout_native(mounted, stylesheet=sheet)
+
+    assert layout.root.width == 24
+    assert layout.root.height == 26
+    assert dict(layout.root.style)["margin"].value == 99
+
+
+def test_native_layout_rejects_stylesheet_keys_outside_native_matrix():
+    sheet = StyleSheet(
+        rules={".box": StyleRule(".box", {"lineHeight": 20})},
+        tokens={},
+    )
+    mounted = mount(VStack(Text("Nope"), className="box"))
+
+    with pytest.raises(NativeLayoutError, match="Unsupported native style properties"):
         layout_native(mounted, stylesheet=sheet)
 
 
