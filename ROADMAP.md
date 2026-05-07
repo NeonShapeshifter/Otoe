@@ -2,7 +2,7 @@
 
 **Status:** Phase 3 started / renderer hardening and DX diagnostics started
 **Updated:** May 7, 2026
-**Current baseline:** 218 tests passing
+**Current baseline:** 219 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -207,7 +207,7 @@ This track can run alongside Phase 3, but it should not expand the public API un
   - event signatures **Done for built-in widgets and current UI callback surface**
 - CLI:
   - `otoe dev` **Started through `python -m otoe dev MODULE:APP` and the installed `otoe` console script**
-  - `otoe render` **Started through `python -m otoe render MODULE:OBJECT --out PATH` and the installed `otoe` console script**
+  - `otoe render` **Started through HTML and native PNG output paths**
   - `otoe check` **Started through `python -m otoe check` and the installed `otoe` console script**
   - optional `otoe new`
 - Snapshot and renderer testing guides.
@@ -293,6 +293,6 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 ## Immediate Next Actions
 
-1. Add `otoe render --native` once native output target semantics are settled.
-2. Decide whether `otoe dev` should accept app factories lazily per reload cycle.
-3. Add first-class CLI help text examples if the command surface grows past these three commands.
+1. Decide whether `otoe dev` should accept app factories lazily per reload cycle.
+2. Add first-class CLI help text examples if the command surface grows past these three commands.
+3. Add a native CLI fixture that compares PNG output across repeated renders.

@@ -12,6 +12,7 @@ from typing import Any
 from .html import render_html
 from .live_server import LivePreviewApp, LivePreviewConfig, run_live_preview
 from .mount import MountedNode, mount
+from .native import render_native_png
 from .node import Node
 
 DEFAULT_CHECK_PATHS = ("src", "examples", "tests")
@@ -46,6 +47,16 @@ def _build_parser() -> argparse.ArgumentParser:
     render.add_argument("--out", required=True, help="output HTML path")
     render.add_argument("--pretty", action="store_true", help="pretty-print HTML")
     render.add_argument("--indent", type=int, default=0, help="base HTML indent")
+    render.add_argument(
+        "--native",
+        action="store_true",
+        help="render a native PNG frame",
+    )
+    render.add_argument(
+        "--background",
+        default="#ffffff",
+        help="native PNG background",
+    )
     render.set_defaults(func=_render)
 
     dev = subcommands.add_parser("dev", help="run a local live preview app")
@@ -95,6 +106,11 @@ def _render(args: argparse.Namespace) -> int:
 
     output = Path(args.out)
     output.parent.mkdir(parents=True, exist_ok=True)
+    if args.native:
+        render_native_png(mounted, output, background=args.background)
+        print(f"render native {args.target}: {output}")
+        return 0
+
     output.write_text(
         render_html(mounted, pretty=args.pretty, indent=args.indent),
         encoding="utf-8",

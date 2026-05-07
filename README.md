@@ -94,6 +94,7 @@ script:
 ```bash
 otoe check
 otoe render examples.quickstart:app --out preview.html --pretty
+otoe render examples.quickstart:app --out preview.png --native
 otoe dev examples.live_counter:app --port 8767
 ```
 
@@ -101,6 +102,12 @@ Render an importable Otoe node or zero-argument factory to HTML:
 
 ```bash
 python -m otoe render examples.quickstart:app --out preview.html --pretty
+```
+
+Render the same target through the native PNG path:
+
+```bash
+python -m otoe render examples.quickstart:app --out preview.png --native
 ```
 
 Run an importable live preview app locally:

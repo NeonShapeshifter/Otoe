@@ -79,6 +79,25 @@ def test_cli_render_quickstart_example(tmp_path):
     assert "Primary action" in html
 
 
+def test_cli_render_writes_native_png(tmp_path):
+    output = tmp_path / "quickstart.png"
+
+    result = main(
+        [
+            "render",
+            "examples.quickstart:app",
+            "--out",
+            str(output),
+            "--native",
+            "--background",
+            "#f8fafc",
+        ]
+    )
+
+    assert result == 0
+    assert output.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+
+
 def test_cli_render_rejects_invalid_target(tmp_path, monkeypatch, capsys):
     module = tmp_path / "bad_surface.py"
     module.write_text("app = object()\n", encoding="utf-8")
