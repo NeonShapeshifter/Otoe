@@ -22,15 +22,20 @@ def test_native_counter_demo_clicks_update_state_and_render_output(tmp_path):
     after = tmp_path / "after.png"
     final = tmp_path / "final.png"
 
-    demo.render(before)
+    before_paint = demo.render(before)
     demo.click_increment()
     demo.render(after)
     demo.click_decrement()
-    demo.render(final)
+    final_paint = demo.render(final)
 
     assert demo.count.value == 0
     assert before.read_bytes() != after.read_bytes()
-    assert before.read_bytes() == final.read_bytes()
+    assert after.read_bytes() != final.read_bytes()
+    assert not any(command.stroke == "#38bdf8" for command in before_paint.commands)
+    assert any(
+        command.path == (2, 0) and command.stroke == "#38bdf8"
+        for command in final_paint.commands
+    )
 
 
 def test_native_counter_demo_frame_writer_creates_before_after_images(tmp_path):

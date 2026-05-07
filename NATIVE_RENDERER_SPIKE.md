@@ -99,6 +99,9 @@ The current painter supports:
 - Rounded rect masking from `border-radius`.
 - Text marker output from box text, `color`, and `font-size`.
 - Default button and input colors when styles are not provided.
+- Disabled button and input paint defaults.
+- Focus ring commands for focused buttons and inputs through
+  `paint_native(..., focused_path=...)` and `NativeSurface`.
 - Token-resolved colors from `css(..., tokens={...})`.
 - `ScrollView` descendant clipping through paint command clip rects, including
   stdlib PNG output.

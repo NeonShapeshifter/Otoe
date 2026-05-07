@@ -163,9 +163,10 @@ framework milestone.
 - Lazy `NativeSurface` auto-refresh added for external reactive prop and control-flow updates.
 - Native click dispatch now respects disabled widgets.
 - Native `ScrollView` bounds now clip descendant paint output, PNG rendering, and hit-tested clicks.
+- Native paint now includes disabled control defaults and focused control rings.
 - `BENCHMARKS.md` added for concrete change-friction notes against Wraith/Kivy.
 - CI now builds release distributions and runs `twine check` on package metadata.
-- Baseline tests: `155 passed`.
+- Baseline tests: `159 passed`.
 
 ### Current Sprint
 
@@ -183,6 +184,7 @@ framework milestone.
 12. Add lazy invalidation so external reactive updates refresh `NativeSurface` without manual `refresh()`. **Added for reactive props and control-flow tree changes.**
 13. Align native disabled control semantics with focus/click dispatch. **Disabled widgets no longer receive native click handlers.**
 14. Add minimal `ScrollView` bounds semantics for paint and hit-testing. **Descendant paint and click targets are clipped to the viewport bounds.**
+15. Add visible native control states for disabled and focused controls. **Disabled defaults and focus rings are covered in paint tests.**
 
 ---
 

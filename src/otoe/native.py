@@ -31,6 +31,7 @@ class LayoutBox:
     id: str | None = None
     text: str | None = None
     events: tuple[str, ...] = ()
+    state: tuple[str, ...] = ()
     style: tuple[tuple[str, Any], ...] = ()
     children: tuple["LayoutBox", ...] = ()
 
@@ -104,6 +105,12 @@ class NativeSurface:
         self._tree_revision: tuple[Any, ...] | None = None
         self.refresh()
         self.focused_path = self._first_autofocus_path()
+        if self.focused_path is not None:
+            self._paint = paint_native(
+                self.layout,
+                background=self.background,
+                focused_path=self.focused_path,
+            )
 
     @property
     def mounted(self) -> MountedNode | None:
@@ -144,9 +151,13 @@ class NativeSurface:
             stylesheet=self.stylesheet,
             strict_styles=self.strict_styles,
         )
-        self._paint = paint_native(self._layout, background=self.background)
         self._tree_revision = _tree_revision(_surface_root_widget(self._target))
         self._sync_focus_after_refresh()
+        self._paint = paint_native(
+            self._layout,
+            background=self.background,
+            focused_path=self.focused_path,
+        )
         self.frame += 1
         return self._paint
 
@@ -384,6 +395,7 @@ def paint_native(
     layout: NativeLayout,
     *,
     background: str = "#ffffff",
+    focused_path: tuple[int, ...] | None = None,
 ) -> NativePaint:
     commands = [
         PaintCommand(
@@ -396,7 +408,7 @@ def paint_native(
             fill=background,
         )
     ]
-    commands.extend(_paint_box(layout.root))
+    commands.extend(_paint_box(layout.root, focused_path=focused_path))
     return NativePaint(
         width=max(layout.root.width, 1),
         height=max(layout.root.height, 1),
@@ -423,13 +435,14 @@ def render_native_png(
     stylesheet: StyleSheet | None = None,
     strict_styles: bool = True,
     background: str = "#ffffff",
+    focused_path: tuple[int, ...] | None = None,
 ) -> NativePaint:
     layout = (
         target
         if isinstance(target, NativeLayout)
         else layout_native(target, stylesheet=stylesheet, strict_styles=strict_styles)
     )
-    paint = paint_native(layout, background=background)
+    paint = paint_native(layout, background=background, focused_path=focused_path)
     write_native_png(paint, path)
     return paint
 
@@ -588,12 +601,16 @@ def _paint_box(
     box: LayoutBox,
     *,
     clip: tuple[int, int, int, int] | None = None,
+    focused_path: tuple[int, ...] | None = None,
 ) -> list[PaintCommand]:
     style = dict(box.style)
     commands: list[PaintCommand] = []
     rect = _rect_command(box, style, clip=clip)
     if rect is not None:
         commands.append(rect)
+    focus_ring = _focus_ring_command(box, style, clip=clip, focused_path=focused_path)
+    if focus_ring is not None:
+        commands.append(focus_ring)
 
     if box.text:
         commands.append(_text_command(box, style, clip=clip))
@@ -604,7 +621,7 @@ def _paint_box(
         else clip
     )
     for child in box.children:
-        commands.extend(_paint_box(child, clip=child_clip))
+        commands.extend(_paint_box(child, clip=child_clip, focused_path=focused_path))
     return commands
 
 
@@ -636,6 +653,31 @@ def _rect_command(
     )
 
 
+def _focus_ring_command(
+    box: LayoutBox,
+    style: dict[str, Any],
+    *,
+    clip: tuple[int, int, int, int] | None,
+    focused_path: tuple[int, ...] | None,
+) -> PaintCommand | None:
+    if box.path != focused_path or box.name not in {"Button", "Input"}:
+        return None
+    if _is_disabled(box):
+        return None
+    return PaintCommand(
+        kind="rect",
+        path=box.path,
+        x=box.x - 2,
+        y=box.y - 2,
+        width=box.width + 4,
+        height=box.height + 4,
+        stroke="#38bdf8",
+        stroke_width=2,
+        radius=_dimension(style, "borderRadius", default=_default_radius(box)) + 2,
+        clip=clip,
+    )
+
+
 def _text_command(
     box: LayoutBox,
     style: dict[str, Any],
@@ -663,6 +705,11 @@ def _text_command(
 def _box_fill(box: LayoutBox, style: dict[str, Any]) -> str | None:
     if "background" in style:
         return _color_value(style["background"])
+    if _is_disabled(box):
+        if box.name == "Button":
+            return "#e5e7eb"
+        if box.name == "Input":
+            return "#f3f4f6"
     if box.name == "Button":
         return "#2563eb"
     if box.name == "Input":
@@ -673,6 +720,8 @@ def _box_fill(box: LayoutBox, style: dict[str, Any]) -> str | None:
 def _box_stroke(box: LayoutBox, style: dict[str, Any]) -> str | None:
     if "borderColor" in style:
         return _color_value(style["borderColor"])
+    if _is_disabled(box) and box.name in {"Button", "Input"}:
+        return "#d1d5db"
     if box.name == "Button":
         return "#1d4ed8"
     if box.name == "Input":
@@ -689,6 +738,11 @@ def _default_radius(box: LayoutBox) -> int:
 
 
 def _default_text_color(box: LayoutBox) -> str:
+    if _is_disabled(box):
+        if box.name == "Button":
+            return "#6b7280"
+        if box.name == "Input":
+            return "#9ca3af"
     if box.name == "Button":
         return "#ffffff"
     return "#111827"
@@ -698,6 +752,10 @@ def _text_padding(box: LayoutBox, style: dict[str, Any]) -> int:
     if "padding" in style:
         return _dimension(style, "padding", default=0)
     return 8 if box.name in {"Button", "Input"} else 0
+
+
+def _is_disabled(box: LayoutBox) -> bool:
+    return "disabled" in box.state
 
 
 def _container_box(
@@ -760,6 +818,7 @@ def _container_box(
         height=height,
         id=_optional_string(widget.props.get("id")),
         events=tuple(sorted(widget.events)),
+        state=_state_items(widget),
         style=_style_items(style),
         children=tuple(children),
     )
@@ -800,6 +859,7 @@ def _leaf_box(
         id=_optional_string(widget.props.get("id")),
         text=text,
         events=tuple(sorted(widget.events)),
+        state=_state_items(widget),
         style=_style_items(style),
     )
 
@@ -883,6 +943,13 @@ def _constrain(
 
 def _style_items(style: dict[str, Any]) -> tuple[tuple[str, Any], ...]:
     return tuple(sorted(style.items()))
+
+
+def _state_items(widget: FakeWidget) -> tuple[str, ...]:
+    state = []
+    if widget.props.get("disabled"):
+        state.append("disabled")
+    return tuple(state)
 
 
 def _flatten(box: LayoutBox) -> list[LayoutBox]:

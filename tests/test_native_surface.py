@@ -138,6 +138,10 @@ def test_native_surface_tracks_autofocus_input():
     assert surface.focused_path == (1,)
     assert surface.focused_box is not None
     assert surface.focused_box.name == "Input"
+    assert any(
+        command.stroke == "#38bdf8"
+        for command in surface.paint.by_path((1,))
+    )
 
 
 def test_native_surface_click_moves_focus_and_runs_focus_events():
@@ -165,6 +169,10 @@ def test_native_surface_click_moves_focus_and_runs_focus_events():
     surface.click(button_box.x + 2, button_box.y + 2)
 
     assert surface.focused_path == (1,)
+    assert any(
+        command.stroke == "#38bdf8"
+        for command in surface.paint.by_path((1,))
+    )
     assert events == [
         "input-focus",
         "input-blur",

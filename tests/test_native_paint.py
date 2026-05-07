@@ -4,6 +4,8 @@ import pytest
 
 from otoe import (
     Button,
+    HStack,
+    Input,
     NativePaint,
     NativePaintError,
     PaintCommand,
@@ -75,6 +77,81 @@ def test_native_paint_generates_rect_and_text_commands():
     assert [(command.path, command.text) for command in text_commands] == [
         ((0,), "Hello"),
         ((1,), "Run"),
+    ]
+
+
+def test_native_layout_marks_disabled_widget_state():
+    mounted = mount(Button("Run", disabled=True, onClick=lambda: None))
+
+    layout = layout_native(mounted)
+
+    assert layout.root.state == ("disabled",)
+
+
+def test_native_paint_uses_disabled_control_defaults():
+    mounted = mount(
+        HStack(
+            Button("Run", disabled=True, onClick=lambda: None),
+            Input(value="Locked", disabled=True),
+            gap=4,
+        )
+    )
+
+    paint = paint_native(layout_native(mounted))
+    button_rect = next(
+        command
+        for command in paint.commands
+        if command.kind == "rect" and command.path == (0,)
+    )
+    input_rect = next(
+        command
+        for command in paint.commands
+        if command.kind == "rect" and command.path == (1,)
+    )
+    button_text = next(
+        command
+        for command in paint.commands
+        if command.kind == "text" and command.path == (0,)
+    )
+    input_text = next(
+        command
+        for command in paint.commands
+        if command.kind == "text" and command.path == (1,)
+    )
+
+    assert button_rect.fill == "#e5e7eb"
+    assert button_rect.stroke == "#d1d5db"
+    assert button_text.color == "#6b7280"
+    assert input_rect.fill == "#f3f4f6"
+    assert input_rect.stroke == "#d1d5db"
+    assert input_text.color == "#9ca3af"
+
+
+def test_native_paint_adds_focus_ring_for_focused_control():
+    mounted = mount(HStack(Button("Run", onClick=lambda: None), Input(value=""), gap=4))
+    layout = layout_native(mounted)
+
+    paint = paint_native(layout, focused_path=(1,))
+
+    focus_ring = next(
+        command
+        for command in paint.commands
+        if command.path == (1,) and command.stroke == "#38bdf8"
+    )
+    assert focus_ring.fill is None
+    assert focus_ring.stroke_width == 2
+    assert focus_ring.x == layout.by_path((1,)).x - 2
+
+
+def test_native_paint_skips_focus_ring_for_disabled_control():
+    mounted = mount(Button("Run", disabled=True, onClick=lambda: None))
+
+    paint = paint_native(layout_native(mounted), focused_path=())
+
+    assert not [
+        command
+        for command in paint.commands
+        if command.path == () and command.stroke == "#38bdf8"
     ]
 
 
