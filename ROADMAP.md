@@ -2,7 +2,7 @@
 
 **Status:** Phase 3 started / renderer hardening and DX diagnostics started
 **Updated:** May 7, 2026
-**Current baseline:** 208 tests passing
+**Current baseline:** 211 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -207,7 +207,7 @@ This track can run alongside Phase 3, but it should not expand the public API un
   - event signatures **Done for built-in widgets and current UI callback surface**
 - CLI:
   - `otoe dev`
-  - `otoe render`
+  - `otoe render` **Started through `python -m otoe render MODULE:OBJECT --out PATH`**
   - `otoe check` **Started through `python -m otoe check`**
   - optional `otoe new`
 - Snapshot and renderer testing guides.
@@ -295,4 +295,4 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 1. Draft the first CLI shape for `otoe dev`, `otoe render`, and `otoe check`. **Done in ADR-010.**
 2. Add package entry point for `otoe` after release metadata is clean.
-3. Draft `otoe render MODULE:OBJECT --out PATH` import semantics.
+3. Draft `otoe dev MODULE:APP` server semantics.

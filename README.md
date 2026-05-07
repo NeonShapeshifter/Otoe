@@ -88,6 +88,12 @@ python -m otoe check
 python -m otoe check --tests
 ```
 
+Render an importable Otoe node or zero-argument factory to HTML:
+
+```bash
+python -m otoe render my_app:app --out preview.html --pretty
+```
+
 Generate the static Wraith Mission Exec preview:
 
 ```bash
