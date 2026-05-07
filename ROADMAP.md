@@ -1,6 +1,6 @@
 # Otoe Roadmap
 
-**Status:** Phase 3 started / renderer hardening started
+**Status:** Phase 3 started / renderer hardening and DX diagnostics started
 **Updated:** May 7, 2026
 **Current baseline:** 177 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
@@ -38,7 +38,7 @@ The current technical question is no longer whether components, signals, control
 | 2A | Headless Native Renderer Spike | Done | Otoe trees can produce deterministic layout, paint commands, PNG output, hit-tested input, focus, keyboard, text input, and scroll in tests. |
 | 2B | Renderer Backend Hardening | Started | Split and harden the native renderer contract before choosing real layout/paint/window backends. |
 | 3 | Interactive Native Demo | Started | `NativeWindowDriver`, optional Tk wrapper, and native window demo exist; the demo still needs framework-level polish and backend contract clarity. |
-| 4 | Developer Experience | Planned | Improve docs, diagnostics, stubs, CLI, and app authoring ergonomics. |
+| 4 | Developer Experience | Started | Improve docs, diagnostics, stubs, CLI, and app authoring ergonomics. |
 | 5 | Case Study Migration Option | Planned | Decide whether one real app surface should adopt Otoe. |
 | 6 | Optional Framework Extraction | Planned | Decide whether Otoe becomes a reusable public or semi-public framework. |
 
@@ -183,7 +183,7 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 ## Phase 4 - Developer Experience
 
-**Status:** Planned
+**Status:** Started
 
 **Goal:** make Otoe pleasant and reliable enough for repeated app development.
 
@@ -191,10 +191,10 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 - Typed widget stubs and better editor support.
 - Better diagnostics:
-  - unknown prop
-  - wrong event name
-  - wrong handler arity
-  - disposed reactive read
+	  - unknown prop
+	  - wrong event name
+	  - wrong handler arity **Started**
+	  - disposed reactive read
   - mutation during mount
   - renderer unsupported feature errors with component context where possible
 - Documentation:
@@ -292,5 +292,6 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 ## Immediate Next Actions
 
-1. Start the first Phase 4 DX slice: widget typing, event signature docs, or better handler diagnostics.
-2. Keep `NATIVE_RENDERER_SPIKE.md` aligned as the renderer contract changes.
+1. Add event signature documentation for built-in widgets and UI primitives.
+2. Continue handler diagnostics with component/widget context where possible.
+3. Keep `NATIVE_RENDERER_SPIKE.md` aligned as the renderer contract changes.

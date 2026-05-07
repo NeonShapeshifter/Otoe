@@ -7,6 +7,7 @@ from otoe import (
     DuplicatePrimaryPropError,
     EventHandlerError,
     HStack,
+    Input,
     Text,
     UnknownPropError,
     component,
@@ -121,6 +122,26 @@ def test_unknown_props_raise_developer_facing_error():
 def test_non_callable_event_raises():
     with pytest.raises(EventHandlerError, match="must be callable"):
         mount(Button("Save", onClick="not-callable"))
+
+
+def test_event_handler_arity_errors_are_developer_facing():
+    def handle_change(value):
+        return value
+
+    widget = root_widget(mount(Input(value="", onChange=handle_change)))
+
+    with pytest.raises(EventHandlerError, match="handle_change expected"):
+        widget.trigger("onChange")
+
+
+def test_event_handler_internal_type_errors_still_propagate():
+    def handle_click():
+        raise TypeError("handler body failed")
+
+    widget = root_widget(mount(Button("Run", onClick=handle_click)))
+
+    with pytest.raises(TypeError, match="handler body failed"):
+        widget.trigger("onClick")
 
 
 def test_primary_prop_duplicate_raises_at_node_creation():
