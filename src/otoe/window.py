@@ -68,6 +68,17 @@ class NativeWindowDriver:
             if event.x is None or event.y is None:
                 raise ValueError("click events require x and y coordinates.")
             return self.click(event.x, event.y)
+        if event.kind == "key_input":
+            if event.key is None:
+                raise ValueError("key_input events require a key.")
+            return self.key_input(
+                event.key,
+                text=event.text or "",
+                shift=event.shift,
+                ctrl=event.ctrl,
+                meta=event.meta,
+                alt=event.alt,
+            )
         if event.kind == "key_down":
             if event.key is None:
                 raise ValueError("key_down events require a key.")
@@ -104,6 +115,34 @@ class NativeWindowDriver:
             alt=alt,
         )
 
+    def key_input(
+        self,
+        key: str,
+        *,
+        text: str = "",
+        shift: bool = False,
+        ctrl: bool = False,
+        meta: bool = False,
+        alt: bool = False,
+    ) -> Any:
+        try:
+            current_value = self.surface.input_value()
+        except KeyError:
+            return self.key_down(key, shift=shift, ctrl=ctrl, meta=meta, alt=alt)
+
+        next_value = edit_native_input_value(
+            current_value,
+            key=key,
+            text=text,
+            shift=shift,
+            ctrl=ctrl,
+            meta=meta,
+            alt=alt,
+        )
+        if next_value is None:
+            return self.key_down(key, shift=shift, ctrl=ctrl, meta=meta, alt=alt)
+        return self.input_text(next_value)
+
     def input_text(self, value: str) -> Any:
         return self.surface.input_text(value)
 
@@ -125,7 +164,11 @@ class TkNativeWindow:
             raise RuntimeError("TkNativeWindow requires tkinter.") from exc
 
         self._tk = tk
-        self.driver = driver if isinstance(driver, NativeWindowDriver) else NativeWindowDriver(driver)
+        self.driver = (
+            driver
+            if isinstance(driver, NativeWindowDriver)
+            else NativeWindowDriver(driver)
+        )
         if frame_path is None:
             handle = tempfile.NamedTemporaryFile(prefix="otoe-native-", suffix=".png", delete=False)
             handle.close()
@@ -160,35 +203,17 @@ class TkNativeWindow:
         meta = bool(event.state & 0x0040)
         key = _tk_key_name(event)
 
-        if ctrl or meta or alt:
-            self.driver.key_down(key, shift=shift, ctrl=ctrl, meta=meta, alt=alt)
-        elif key == "BackSpace":
-            self._edit_focused_input(lambda value: value[:-1], fallback_key=key, shift=shift)
-        elif key == "Return":
-            self.driver.key_down("Enter", shift=shift)
-        elif key == "Tab":
-            self.driver.key_down("Tab", shift=shift)
-        elif event.char:
-            self._edit_focused_input(lambda value: value + event.char, fallback_key=key, shift=shift)
-        else:
-            self.driver.key_down(key, shift=shift)
+        self.driver.key_input(
+            key,
+            text=str(event.char or ""),
+            shift=shift,
+            ctrl=ctrl,
+            meta=meta,
+            alt=alt,
+        )
 
         self._render()
         return "break"
-
-    def _edit_focused_input(
-        self,
-        edit: Any,
-        *,
-        fallback_key: str,
-        shift: bool = False,
-    ) -> None:
-        try:
-            next_value = edit(self.driver.surface.input_value())
-        except KeyError:
-            self.driver.key_down(fallback_key, shift=shift)
-        else:
-            self.driver.input_text(next_value)
 
     def _render(self) -> None:
         self.driver.render_png(self.frame_path)
@@ -199,6 +224,57 @@ class TkNativeWindow:
 
 
 def _tk_key_name(event: Any) -> str:
+    if event.keysym == "Return":
+        return "Enter"
     if event.keysym == "space":
         return " "
     return str(event.keysym)
+
+
+def edit_native_input_value(
+    value: str,
+    *,
+    key: str,
+    text: str = "",
+    shift: bool = False,
+    ctrl: bool = False,
+    meta: bool = False,
+    alt: bool = False,
+) -> str | None:
+    if ctrl or meta or alt:
+        return None
+    if key == "BackSpace":
+        return value[:-1]
+    if key == "Delete":
+        return value
+    if key in {"Enter", "Tab", "Escape"}:
+        return None
+    if len(text) == 1 and text not in {"\b", "\r", "\n", "\t"}:
+        return value + text
+    return None
+
+
+def run_native(
+    target: Node | FakeWidget | MountedNode | NativeSurface | NativeWindowDriver,
+    *,
+    stylesheet: StyleSheet | None = None,
+    strict_styles: bool = True,
+    background: str = "#ffffff",
+    title: str = "Otoe",
+    backend: str = "tk",
+) -> None:
+    if backend != "tk":
+        raise ValueError(f"Unsupported native backend {backend!r}.")
+
+    if isinstance(target, NativeWindowDriver):
+        driver = target
+    elif isinstance(target, NativeSurface):
+        driver = NativeWindowDriver(target)
+    else:
+        driver = NativeWindowDriver.from_target(
+            target,
+            stylesheet=stylesheet,
+            strict_styles=strict_styles,
+            background=background,
+        )
+    TkNativeWindow(driver, title=title).run()

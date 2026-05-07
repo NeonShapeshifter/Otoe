@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
-from otoe import NativeWindowDriver, TkNativeWindow
+from otoe import NativeWindowDriver, run_native
 
 from .task_board_demo import NativeTaskBoardDemo
 
@@ -58,7 +58,7 @@ def render_demo_frames(directory: str | Path) -> tuple[Path, Path, Path, Path]:
 
 def run_window() -> None:
     demo = NativeWindowDemo()
-    TkNativeWindow(demo.driver, title="Otoe Native Window Demo").run()
+    run_native(demo.driver, title="Otoe Native Window Demo")
 
 
 def main(argv: Sequence[str] | None = None) -> None:

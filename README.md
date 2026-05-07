@@ -35,6 +35,10 @@ stable public framework or a production desktop renderer.
   clicks, and refreshing the headless native frame from one object.
 - `NativeWindowDriver` for testable native-window event dispatch over a
   `NativeSurface`, plus an optional Tk wrapper for local experiments.
+- `run_native(...)` as the experimental native app entry point, currently backed
+  by the optional Tk wrapper.
+- Driver-level `key_input(...)` text editing for printable keys, Backspace,
+  Delete, Enter/Tab fallback, and shortcut fallback.
 - Headless native focus and keyboard handling for autofocus, click-to-focus,
   Tab traversal, focused keydown handlers, button submit keys, and global
   shortcut payloads.
@@ -136,6 +140,14 @@ Generate native-window driver PNG frames, or open the optional Tk wrapper:
 ```bash
 PYTHONPATH=src:. python -m examples.native.window_demo
 PYTHONPATH=src:. python -m examples.native.window_demo --window
+```
+
+The `--window` mode uses the experimental native entry point:
+
+```python
+from otoe import run_native
+
+run_native(App(), stylesheet=styles, title="Otoe")
 ```
 
 ## Tiny Example

@@ -51,6 +51,11 @@ and PNG output. `TkNativeWindow` is an optional local experiment layer on top of
 that driver; it imports `tkinter` only when constructed and is not part of the
 production renderer contract.
 
+`run_native(...)` is the experimental framework-facing entry point for launching
+a native tree. Today it creates the same `NativeWindowDriver` and uses the
+optional Tk backend. The public entry point is intentionally backend-neutral so
+the implementation can move to another windowing layer later.
+
 The native spike consumes `MountedNode` or `FakeWidget` trees. Components,
 `Show`, and `For` are already resolved by `mount(...)`, so the renderer only
 sees widget names, resolved props, event handlers, and ordered children.
@@ -155,11 +160,17 @@ The `NativeSurface` focus and keyboard subset supports:
   handler and refreshes the next headless frame.
 - `NativeWindowDriver` event dispatch for high-level `click`, `key_down`, and
   `input_text` events over the current `NativeSurface`.
+- `NativeWindowDriver.key_input(...)` dispatch for platform keypress events:
+  printable text edits focused inputs, Backspace/Delete mutate the controlled
+  value, Enter/Tab fall through to `key_down`, and modified keys remain
+  available to shortcut handlers.
 - Optional `TkNativeWindow` wrapper for local manual experiments with OS mouse
   and keyboard events translated into `NativeWindowDriver` events.
+- `run_native(...)` as the experimental native app runner, currently backed by
+  the optional Tk wrapper.
 
-Uncontrolled input mutation, text selection, pointer movement, IME, drag,
-wheel, gesture, and bubbling/capture semantics are deferred.
+Caret movement, text selection, uncontrolled input mutation, pointer movement,
+IME, drag, wheel, gesture, and bubbling/capture semantics are deferred.
 
 ## Rejected For This Spike
 

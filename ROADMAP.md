@@ -169,9 +169,13 @@ framework milestone.
   experiments.
 - Framework-neutral native window demo added for driver-level PNG frames and
   optional Tk manual testing.
+- Experimental `run_native(...)` entry point added over the native window
+  driver and optional Tk backend.
+- Driver-level `key_input(...)` editing added for printable text, Backspace,
+  Delete, Enter/Tab fallback, and shortcut fallback.
 - `BENCHMARKS.md` added for concrete change-friction notes against Wraith/Kivy.
 - CI now builds release distributions and runs `twine check` on package metadata.
-- Baseline tests: `166 passed`.
+- Baseline tests: `171 passed`.
 
 ### Current Sprint
 
@@ -192,6 +196,7 @@ framework milestone.
 15. Add visible native control states for disabled and focused controls. **Disabled defaults and focus rings are covered in paint tests.**
 16. Add a testable native window driver before picking a production backend. **`NativeWindowDriver` added, with optional Tk wrapper.**
 17. Add a manual native window demo that still works headlessly in CI. **Driver PNG frames and optional Tk launch added.**
+18. Add a framework-facing native runner and driver-level text key editing. **`run_native(...)` and `NativeWindowDriver.key_input(...)` added.**
 
 ---
 

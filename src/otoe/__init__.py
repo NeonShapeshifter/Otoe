@@ -69,7 +69,13 @@ from .ui import (
     class_names,
 )
 from .widgets import Button, HStack, Input, Panel, ScrollView, Text, VStack
-from .window import NativeWindowDriver, NativeWindowEvent, TkNativeWindow
+from .window import (
+    NativeWindowDriver,
+    NativeWindowEvent,
+    TkNativeWindow,
+    edit_native_input_value,
+    run_native,
+)
 
 __all__ = [
     "ActionButton",
@@ -147,6 +153,7 @@ __all__ = [
     "css",
     "dispatch_native_click",
     "effect",
+    "edit_native_input_value",
     "hit_test_native",
     "interval",
     "layout_native",
@@ -155,6 +162,7 @@ __all__ = [
     "on_mount",
     "paint_native",
     "root_widget",
+    "run_native",
     "signal",
     "snapshot",
     "snapshot_text",
