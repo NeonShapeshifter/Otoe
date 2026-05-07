@@ -62,6 +62,18 @@ stable public framework or a production desktop renderer.
 - Full component library or shadcn/Horizon-style UI kit.
 - Packaging for production apps.
 
+## Native Renderer Status
+
+The native path is currently a deterministic headless renderer spike. It can
+layout mounted Otoe trees, emit paint commands, write PNG preview frames, and
+exercise click, focus, keyboard, input, and scroll dispatch through
+`NativeSurface`.
+
+This is enough for renderer tests, visual fixtures, and early framework API
+validation. It is not yet a production desktop backend: there is no GPU
+renderer, platform accessibility tree, text shaping engine, retained windowing
+backend, or backend compatibility promise.
+
 ## Quick Start
 
 Use Python 3.11 or newer.

@@ -295,4 +295,4 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 1. Decide whether `otoe dev` should accept app factories lazily per reload cycle.
 2. Add first-class CLI help text examples if the command surface grows past these three commands.
-3. Add a public native renderer status note that separates PNG preview support from production backend claims.
+3. Add a native backend boundary ADR before claiming any backend beyond headless PNG/Tk experiments.
