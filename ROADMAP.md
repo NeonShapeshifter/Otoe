@@ -2,7 +2,7 @@
 
 **Status:** Phase 3 started / renderer hardening and DX diagnostics started
 **Updated:** May 7, 2026
-**Current baseline:** 199 tests passing
+**Current baseline:** 201 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -195,7 +195,7 @@ This track can run alongside Phase 3, but it should not expand the public API un
   - unknown prop
   - wrong event name **Started with widget/component context**
   - wrong handler arity **Started with widget/event/component context**
-  - disposed reactive read
+  - disposed reactive read **Done for computed values**
   - mutation during mount
   - renderer unsupported feature errors with component context where possible **Started**
 - Documentation:
@@ -293,6 +293,6 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 ## Immediate Next Actions
 
-1. Add disposed reactive read diagnostics.
-2. Define accessibility metadata expectations from `LayoutBox`.
+1. Define accessibility metadata expectations from `LayoutBox`.
+2. Add mutation-during-mount diagnostics.
 3. Keep `NATIVE_RENDERER_SPIKE.md` aligned as the renderer contract changes.

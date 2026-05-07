@@ -13,3 +13,6 @@ class DuplicatePrimaryPropError(OtoeError):
 class EventHandlerError(OtoeError):
     """Raised when an event value is not callable."""
 
+
+class ReactiveDisposedError(OtoeError):
+    """Raised when code reads reactive state after its owner was disposed."""

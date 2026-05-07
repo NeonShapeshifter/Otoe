@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextvars import ContextVar
 from typing import Any, Callable
 
+from .errors import ReactiveDisposedError
 from .owner import current_owner
 from .scheduler import schedule
 
@@ -75,13 +76,14 @@ class Computed(ReactiveValue):
         self._disposed = False
 
         owner = current_owner()
+        self._owner_name = owner.name if owner is not None else None
         if owner is not None:
             owner.add_disposable(self)
 
     @property
     def value(self) -> Any:
         if self._disposed:
-            raise RuntimeError("Cannot read a disposed computed value.")
+            raise ReactiveDisposedError(_disposed_computed_message(self._owner_name))
         self._track_read()
         if self._dirty:
             self._recompute()
@@ -186,3 +188,10 @@ def effect(fn: Callable[[], Any]) -> Effect:
 
 def is_reactive(value: Any) -> bool:
     return isinstance(value, ReactiveValue)
+
+
+def _disposed_computed_message(owner_name: str | None) -> str:
+    message = "Computed value was read after it was disposed."
+    if owner_name is None:
+        return message
+    return f"{owner_name}: {message}"

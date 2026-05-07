@@ -1,4 +1,15 @@
-from otoe import computed, effect, signal
+import pytest
+
+from otoe import (
+    ReactiveDisposedError,
+    Text,
+    component,
+    computed,
+    effect,
+    mount,
+    signal,
+    unmount,
+)
 
 
 def test_signal_updates_effect_dependencies():
@@ -49,3 +60,33 @@ def test_effect_cleanup_runs_before_rerun_and_dispose():
 
     assert events == ["run:a", "cleanup:a", "run:b", "cleanup:b"]
 
+
+def test_disposed_computed_read_is_developer_facing():
+    label = computed(lambda: "ready")
+
+    label.dispose()
+
+    with pytest.raises(
+        ReactiveDisposedError,
+        match="Computed value was read after it was disposed",
+    ):
+        _ = label.value
+
+
+def test_disposed_computed_read_includes_owner_context():
+    leaked = []
+
+    @component
+    def StatusLabel():
+        label = computed(lambda: "ready")
+        leaked.append(label)
+        return Text(label)
+
+    mounted = mount(StatusLabel())
+    unmount(mounted)
+
+    with pytest.raises(
+        ReactiveDisposedError,
+        match="StatusLabel: Computed value was read after it was disposed",
+    ):
+        _ = leaked[0].value
