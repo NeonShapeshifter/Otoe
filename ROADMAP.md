@@ -117,6 +117,8 @@ Already landed:
 - Native window demo frame generation through the task board surface.
 - Driver-level key editing for printable text, Backspace, Delete, Enter/Tab fallback, and shortcut fallback.
 - Driver-level wheel events for controlled scroll views.
+- Native task board behavior parity tests against the HTML render path for text
+  content and controlled input values after native event dispatch.
 
 Phase 3 is not complete yet. The current implementation proves the path, but it is still an experimental wrapper over a headless surface.
 
@@ -290,8 +292,7 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 ## Immediate Next Actions
 
-1. Add Phase 3 behavior-parity tests between the native task board and the live/html preview shape where useful.
-2. Decide the next text-rendering milestone: keep marker text documented, or spike real font measurement/rasterization.
-3. Expand the executable renderer support matrix beyond style and widget categories.
-4. Start the first Phase 4 DX slice: widget typing, event signature docs, or better handler diagnostics.
-5. Keep `NATIVE_RENDERER_SPIKE.md` aligned as the renderer contract changes.
+1. Decide the next text-rendering milestone: keep marker text documented, or spike real font measurement/rasterization.
+2. Expand the executable renderer support matrix beyond style and widget categories.
+3. Start the first Phase 4 DX slice: widget typing, event signature docs, or better handler diagnostics.
+4. Keep `NATIVE_RENDERER_SPIKE.md` aligned as the renderer contract changes.

@@ -17,6 +17,11 @@ and multi-frame PNG output. The window demo drives that same app-shaped surface
 through `NativeWindowDriver` and can optionally open a Tk window for manual
 experiments.
 
+The task board also has behavior-parity coverage against the HTML render path:
+after native input, click, Escape, and shortcut dispatch, the native layout text
+and controlled input values must match the same mounted tree rendered through
+`render_html(...)`.
+
 ## Current Pipeline
 
 The supported path is:
