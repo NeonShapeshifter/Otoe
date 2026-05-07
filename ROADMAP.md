@@ -2,7 +2,7 @@
 
 **Status:** Phase 3 started / renderer hardening and DX diagnostics started
 **Updated:** May 7, 2026
-**Current baseline:** 177 tests passing
+**Current baseline:** 188 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -191,10 +191,10 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 - Typed widget stubs and better editor support.
 - Better diagnostics:
-	  - unknown prop
-	  - wrong event name
-	  - wrong handler arity **Started**
-	  - disposed reactive read
+  - unknown prop
+  - wrong event name
+  - wrong handler arity **Started**
+  - disposed reactive read
   - mutation during mount
   - renderer unsupported feature errors with component context where possible
 - Documentation:
