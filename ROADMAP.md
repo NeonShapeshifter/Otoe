@@ -2,7 +2,7 @@
 
 **Status:** Phase 3 started / renderer hardening and DX diagnostics started
 **Updated:** May 7, 2026
-**Current baseline:** 211 tests passing
+**Current baseline:** 215 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -206,7 +206,7 @@ This track can run alongside Phase 3, but it should not expand the public API un
   - native renderer subset
   - event signatures **Done for built-in widgets and current UI callback surface**
 - CLI:
-  - `otoe dev`
+  - `otoe dev` **Started through `python -m otoe dev MODULE:APP`**
   - `otoe render` **Started through `python -m otoe render MODULE:OBJECT --out PATH`**
   - `otoe check` **Started through `python -m otoe check`**
   - optional `otoe new`
@@ -293,6 +293,6 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 ## Immediate Next Actions
 
-1. Move the shared live preview server from `examples/` into `src/otoe/`.
-2. Implement `python -m otoe dev MODULE:APP`.
-3. Add package entry point for `otoe` after release metadata is clean.
+1. Add package entry point for `otoe` after release metadata is clean.
+2. Add `otoe render --native` once native output target semantics are settled.
+3. Add CLI docs/examples for app factories and live preview apps.

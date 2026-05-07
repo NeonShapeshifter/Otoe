@@ -94,6 +94,12 @@ Render an importable Otoe node or zero-argument factory to HTML:
 python -m otoe render my_app:app --out preview.html --pretty
 ```
 
+Run an importable live preview app locally:
+
+```bash
+python -m otoe dev my_live_app:app --port 8767
+```
+
 Generate the static Wraith Mission Exec preview:
 
 ```bash

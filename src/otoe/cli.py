@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from .html import render_html
+from .live_server import LivePreviewApp, LivePreviewConfig, run_live_preview
 from .mount import MountedNode, mount
 from .node import Node
 
@@ -46,6 +47,15 @@ def _build_parser() -> argparse.ArgumentParser:
     render.add_argument("--pretty", action="store_true", help="pretty-print HTML")
     render.add_argument("--indent", type=int, default=0, help="base HTML indent")
     render.set_defaults(func=_render)
+
+    dev = subcommands.add_parser("dev", help="run a local live preview app")
+    dev.add_argument("target", help="app target in MODULE:APP form")
+    dev.add_argument("--host", default="127.0.0.1")
+    dev.add_argument("--port", default=8767, type=int)
+    dev.add_argument("--title", default="Otoe Dev")
+    dev.add_argument("--css", help="optional CSS file to serve")
+    dev.add_argument("--css-route", default="/otoe.css")
+    dev.set_defaults(func=_dev)
 
     return parser
 
@@ -93,6 +103,30 @@ def _render(args: argparse.Namespace) -> int:
     return 0
 
 
+def _dev(args: argparse.Namespace) -> int:
+    try:
+        target = _load_target(args.target)
+        app = _coerce_dev_app(target)
+    except CliError as exc:
+        print(f"dev: {exc}", file=sys.stderr)
+        return 1
+
+    css_path = Path(args.css) if args.css else None
+    config = LivePreviewConfig(
+        title=args.title,
+        css_route=args.css_route,
+        css_path=css_path,
+    )
+    run_live_preview(
+        app_factory=lambda: app,
+        config=config,
+        host=args.host,
+        port=args.port,
+        label="Otoe dev",
+    )
+    return 0
+
+
 def _load_target(spec: str) -> Any:
     module_name, separator, object_path = spec.partition(":")
     if not separator or not module_name or not object_path:
@@ -120,6 +154,25 @@ def _coerce_render_target(target: Any) -> MountedNode:
         "render target must be a Node, MountedNode, or zero-argument callable "
         f"returning one; got {type(target).__name__}"
     )
+
+
+def _coerce_dev_app(target: Any) -> LivePreviewApp:
+    if _is_live_preview_app(target):
+        return target
+    app = target() if callable(target) else target
+    if _is_live_preview_app(app):
+        return app
+    raise CliError(
+        "dev target must expose render_fragment() and dispatch_event(event_id, *args)"
+    )
+
+
+def _is_live_preview_app(target: Any) -> bool:
+    if callable(getattr(target, "render_fragment", None)) and callable(
+        getattr(target, "dispatch_event", None)
+    ):
+        return True
+    return False
 
 
 class CliError(ValueError):

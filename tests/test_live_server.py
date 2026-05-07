@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from examples.live_server import LivePreviewConfig, render_live_page
+from otoe.live_server import LivePreviewConfig, render_live_page
 
 
 class DummyPreview:
