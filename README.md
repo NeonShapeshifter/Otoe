@@ -72,7 +72,8 @@ exercise click, focus, keyboard, input, and scroll dispatch through
 This is enough for renderer tests, visual fixtures, and early framework API
 validation. It is not yet a production desktop backend: there is no GPU
 renderer, platform accessibility tree, text shaping engine, retained windowing
-backend, or backend compatibility promise.
+backend, or backend compatibility promise. See
+`ADR-012-native-backend-boundary.md` for the backend boundary.
 
 ## Quick Start
 
