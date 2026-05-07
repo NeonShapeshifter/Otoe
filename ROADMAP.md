@@ -126,7 +126,7 @@ Phase 3 is not complete yet. The current implementation proves the path, but it 
 - Make the native task board/window demo the primary Phase 3 validation surface.
 - Support click, keyboard, focus, text input, shortcuts, modal state, list filtering, and scroll through the same Otoe event system.
 - Compare behavior against the HTML preview only for state/event parity, not exact visuals.
-- Add a backend ownership note for `run_native(...)`, event loop ownership, window lifetime, and future backend replacement.
+- Use `ADR-007` as the backend ownership note for `run_native(...)`, event loop ownership, window lifetime, and future backend replacement.
 - Keep Tk explicitly optional and non-production.
 
 #### Exit Criteria
@@ -290,8 +290,8 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 ## Immediate Next Actions
 
-1. Write a short ADR or design note for native window ownership, event loop ownership, and backend replacement.
-2. Add Phase 3 behavior-parity tests between the native task board and the live/html preview shape where useful.
+1. Add Phase 3 behavior-parity tests between the native task board and the live/html preview shape where useful.
+2. Clarify style support categories: supported, rejected, ignored, and reserved.
 3. Decide the next text-rendering milestone: keep marker text documented, or spike real font measurement/rasterization.
-4. Clarify style support categories: supported, rejected, ignored, and reserved.
+4. Make the renderer support matrix executable through focused tests.
 5. Start the first Phase 4 DX slice: widget typing, event signature docs, or better handler diagnostics.

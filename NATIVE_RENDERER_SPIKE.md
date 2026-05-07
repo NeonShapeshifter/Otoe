@@ -1,7 +1,7 @@
 # Native Renderer Spike
 
 **Status:** experimental headless spike with optional local window wrapper
-**Updated:** May 6, 2026
+**Updated:** May 7, 2026
 
 This document describes the renderer boundary that exists today. It is not a
 production desktop backend yet. The goal is to keep the contract precise while
@@ -55,6 +55,11 @@ production renderer contract.
 a native tree. Today it creates the same `NativeWindowDriver` and uses the
 optional Tk backend. The public entry point is intentionally backend-neutral so
 the implementation can move to another windowing layer later.
+
+Window, event loop, and backend ownership are defined in
+`ADR-007-native-window-ownership.md`. The short version: `NativeSurface` owns the
+headless renderer state, `NativeWindowDriver` owns testable high-level input
+dispatch, and concrete window backends own OS resources.
 
 The native spike consumes `MountedNode` or `FakeWidget` trees. Components,
 `Show`, and `For` are already resolved by `mount(...)`, so the renderer only
@@ -208,9 +213,9 @@ without changing the component API:
 
 - Taffy or another layout solver behind `layout_native(...)`.
 - Skia or another raster backend behind the paint command contract.
-- Windowing and OS event loop adapter.
+- Production windowing and OS event loop adapters.
 - Accessibility tree generation from `LayoutBox` metadata.
-- Focus ownership and keyboard routing for native surfaces.
+- Backend-level focus synchronization and platform key routing.
 - Text shaping, font selection, and DPI scaling.
 - Dirty-region or retained-render optimizations.
 
