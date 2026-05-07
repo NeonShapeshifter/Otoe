@@ -81,6 +81,13 @@ python -m pip install -e ".[dev]"
 pytest -q
 ```
 
+Run the local framework health check:
+
+```bash
+python -m otoe check
+python -m otoe check --tests
+```
+
 Generate the static Wraith Mission Exec preview:
 
 ```bash
