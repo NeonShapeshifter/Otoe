@@ -308,6 +308,9 @@ The `NativeSurface` focus and keyboard subset supports:
 
 - Initial `Input(autoFocus=True)` focus.
 - Click-to-focus for buttons and inputs.
+- Focus hit-testing uses the same depth plus paint/tree-order tie-breaker as
+  click dispatch, so overlapping focusable controls do not split focus and
+  click ownership.
 - `onFocus` and `onBlur` dispatch when focus changes.
 - `Tab` and `Shift+Tab` traversal across enabled buttons and inputs.
 - Focused `onKeyDown` dispatch with the same string key shape used by the live

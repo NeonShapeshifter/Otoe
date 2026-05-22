@@ -286,7 +286,10 @@ class NativeSurface:
         ]
         if not containing:
             return None
-        return max(containing, key=lambda box: len(box.path))
+        return max(
+            enumerate(containing),
+            key=lambda item: (len(item[1].path), item[0]),
+        )[1]
 
     def _is_focusable_path(self, path: tuple[int, ...]) -> bool:
         try:

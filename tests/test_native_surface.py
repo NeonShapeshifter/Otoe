@@ -4,7 +4,9 @@ from otoe import (
     Button,
     HStack,
     Input,
+    LayoutBox,
     NativeSurface,
+    NativeLayout,
     ScrollView,
     ShortcutScope,
     Show,
@@ -222,6 +224,51 @@ def test_native_surface_click_ignores_disabled_button_without_focus_change():
 
     assert clicks == []
     assert surface.focused_path == (0,)
+
+
+def test_native_surface_focus_hit_testing_matches_painter_order_for_overlaps():
+    surface = NativeSurface(
+        VStack(
+            Button("First", onClick=lambda: None),
+            Button("Second", onClick=lambda: None),
+        )
+    )
+    first = LayoutBox(
+        path=(0,),
+        name="Button",
+        x=0,
+        y=0,
+        width=100,
+        height=40,
+        events=("onClick",),
+    )
+    second = LayoutBox(
+        path=(1,),
+        name="Button",
+        x=0,
+        y=20,
+        width=100,
+        height=40,
+        events=("onClick",),
+    )
+    root = LayoutBox(
+        path=(),
+        name="VStack",
+        x=0,
+        y=0,
+        width=100,
+        height=60,
+        children=(first, second),
+    )
+    surface._layout = NativeLayout(root=root, boxes=(root, first, second))
+
+    focus_hit = surface._hit_test_focusable(4, 24)
+    click_hit = surface.hit_test(4, 24)
+
+    assert focus_hit is not None
+    assert focus_hit.path == (1,)
+    assert click_hit is not None
+    assert click_hit.path == (1,)
 
 
 def test_native_surface_click_respects_scrollview_bounds_for_focus_and_click():
