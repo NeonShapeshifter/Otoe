@@ -277,6 +277,9 @@ The input spike supports click dispatch:
 
 - `hit_test_native(layout, x, y, event="onClick")` returns the deepest box that
   contains the coordinate, then walks ancestors until it finds a matching event.
+  If multiple boxes at the same depth contain the coordinate, the later
+  paint/tree-order box wins. This keeps overflow and future overlay hit testing
+  deterministic.
 - `dispatch_native_click(mounted, layout, x, y)` triggers the matched Otoe
   handler through the existing event system.
 - `NativeSurface.click(x, y)` dispatches through the current layout and then

@@ -264,6 +264,8 @@ Closed:
   space-around, and space-evenly.
 - Native layout rejects negative dimensions before producing boxes, while
   preserving zero-clamp behavior for negative scroll offsets.
+- Native hit testing now has deterministic paint/tree-order tie breaking for
+  overlapping boxes.
 - `ScrollView` is the current clipping boundary for paint and hit-testing; normal containers intentionally do not clip overflow.
 - `NativeBackendAdapter`, `TkNativeBackendAdapter`, `native_backend_adapter(...)`, and `native_backend_names()` make backend selection executable.
 - Tk Canvas presentation now supports geometry scale-to-fit capped at 2x with logical font sizes and pointer/wheel coordinate mapping back to logical native coordinates.

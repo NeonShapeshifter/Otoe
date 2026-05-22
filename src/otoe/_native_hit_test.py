@@ -26,7 +26,10 @@ def hit_test_native(
     if not containing:
         return None
 
-    deepest = max(containing, key=lambda box: len(box.path))
+    deepest = max(
+        enumerate(containing),
+        key=lambda item: (len(item[1].path), item[0]),
+    )[1]
     for path in ancestor_paths(deepest.path):
         box = layout.by_path(path)
         if event in box.events:

@@ -1,5 +1,7 @@
 from otoe import (
     Button,
+    LayoutBox,
+    NativeLayout,
     ScrollView,
     Text,
     VStack,
@@ -61,6 +63,35 @@ def test_native_normal_container_overflow_remains_hit_testable():
     assert hit is not None
     assert hit.path == (1,)
     assert clicks == ["overflow"]
+
+
+def test_native_hit_testing_prefers_later_paint_order_for_overlapping_boxes():
+    clicks = []
+    mounted = mount(
+        VStack(
+            Button("First", onClick=lambda: clicks.append("first")),
+            Button("Second", onClick=lambda: clicks.append("second")),
+        )
+    )
+    first = LayoutBox(path=(0,), name="Button", x=0, y=0, width=100, height=40, events=("onClick",))
+    second = LayoutBox(path=(1,), name="Button", x=0, y=20, width=100, height=40, events=("onClick",))
+    root = LayoutBox(
+        path=(),
+        name="VStack",
+        x=0,
+        y=0,
+        width=100,
+        height=60,
+        children=(first, second),
+    )
+    layout = NativeLayout(root=root, boxes=(root, first, second))
+
+    hit = hit_test_native(layout, 4, 24)
+    dispatch_native_click(mounted, layout, 4, 24)
+
+    assert hit is not None
+    assert hit.path == (1,)
+    assert clicks == ["second"]
 
 
 def test_native_scrollview_clips_overflow_paint_and_hit_testing():
