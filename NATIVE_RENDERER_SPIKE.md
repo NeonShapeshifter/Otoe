@@ -57,6 +57,13 @@ that driver; it imports `tkinter` only when constructed and is not part of the
 production renderer contract. On Debian/Ubuntu, the optional window smoke needs
 the OS Tk package: `sudo apt install python3-tk`.
 
+`tests/test_native_backend_contract.py` is the current backend-replay acceptance
+surface. It drives one framework-neutral tree through `NativeWindowDriver` and
+`NativeSurface`, then asserts layout paths, painter order, focused controlled
+input, shortcut dispatch, hit-tested click, controlled wheel scroll, and frame
+refresh. Future layout, paint, raster, or windowing backend experiments should
+reproduce that contract before claiming parity with the current native path.
+
 The headless PNG path still uses deterministic marker text for tests and file
 output. The Tk wrapper is now a small paint/text proof: it presents the current
 `PaintCommand` stream on a Tk `Canvas`, mapping text commands to Tk text items so

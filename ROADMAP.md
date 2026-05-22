@@ -1,8 +1,8 @@
 # Otoe Roadmap
 
-**Status:** Phase 2B layout guardrails landed
+**Status:** Phase 2B backend-replay guardrail landed
 **Updated:** May 22, 2026
-**Current baseline:** 273 tests passing
+**Current baseline:** 274 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -242,6 +242,10 @@ This track can run alongside Phase 3, but it should not expand the public API un
   - negative `width`, `height`, `padding`, `gap`, and `fontSize` fail with
     component-aware `NativeLayoutError`
   - negative `ScrollView(scrollY=...)` clamps to zero before layout proceeds
+- Add a backend-replay acceptance surface. **Done:**
+  - one framework-neutral app drives layout, painter order, focused input,
+    shortcut dispatch, click hit-testing, controlled scroll, and frame refresh
+    through `NativeWindowDriver` and `NativeSurface`
 - Evaluate backend candidates only after the contract split is stable.
 
 #### Exit Criteria
@@ -268,6 +272,8 @@ Closed:
   overlapping boxes.
 - Native paint command emission has executable painter-order coverage, matching
   hit-test tie breaking.
+- The backend-replay acceptance test exercises the driver/surface contract end
+  to end without requiring an OS window.
 - `ScrollView` is the current clipping boundary for paint and hit-testing; normal containers intentionally do not clip overflow.
 - `NativeBackendAdapter`, `TkNativeBackendAdapter`, `native_backend_adapter(...)`, and `native_backend_names()` make backend selection executable.
 - Tk Canvas presentation now supports geometry scale-to-fit capped at 2x with logical font sizes and pointer/wheel coordinate mapping back to logical native coordinates.
@@ -277,7 +283,8 @@ Remaining:
 
 - Continue the Python layout-hardening pass until the stack contract is small,
   documented, and backend-replayable.
-- Do not start Skia/Taffy production integration before the adapter contract has a small matching implementation and explicit acceptance tests.
+- Keep the backend-replay acceptance surface small while evaluating future
+  layout, paint, or windowing backend candidates.
 
 ---
 
@@ -399,5 +406,7 @@ it explains or tests a boundary that has already been proven by the native demo.
    hardening pass.
 2. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
    after each native input/style/layout change.
-3. Defer `otoe dev` reload semantics and additional CLI polish until the native
+3. Use the backend-replay acceptance test as the first guardrail for any future
+   Taffy, Skia, or windowing backend experiment.
+4. Defer `otoe dev` reload semantics and additional CLI polish until the native
    boundary work stops changing the framework-facing shape.

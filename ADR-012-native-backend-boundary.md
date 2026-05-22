@@ -22,7 +22,8 @@ Otoe will treat native support as three separable layers:
 
 1. **Headless renderer contract.**
    `NativeSurface`, layout, paint commands, hit testing, focus, input dispatch,
-   and PNG output are the current testable contract.
+   and PNG output are the current testable contract. The backend-replay
+   acceptance test is the executable end-to-end target for this layer.
 
 2. **Backend adapter contract.**
    A backend adapter owns platform windows, event loops, rasterization, text
@@ -52,6 +53,8 @@ the adapter contract, but it is not the backend contract itself.
   required for HTML preview, static render, or headless native tests.
 - Future Skia/Taffy work should attach below `NativeSurface`/driver boundaries
   instead of changing the component model.
+- Future backend spikes should first reproduce the backend-replay acceptance
+  test before expanding backend-specific behavior.
 
 ## Open Questions
 
