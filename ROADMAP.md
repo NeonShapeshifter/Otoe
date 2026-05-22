@@ -1,6 +1,6 @@
 # Otoe Roadmap
 
-**Status:** Phase 2B backend-replay guardrail landed
+**Status:** Phase 2B exit cleanup
 **Updated:** May 22, 2026
 **Current baseline:** 281 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
@@ -36,7 +36,7 @@ The current technical question is no longer whether components, signals, control
 | 0 | Case Study and First Slice | Done | Architecture and validation direction are established. |
 | 1 | Pure Python Runtime Core | Done | Core reactivity, components, mounting, lifecycle, events, control flow, batching, and tests are implemented. |
 | 2A | Headless Native Renderer Spike | Done | Otoe trees can produce deterministic layout, paint commands, PNG output, hit-tested input, focus, keyboard, text input, and scroll in tests. |
-| 2B | Renderer Backend Hardening | Exit pending | Renderer split, executable support matrices, ADRs, layout policy, overflow policy, API boundary, backend adapter interface, Tk Canvas paint/text/scale proof, and the first Python stack-alignment backend spike exist. |
+| 2B | Renderer Backend Hardening | Exit cleanup | Renderer split, executable support matrices, ADRs, layout policy, overflow policy, API boundary, backend adapter interface, Tk Canvas paint/text/scale proof, stack hardening, backend-replay acceptance, and native diagnostics exist. |
 | 3 | Interactive Native Demo | Done | `NativeWindowDriver`, optional Tk wrapper, native window demo, and manual Tk launch smoke are covered; Tk windows now show readable scaled Canvas text while PNG output remains marker-level. |
 | 4 | Developer Experience | Started | Improve docs, diagnostics, stubs, CLI, and app authoring ergonomics. |
 | 5 | Case Study Migration Option | Planned | Decide whether one real app surface should adopt Otoe. |
@@ -100,7 +100,7 @@ The Phase 2A success criterion is satisfied: an Otoe tree can leave the HTML pre
 
 ---
 
-## Current Milestone
+## Completed Interactive Milestone
 
 ### Phase 3 - Interactive Native Demo
 
@@ -181,11 +181,11 @@ Remaining:
 
 ---
 
-## Next Technical Track
+## Current Technical Track
 
 ### Phase 2B - Renderer Backend Hardening
 
-**Status:** Exit pending
+**Status:** Exit cleanup
 
 **Goal:** make the native renderer contract smaller, clearer, and easier to replace before adopting a real layout, paint, or windowing backend.
 
@@ -204,7 +204,7 @@ This track can run alongside Phase 3, but it should not expand the public API un
 - Make the renderer support matrix executable through tests and documented through `NATIVE_RENDERER_SPIKE.md`. **Done for native style, widget, and input categories.**
 - Clarify which style properties are supported, ignored, rejected, or reserved. **Done for current native style subset.**
 - Fix the roadmap language around layout: Otoe currently supports stack layout and dimensions, not full flex distribution. **Done.**
-- Preserve widget/component debug context in `LayoutBox` for renderer diagnostics. **Started for layout and paint errors.**
+- Preserve widget/component debug context in renderer diagnostics. **Done for current layout, paint, strict style, PNG, surface input, and focus failures.**
 - Define the next text-rendering plan. **Done in ADR-008:**
   - current marker text is deterministic, not real font rasterization
   - future backend needs text measurement, shaping, font selection, and DPI behavior
@@ -265,7 +265,7 @@ Closed:
 
 - Native renderer internals are split into focused modules while preserving the public imports.
 - The support matrix is executable and documented for current widget, style, layout, input, and overflow behavior.
-- ADR-008, ADR-009, ADR-012, ADR-013, ADR-014, ADR-015, and ADR-016 define text, accessibility, backend, layout, overflow, adapter, and Tk Canvas proof boundaries.
+- ADR-008, ADR-009, ADR-012, ADR-013, ADR-014, ADR-015, ADR-016, and ADR-017 define text, accessibility, backend, layout, overflow, adapter, Tk Canvas proof, and stack-alignment boundaries.
 - Layout hardening has deterministic min/max constraints and a stack-only
   alignment subset covering start, center, end, stretch, space-between,
   space-around, and space-evenly.
@@ -291,8 +291,8 @@ Closed:
 
 Remaining:
 
-- Continue the Python layout-hardening pass until the stack contract is small,
-  documented, and backend-replayable.
+- Decide whether Phase 2B closes after the current guardrails, or needs one
+  final backend-contract pass around CLI/docs before a patch release.
 - Keep the backend-replay acceptance surface small while evaluating future
   layout, paint, or windowing backend candidates.
 
@@ -412,8 +412,7 @@ it explains or tests a boundary that has already been proven by the native demo.
 
 ## Immediate Next Actions
 
-1. Continue the first backend spike target: the dependency-free Python layout
-   hardening pass.
+1. Push the current Phase 2B guardrail commit before cutting another release.
 2. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
    after each native input/style/layout change.
 3. Use the backend-replay acceptance test as the first guardrail for any future
