@@ -394,7 +394,8 @@ The spike should fail clearly where possible. Unsupported style classes are
 strict by default. Non-pixel layout dimensions raise `NativeLayoutError`.
 Unresolved or invalid paint colors raise `NativePaintError`.
 When a box was produced by a component, these errors include the component and
-widget context, such as `PaintPanel > VStack`.
+widget context, such as `PaintPanel > VStack`. Native strict-style class
+resolution also uses this component-aware `NativeLayoutError` boundary.
 
 ## Deferred Backend Work
 

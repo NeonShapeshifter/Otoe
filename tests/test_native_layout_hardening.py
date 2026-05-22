@@ -152,6 +152,20 @@ def test_native_layout_negative_dimension_errors_include_component_context():
         layout_native(mount(BadBox()), stylesheet=sheet)
 
 
+def test_native_layout_missing_style_class_errors_include_component_context():
+    sheet = css(".known { width: 20; }")
+
+    @component
+    def StyledPanel():
+        return VStack(Text("Missing"), className="missing")
+
+    with pytest.raises(
+        NativeLayoutError,
+        match=r"StyledPanel > VStack: Unknown style class 'missing'",
+    ):
+        layout_native(mount(StyledPanel()), stylesheet=sheet)
+
+
 def test_native_layout_negative_scroll_y_clamps_to_zero():
     sheet = css(".scroll { width: 120; height: 40; padding: 4; gap: 4; }")
     mounted = mount(

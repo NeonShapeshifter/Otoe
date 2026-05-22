@@ -2,7 +2,7 @@
 
 **Status:** Phase 2B backend-replay guardrail landed
 **Updated:** May 22, 2026
-**Current baseline:** 274 tests passing
+**Current baseline:** 275 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -242,6 +242,9 @@ This track can run alongside Phase 3, but it should not expand the public API un
   - negative `width`, `height`, `padding`, `gap`, and `fontSize` fail with
     component-aware `NativeLayoutError`
   - negative `ScrollView(scrollY=...)` clamps to zero before layout proceeds
+- Add native strict-style diagnostics. **Done:**
+  - missing stylesheet classes in native layout fail as component-aware
+    `NativeLayoutError`
 - Add a backend-replay acceptance surface. **Done:**
   - one framework-neutral app drives layout, painter order, focused input,
     shortcut dispatch, click hit-testing, controlled scroll, and frame refresh
@@ -268,6 +271,7 @@ Closed:
   space-around, and space-evenly.
 - Native layout rejects negative dimensions before producing boxes, while
   preserving zero-clamp behavior for negative scroll offsets.
+- Native strict stylesheet failures now include the component/widget context.
 - Native hit testing now has deterministic paint/tree-order tie breaking for
   overlapping boxes.
 - Native paint command emission has executable painter-order coverage, matching

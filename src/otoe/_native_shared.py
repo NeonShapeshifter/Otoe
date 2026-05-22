@@ -6,7 +6,7 @@ from typing import Any
 from ._native_contracts import LayoutBox, NativeLayout, NativeLayoutError, NativePaintError
 from .mount import FakeWidget, MountedNode, root_widget
 from .node import Node
-from .style import Size, StyleSheet, Token
+from .style import Size, StyleSheet, Token, UnknownStyleClassError
 
 
 NATIVE_LAYOUT_STYLE_PROPERTIES = frozenset(
@@ -131,19 +131,23 @@ def resolve_style(
     strict_styles: bool,
 ) -> dict[str, Any]:
     style = {}
+    context = widget_context(widget)
     if stylesheet is not None:
-        style.update(
-            stylesheet.resolve(
-                optional_string(widget.props.get("className")),
-                strict=strict_styles,
+        try:
+            style.update(
+                stylesheet.resolve(
+                    optional_string(widget.props.get("className")),
+                    strict=strict_styles,
+                )
             )
-        )
+        except UnknownStyleClassError as exc:
+            raise NativeLayoutError(_contextual_message(context, str(exc))) from exc
     for prop in ("gap", "padding", "scrollY"):
         if prop in widget.props:
             style[prop] = widget.props[prop]
     if "color" in widget.props:
         style["color"] = widget.props["color"]
-    _validate_native_style_keys(style, context=widget_context(widget))
+    _validate_native_style_keys(style, context=context)
     return resolve_tokens(style, stylesheet.tokens if stylesheet is not None else {})
 
 
