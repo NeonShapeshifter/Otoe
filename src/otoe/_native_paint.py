@@ -19,6 +19,7 @@ def paint_native(
     background: str = "#ffffff",
     focused_path: tuple[int, ...] | None = None,
 ) -> NativePaint:
+    surface_fill = color_value(background, context="NativePaint surface")
     commands = [
         PaintCommand(
             kind="rect",
@@ -27,7 +28,7 @@ def paint_native(
             y=0,
             width=max(layout.root.width, 1),
             height=max(layout.root.height, 1),
-            fill=background,
+            fill=surface_fill,
         )
     ]
     commands.extend(_paint_box(layout.root, focused_path=focused_path))

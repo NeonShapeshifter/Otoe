@@ -2,7 +2,7 @@
 
 **Status:** Phase 2B backend-replay guardrail landed
 **Updated:** May 22, 2026
-**Current baseline:** 275 tests passing
+**Current baseline:** 278 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -272,6 +272,8 @@ Closed:
 - Native layout rejects negative dimensions before producing boxes, while
   preserving zero-clamp behavior for negative scroll offsets.
 - Native strict stylesheet failures now include the component/widget context.
+- Native paint and PNG diagnostics now fail early with surface or command-path
+  context for invalid backgrounds, command kinds, and command colors.
 - Native hit testing now has deterministic paint/tree-order tie breaking for
   overlapping boxes.
 - Native paint command emission has executable painter-order coverage, matching

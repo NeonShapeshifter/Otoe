@@ -213,6 +213,16 @@ def test_native_paint_errors_include_component_context():
         paint_native(layout_native(mount(PaintPanel()), stylesheet=sheet))
 
 
+def test_native_paint_rejects_invalid_surface_background():
+    layout = layout_native(mount(Text("Surface")))
+
+    with pytest.raises(
+        NativePaintError,
+        match=r"NativePaint surface: Unsupported paint color 'not-a-color'",
+    ):
+        paint_native(layout, background="not-a-color")
+
+
 def test_native_paint_clips_scrollview_descendant_commands():
     sheet = css(
         """
@@ -316,6 +326,53 @@ def test_native_png_writer_respects_command_clips(tmp_path):
 
     assert pixels[1][1] == (255, 0, 0, 255)
     assert pixels[6][1] == (0, 0, 0, 0)
+
+
+def test_native_png_writer_unknown_command_errors_include_path(tmp_path):
+    paint = NativePaint(
+        width=8,
+        height=8,
+        commands=(
+            PaintCommand(
+                kind="oval",
+                path=(2,),
+                x=0,
+                y=0,
+                width=8,
+                height=8,
+            ),
+        ),
+    )
+
+    with pytest.raises(
+        NativePaintError,
+        match=r"Unknown paint command kind 'oval' at path \(2,\)",
+    ):
+        write_native_png(paint, tmp_path / "invalid.png")
+
+
+def test_native_png_writer_color_errors_include_command_path(tmp_path):
+    paint = NativePaint(
+        width=8,
+        height=8,
+        commands=(
+            PaintCommand(
+                kind="rect",
+                path=(3,),
+                x=0,
+                y=0,
+                width=8,
+                height=8,
+                fill="not-a-color",
+            ),
+        ),
+    )
+
+    with pytest.raises(
+        NativePaintError,
+        match=r"Paint command 'rect' at path \(3,\) has invalid fill",
+    ):
+        write_native_png(paint, tmp_path / "bad-color.png")
 
 
 def _png_pixels(

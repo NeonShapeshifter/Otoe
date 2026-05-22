@@ -396,6 +396,9 @@ Unresolved or invalid paint colors raise `NativePaintError`.
 When a box was produced by a component, these errors include the component and
 widget context, such as `PaintPanel > VStack`. Native strict-style class
 resolution also uses this component-aware `NativeLayoutError` boundary.
+Invalid surface backgrounds fail during `paint_native(...)`, and manual
+`NativePaint` PNG writer failures include the command path for unsupported
+command kinds and invalid command colors.
 
 ## Deferred Backend Work
 

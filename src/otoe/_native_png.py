@@ -20,7 +20,9 @@ def write_native_png(paint: NativePaint, path: str | Path) -> None:
         elif command.kind == "text":
             _draw_text_marker(image, paint.width, paint.height, command)
         else:
-            raise NativePaintError(f"Unknown paint command kind {command.kind!r}.")
+            raise NativePaintError(
+                f"Unknown paint command kind {command.kind!r} at path {command.path!r}."
+            )
     Path(path).write_bytes(_encode_png(image, paint.width, paint.height))
 
 
@@ -53,8 +55,8 @@ def _draw_rounded_rect(
     image_height: int,
     command: PaintCommand,
 ) -> None:
-    fill = parse_color(command.fill) if command.fill is not None else None
-    stroke = parse_color(command.stroke) if command.stroke is not None else None
+    fill = _command_color(command, "fill") if command.fill is not None else None
+    stroke = _command_color(command, "stroke") if command.stroke is not None else None
     stroke_width = max(command.stroke_width, 0)
     radius = max(command.radius, 0)
     clip_x, clip_y, clip_width, clip_height = _clip_bounds(
@@ -102,7 +104,7 @@ def _draw_text_marker(
     image_height: int,
     command: PaintCommand,
 ) -> None:
-    color = parse_color(command.color)
+    color = _command_color(command, "color")
     clip = _clip_bounds(command.clip, image_width, image_height)
     glyph_width = max(2, command.font_size // 3)
     glyph_height = max(6, int(command.font_size * 0.85))
@@ -124,6 +126,17 @@ def _draw_text_marker(
             ord(character),
             clip,
         )
+
+
+def _command_color(command: PaintCommand, field: str) -> tuple[int, int, int, int]:
+    value = getattr(command, field)
+    try:
+        return parse_color(value)
+    except NativePaintError as exc:
+        raise NativePaintError(
+            f"Paint command {command.kind!r} at path {command.path!r} "
+            f"has invalid {field}: {exc}"
+        ) from exc
 
 
 def _draw_text_glyph(
