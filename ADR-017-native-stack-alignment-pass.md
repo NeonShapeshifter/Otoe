@@ -35,6 +35,8 @@ to start alignment for zero or one child.
 
 Alignment remains limited to `HStack` and `VStack`. Unsupported values or
 alignment styles on other widgets still fail with `NativeLayoutError`.
+All layout dimensions used by this pass remain non-negative integer pixel
+values; invalid negative sizes fail before alignment is applied.
 
 ## Non-Goals
 

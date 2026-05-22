@@ -134,7 +134,7 @@ def _container_box(
     padding = dimension(style, "padding", default=0, context=context)
     gap = dimension(style, "gap", default=0, context=context)
     scroll_y = (
-        dimension(style, "scrollY", default=0, context=context)
+        dimension(style, "scrollY", default=0, context=context, allow_negative=True)
         if widget.name == "ScrollView"
         else 0
     )

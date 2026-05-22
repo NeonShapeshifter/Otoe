@@ -162,14 +162,18 @@ Exact dimensions override intrinsic content size, max constraints cap the
 result, and min constraints floor the result. If min and max constraints
 conflict, min wins so controls do not shrink below their declared minimum.
 
-All layout dimensions must be numeric pixels. Percent units, `auto`, flex
-grow/shrink distribution, wrapping, margins, horizontal scroll offsets, baseline
-alignment, and intrinsic platform text measurement are intentionally not
-implemented yet. `alignItems` and `justifyContent` are stack-only features on
-`HStack` and `VStack`; unsupported values or non-stack widgets fail with
+All layout dimensions must be non-negative numeric pixels. Percent units,
+`auto`, negative sizes, flex grow/shrink distribution, wrapping, margins,
+horizontal scroll offsets, baseline alignment, and intrinsic platform text
+measurement are intentionally not implemented yet. `alignItems` and
+`justifyContent` are stack-only features on `HStack` and `VStack`; unsupported
+values or non-stack widgets fail with
 `NativeLayoutError`. `ADR-013-native-layout-hardening.md` documents this
 hardening boundary, and `ADR-017-native-stack-alignment-pass.md` documents the
 first post-release Python layout pass.
+
+`ScrollView(scrollY=...)` accepts numeric pixel values, clamps negative scroll
+to zero, and clamps excessive scroll to the current content bounds.
 
 Normal containers do not clip overflow. Fixed `width` and `height` constrain the
 container box, but descendants may paint and receive hit-tested input outside

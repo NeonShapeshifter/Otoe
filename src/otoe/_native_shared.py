@@ -222,6 +222,7 @@ def dimension(
     *,
     default: int,
     context: str | None = None,
+    allow_negative: bool = False,
 ) -> int:
     if name not in style:
         return default
@@ -234,15 +235,24 @@ def dimension(
                     f"Native layout only supports px dimensions; {name} used {value.unit!r}.",
                 )
             )
-        return int(ceil(value.value))
-    if isinstance(value, (int, float)):
-        return int(ceil(value))
-    raise NativeLayoutError(
-        _contextual_message(
-            context,
-            f"Native layout expected numeric {name}; got {value!r}.",
+        resolved = int(ceil(value.value))
+    elif isinstance(value, (int, float)):
+        resolved = int(ceil(value))
+    else:
+        raise NativeLayoutError(
+            _contextual_message(
+                context,
+                f"Native layout expected numeric {name}; got {value!r}.",
+            )
         )
-    )
+    if resolved < 0 and not allow_negative:
+        raise NativeLayoutError(
+            _contextual_message(
+                context,
+                f"Native layout expected non-negative {name}; got {resolved}.",
+            )
+        )
+    return resolved
 
 
 def constrain(

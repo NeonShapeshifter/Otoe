@@ -8,6 +8,7 @@ from otoe import (
     Text,
     VStack,
     css,
+    component,
     layout_native,
     mount,
 )
@@ -110,6 +111,63 @@ def test_native_layout_auto_and_percent_dimensions_remain_unsupported():
                 mount(VStack(Text("Unsupported"), className="box")),
                 stylesheet=css(source),
             )
+
+
+@pytest.mark.parametrize(
+    ("source", "pattern"),
+    [
+        (".box { width: -10; }", "expected non-negative width"),
+        (".box { height: -10; }", "expected non-negative height"),
+        (".box { padding: -4; }", "expected non-negative padding"),
+        (".box { gap: -2; }", "expected non-negative gap"),
+    ],
+)
+def test_native_layout_rejects_negative_dimensions(source, pattern):
+    with pytest.raises(NativeLayoutError, match=pattern):
+        layout_native(
+            mount(VStack(Text("Negative"), className="box")),
+            stylesheet=css(source),
+        )
+
+
+def test_native_layout_rejects_negative_font_size():
+    with pytest.raises(NativeLayoutError, match="expected non-negative fontSize"):
+        layout_native(
+            mount(Text("Negative", className="box")),
+            stylesheet=css(".box { font-size: -12; }"),
+        )
+
+
+def test_native_layout_negative_dimension_errors_include_component_context():
+    sheet = css(".box { width: -10; }")
+
+    @component
+    def BadBox():
+        return VStack(Text("Negative"), className="box")
+
+    with pytest.raises(
+        NativeLayoutError,
+        match=r"BadBox > VStack: Native layout expected non-negative width",
+    ):
+        layout_native(mount(BadBox()), stylesheet=sheet)
+
+
+def test_native_layout_negative_scroll_y_clamps_to_zero():
+    sheet = css(".scroll { width: 120; height: 40; padding: 4; gap: 4; }")
+    mounted = mount(
+        ScrollView(
+            Button("First", onClick=lambda: None),
+            Button("Second", onClick=lambda: None),
+            scrollY=-30,
+            className="scroll",
+        )
+    )
+
+    layout = layout_native(mounted, stylesheet=sheet)
+
+    assert dict(layout.root.style)["scrollY"] == 0
+    assert layout.by_path((0,)).y == 4
+    assert layout.by_path((1,)).y == 42
 
 
 def test_native_layout_alignment_center_offsets_hstack_children():

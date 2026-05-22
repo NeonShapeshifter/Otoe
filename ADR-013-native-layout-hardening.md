@@ -30,13 +30,14 @@ The hardened minimum native layout contract is:
 - Unknown widgets use the documented column-container fallback.
 - Empty containers still produce deterministic boxes.
 - `padding`, `gap`, `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, and
-  `maxHeight` use numeric pixel values only.
+  `maxHeight` use non-negative numeric pixel values only.
 - Exact dimensions override intrinsic content size, then max constraints cap the
   result, then min constraints floor the result. If min and max conflict, min
   wins.
 - `ScrollView` keeps viewport bounds fixed, vertically offsets children by
-  `scrollY`, clamps excessive scroll values to content bounds, and clips paint
-  and hit testing elsewhere in the native pipeline.
+  `scrollY`, clamps negative scroll to zero, clamps excessive scroll values to
+  content bounds, and clips paint and hit testing elsewhere in the native
+  pipeline.
 - `alignItems` is supported only on `HStack` and `VStack`, with `start`,
   `flex-start`, `center`, `end`, `flex-end`, and `stretch`.
 - `justifyContent` is supported only on `HStack` and `VStack`, with `start`,
@@ -49,9 +50,9 @@ The hardened minimum native layout contract is:
 - No Taffy adapter in this hardening pass.
 - No Skia or GPU renderer dependency.
 - No CSS parity promise.
-- No flex grow/shrink distribution, wrapping, percentage dimensions, `auto`
-  sizing, baseline alignment, margins, absolute positioning, or intrinsic
-  platform text measurement.
+- No flex grow/shrink distribution, wrapping, negative layout dimensions,
+  percentage dimensions, `auto` sizing, baseline alignment, margins, absolute
+  positioning, or intrinsic platform text measurement.
 - No public stability promise for the native renderer beyond the documented
   experimental API status.
 
