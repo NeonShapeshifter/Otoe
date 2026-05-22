@@ -263,6 +263,35 @@ def test_native_paint_clips_scrollview_descendant_commands():
     assert clipped_rect.clip == clip
 
 
+def test_native_paint_commands_follow_tree_painter_order():
+    sheet = css(".row { background: #f8fafc; }")
+    mounted = mount(
+        VStack(
+            Button("First", onClick=lambda: None),
+            HStack(
+                Button("Nested", onClick=lambda: None),
+                Text("Label"),
+                className="row",
+                gap=4,
+            ),
+            Button("Last", onClick=lambda: None),
+            gap=4,
+        )
+    )
+
+    paint = paint_native(layout_native(mounted, stylesheet=sheet))
+
+    first_command_indexes = {}
+    for index, command in enumerate(paint.commands):
+        first_command_indexes.setdefault(command.path, index)
+
+    assert [
+        path
+        for path in first_command_indexes
+        if path in {(), (0,), (1,), (1, 0), (1, 1), (2,)}
+    ] == [(), (0,), (1,), (1, 0), (1, 1), (2,)]
+
+
 def test_native_png_writer_respects_command_clips(tmp_path):
     output = tmp_path / "clip.png"
     paint = NativePaint(

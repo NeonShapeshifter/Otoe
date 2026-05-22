@@ -2,7 +2,7 @@
 
 **Status:** Phase 2B layout guardrails landed
 **Updated:** May 22, 2026
-**Current baseline:** 271 tests passing
+**Current baseline:** 273 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -266,6 +266,8 @@ Closed:
   preserving zero-clamp behavior for negative scroll offsets.
 - Native hit testing now has deterministic paint/tree-order tie breaking for
   overlapping boxes.
+- Native paint command emission has executable painter-order coverage, matching
+  hit-test tie breaking.
 - `ScrollView` is the current clipping boundary for paint and hit-testing; normal containers intentionally do not clip overflow.
 - `NativeBackendAdapter`, `TkNativeBackendAdapter`, `native_backend_adapter(...)`, and `native_backend_names()` make backend selection executable.
 - Tk Canvas presentation now supports geometry scale-to-fit capped at 2x with logical font sizes and pointer/wheel coordinate mapping back to logical native coordinates.

@@ -27,6 +27,8 @@ Only `ScrollView` clips descendants in the current native renderer contract.
   contains the coordinate.
 - If multiple boxes contain the same coordinate, hit testing chooses the deepest
   eligible box; ties at the same depth choose the later box in paint/tree order.
+- Paint commands are emitted in deterministic tree painter order, so later
+  sibling commands draw after earlier sibling commands.
 - `ScrollView` clips descendant paint through paint command clip rects.
 - `ScrollView` clips hit testing: descendants outside the scroll viewport do not
   receive focus or click dispatch.
