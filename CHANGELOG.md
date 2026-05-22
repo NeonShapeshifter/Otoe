@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## v0.0.8 - Native Renderer Spike
+## v0.1.0 - Native Renderer Spike
 
 - Added `NativeSurface` to package mount/layout/paint/click/rerender into one
   headless renderer surface API.
