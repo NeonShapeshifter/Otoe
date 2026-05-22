@@ -159,10 +159,74 @@ def test_native_layout_alignment_center_offsets_vstack_children():
     assert (layout.by_path((1,)).x, layout.by_path((1,)).y) == (56, 52)
 
 
-def test_native_layout_alignment_rejects_non_center_values():
-    sheet = css(".row { align-items: stretch; }")
+def test_native_layout_alignment_end_offsets_hstack_children():
+    sheet = css(
+        """
+        .row {
+          align-items: flex-end;
+          justify-content: flex-end;
+          width: 100;
+          height: 60;
+          padding: 10;
+          gap: 4;
+        }
+        """
+    )
 
-    with pytest.raises(NativeLayoutError, match="only supports alignItems='center'"):
+    layout = layout_native(mount(HStack(Text("A"), Text("B"), className="row")), stylesheet=sheet)
+
+    assert (layout.by_path((0,)).x, layout.by_path((0,)).y) == (70, 32)
+    assert (layout.by_path((1,)).x, layout.by_path((1,)).y) == (82, 32)
+
+
+def test_native_layout_justify_space_between_distributes_hstack_children():
+    sheet = css(
+        """
+        .row {
+          justify-content: space-between;
+          width: 100;
+          padding: 10;
+        }
+        """
+    )
+
+    layout = layout_native(
+        mount(HStack(Text("A"), Text("B"), Text("C"), className="row")),
+        stylesheet=sheet,
+    )
+
+    assert layout.root.width == 100
+    assert [layout.by_path((index,)).x for index in range(3)] == [10, 46, 82]
+
+
+def test_native_layout_align_stretch_resizes_vstack_children_cross_axis():
+    sheet = css(
+        """
+        .column {
+          align-items: stretch;
+          width: 100;
+          padding: 10;
+          gap: 4;
+        }
+        """
+    )
+
+    layout = layout_native(
+        mount(VStack(Text("A"), Text("BB"), className="column")),
+        stylesheet=sheet,
+    )
+
+    first = layout.by_path((0,))
+    second = layout.by_path((1,))
+
+    assert (first.x, first.width) == (10, 80)
+    assert (second.x, second.width) == (10, 80)
+
+
+def test_native_layout_alignment_rejects_unknown_values():
+    sheet = css(".row { align-items: baseline; }")
+
+    with pytest.raises(NativeLayoutError, match="does not support alignItems='baseline'"):
         layout_native(mount(HStack(Text("A"), className="row")), stylesheet=sheet)
 
 

@@ -1,8 +1,8 @@
 # Otoe Roadmap
 
-**Status:** Phase 2B paint/text proof landed
+**Status:** Phase 2B stack-alignment pass landed
 **Updated:** May 22, 2026
-**Current baseline:** 258 tests passing
+**Current baseline:** 261 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -36,7 +36,7 @@ The current technical question is no longer whether components, signals, control
 | 0 | Case Study and First Slice | Done | Architecture and validation direction are established. |
 | 1 | Pure Python Runtime Core | Done | Core reactivity, components, mounting, lifecycle, events, control flow, batching, and tests are implemented. |
 | 2A | Headless Native Renderer Spike | Done | Otoe trees can produce deterministic layout, paint commands, PNG output, hit-tested input, focus, keyboard, text input, and scroll in tests. |
-| 2B | Renderer Backend Hardening | Exit pending | Renderer split, executable support matrices, ADRs, layout policy, overflow policy, API boundary, backend adapter interface, and Tk Canvas paint/text/scale proof exist; first production-grade backend spike remains. |
+| 2B | Renderer Backend Hardening | Exit pending | Renderer split, executable support matrices, ADRs, layout policy, overflow policy, API boundary, backend adapter interface, Tk Canvas paint/text/scale proof, and the first Python stack-alignment backend spike exist. |
 | 3 | Interactive Native Demo | Done | `NativeWindowDriver`, optional Tk wrapper, native window demo, and manual Tk launch smoke are covered; Tk windows now show readable scaled Canvas text while PNG output remains marker-level. |
 | 4 | Developer Experience | Started | Improve docs, diagnostics, stubs, CLI, and app authoring ergonomics. |
 | 5 | Case Study Migration Option | Planned | Decide whether one real app surface should adopt Otoe. |
@@ -213,8 +213,8 @@ This track can run alongside Phase 3, but it should not expand the public API un
   **Done in ADR-013:**
   - next layout spike stays in Python
   - min constraints win over conflicting max constraints
-  - `alignItems: center` and `justifyContent: center` are supported on
-    `HStack`/`VStack`; other values or non-stack widgets fail clearly
+  - initial `alignItems: center` and `justifyContent: center` support on
+    `HStack`/`VStack`
   - Taffy/backend work waits until the Python contract is hardened
 - Define the native overflow and clipping policy. **Done in ADR-014:**
   - normal containers do not clip overflow
@@ -231,6 +231,12 @@ This track can run alongside Phase 3, but it should not expand the public API un
   - window resize/fullscreen scales geometry up to 2x, keeps fonts logical, and remaps pointer input
   - text commands use layout-box text width to avoid drawing across neighboring widgets
   - headless PNG output remains deterministic marker text
+- Add the first post-release Python stack-alignment pass. **Done in ADR-017:**
+  - `alignItems` on `HStack`/`VStack` supports `start`, `flex-start`,
+    `center`, `end`, `flex-end`, and `stretch`
+  - `justifyContent` on `HStack`/`VStack` supports `start`, `flex-start`,
+    `center`, `end`, `flex-end`, and `space-between`
+  - unsupported values and alignment on non-stack widgets still fail clearly
 - Evaluate backend candidates only after the contract split is stable.
 
 #### Exit Criteria
@@ -248,7 +254,8 @@ Closed:
 - Native renderer internals are split into focused modules while preserving the public imports.
 - The support matrix is executable and documented for current widget, style, layout, input, and overflow behavior.
 - ADR-008, ADR-009, ADR-012, ADR-013, ADR-014, ADR-015, and ADR-016 define text, accessibility, backend, layout, overflow, adapter, and Tk Canvas proof boundaries.
-- Layout hardening has started with deterministic min/max constraints and stack center alignment/justification.
+- Layout hardening has deterministic min/max constraints and a stack-only
+  alignment subset covering start, center, end, stretch, and space-between.
 - `ScrollView` is the current clipping boundary for paint and hit-testing; normal containers intentionally do not clip overflow.
 - `NativeBackendAdapter`, `TkNativeBackendAdapter`, `native_backend_adapter(...)`, and `native_backend_names()` make backend selection executable.
 - Tk Canvas presentation now supports geometry scale-to-fit capped at 2x with logical font sizes and pointer/wheel coordinate mapping back to logical native coordinates.
@@ -256,7 +263,8 @@ Closed:
 
 Remaining:
 
-- Decide the first production-grade backend spike target: another Python layout-hardening pass, a Taffy adapter spike, or a non-Tk paint/text backend.
+- Continue the Python layout-hardening pass until the stack contract is small,
+  documented, and backend-replayable.
 - Do not start Skia/Taffy production integration before the adapter contract has a small matching implementation and explicit acceptance tests.
 
 ---
@@ -375,9 +383,8 @@ it explains or tests a boundary that has already been proven by the native demo.
 
 ## Immediate Next Actions
 
-1. Decide the first production-grade backend spike target: another Python layout
-   pass, a Taffy adapter spike, or a non-Tk paint/text backend behind
-   `NativeBackendAdapter`.
+1. Continue the first backend spike target: the dependency-free Python layout
+   hardening pass.
 2. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
    after each native input/style/layout change.
 3. Defer `otoe dev` reload semantics and additional CLI polish until the native

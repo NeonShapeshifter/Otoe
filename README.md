@@ -318,7 +318,7 @@ perform security operations.
 
 ## Status
 
-Current status: Phase 3 started / native demo and DX hardening. See
+Current status: Phase 2B renderer backend hardening / native demo proof. See
 `ROADMAP.md` for the active plan.
 
 ## License

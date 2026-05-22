@@ -20,6 +20,14 @@ from .mount import FakeWidget, MountedNode, root_widget
 from .style import StyleSheet
 
 
+_ALIGN_ITEMS_VALUES = frozenset(
+    {"center", "end", "flex-end", "flex-start", "start", "stretch"}
+)
+_JUSTIFY_CONTENT_VALUES = frozenset(
+    {"center", "end", "flex-end", "flex-start", "space-between", "start"}
+)
+
+
 def layout_native(
     target: FakeWidget | MountedNode,
     *,
@@ -265,46 +273,81 @@ def _align_stack_children(
     justify_content = style.get("justifyContent")
     if align_items is None and justify_content is None:
         return children
+    if not children:
+        return children
 
     inner_width = max(0, width - padding * 2)
     inner_height = max(0, height - padding * 2)
 
     if direction == "row":
-        justify_offset = (
-            max(0, inner_width - content_width) // 2
-            if justify_content == "center"
-            else 0
+        main_offsets = _main_offsets(
+            children,
+            justify_content=justify_content,
+            available=inner_width,
+            content=content_width,
         )
         return [
             _offset_box(
-                child,
-                dx=justify_offset,
-                dy=(
-                    max(0, inner_height - child.height) // 2
-                    if align_items == "center"
-                    else 0
+                _stretch_box(child, height=inner_height)
+                if align_items == "stretch"
+                else child,
+                dx=main_offsets[index],
+                dy=_cross_offset(
+                    align_items,
+                    available=inner_height,
+                    size=inner_height if align_items == "stretch" else child.height,
                 ),
             )
-            for child in children
+            for index, child in enumerate(children)
         ]
 
-    justify_offset = (
-        max(0, inner_height - content_height) // 2
-        if justify_content == "center"
-        else 0
+    main_offsets = _main_offsets(
+        children,
+        justify_content=justify_content,
+        available=inner_height,
+        content=content_height,
     )
     return [
         _offset_box(
-            child,
-            dx=(
-                max(0, inner_width - child.width) // 2
-                if align_items == "center"
-                else 0
+            _stretch_box(child, width=inner_width)
+            if align_items == "stretch"
+            else child,
+            dx=_cross_offset(
+                align_items,
+                available=inner_width,
+                size=inner_width if align_items == "stretch" else child.width,
             ),
-            dy=justify_offset,
+            dy=main_offsets[index],
         )
-        for child in children
+        for index, child in enumerate(children)
     ]
+
+
+def _main_offsets(
+    children: list[LayoutBox],
+    *,
+    justify_content: Any,
+    available: int,
+    content: int,
+) -> list[int]:
+    extra = max(0, available - content)
+    if justify_content == "center":
+        return [extra // 2 for _ in children]
+    if justify_content in {"end", "flex-end"}:
+        return [extra for _ in children]
+    if justify_content == "space-between" and len(children) > 1:
+        gaps = len(children) - 1
+        return [(extra * index) // gaps for index, _ in enumerate(children)]
+    return [0 for _ in children]
+
+
+def _cross_offset(value: Any, *, available: int, size: int) -> int:
+    extra = max(0, available - size)
+    if value == "center":
+        return extra // 2
+    if value in {"end", "flex-end"}:
+        return extra
+    return 0
 
 
 def _validate_alignment_support(
@@ -322,11 +365,17 @@ def _validate_alignment_support(
         raise NativeLayoutError(
             f"{context}: Native layout supports {names} only on HStack and VStack."
         )
+    allowed_values = {
+        "alignItems": _ALIGN_ITEMS_VALUES,
+        "justifyContent": _JUSTIFY_CONTENT_VALUES,
+    }
     for name in alignment_props:
         value = style[name]
-        if value != "center":
+        if value not in allowed_values[name]:
+            supported = ", ".join(repr(item) for item in sorted(allowed_values[name]))
             raise NativeLayoutError(
-                f"{context}: Native layout only supports {name}='center'; got {value!r}."
+                f"{context}: Native layout does not support {name}={value!r}; "
+                f"supported values are {supported}."
             )
 
 
@@ -345,6 +394,29 @@ def _offset_box(box: LayoutBox, *, dx: int = 0, dy: int = 0) -> LayoutBox:
         state=box.state,
         style=box.style,
         children=tuple(_offset_box(child, dx=dx, dy=dy) for child in box.children),
+    )
+
+
+def _stretch_box(
+    box: LayoutBox,
+    *,
+    width: int | None = None,
+    height: int | None = None,
+) -> LayoutBox:
+    return LayoutBox(
+        path=box.path,
+        name=box.name,
+        x=box.x,
+        y=box.y,
+        width=max(0, width) if width is not None else box.width,
+        height=max(0, height) if height is not None else box.height,
+        id=box.id,
+        context=box.context,
+        text=box.text,
+        events=box.events,
+        state=box.state,
+        style=box.style,
+        children=box.children,
     )
 
 
