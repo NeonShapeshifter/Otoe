@@ -2,7 +2,7 @@
 
 **Status:** Phase 2B layout guardrails landed
 **Updated:** May 22, 2026
-**Current baseline:** 268 tests passing
+**Current baseline:** 271 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -235,7 +235,8 @@ This track can run alongside Phase 3, but it should not expand the public API un
   - `alignItems` on `HStack`/`VStack` supports `start`, `flex-start`,
     `center`, `end`, `flex-end`, and `stretch`
   - `justifyContent` on `HStack`/`VStack` supports `start`, `flex-start`,
-    `center`, `end`, `flex-end`, and `space-between`
+    `center`, `end`, `flex-end`, `space-between`, `space-around`, and
+    `space-evenly`
   - unsupported values and alignment on non-stack widgets still fail clearly
 - Add native layout dimension guardrails. **Done:**
   - negative `width`, `height`, `padding`, `gap`, and `fontSize` fail with
@@ -259,7 +260,8 @@ Closed:
 - The support matrix is executable and documented for current widget, style, layout, input, and overflow behavior.
 - ADR-008, ADR-009, ADR-012, ADR-013, ADR-014, ADR-015, and ADR-016 define text, accessibility, backend, layout, overflow, adapter, and Tk Canvas proof boundaries.
 - Layout hardening has deterministic min/max constraints and a stack-only
-  alignment subset covering start, center, end, stretch, and space-between.
+  alignment subset covering start, center, end, stretch, space-between,
+  space-around, and space-evenly.
 - Native layout rejects negative dimensions before producing boxes, while
   preserving zero-clamp behavior for negative scroll offsets.
 - `ScrollView` is the current clipping boundary for paint and hit-testing; normal containers intentionally do not clip overflow.

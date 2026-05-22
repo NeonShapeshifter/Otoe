@@ -25,13 +25,14 @@ Native layout now supports these stack-only values:
 
 - `alignItems`: `start`, `flex-start`, `center`, `end`, `flex-end`, `stretch`
 - `justifyContent`: `start`, `flex-start`, `center`, `end`, `flex-end`,
-  `space-between`
+  `space-between`, `space-around`, `space-evenly`
 
 The behavior remains deterministic and integer-based. `stretch` resizes a
 child's cross-axis layout box to the stack's inner cross-axis size. It does not
 rerun child layout or implement CSS flexbox auto-size semantics. `space-between`
 distributes remaining main-axis space between existing children and falls back
-to start alignment for zero or one child.
+to start alignment for zero or one child. `space-around` and `space-evenly`
+distribute remaining main-axis space with deterministic integer rounding.
 
 Alignment remains limited to `HStack` and `VStack`. Unsupported values or
 alignment styles on other widgets still fail with `NativeLayoutError`.

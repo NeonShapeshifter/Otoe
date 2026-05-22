@@ -41,7 +41,8 @@ The hardened minimum native layout contract is:
 - `alignItems` is supported only on `HStack` and `VStack`, with `start`,
   `flex-start`, `center`, `end`, `flex-end`, and `stretch`.
 - `justifyContent` is supported only on `HStack` and `VStack`, with `start`,
-  `flex-start`, `center`, `end`, `flex-end`, and `space-between`.
+  `flex-start`, `center`, `end`, `flex-end`, `space-between`,
+  `space-around`, and `space-evenly`.
 - Unsupported alignment values or alignment styles on non-stack widgets fail
   with `NativeLayoutError`.
 

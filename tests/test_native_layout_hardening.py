@@ -257,6 +257,60 @@ def test_native_layout_justify_space_between_distributes_hstack_children():
     assert [layout.by_path((index,)).x for index in range(3)] == [10, 46, 82]
 
 
+def test_native_layout_justify_space_around_distributes_hstack_children():
+    sheet = css(
+        """
+        .row {
+          justify-content: space-around;
+          width: 100;
+          padding: 10;
+        }
+        """
+    )
+
+    layout = layout_native(
+        mount(HStack(Text("A"), Text("B"), className="row")),
+        stylesheet=sheet,
+    )
+
+    assert [layout.by_path((index,)).x for index in range(2)] == [26, 66]
+
+
+def test_native_layout_justify_space_evenly_distributes_vstack_children():
+    sheet = css(
+        """
+        .column {
+          justify-content: space-evenly;
+          height: 100;
+          padding: 10;
+        }
+        """
+    )
+
+    layout = layout_native(
+        mount(VStack(Text("A"), Text("B"), className="column")),
+        stylesheet=sheet,
+    )
+
+    assert [layout.by_path((index,)).y for index in range(2)] == [24, 57]
+
+
+def test_native_layout_justify_space_between_single_child_stays_at_start():
+    sheet = css(
+        """
+        .row {
+          justify-content: space-between;
+          width: 100;
+          padding: 10;
+        }
+        """
+    )
+
+    layout = layout_native(mount(HStack(Text("A"), className="row")), stylesheet=sheet)
+
+    assert layout.by_path((0,)).x == 10
+
+
 def test_native_layout_align_stretch_resizes_vstack_children_cross_axis():
     sheet = css(
         """

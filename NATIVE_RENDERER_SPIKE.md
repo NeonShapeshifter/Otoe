@@ -148,7 +148,8 @@ The layout adapter currently supports:
   `end`, `flex-end`, and `stretch`.
 - `gap`.
 - `justifyContent` on `HStack` and `VStack` for `start`, `flex-start`,
-  `center`, `end`, `flex-end`, and `space-between`.
+  `center`, `end`, `flex-end`, `space-between`, `space-around`, and
+  `space-evenly`.
 - `padding`.
 - `width` and `height`.
 - `min-width`, `min-height`, `max-width`, and `max-height`.

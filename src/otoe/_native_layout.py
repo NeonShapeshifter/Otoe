@@ -24,7 +24,16 @@ _ALIGN_ITEMS_VALUES = frozenset(
     {"center", "end", "flex-end", "flex-start", "start", "stretch"}
 )
 _JUSTIFY_CONTENT_VALUES = frozenset(
-    {"center", "end", "flex-end", "flex-start", "space-between", "start"}
+    {
+        "center",
+        "end",
+        "flex-end",
+        "flex-start",
+        "space-around",
+        "space-between",
+        "space-evenly",
+        "start",
+    }
 )
 
 
@@ -338,6 +347,18 @@ def _main_offsets(
     if justify_content == "space-between" and len(children) > 1:
         gaps = len(children) - 1
         return [(extra * index) // gaps for index, _ in enumerate(children)]
+    if justify_content == "space-around":
+        count = len(children)
+        return [
+            (extra * ((index * 2) + 1)) // (count * 2)
+            for index, _ in enumerate(children)
+        ]
+    if justify_content == "space-evenly":
+        count = len(children)
+        return [
+            (extra * (index + 1)) // (count + 1)
+            for index, _ in enumerate(children)
+        ]
     return [0 for _ in children]
 
 
