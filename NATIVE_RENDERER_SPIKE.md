@@ -399,6 +399,9 @@ resolution also uses this component-aware `NativeLayoutError` boundary.
 Invalid surface backgrounds fail during `paint_native(...)`, and manual
 `NativePaint` PNG writer failures include the command path for unsupported
 command kinds and invalid command colors.
+`NativeSurface` input and focus failures include the target path plus
+component/widget context when a path is missing, disabled, not an input, or not
+focusable.
 
 ## Deferred Backend Work
 

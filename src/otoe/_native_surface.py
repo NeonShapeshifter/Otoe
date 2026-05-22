@@ -19,6 +19,7 @@ from ._native_shared import (
     visible_through_scroll_ancestors,
     walk_widgets,
     widget_by_path,
+    widget_context,
 )
 from .mount import FakeWidget, MountedNode, mount, unmount
 from .node import Node
@@ -133,7 +134,7 @@ class NativeSurface:
         if path == self.focused_path:
             return
         if path is not None and not self._is_focusable_path(path):
-            raise KeyError(f"No focusable native box exists at path {path!r}.")
+            raise KeyError(self._focus_error_message(path))
 
         previous_path = self.focused_path
         self.focused_path = path
@@ -302,10 +303,39 @@ class NativeSurface:
     def _enabled_input_widget(self, path: tuple[int, ...] | None) -> FakeWidget:
         if path is None:
             raise KeyError("NativeSurface has no focused input for text entry.")
-        widget = widget_by_path(surface_root_widget(self._target), path)
-        if widget.name != "Input" or widget.props.get("disabled"):
-            raise KeyError(f"No enabled native input exists at path {path!r}.")
+        try:
+            widget = widget_by_path(surface_root_widget(self._target), path)
+        except KeyError as exc:
+            raise KeyError(
+                f"No enabled native input exists at path {path!r}: "
+                "no native widget exists at that path."
+            ) from exc
+        if widget.name != "Input":
+            raise KeyError(
+                f"No enabled native input exists at path {path!r}: "
+                f"{widget_context(widget)} is {widget.name}, not Input."
+            )
+        if widget.props.get("disabled"):
+            raise KeyError(
+                f"No enabled native input exists at path {path!r}: "
+                f"{widget_context(widget)} is disabled."
+            )
         return widget
+
+    def _focus_error_message(self, path: tuple[int, ...]) -> str:
+        try:
+            widget = widget_by_path(surface_root_widget(self._target), path)
+        except KeyError:
+            return f"No focusable native box exists at path {path!r}: no native widget exists."
+        if widget.props.get("disabled"):
+            return (
+                f"No focusable native box exists at path {path!r}: "
+                f"{widget_context(widget)} is disabled."
+            )
+        return (
+            f"No focusable native box exists at path {path!r}: "
+            f"{widget_context(widget)} is {widget.name}, not a focusable native control."
+        )
 
     def _trigger_path_event(self, path: tuple[int, ...], event: str, *args: Any) -> Any:
         try:

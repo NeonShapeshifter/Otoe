@@ -2,7 +2,7 @@
 
 **Status:** Phase 2B backend-replay guardrail landed
 **Updated:** May 22, 2026
-**Current baseline:** 278 tests passing
+**Current baseline:** 280 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -274,6 +274,8 @@ Closed:
 - Native strict stylesheet failures now include the component/widget context.
 - Native paint and PNG diagnostics now fail early with surface or command-path
   context for invalid backgrounds, command kinds, and command colors.
+- `NativeSurface` input/focus failures now include the component/widget context
+  and target path for non-input, disabled, or non-focusable widgets.
 - Native hit testing now has deterministic paint/tree-order tie breaking for
   overlapping boxes.
 - Native paint command emission has executable painter-order coverage, matching

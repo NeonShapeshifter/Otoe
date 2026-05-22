@@ -1,3 +1,5 @@
+import pytest
+
 from otoe import (
     Button,
     HStack,
@@ -8,6 +10,7 @@ from otoe import (
     Show,
     Text,
     VStack,
+    component,
     css,
     mount,
     signal,
@@ -374,3 +377,58 @@ def test_native_surface_input_text_rejects_non_input_focus():
         assert "No enabled native input" in str(exc)
     else:
         raise AssertionError("Expected input_text to reject non-input focus.")
+
+
+def test_native_surface_input_errors_include_component_context():
+    @component
+    def InputPanel():
+        return VStack(
+            Button("Run", onClick=lambda: None),
+            Input(value="", disabled=True),
+            padding=4,
+            gap=4,
+        )
+
+    surface = NativeSurface(InputPanel())
+    surface.focus((0,))
+
+    with pytest.raises(
+        KeyError,
+        match=r"No enabled native input exists at path \(0,\): "
+        r"InputPanel > Button is Button, not Input",
+    ):
+        surface.input_text("nope")
+
+    with pytest.raises(
+        KeyError,
+        match=r"No enabled native input exists at path \(1,\): "
+        r"InputPanel > Input is disabled",
+    ):
+        surface.input_text("nope", path=(1,))
+
+
+def test_native_surface_focus_errors_include_component_context():
+    @component
+    def FocusPanel():
+        return VStack(
+            Text("Title"),
+            Button("Disabled", disabled=True, onClick=lambda: None),
+            padding=4,
+            gap=4,
+        )
+
+    surface = NativeSurface(FocusPanel())
+
+    with pytest.raises(
+        KeyError,
+        match=r"No focusable native box exists at path \(0,\): "
+        r"FocusPanel > Text is Text, not a focusable native control",
+    ):
+        surface.focus((0,))
+
+    with pytest.raises(
+        KeyError,
+        match=r"No focusable native box exists at path \(1,\): "
+        r"FocusPanel > Button is disabled",
+    ):
+        surface.focus((1,))
