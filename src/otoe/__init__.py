@@ -1,3 +1,13 @@
+from .api_status import (
+    API_STATUSES,
+    CORE_PREVIEW_APIS,
+    EXPERIMENTAL_APIS,
+    EXPERIMENTAL_NATIVE_APIS,
+    PREVIEW_APIS,
+    ApiStatus,
+    api_status,
+    is_experimental_api,
+)
 from .component import component, on_cleanup, on_mount
 from .control import For, Show
 from .errors import (
@@ -74,16 +84,22 @@ from .ui import (
 )
 from .widgets import Button, HStack, Input, Panel, ScrollView, Text, VStack
 from .window import (
+    NativeBackendAdapter,
     NativeWindowDriver,
     NativeWindowEvent,
+    TkNativeBackendAdapter,
     TkNativeWindow,
     edit_native_input_value,
+    native_backend_adapter,
+    native_backend_names,
     run_native,
 )
 
 __all__ = [
+    "API_STATUSES",
     "ActionButton",
     "AppShell",
+    "ApiStatus",
     "Badge",
     "Button",
     "Card",
@@ -91,12 +107,15 @@ __all__ = [
     "CommandPalette",
     "CommandRegistry",
     "Computed",
+    "CORE_PREVIEW_APIS",
     "DataTable",
     "Dialog",
     "DuplicatePrimaryPropError",
     "Effect",
     "EventHandlerError",
     "EventSignature",
+    "EXPERIMENTAL_APIS",
+    "EXPERIMENTAL_NATIVE_APIS",
     "FakeWidget",
     "FocusScope",
     "For",
@@ -109,6 +128,7 @@ __all__ = [
     "MountedNode",
     "Menu",
     "MenuItem",
+    "NativeBackendAdapter",
     "NativeLayout",
     "NativeLayoutError",
     "NativePaint",
@@ -122,6 +142,7 @@ __all__ = [
     "OtoeError",
     "Panel",
     "PaintCommand",
+    "PREVIEW_APIS",
     "ReactiveDisposedError",
     "ReactiveMutationError",
     "render_html",
@@ -148,6 +169,7 @@ __all__ = [
     "Token",
     "Toast",
     "Toolbar",
+    "TkNativeBackendAdapter",
     "TkNativeWindow",
     "UI_EVENT_SIGNATURES",
     "UnknownPropError",
@@ -155,6 +177,7 @@ __all__ = [
     "VStack",
     "Widget",
     "batch",
+    "api_status",
     "class_names",
     "component",
     "computed",
@@ -166,8 +189,11 @@ __all__ = [
     "edit_native_input_value",
     "hit_test_native",
     "interval",
+    "is_experimental_api",
     "layout_native",
     "mount",
+    "native_backend_adapter",
+    "native_backend_names",
     "on_cleanup",
     "on_mount",
     "paint_native",

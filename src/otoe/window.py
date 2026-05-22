@@ -1,14 +1,22 @@
 from __future__ import annotations
 
-import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 from .mount import FakeWidget, MountedNode
 from .native import NativePaint, NativeSurface
 from .node import Node
 from .style import StyleSheet
+
+
+_TKINTER_REQUIRED_MESSAGE = (
+    "TkNativeWindow requires tkinter. Install the Tk bindings for your Python "
+    "before using the optional --window mode. On Debian/Ubuntu, run "
+    "`sudo apt install python3-tk`. The headless PNG demo still works with "
+    "`PYTHONPATH=src:. python -m examples.native.window_demo`."
+)
+_TK_CANVAS_MAX_SCALE = 2.0
 
 
 @dataclass(frozen=True)
@@ -158,6 +166,14 @@ class NativeWindowDriver:
         return self.surface.render_png(path)
 
 
+@runtime_checkable
+class NativeBackendAdapter(Protocol):
+    name: str
+
+    def run(self, driver: NativeWindowDriver, *, title: str = "Otoe") -> None:
+        ...
+
+
 class TkNativeWindow:
     def __init__(
         self,
@@ -169,7 +185,7 @@ class TkNativeWindow:
         try:
             import tkinter as tk
         except ImportError as exc:  # pragma: no cover - platform dependent.
-            raise RuntimeError("TkNativeWindow requires tkinter.") from exc
+            raise RuntimeError(_TKINTER_REQUIRED_MESSAGE) from exc
 
         self._tk = tk
         self.driver = (
@@ -177,23 +193,33 @@ class TkNativeWindow:
             if isinstance(driver, NativeWindowDriver)
             else NativeWindowDriver(driver)
         )
-        if frame_path is None:
-            handle = tempfile.NamedTemporaryFile(prefix="otoe-native-", suffix=".png", delete=False)
-            handle.close()
-            self.frame_path = Path(handle.name)
-        else:
-            self.frame_path = Path(frame_path)
+        self.frame_path = Path(frame_path) if frame_path is not None else None
+        width, height = self.driver.size
+        self._logical_width = width
+        self._logical_height = height
+        self._canvas_width = width
+        self._canvas_height = height
+        self._scale = 1.0
+        self._offset_x = 0.0
+        self._offset_y = 0.0
 
         self.root = tk.Tk()
         self.root.title(title)
-        self._image: Any | None = None
-        self._label = tk.Label(self.root, bd=0, highlightthickness=0)
-        self._label.pack()
-        self._label.bind("<Button-1>", self._on_click)
-        self._label.bind("<MouseWheel>", self._on_wheel)
-        self._label.bind("<Button-4>", self._on_wheel)
-        self._label.bind("<Button-5>", self._on_wheel)
+        self._canvas = tk.Canvas(
+            self.root,
+            bd=0,
+            highlightthickness=0,
+            width=width,
+            height=height,
+        )
+        self._canvas.pack(fill="both", expand=True)
+        self._canvas.bind("<Button-1>", self._on_click)
+        self._canvas.bind("<MouseWheel>", self._on_wheel)
+        self._canvas.bind("<Button-4>", self._on_wheel)
+        self._canvas.bind("<Button-5>", self._on_wheel)
+        self._canvas.bind("<Configure>", self._on_configure)
         self.root.bind("<KeyPress>", self._on_key_press)
+        self.root.geometry(f"{width}x{height}")
         self._render()
 
     def run(self) -> None:
@@ -203,12 +229,17 @@ class TkNativeWindow:
         self.root.destroy()
 
     def _on_click(self, event: Any) -> str:
-        self.driver.click(int(event.x), int(event.y))
+        focus_set = getattr(self._canvas, "focus_set", None)
+        if focus_set is not None:
+            focus_set()
+        x, y = self._event_point(event)
+        self.driver.click(x, y)
         self._render()
         return "break"
 
     def _on_wheel(self, event: Any) -> str:
-        self.driver.wheel(int(event.x), int(event.y), _tk_wheel_delta(event))
+        x, y = self._event_point(event)
+        self.driver.wheel(x, y, _tk_wheel_delta(event))
         self._render()
         return "break"
 
@@ -231,12 +262,184 @@ class TkNativeWindow:
         self._render()
         return "break"
 
+    def _on_configure(self, event: Any) -> None:
+        width = max(1, int(event.width))
+        height = max(1, int(event.height))
+        if width == self._canvas_width and height == self._canvas_height:
+            return
+        self._canvas_width = width
+        self._canvas_height = height
+        self._render()
+
     def _render(self) -> None:
-        self.driver.render_png(self.frame_path)
-        self._image = self._tk.PhotoImage(file=str(self.frame_path))
-        self._label.configure(image=self._image)
-        width, height = self.driver.size
-        self.root.geometry(f"{width}x{height}")
+        if self.frame_path is not None:
+            self.driver.render_png(self.frame_path)
+        paint = self.driver.paint
+        self._logical_width = paint.width
+        self._logical_height = paint.height
+        self._sync_canvas_transform()
+        self._canvas.delete("all")
+        for command in paint.commands:
+            _draw_tk_canvas_command(
+                self._canvas,
+                command,
+                scale=self._scale,
+                offset_x=self._offset_x,
+                offset_y=self._offset_y,
+            )
+
+    def _sync_canvas_transform(self) -> None:
+        scale_x = self._canvas_width / max(1, self._logical_width)
+        scale_y = self._canvas_height / max(1, self._logical_height)
+        self._scale = max(0.01, min(scale_x, scale_y, _TK_CANVAS_MAX_SCALE))
+        self._offset_x = (self._canvas_width - (self._logical_width * self._scale)) / 2
+        self._offset_y = (self._canvas_height - (self._logical_height * self._scale)) / 2
+
+    def _event_point(self, event: Any) -> tuple[int, int]:
+        x = (float(event.x) - self._offset_x) / self._scale
+        y = (float(event.y) - self._offset_y) / self._scale
+        return (int(x), int(y))
+
+
+def _draw_tk_canvas_command(
+    canvas: Any,
+    command: Any,
+    *,
+    scale: float = 1.0,
+    offset_x: float = 0.0,
+    offset_y: float = 0.0,
+) -> None:
+    if command.kind == "rect":
+        _draw_tk_canvas_rect(canvas, command, scale=scale, offset_x=offset_x, offset_y=offset_y)
+        return
+    if command.kind == "text":
+        _draw_tk_canvas_text(canvas, command, scale=scale, offset_x=offset_x, offset_y=offset_y)
+
+
+def _draw_tk_canvas_rect(
+    canvas: Any,
+    command: Any,
+    *,
+    scale: float,
+    offset_x: float,
+    offset_y: float,
+) -> None:
+    rect = _visible_canvas_rect(command)
+    if rect is None:
+        return
+    rect = _transform_canvas_rect(rect, scale=scale, offset_x=offset_x, offset_y=offset_y)
+    left, top, right, bottom = rect
+    if command.fill:
+        canvas.create_rectangle(
+            left,
+            top,
+            right,
+            bottom,
+            fill=command.fill,
+            outline="",
+        )
+    if command.stroke and command.stroke_width > 0:
+        canvas.create_rectangle(
+            left,
+            top,
+            right,
+            bottom,
+            outline=command.stroke,
+            width=command.stroke_width,
+        )
+
+
+def _draw_tk_canvas_text(
+    canvas: Any,
+    command: Any,
+    *,
+    scale: float,
+    offset_x: float,
+    offset_y: float,
+) -> None:
+    if command.text is None or not _canvas_command_intersects_clip(command):
+        return
+    x = offset_x + (command.x * scale)
+    y = offset_y + (command.y * scale)
+    canvas.create_text(
+        x,
+        y,
+        anchor="nw",
+        text=command.text,
+        fill=command.color or "#111827",
+        font=("TkDefaultFont", max(1, int(command.font_size))),
+        width=max(1, command.width * scale),
+    )
+
+
+def _visible_canvas_rect(command: Any) -> tuple[int, int, int, int] | None:
+    rect = (command.x, command.y, command.x + command.width, command.y + command.height)
+    if command.clip is None:
+        return rect
+    return _intersect_canvas_rect(rect, _canvas_clip_rect(command.clip))
+
+
+def _canvas_command_intersects_clip(command: Any) -> bool:
+    if command.clip is None:
+        return True
+    rect = (command.x, command.y, command.x + command.width, command.y + command.height)
+    return _intersect_canvas_rect(rect, _canvas_clip_rect(command.clip)) is not None
+
+
+def _canvas_clip_rect(clip: tuple[int, int, int, int]) -> tuple[int, int, int, int]:
+    x, y, width, height = clip
+    return (x, y, x + width, y + height)
+
+
+def _transform_canvas_rect(
+    rect: tuple[int, int, int, int],
+    *,
+    scale: float,
+    offset_x: float,
+    offset_y: float,
+) -> tuple[float, float, float, float]:
+    return (
+        offset_x + (rect[0] * scale),
+        offset_y + (rect[1] * scale),
+        offset_x + (rect[2] * scale),
+        offset_y + (rect[3] * scale),
+    )
+
+
+def _intersect_canvas_rect(
+    first: tuple[int, int, int, int],
+    second: tuple[int, int, int, int],
+) -> tuple[int, int, int, int] | None:
+    left = max(first[0], second[0])
+    top = max(first[1], second[1])
+    right = min(first[2], second[2])
+    bottom = min(first[3], second[3])
+    if right <= left or bottom <= top:
+        return None
+    return (left, top, right, bottom)
+
+
+class TkNativeBackendAdapter:
+    name = "tk"
+
+    def run(self, driver: NativeWindowDriver, *, title: str = "Otoe") -> None:
+        TkNativeWindow(driver, title=title).run()
+
+
+_NATIVE_BACKENDS: dict[str, NativeBackendAdapter] = {
+    TkNativeBackendAdapter.name: TkNativeBackendAdapter(),
+}
+
+
+def native_backend_names() -> tuple[str, ...]:
+    return tuple(sorted(_NATIVE_BACKENDS))
+
+
+def native_backend_adapter(name: str) -> NativeBackendAdapter:
+    try:
+        return _NATIVE_BACKENDS[name]
+    except KeyError as exc:
+        raise ValueError(f"Unsupported native backend {name!r}.") from exc
 
 
 def _tk_key_name(event: Any) -> str:
@@ -290,10 +493,9 @@ def run_native(
     strict_styles: bool = True,
     background: str = "#ffffff",
     title: str = "Otoe",
-    backend: str = "tk",
+    backend: str | NativeBackendAdapter = "tk",
 ) -> None:
-    if backend != "tk":
-        raise ValueError(f"Unsupported native backend {backend!r}.")
+    adapter = _resolve_native_backend(backend)
 
     if isinstance(target, NativeWindowDriver):
         driver = target
@@ -306,4 +508,15 @@ def run_native(
             strict_styles=strict_styles,
             background=background,
         )
-    TkNativeWindow(driver, title=title).run()
+    adapter.run(driver, title=title)
+
+
+def _resolve_native_backend(backend: str | NativeBackendAdapter) -> NativeBackendAdapter:
+    if isinstance(backend, str):
+        return native_backend_adapter(backend)
+    if isinstance(backend, NativeBackendAdapter):
+        return backend
+    raise TypeError(
+        "native backend must be a backend name or an object implementing "
+        "NativeBackendAdapter."
+    )

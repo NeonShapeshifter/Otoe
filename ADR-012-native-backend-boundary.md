@@ -28,7 +28,8 @@ Otoe will treat native support as three separable layers:
    A backend adapter owns platform windows, event loops, rasterization, text
    shaping, accessibility bridge wiring, and GPU or CPU presentation. Backend
    adapters translate platform events into `NativeWindowDriver` or
-   `NativeSurface` operations.
+   `NativeSurface` operations. ADR-015 defines the current executable
+   `NativeBackendAdapter` interface.
 
 3. **Production backend promise.**
    Otoe does not claim a production desktop backend until at least one adapter

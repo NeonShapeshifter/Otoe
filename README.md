@@ -47,7 +47,7 @@ stable public framework or a production desktop renderer.
   shortcut payloads.
 - Headless controlled input text dispatch through `NativeSurface.input_text(...)`.
 - Framework-neutral native task board demo with search, filtered rows, empty
-  state, modal state, shortcuts, and PNG frame output.
+  state, modal state, shortcuts, controlled scroll, and PNG frame output.
 - Lazy `NativeSurface` refresh when reactive props or control-flow branches
   change outside direct surface events.
 - Disabled widgets are skipped for native focus and click dispatch.
@@ -73,7 +73,20 @@ This is enough for renderer tests, visual fixtures, and early framework API
 validation. It is not yet a production desktop backend: there is no GPU
 renderer, platform accessibility tree, text shaping engine, retained windowing
 backend, or backend compatibility promise. See
-`ADR-012-native-backend-boundary.md` for the backend boundary.
+`ADR-012-native-backend-boundary.md` for the backend boundary and
+`ADR-013-native-layout-hardening.md` for the current layout-hardening contract.
+`ADR-014-native-overflow-clipping.md` defines the current overflow policy:
+normal containers do not clip, while `ScrollView` clips paint and hit testing.
+
+Native and window-facing exports are intentionally marked as experimental. The
+imports remain available for examples and tests, but they are not backend
+compatibility promises:
+
+```python
+from otoe import api_status
+
+assert api_status("NativeSurface").category == "experimental-native"
+```
 
 ## Quick Start
 
@@ -93,6 +106,10 @@ python -m venv .venv
 python -m pip install -e ".[dev]"
 pytest -q
 ```
+
+On Debian/Ubuntu systems that report an externally managed Python environment,
+do not install Otoe into the system Python. Use the virtual environment above,
+or run examples directly from a checkout with `PYTHONPATH=src:.`.
 
 Run the local framework health check:
 
@@ -193,6 +210,13 @@ PYTHONPATH=src:. python -m examples.native.window_demo
 PYTHONPATH=src:. python -m examples.native.window_demo --window
 ```
 
+The `--window` command requires Python's Tk bindings and a graphical display. On
+Debian/Ubuntu, install the OS package with:
+
+```bash
+sudo apt install python3-tk
+```
+
 The `--window` mode uses the experimental native entry point:
 
 ```python
@@ -200,6 +224,15 @@ from otoe import run_native
 
 run_native(App(), stylesheet=styles, title="Otoe")
 ```
+
+`run_native(...)` routes through the experimental `NativeBackendAdapter`
+boundary. The only built-in backend name today is `"tk"`; it is a manual-test
+adapter, not a production desktop backend. The `"tk"` adapter presents native
+paint commands on a Tk Canvas so manual windows can show readable text. The
+Canvas scales geometry up to 2x for larger windows while keeping font sizes in
+logical native units; this is a presentation proof, not responsive layout
+reflow. The headless PNG output path remains deterministic and still uses marker
+text.
 
 ## Tiny Example
 

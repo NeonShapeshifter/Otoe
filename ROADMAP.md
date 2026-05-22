@@ -1,8 +1,8 @@
 # Otoe Roadmap
 
-**Status:** Phase 3 started / renderer hardening and DX diagnostics started
-**Updated:** May 7, 2026
-**Current baseline:** 220 tests passing
+**Status:** Phase 2B paint/text proof landed
+**Updated:** May 22, 2026
+**Current baseline:** 258 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -13,7 +13,7 @@ Otoe is an experimental Python UI framework for building professional desktop-st
 
 The project is framework-first. Case studies such as Wraith and SaaS previews are validation pressure, not product ownership. They prove whether the API can support dense operational UI, softer dashboard UI, overlays, commands, keyboard handling, and app-shaped state without coupling the core runtime to one application.
 
-The current technical question is no longer whether components, signals, control flow, live previews, and headless rendering can work. They do. The next question is whether Otoe can turn the headless renderer and optional window wrapper into a coherent native framework demo while keeping the renderer contract small enough to replace the backend later.
+The current technical question is no longer whether components, signals, control flow, live previews, headless rendering, and an optional native window smoke can work. They do. The next question is which backend slice should replace the marker renderer first while preserving the small adapter contract.
 
 ---
 
@@ -36,8 +36,8 @@ The current technical question is no longer whether components, signals, control
 | 0 | Case Study and First Slice | Done | Architecture and validation direction are established. |
 | 1 | Pure Python Runtime Core | Done | Core reactivity, components, mounting, lifecycle, events, control flow, batching, and tests are implemented. |
 | 2A | Headless Native Renderer Spike | Done | Otoe trees can produce deterministic layout, paint commands, PNG output, hit-tested input, focus, keyboard, text input, and scroll in tests. |
-| 2B | Renderer Backend Hardening | Started | Split and harden the native renderer contract before choosing real layout/paint/window backends. |
-| 3 | Interactive Native Demo | Started | `NativeWindowDriver`, optional Tk wrapper, and native window demo exist; the demo still needs framework-level polish and backend contract clarity. |
+| 2B | Renderer Backend Hardening | Exit pending | Renderer split, executable support matrices, ADRs, layout policy, overflow policy, API boundary, backend adapter interface, and Tk Canvas paint/text/scale proof exist; first production-grade backend spike remains. |
+| 3 | Interactive Native Demo | Done | `NativeWindowDriver`, optional Tk wrapper, native window demo, and manual Tk launch smoke are covered; Tk windows now show readable scaled Canvas text while PNG output remains marker-level. |
 | 4 | Developer Experience | Started | Improve docs, diagnostics, stubs, CLI, and app authoring ergonomics. |
 | 5 | Case Study Migration Option | Planned | Decide whether one real app surface should adopt Otoe. |
 | 6 | Optional Framework Extraction | Planned | Decide whether Otoe becomes a reusable public or semi-public framework. |
@@ -104,7 +104,7 @@ The Phase 2A success criterion is satisfied: an Otoe tree can leave the HTML pre
 
 ### Phase 3 - Interactive Native Demo
 
-**Status:** Started
+**Status:** Done
 
 **Goal:** turn the headless renderer spike into a small interactive native app that feels like a framework demo rather than a screenshot generator.
 
@@ -119,8 +119,27 @@ Already landed:
 - Driver-level wheel events for controlled scroll views.
 - Native task board behavior parity tests against the HTML render path for text
   content and controlled input values after native event dispatch.
+- Phase 3 closeout coverage for driver-driven search, modal, shortcut, scroll,
+  repeated stable frames, distinct frames, `run_native(...)` handoff, and no
+  app-level renderer pipeline stitching.
 
-Phase 3 is not complete yet. The current implementation proves the path, but it is still an experimental wrapper over a headless surface.
+Phase 3 is closed for this milestone. The current implementation proves the
+path: an Otoe native surface can be driven through a window-facing driver,
+opened through `run_native(...)`, refreshed through a Tk wrapper, and tested
+headlessly. The default Tk wrapper now presents readable Canvas text and scales
+the current surface for manual validation. The headless PNG path still uses
+deterministic marker text.
+
+#### Immediate Focus
+
+The next work should converge instead of expanding the framework surface. After
+the Phase 3 exit, avoid adding new UI primitives, new CLI commands, or production
+backend claims unless they directly support the renderer/backend boundary.
+
+The primary deliverable is one framework-neutral native app surface that can be
+driven through `NativeWindowDriver`, opened through `run_native(...)`, tested
+without an OS window, and documented without implying that Tk or PNG refresh is a
+production backend.
 
 #### Scope
 
@@ -139,6 +158,26 @@ Phase 3 is not complete yet. The current implementation proves the path, but it 
 - No app-level code manually stitches mount, layout, paint, hit-testing, and rerender.
 - Backend-specific details remain outside component code.
 - The remaining native limitations are documented clearly enough that future backend work has a stable target.
+- The top-level API clearly marks native/window/backend-adjacent APIs as
+  experimental so they do not become accidental compatibility promises.
+
+#### Current Exit Status
+
+Closed:
+
+- The native task board/window demo is driven through `NativeWindowDriver`.
+- `run_native(...)` is covered without opening a real OS window.
+- Button, input, modal, list, shortcut, scroll, and repeated-frame stability are covered by headless tests.
+- App-level demo code uses `NativeSurface` instead of manually stitching mount, layout, paint, hit-testing, and rerender steps.
+- Native/window/backend-adjacent exports are marked experimental through the API status boundary.
+- Manual Tk launch smoke has been recorded from an uninstalled checkout with
+  `PYTHONPATH=src:. python -m examples.native.window_demo --window`.
+
+Remaining:
+
+- Keep Tk documented as optional and non-production while backend adapter work is still undecided.
+- Keep production-grade text shaping, font fallback, DPI, and rasterization
+  deferred to the backend/text-rendering track.
 
 ---
 
@@ -146,7 +185,7 @@ Phase 3 is not complete yet. The current implementation proves the path, but it 
 
 ### Phase 2B - Renderer Backend Hardening
 
-**Status:** Started
+**Status:** Exit pending
 
 **Goal:** make the native renderer contract smaller, clearer, and easier to replace before adopting a real layout, paint, or windowing backend.
 
@@ -162,7 +201,7 @@ This track can run alongside Phase 3, but it should not expand the public API un
   - PNG/raster output
   - native errors/contracts
 - Preserve the current public imports from `otoe.__init__`. **Done.**
-- Make the renderer support matrix executable through tests and documented through `NATIVE_RENDERER_SPIKE.md`. **Started for native style, widget, and input categories.**
+- Make the renderer support matrix executable through tests and documented through `NATIVE_RENDERER_SPIKE.md`. **Done for native style, widget, and input categories.**
 - Clarify which style properties are supported, ignored, rejected, or reserved. **Done for current native style subset.**
 - Fix the roadmap language around layout: Otoe currently supports stack layout and dimensions, not full flex distribution. **Done.**
 - Preserve widget/component debug context in `LayoutBox` for renderer diagnostics. **Started for layout and paint errors.**
@@ -170,6 +209,28 @@ This track can run alongside Phase 3, but it should not expand the public API un
   - current marker text is deterministic, not real font rasterization
   - future backend needs text measurement, shaping, font selection, and DPI behavior
 - Define accessibility metadata expectations from `LayoutBox` without implementing a full accessibility tree yet. **Done in ADR-009.**
+- Define the native layout-hardening boundary before backend adapter work.
+  **Done in ADR-013:**
+  - next layout spike stays in Python
+  - min constraints win over conflicting max constraints
+  - `alignItems: center` and `justifyContent: center` are supported on
+    `HStack`/`VStack`; other values or non-stack widgets fail clearly
+  - Taffy/backend work waits until the Python contract is hardened
+- Define the native overflow and clipping policy. **Done in ADR-014:**
+  - normal containers do not clip overflow
+  - overflow from normal containers remains paint-visible and hit-testable
+  - `ScrollView` is the current clipping boundary for paint and hit testing
+- Define the native backend adapter interface. **Done in ADR-015:**
+  - `NativeBackendAdapter` receives a `NativeWindowDriver`
+  - `run_native(..., backend=...)` accepts a registered backend name or adapter object
+  - invalid backends fail before mounting the target
+  - `"tk"` is registered through `TkNativeBackendAdapter`
+- Add a Tk Canvas paint/text proof. **Done in ADR-016:**
+  - manual Tk windows present `PaintCommand` rectangles and text on a Canvas
+  - text commands become readable Tk text items
+  - window resize/fullscreen scales geometry up to 2x, keeps fonts logical, and remaps pointer input
+  - text commands use layout-box text width to avoid drawing across neighboring widgets
+  - headless PNG output remains deterministic marker text
 - Evaluate backend candidates only after the contract split is stable.
 
 #### Exit Criteria
@@ -180,11 +241,29 @@ This track can run alongside Phase 3, but it should not expand the public API un
 - `NATIVE_RENDERER_SPIKE.md` matches the actual implementation.
 - Future Taffy, Skia, or alternative backend work has a concrete contract to target.
 
+#### Current Exit Status
+
+Closed:
+
+- Native renderer internals are split into focused modules while preserving the public imports.
+- The support matrix is executable and documented for current widget, style, layout, input, and overflow behavior.
+- ADR-008, ADR-009, ADR-012, ADR-013, ADR-014, ADR-015, and ADR-016 define text, accessibility, backend, layout, overflow, adapter, and Tk Canvas proof boundaries.
+- Layout hardening has started with deterministic min/max constraints and stack center alignment/justification.
+- `ScrollView` is the current clipping boundary for paint and hit-testing; normal containers intentionally do not clip overflow.
+- `NativeBackendAdapter`, `TkNativeBackendAdapter`, `native_backend_adapter(...)`, and `native_backend_names()` make backend selection executable.
+- Tk Canvas presentation now supports geometry scale-to-fit capped at 2x with logical font sizes and pointer/wheel coordinate mapping back to logical native coordinates.
+- Native task board fixed columns fit inside the `ScrollView`, with executable coverage to prevent row overflow regressions.
+
+Remaining:
+
+- Decide the first production-grade backend spike target: another Python layout-hardening pass, a Taffy adapter spike, or a non-Tk paint/text backend.
+- Do not start Skia/Taffy production integration before the adapter contract has a small matching implementation and explicit acceptance tests.
+
 ---
 
 ## Phase 4 - Developer Experience
 
-**Status:** Started
+**Status:** Started, but secondary until Phase 3/2B converge
 
 **Goal:** make Otoe pleasant and reliable enough for repeated app development.
 
@@ -216,6 +295,9 @@ This track can run alongside Phase 3, but it should not expand the public API un
   - native examples
   - HTML preview examples
   - case-study examples
+
+Phase 4 should not outrun the renderer contract. DX work is highest value when
+it explains or tests a boundary that has already been proven by the native demo.
 
 ### Exit Criteria
 
@@ -293,6 +375,10 @@ This track can run alongside Phase 3, but it should not expand the public API un
 
 ## Immediate Next Actions
 
-1. Decide whether `otoe dev` should accept app factories lazily per reload cycle.
-2. Add first-class CLI help text examples if the command surface grows past these three commands.
-3. Add the next renderer spike note: Python layout first, Taffy layout adapter, or Skia paint adapter.
+1. Decide the first production-grade backend spike target: another Python layout
+   pass, a Taffy adapter spike, or a non-Tk paint/text backend behind
+   `NativeBackendAdapter`.
+2. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
+   after each native input/style/layout change.
+3. Defer `otoe dev` reload semantics and additional CLI polish until the native
+   boundary work stops changing the framework-facing shape.

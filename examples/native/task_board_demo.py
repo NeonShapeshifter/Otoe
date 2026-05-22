@@ -10,6 +10,7 @@ from otoe import (
     Input,
     NativeSurface,
     Panel,
+    ScrollView,
     ShortcutScope,
     Show,
     Text,
@@ -71,14 +72,14 @@ TASK_BOARD_STYLES = css(
       gap: 8;
     }
     .search {
-      width: 210;
+      width: 190;
       background: white;
       border-color: border;
       border-width: 1;
       border-radius: 8;
     }
     .button {
-      width: 84;
+      width: 76;
       background: accent;
       border-color: accentDark;
       border-width: 1;
@@ -105,6 +106,15 @@ TASK_BOARD_STYLES = css(
     .list {
       gap: 8;
     }
+    .list-scroll {
+      width: 388;
+      height: 92;
+      padding: 0;
+      background: surface;
+      border-color: border;
+      border-width: 1;
+      border-radius: 10;
+    }
     .row {
       gap: 8;
       padding: 8;
@@ -114,12 +124,12 @@ TASK_BOARD_STYLES = css(
       border-radius: 10;
     }
     .cell-title {
-      width: 140;
+      width: 128;
       color: ink;
       font-size: 15;
     }
     .cell-meta {
-      width: 70;
+      width: 60;
       color: muted;
       font-size: 13;
     }
@@ -150,6 +160,7 @@ TASK_BOARD_STYLES = css(
 class NativeTaskBoardDemo:
     def __init__(self) -> None:
         self.query = signal("")
+        self.list_scroll_y = signal(0)
         self.selected_task_id = signal(None)
         self.shortcut_count = signal(0)
         self.visible_tasks = computed(self._visible_tasks)
@@ -168,6 +179,10 @@ class NativeTaskBoardDemo:
 
     def key_down(self, key: str, **modifiers: Any):
         return self.surface.key_down(key, **modifiers)
+
+    def scroll_list(self, delta_y: int):
+        box = self._first_box("ScrollView")
+        return self.surface.scroll(box.x + 2, box.y + 2, delta_y)
 
     def visible_titles(self) -> list[str]:
         return [task["title"] for task in self.visible_tasks.value]
@@ -191,9 +206,11 @@ class NativeTaskBoardDemo:
 
     def _set_query(self, value: str) -> None:
         self.query.set(value)
+        self.list_scroll_y.set(0)
 
     def _clear_query(self) -> None:
         self.query.set("")
+        self.list_scroll_y.set(0)
 
     def _open_task(self, task_id: str) -> None:
         self.selected_task_id.set(task_id)
@@ -201,12 +218,16 @@ class NativeTaskBoardDemo:
     def _close_modal(self) -> None:
         self.selected_task_id.set(None)
 
+    def _set_list_scroll(self, next_scroll_y: int) -> None:
+        self.list_scroll_y.set(next_scroll_y)
+
     def _shortcut(self, payload: dict[str, Any]) -> None:
         self.shortcut_count.set(self.shortcut_count.value + 1)
         if payload["key"] == "Escape":
             self._close_modal()
         if payload["key"].lower() == "k" and (payload["ctrlKey"] or payload["metaKey"]):
             self.query.set("")
+            self.list_scroll_y.set(0)
 
     def _view(self):
         return ShortcutScope(
@@ -247,14 +268,19 @@ class NativeTaskBoardDemo:
                     Text("Ctrl+K clears search", className="muted"),
                     className="stats",
                 ),
-                VStack(
-                    For(
-                        each=self.visible_tasks,
-                        key=lambda task: task["id"],
-                        children=self._task_row,
-                        fallback=Text("No tasks match", className="muted"),
+                ScrollView(
+                    VStack(
+                        For(
+                            each=self.visible_tasks,
+                            key=lambda task: task["id"],
+                            children=self._task_row,
+                            fallback=Text("No tasks match", className="muted"),
+                        ),
+                        className="list",
                     ),
-                    className="list",
+                    className="list-scroll",
+                    scrollY=self.list_scroll_y,
+                    onScroll=self._set_list_scroll,
                 ),
                 Show(
                     Panel(

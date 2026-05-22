@@ -147,12 +147,13 @@ def _text_command(
     font_size = dimension(style, "fontSize", default=14, context=context)
     padding = _text_padding(box, style)
     metrics = measure_native_text(box.text or "", font_size=font_size)
+    available_width = max(1, box.width - (padding * 2))
     return PaintCommand(
         kind="text",
         path=box.path,
         x=box.x + padding,
         y=box.y + max(padding, (box.height - metrics.height) // 2),
-        width=metrics.width,
+        width=available_width,
         height=metrics.height,
         text=box.text or "",
         color=color_value(

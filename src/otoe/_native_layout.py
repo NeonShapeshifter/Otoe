@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ._native_contracts import LayoutBox, NativeLayout
+from ._native_contracts import LayoutBox, NativeLayout, NativeLayoutError
 from ._native_shared import (
     clamp_scroll_y,
     constrain,
@@ -50,6 +50,7 @@ def _layout_widget(
     style = resolve_style(widget, stylesheet, strict_styles)
     name = widget.name
     context = widget_context(widget)
+    _validate_alignment_support(name, style, context)
 
     if name == "Text":
         return _leaf_box(
@@ -167,6 +168,19 @@ def _container_box(
     height = content_height + padding * 2
     width = constrain(width, style, "width", "minWidth", "maxWidth", context=context)
     height = constrain(height, style, "height", "minHeight", "maxHeight", context=context)
+    if widget.name in {"HStack", "VStack"}:
+        children = _align_stack_children(
+            children,
+            direction=direction,
+            style=style,
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            padding=padding,
+            content_width=content_width,
+            content_height=content_height,
+        )
     if widget.name == "ScrollView":
         max_scroll_y = max(0, content_height + padding * 2 - height)
         clamped_scroll_y = clamp_scroll_y(scroll_y, max_scroll_y=max_scroll_y)
@@ -231,6 +245,106 @@ def _leaf_box(
         events=tuple(sorted(widget.events)),
         state=state_items(widget),
         style=style_items(style),
+    )
+
+
+def _align_stack_children(
+    children: list[LayoutBox],
+    *,
+    direction: str,
+    style: dict[str, Any],
+    x: int,
+    y: int,
+    width: int,
+    height: int,
+    padding: int,
+    content_width: int,
+    content_height: int,
+) -> list[LayoutBox]:
+    align_items = style.get("alignItems")
+    justify_content = style.get("justifyContent")
+    if align_items is None and justify_content is None:
+        return children
+
+    inner_width = max(0, width - padding * 2)
+    inner_height = max(0, height - padding * 2)
+
+    if direction == "row":
+        justify_offset = (
+            max(0, inner_width - content_width) // 2
+            if justify_content == "center"
+            else 0
+        )
+        return [
+            _offset_box(
+                child,
+                dx=justify_offset,
+                dy=(
+                    max(0, inner_height - child.height) // 2
+                    if align_items == "center"
+                    else 0
+                ),
+            )
+            for child in children
+        ]
+
+    justify_offset = (
+        max(0, inner_height - content_height) // 2
+        if justify_content == "center"
+        else 0
+    )
+    return [
+        _offset_box(
+            child,
+            dx=(
+                max(0, inner_width - child.width) // 2
+                if align_items == "center"
+                else 0
+            ),
+            dy=justify_offset,
+        )
+        for child in children
+    ]
+
+
+def _validate_alignment_support(
+    widget_name: str,
+    style: dict[str, Any],
+    context: str,
+) -> None:
+    alignment_props = [
+        name for name in ("alignItems", "justifyContent") if name in style
+    ]
+    if not alignment_props:
+        return
+    if widget_name not in {"HStack", "VStack"}:
+        names = ", ".join(alignment_props)
+        raise NativeLayoutError(
+            f"{context}: Native layout supports {names} only on HStack and VStack."
+        )
+    for name in alignment_props:
+        value = style[name]
+        if value != "center":
+            raise NativeLayoutError(
+                f"{context}: Native layout only supports {name}='center'; got {value!r}."
+            )
+
+
+def _offset_box(box: LayoutBox, *, dx: int = 0, dy: int = 0) -> LayoutBox:
+    return LayoutBox(
+        path=box.path,
+        name=box.name,
+        x=box.x + dx,
+        y=box.y + dy,
+        width=box.width,
+        height=box.height,
+        id=box.id,
+        context=box.context,
+        text=box.text,
+        events=box.events,
+        state=box.state,
+        style=box.style,
+        children=tuple(_offset_box(child, dx=dx, dy=dy) for child in box.children),
     )
 
 

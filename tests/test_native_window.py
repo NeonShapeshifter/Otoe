@@ -1,15 +1,24 @@
+import builtins
+from types import SimpleNamespace
+
 from otoe import (
     Button,
     Input,
+    NativeBackendAdapter,
     NativeSurface,
+    TkNativeBackendAdapter,
+    TkNativeWindow,
     NativeWindowDriver,
     NativeWindowEvent,
     ScrollView,
     ShortcutScope,
     Text,
     VStack,
+    component,
     edit_native_input_value,
     css,
+    native_backend_adapter,
+    native_backend_names,
     run_native,
     signal,
 )
@@ -196,3 +205,248 @@ def test_run_native_rejects_unknown_backend_without_opening_window():
         assert "Unsupported native backend" in str(exc)
     else:
         raise AssertionError("Expected run_native to reject unknown backends.")
+
+
+def test_native_backend_registry_exposes_tk_adapter():
+    adapter = native_backend_adapter("tk")
+
+    assert native_backend_names() == ("tk",)
+    assert isinstance(adapter, NativeBackendAdapter)
+    assert isinstance(adapter, TkNativeBackendAdapter)
+    assert adapter.name == "tk"
+
+
+def test_run_native_accepts_custom_backend_adapter_without_real_window():
+    calls = []
+
+    class RecordingBackend:
+        name = "recording"
+
+        def run(self, driver, *, title="Otoe"):
+            calls.append((driver, title, driver.surface.box(()).text))
+
+    result = run_native(
+        Button("Run", onClick=lambda: None),
+        title="Adapter Test",
+        backend=RecordingBackend(),
+    )
+
+    assert result is None
+    assert len(calls) == 1
+    driver, title, text = calls[0]
+    assert isinstance(driver, NativeWindowDriver)
+    assert title == "Adapter Test"
+    assert text == "Run"
+
+
+def test_run_native_rejects_invalid_backend_adapter_before_mount():
+    mounted = []
+
+    @component
+    def App():
+        mounted.append(True)
+        return Button("Run", onClick=lambda: None)
+
+    try:
+        run_native(App(), backend=object())
+    except TypeError as exc:
+        assert "NativeBackendAdapter" in str(exc)
+    else:
+        raise AssertionError("Expected run_native to reject invalid backend adapters.")
+
+    assert mounted == []
+
+
+def test_tk_native_window_canvas_draws_real_text_commands(monkeypatch):
+    original_import = builtins.__import__
+
+    class FakeRoot:
+        def __init__(self):
+            self.title_value = None
+            self.geometry_value = None
+            self.bindings = {}
+
+        def title(self, value):
+            self.title_value = value
+
+        def bind(self, event, handler):
+            self.bindings[event] = handler
+
+        def geometry(self, value):
+            self.geometry_value = value
+
+        def mainloop(self):
+            pass
+
+        def destroy(self):
+            pass
+
+    class FakeCanvas:
+        def __init__(self, root, **kwargs):
+            self.root = root
+            self.kwargs = kwargs
+            self.bindings = {}
+            self.operations = []
+            self.focused = False
+
+        def pack(self, **kwargs):
+            self.operations.append(("pack", kwargs))
+
+        def bind(self, event, handler):
+            self.bindings[event] = handler
+
+        def delete(self, tag):
+            self.operations.append(("delete", tag))
+
+        def create_rectangle(self, *args, **kwargs):
+            self.operations.append(("rectangle", args, kwargs))
+
+        def create_text(self, *args, **kwargs):
+            self.operations.append(("text", args, kwargs))
+
+        def focus_set(self):
+            self.focused = True
+
+    class FakeTkModule:
+        Tk = FakeRoot
+        Canvas = FakeCanvas
+
+    def import_with_fake_tkinter(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "tkinter":
+            return FakeTkModule
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", import_with_fake_tkinter)
+    driver = NativeWindowDriver.from_target(
+        VStack(Text("Hello"), Button("Run", onClick=lambda: None), padding=4)
+    )
+
+    window = TkNativeWindow(driver, title="Canvas Proof")
+
+    text_operations = [operation for operation in window._canvas.operations if operation[0] == "text"]
+    assert window.root.title_value == "Canvas Proof"
+    assert window.root.geometry_value == f"{driver.paint.width}x{driver.paint.height}"
+    assert any(operation[2]["text"] == "Hello" for operation in text_operations)
+    assert any(operation[2]["text"] == "Run" for operation in text_operations)
+    assert all(operation[2]["font"][0] == "TkDefaultFont" for operation in text_operations)
+    assert all(operation[2]["width"] > 0 for operation in text_operations)
+
+
+def test_tk_native_window_canvas_scales_paint_and_maps_pointer_events(monkeypatch):
+    original_import = builtins.__import__
+
+    class FakeRoot:
+        def __init__(self):
+            self.geometry_value = None
+            self.bindings = {}
+
+        def title(self, value):
+            pass
+
+        def bind(self, event, handler):
+            self.bindings[event] = handler
+
+        def geometry(self, value):
+            self.geometry_value = value
+
+        def mainloop(self):
+            pass
+
+        def destroy(self):
+            pass
+
+    class FakeCanvas:
+        def __init__(self, root, **kwargs):
+            self.root = root
+            self.kwargs = kwargs
+            self.bindings = {}
+            self.operations = []
+            self.focused = False
+
+        def pack(self, **kwargs):
+            self.operations.append(("pack", kwargs))
+
+        def bind(self, event, handler):
+            self.bindings[event] = handler
+
+        def delete(self, tag):
+            self.operations.append(("delete", tag))
+
+        def create_rectangle(self, *args, **kwargs):
+            self.operations.append(("rectangle", args, kwargs))
+
+        def create_text(self, *args, **kwargs):
+            self.operations.append(("text", args, kwargs))
+
+        def focus_set(self):
+            self.focused = True
+
+    class FakeTkModule:
+        Tk = FakeRoot
+        Canvas = FakeCanvas
+
+    def import_with_fake_tkinter(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "tkinter":
+            return FakeTkModule
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", import_with_fake_tkinter)
+    clicked = signal(False)
+    driver = NativeWindowDriver.from_target(
+        VStack(
+            Text("Scale"),
+            Button("Run", onClick=lambda: clicked.set(True)),
+            padding=4,
+        )
+    )
+    window = TkNativeWindow(driver)
+
+    window._canvas.operations.clear()
+    window._on_configure(SimpleNamespace(width=driver.paint.width * 2, height=driver.paint.height * 2))
+
+    text_operations = [operation for operation in window._canvas.operations if operation[0] == "text"]
+    expected_text_widths = sorted(
+        command.width * 2
+        for command in driver.paint.commands
+        if command.kind == "text"
+    )
+    assert window._scale == 2
+    assert any(operation[2]["font"][1] == 14 for operation in text_operations)
+    assert sorted(operation[2]["width"] for operation in text_operations) == expected_text_widths
+
+    window._on_configure(SimpleNamespace(width=driver.paint.width * 5, height=driver.paint.height * 5))
+
+    assert window._scale == 2
+
+    button = driver.surface.box((1,))
+    window._on_click(
+        SimpleNamespace(
+            x=window._offset_x + ((button.x + 2) * window._scale),
+            y=window._offset_y + ((button.y + 2) * window._scale),
+        )
+    )
+
+    assert clicked.value is True
+    assert window._canvas.focused
+
+
+def test_tk_native_window_missing_tkinter_error_is_actionable(monkeypatch):
+    original_import = builtins.__import__
+
+    def import_without_tkinter(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "tkinter":
+            raise ImportError("No module named 'tkinter'")
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", import_without_tkinter)
+    driver = NativeWindowDriver.from_target(Button("Run", onClick=lambda: None))
+
+    try:
+        TkNativeWindow(driver)
+    except RuntimeError as exc:
+        message = str(exc)
+        assert "TkNativeWindow requires tkinter" in message
+        assert "sudo apt install python3-tk" in message
+        assert "PYTHONPATH=src:. python -m examples.native.window_demo" in message
+    else:
+        raise AssertionError("Expected TkNativeWindow to explain missing tkinter.")

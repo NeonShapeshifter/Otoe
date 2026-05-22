@@ -183,10 +183,8 @@ def test_native_layout_accepts_documented_ignored_styles_without_effect():
     sheet = css(
         """
         .box {
-          align-items: center;
           display: flex;
           font-weight: 800;
-          justify-content: center;
           margin: 99;
           opacity: 0.5;
           padding: 4;

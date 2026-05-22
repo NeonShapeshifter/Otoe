@@ -1,7 +1,7 @@
 # Native Renderer Spike
 
 **Status:** experimental headless spike with optional local window wrapper
-**Updated:** May 7, 2026
+**Updated:** May 22, 2026
 
 This document describes the renderer boundary that exists today. It is not a
 production desktop backend yet. The goal is to keep the contract precise while
@@ -13,9 +13,9 @@ The `examples.native.counter_demo`, `examples.native.task_board_demo`, and
 `examples.native.window_demo` modules are the current framework-neutral
 validation surfaces. The task board demo is intentionally app-shaped: shell,
 search, filtered rows, empty state, modal state, shortcuts, controlled input,
-and multi-frame PNG output. The window demo drives that same app-shaped surface
-through `NativeWindowDriver` and can optionally open a Tk window for manual
-experiments.
+controlled scroll, and multi-frame PNG output. The window demo drives that same
+app-shaped surface through `NativeWindowDriver` and can optionally open a Tk
+window for manual experiments.
 
 The task board also has behavior-parity coverage against the HTML render path:
 after native input, click, Escape, and shortcut dispatch, the native layout text
@@ -54,12 +54,45 @@ It accepts high-level click, key-down, and controlled text-input events, then
 delegates to the surface and exposes the resulting frame, paint, size, focus,
 and PNG output. `TkNativeWindow` is an optional local experiment layer on top of
 that driver; it imports `tkinter` only when constructed and is not part of the
-production renderer contract.
+production renderer contract. On Debian/Ubuntu, the optional window smoke needs
+the OS Tk package: `sudo apt install python3-tk`.
+
+The headless PNG path still uses deterministic marker text for tests and file
+output. The Tk wrapper is now a small paint/text proof: it presents the current
+`PaintCommand` stream on a Tk `Canvas`, mapping text commands to Tk text items so
+manual windows can show readable labels. Resizing the window scales the current
+paint geometry up to 2x and maps pointer events back to logical `NativeSurface`
+coordinates, while font sizes remain in logical native units to avoid wrapping
+inside fixed-height cells. This does not perform responsive layout reflow yet.
+It is not a production text renderer; ADR-008 still owns the full text-shaping
+and font-fallback deferral, and ADR-016 documents the Tk Canvas proof.
+
+To keep Tk text from drawing over neighboring widgets, text paint commands use
+the available width from their layout boxes and the Canvas presenter passes that
+width to `create_text(...)`. This is still a simple bounds discipline, not full
+font measurement or native clipping.
 
 `run_native(...)` is the experimental framework-facing entry point for launching
 a native tree. Today it creates the same `NativeWindowDriver` and uses the
 optional Tk backend. The public entry point is intentionally backend-neutral so
 the implementation can move to another windowing layer later.
+
+Backend selection is now routed through `NativeBackendAdapter`. Registered
+backend names can be inspected with `native_backend_names()` and resolved with
+`native_backend_adapter(...)`. `run_native(..., backend=...)` accepts either a
+registered name such as `"tk"` or an object implementing the adapter protocol.
+Invalid backends fail before the target is mounted. ADR-015 defines the adapter
+contract.
+
+These native and window-facing names are also declared in the executable API
+status registry as `experimental-native`. This preserves today's imports for
+examples and tests while making the lack of a compatibility promise explicit:
+
+```python
+from otoe import api_status
+
+assert api_status("run_native").category == "experimental-native"
+```
 
 Window, event loop, and backend ownership are defined in
 `ADR-007-native-window-ownership.md`. The short version: `NativeSurface` owns the
@@ -85,12 +118,21 @@ The current layout adapter has explicit behavior for:
   hit-testing, and controlled `onScroll`.
 - `Show` and `For`: container boxes after mount-time control-flow resolution.
 
-Unknown widgets are treated as column containers for now. That keeps the spike
-useful for generic trees while the formal native widget set is still small.
+Unknown widgets, for example a user-defined `Hero` widget, are treated as column
+containers for now. That keeps the spike useful for generic trees while the
+formal native widget set is still small.
 This behavior is intentional and covered by the executable widget matrix in
 `otoe._native_shared`: `Text` is a text leaf, `Button` and `Input` are controls,
 known stack/scope/control-flow wrappers are containers, and unknown widgets are
 fallback containers.
+
+The executable widget support categories are:
+
+- `text`: `Text`
+- `control`: `Button`, `Input`
+- `container`: `FocusScope`, `For`, `HStack`, `Panel`, `ScrollView`,
+  `ShortcutScope`, `Show`, `VStack`
+- fallback: any unknown widget name, such as `Hero`
 
 ## Supported Layout
 
@@ -102,7 +144,9 @@ The layout adapter currently supports:
 
 - Vertical and horizontal stacking.
 - Child order.
+- `alignItems: center` on `HStack` and `VStack`.
 - `gap`.
+- `justifyContent: center` on `HStack` and `VStack`.
 - `padding`.
 - `width` and `height`.
 - `min-width`, `min-height`, `max-width`, and `max-height`.
@@ -112,9 +156,23 @@ The layout adapter currently supports:
 - `ScrollView(scrollY=...)` vertical child offset.
 - Strict class resolution through `StyleSheet.resolve(...)`.
 
+Exact dimensions override intrinsic content size, max constraints cap the
+result, and min constraints floor the result. If min and max constraints
+conflict, min wins so controls do not shrink below their declared minimum.
+
 All layout dimensions must be numeric pixels. Percent units, `auto`, flex
-distribution, wrapping, alignment, margins, horizontal scroll offsets, and
-intrinsic platform text measurement are intentionally not implemented yet.
+distribution, wrapping, margins, horizontal scroll offsets, and intrinsic
+platform text measurement are intentionally not implemented yet. `alignItems`
+and `justifyContent` support only `center`, only on `HStack` and `VStack`; other
+values or non-stack widgets fail with `NativeLayoutError`.
+`ADR-013-native-layout-hardening.md` documents this hardening boundary.
+
+Normal containers do not clip overflow. Fixed `width` and `height` constrain the
+container box, but descendants may paint and receive hit-tested input outside
+that box. `ScrollView` is the only current clipping boundary: descendant paint
+commands receive the scroll viewport clip, and hit testing ignores descendants
+outside the scroll viewport. `ADR-014-native-overflow-clipping.md` documents this
+overflow policy.
 
 Each `LayoutBox` carries a `context` string when it comes from a component tree,
 for example `TaskList > VStack`. Native layout and paint diagnostics use that
@@ -136,39 +194,45 @@ expose public role, label, or OS accessibility APIs yet.
 The native backend has an executable style matrix in `otoe._native_shared`.
 Styles parsed by `css(...)` are not automatically native behavior.
 
-Native layout currently uses:
+Native layout-only style keys currently are:
 
+- `alignItems`
 - `gap`
+- `height`
+- `justifyContent`
+- `maxHeight`
+- `maxWidth`
+- `minHeight`
+- `minWidth`
 - `padding`
 - `scrollY`
-- `width` and `height`
-- `minWidth`, `minHeight`, `maxWidth`, and `maxHeight`
-- `fontSize` for approximate text measurement
-- `borderWidth` for leaf sizing
+- `width`
 
-Native paint currently uses:
+Native paint-only style keys currently are:
 
 - `background`
 - `borderColor`
-- `borderWidth`
 - `borderRadius`
 - `color`
+
+Native layout-and-paint style keys currently are:
+
+- `borderWidth`
 - `fontSize`
 
 The following parsed properties are accepted and preserved in `LayoutBox.style`,
 but intentionally have no native effect yet:
 
-- `alignItems`
 - `display`
 - `fontWeight`
-- `justifyContent`
 - `margin`
 - `opacity`
 
 Unknown CSS properties still fail in `css(...)`. Unknown style keys injected
 through a manually constructed `StyleSheet` fail in the native style matrix with
-`NativeLayoutError`. Non-pixel dimensions fail in layout, and unresolved or
-invalid colors fail in paint.
+`NativeLayoutError`; for example, `lineHeight` is not in the native matrix.
+Non-pixel dimensions fail in layout, and unresolved or invalid colors fail in
+paint.
 
 ## Supported Paint
 
@@ -189,6 +253,7 @@ The current painter supports:
 - Token-resolved colors from `css(..., tokens={...})`.
 - `ScrollView` descendant clipping through paint command clip rects, including
   stdlib PNG output.
+- Normal container overflow remains unclipped in paint commands.
 
 The text output is a deterministic marker, not font rasterization. Layout and
 paint share the private `measure_native_text(...)` metric contract so text box
@@ -209,6 +274,8 @@ The input spike supports click dispatch:
   refreshes layout/paint for the next headless frame.
 - Hit-testing respects `ScrollView` viewport bounds, so clipped descendants do
   not receive clicks.
+- Hit-testing does not use normal container bounds as clipping boundaries, so
+  overflow from stacks and panels remains interactive.
 - Disabled widgets are skipped for focus and do not fire native click handlers.
 - Low-level callers own rerendering by running layout/paint again after state
   changes.
@@ -244,18 +311,45 @@ The `NativeSurface` focus and keyboard subset supports:
   available to shortcut handlers.
 - Optional `TkNativeWindow` wrapper for local manual experiments with OS mouse
   and keyboard events translated into `NativeWindowDriver` events.
+- `TkNativeBackendAdapter` registered as `"tk"` for routing `run_native(...)`
+  through the same backend interface future window adapters must implement.
+- Tk Canvas presentation of `PaintCommand` rectangles and text for manual
+  paint/text validation without changing the headless PNG path.
+- Tk Canvas scale-to-fit presentation capped at 2x with pointer/wheel coordinate
+  mapping back to logical native coordinates.
+- Text paint commands carry layout-box text width so Tk Canvas labels respect
+  fixed control and cell bounds.
 - `run_native(...)` as the experimental native app runner, currently backed by
-  the optional Tk wrapper.
+  the optional Tk backend adapter.
 
 Caret movement, text selection, uncontrolled input mutation, pointer movement,
 IME, drag, inertial scroll physics, gesture, and bubbling/capture semantics are
 deferred.
 
 The native input support matrix is executable in `otoe._native_shared`.
-Currently supported categories are click, focus, Tab focus traversal, key-down,
-key-input, controlled text input, shortcuts, and wheel dispatch. Deferred
-categories include caret movement, text selection, uncontrolled input mutation,
-pointer movement, IME, drag, inertial scrolling, and gestures.
+Currently supported entries are:
+
+- `click`
+- `focus`
+- `input_text`
+- `key_down`
+- `key_input`
+- `shortcut`
+- `tab_focus`
+- `wheel`
+
+Deferred entries are:
+
+- `caret_movement`
+- `drag`
+- `gesture`
+- `ime`
+- `inertial_scroll`
+- `pointer_move`
+- `text_selection`
+- `uncontrolled_input`
+
+Unknown entries, such as a hypothetical `pinch` event, are not in the matrix.
 
 ## Rejected For This Spike
 
@@ -267,6 +361,7 @@ These are intentionally outside the current headless boundary:
 - CSS layout parity.
 - DOM-style event bubbling.
 - Native text shaping or font fallback.
+- Pixel-perfect parity between Tk Canvas presentation and PNG marker output.
 - Animation timing.
 - Production packaging.
 - Production security model for a remotely exposed preview server.
@@ -288,6 +383,7 @@ without changing the component API:
 - Taffy or another layout solver behind `layout_native(...)`.
 - Skia or another raster backend behind the paint command contract.
 - Production windowing and OS event loop adapters.
+- Production-quality implementations of the `NativeBackendAdapter` protocol.
 - Accessibility tree generation from `LayoutBox` metadata.
 - Backend-level focus synchronization and platform key routing.
 - Text shaping, font selection, and DPI scaling.

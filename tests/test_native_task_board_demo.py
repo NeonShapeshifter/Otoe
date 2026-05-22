@@ -28,6 +28,21 @@ def test_native_task_board_demo_renders_app_shell(tmp_path):
     assert demo._box_with_text("3 visible").text == "3 visible"
 
 
+def test_native_task_board_demo_row_content_fits_scroll_view_width():
+    demo = NativeTaskBoardDemo()
+    scroll_box = demo._first_box("ScrollView")
+
+    for row in [
+        box
+        for box in demo.surface.layout.boxes
+        if box.name == "HStack" and box.path[:4] == scroll_box.path + (0, 0)
+    ]:
+        assert row.x >= scroll_box.x
+        assert row.x + row.width <= scroll_box.x + scroll_box.width
+        for child in row.children:
+            assert child.x + child.width <= row.x + row.width
+
+
 def test_native_task_board_demo_search_filters_and_empty_state():
     demo = NativeTaskBoardDemo()
 

@@ -15,6 +15,8 @@ NATIVE_LAYOUT_STYLE_PROPERTIES = frozenset(
         "fontSize",
         "gap",
         "height",
+        "alignItems",
+        "justifyContent",
         "maxHeight",
         "maxWidth",
         "minHeight",
@@ -36,10 +38,8 @@ NATIVE_PAINT_STYLE_PROPERTIES = frozenset(
 )
 NATIVE_IGNORED_STYLE_PROPERTIES = frozenset(
     {
-        "alignItems",
         "display",
         "fontWeight",
-        "justifyContent",
         "margin",
         "opacity",
     }
@@ -256,10 +256,10 @@ def constrain(
 ) -> int:
     if exact_name in style:
         value = dimension(style, exact_name, default=value, context=context)
-    if min_name in style:
-        value = max(value, dimension(style, min_name, default=value, context=context))
     if max_name in style:
         value = min(value, dimension(style, max_name, default=value, context=context))
+    if min_name in style:
+        value = max(value, dimension(style, min_name, default=value, context=context))
     return value
 
 

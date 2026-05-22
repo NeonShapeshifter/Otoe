@@ -79,6 +79,8 @@ def test_native_paint_generates_rect_and_text_commands():
         ((0,), "Hello"),
         ((1,), "Run"),
     ]
+    assert text_commands[0].width == paint.by_path((0,))[0].width
+    assert text_commands[1].width == button_rect.width - 16
 
 
 def test_native_layout_marks_disabled_widget_state():

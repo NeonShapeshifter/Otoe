@@ -23,6 +23,10 @@ class NativeWindowDemo:
     def clear_with_shortcut(self):
         return self.driver.key_down("k", ctrl=True)
 
+    def scroll_list(self, delta_y: int):
+        box = self._first_box("ScrollView")
+        return self.driver.wheel(box.x + 2, box.y + 2, delta_y)
+
     def open_first_visible_task(self):
         box = self._box_with_text("Inspect")
         return self.driver.click(box.x + 2, box.y + 2)
@@ -35,6 +39,12 @@ class NativeWindowDemo:
             if box.text == text:
                 return box
         raise KeyError(f"No native window box with text {text!r}.")
+
+    def _first_box(self, name: str):
+        for box in self.driver.surface.layout.boxes:
+            if box.name == name:
+                return box
+        raise KeyError(f"No native window box named {name!r}.")
 
 
 def render_demo_frames(directory: str | Path) -> tuple[Path, Path, Path, Path]:
