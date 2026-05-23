@@ -29,6 +29,7 @@ def paint_native(
             width=max(layout.root.width, 1),
             height=max(layout.root.height, 1),
             fill=surface_fill,
+            context="NativePaint surface",
         )
     ]
     commands.extend(_paint_box(layout.root, focused_path=focused_path))
@@ -103,6 +104,7 @@ def _rect_command(
         stroke_width=stroke_width,
         radius=radius,
         clip=clip,
+        context=context,
     )
 
 
@@ -135,6 +137,7 @@ def _focus_ring_command(
         )
         + 2,
         clip=clip,
+        context=context,
     )
 
 
@@ -164,6 +167,7 @@ def _text_command(
         ),
         font_size=font_size,
         clip=clip,
+        context=context,
     )
 
 

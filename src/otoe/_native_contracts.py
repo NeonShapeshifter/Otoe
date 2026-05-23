@@ -60,6 +60,7 @@ class PaintCommand:
     color: str | None = None
     font_size: int = 14
     clip: tuple[int, int, int, int] | None = None
+    context: str | None = None
 
 
 @dataclass(frozen=True)

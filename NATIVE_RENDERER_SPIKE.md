@@ -402,7 +402,10 @@ strict by default. Non-pixel layout dimensions raise `NativeLayoutError`.
 Unresolved or invalid paint colors raise `NativePaintError`.
 When a box was produced by a component, these errors include the component and
 widget context, such as `PaintPanel > VStack`. Native strict-style class
-resolution also uses this component-aware `NativeLayoutError` boundary.
+resolution also uses this component-aware `NativeLayoutError` boundary. Paint
+commands generated from layout boxes carry the same component context into PNG
+writer diagnostics, so invalid generated paint commands can report both the
+component path and layout path.
 Invalid surface backgrounds fail during `paint_native(...)`, and manual
 `NativePaint` PNG writer failures include the command path for unsupported
 command kinds and invalid command colors.

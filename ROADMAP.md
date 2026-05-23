@@ -2,7 +2,7 @@
 
 **Status:** v0.1.1 released; Phase 4 developer experience planning
 **Updated:** May 22, 2026
-**Current baseline:** 287 tests passing
+**Current baseline:** 289 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -314,7 +314,7 @@ Remaining:
   - wrong handler arity **Done with widget/event/component context and a specific error type**
   - disposed reactive read **Done for computed values**
   - mutation during mount **Done for subscribed-signal mutation during component render**
-  - renderer unsupported feature errors with component context where possible **Started**
+  - renderer unsupported feature errors with component context where possible **Done for native layout, paint, and PNG writer diagnostics**
 - Documentation:
   - mental model **Done for current runtime and renderer boundaries**
   - component cookbook **Done for current app-state and renderer recipes**

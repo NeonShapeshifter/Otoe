@@ -21,7 +21,8 @@ def write_native_png(paint: NativePaint, path: str | Path) -> None:
             _draw_text_marker(image, paint.width, paint.height, command)
         else:
             raise NativePaintError(
-                f"Unknown paint command kind {command.kind!r} at path {command.path!r}."
+                f"Unknown paint command kind {command.kind!r}"
+                f"{_command_location(command)}."
             )
     Path(path).write_bytes(_encode_png(image, paint.width, paint.height))
 
@@ -134,9 +135,15 @@ def _command_color(command: PaintCommand, field: str) -> tuple[int, int, int, in
         return parse_color(value)
     except NativePaintError as exc:
         raise NativePaintError(
-            f"Paint command {command.kind!r} at path {command.path!r} "
+            f"Paint command {command.kind!r}{_command_location(command)} "
             f"has invalid {field}: {exc}"
         ) from exc
+
+
+def _command_location(command: PaintCommand) -> str:
+    if command.context:
+        return f" for {command.context} at path {command.path!r}"
+    return f" at path {command.path!r}"
 
 
 def _draw_text_glyph(

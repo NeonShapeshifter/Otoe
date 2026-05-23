@@ -1,4 +1,5 @@
 import zlib
+from dataclasses import replace
 
 import pytest
 
@@ -302,6 +303,19 @@ def test_native_paint_commands_follow_tree_painter_order():
     ] == [(), (0,), (1,), (1, 0), (1, 1), (2,)]
 
 
+def test_native_paint_commands_keep_component_context():
+    sheet = css(".panel { background: #ffffff; }")
+
+    @component
+    def PaintPanel():
+        return VStack(Text("Hello"), className="panel")
+
+    paint = paint_native(layout_native(mount(PaintPanel()), stylesheet=sheet))
+
+    assert paint.by_path(())[1].context == "PaintPanel > VStack"
+    assert paint.by_path((0,))[0].context == "PaintPanel > Text"
+
+
 def test_native_png_writer_respects_command_clips(tmp_path):
     output = tmp_path / "clip.png"
     paint = NativePaint(
@@ -373,6 +387,34 @@ def test_native_png_writer_color_errors_include_command_path(tmp_path):
         match=r"Paint command 'rect' at path \(3,\) has invalid fill",
     ):
         write_native_png(paint, tmp_path / "bad-color.png")
+
+
+def test_native_png_writer_color_errors_include_command_context(tmp_path):
+    sheet = css(".panel { background: #ffffff; }")
+
+    @component
+    def BadPaintPanel():
+        return VStack(Text("Bad"), className="panel")
+
+    paint = paint_native(layout_native(mount(BadPaintPanel()), stylesheet=sheet))
+    commands = tuple(
+        replace(command, fill="not-a-color")
+        if command.kind == "rect" and command.context == "BadPaintPanel > VStack"
+        else command
+        for command in paint.commands
+    )
+
+    with pytest.raises(
+        NativePaintError,
+        match=(
+            r"Paint command 'rect' for BadPaintPanel > VStack at path \(\) "
+            r"has invalid fill"
+        ),
+    ):
+        write_native_png(
+            NativePaint(width=paint.width, height=paint.height, commands=commands),
+            tmp_path / "bad-context-color.png",
+        )
 
 
 def _png_pixels(
