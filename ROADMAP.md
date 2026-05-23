@@ -1,8 +1,8 @@
 # Otoe Roadmap
 
-**Status:** v0.1.1 released; Phase 4 developer experience planning
-**Updated:** May 22, 2026
-**Current baseline:** 298 tests passing
+**Status:** v0.1.1 released; Phase 4 developer experience closeout
+**Updated:** May 23, 2026
+**Current baseline:** 301 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -307,7 +307,8 @@ Remaining:
 ### Scope
 
 - Typed widget stubs and better editor support. **Expanded with PEP 561 marker,
-  core widget/control-flow stubs, and current UI component/model stubs.**
+  core widget/control-flow stubs, current UI component/model stubs, and mypy
+  smoke coverage for valid usage plus common mistakes.**
 - Better diagnostics:
   - unknown prop **Done with widget/component context and known prop list**
   - wrong event name **Done with widget/component context, known event signatures, and a specific error type**
@@ -416,13 +417,13 @@ it explains or tests a boundary that has already been proven by the native demo.
 
 ## Immediate Next Actions
 
-1. Confirm the `v0.1.1` release automation, then leave version metadata alone
-   until the next patch.
+1. Confirm CI for the typing smoke coverage, then prepare the `v0.1.2` patch
+   release.
 2. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
    after each native input/style/layout change.
 3. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter
    semantics change.
 4. Use the backend-replay acceptance test as the first guardrail for any future
    Taffy, Skia, or windowing backend experiment.
-5. Defer `otoe dev` reload semantics and additional CLI polish until the native
-   boundary work stops changing the framework-facing shape.
+5. Start Phase 5 only after the patch release is green and one low-risk
+   case-study surface is chosen explicitly.

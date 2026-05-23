@@ -39,7 +39,7 @@ def test_widget_stub_covers_runtime_widgets():
 
     assert widget_names
     for name in widget_names:
-        assert f"class {name}(" in widget_stub
+        assert f"def {name}(" in widget_stub
 
 
 def test_control_stub_declares_public_helpers():
