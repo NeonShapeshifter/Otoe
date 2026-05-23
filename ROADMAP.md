@@ -300,7 +300,7 @@ Remaining:
 
 ## Phase 4 - Developer Experience
 
-**Status:** Started, but secondary until Phase 3/2B converge
+**Status:** Active after v0.1.1
 
 **Goal:** make Otoe pleasant and reliable enough for repeated app development.
 
@@ -315,7 +315,7 @@ Remaining:
   - mutation during mount **Done for subscribed-signal mutation during component render**
   - renderer unsupported feature errors with component context where possible **Started**
 - Documentation:
-  - mental model
+  - mental model **Done for current runtime and renderer boundaries**
   - component cookbook
   - widget contracts
   - style subset
