@@ -315,6 +315,8 @@ Otoe is intentionally split into layers:
 - `NATIVE_WORKFLOWS.md` - when to use HTML render, native PNG,
   `NativeSurface`, `NativeWindowDriver`, and `run_native(...)`.
 - `NATIVE_RENDERER_SPIKE.md` - current native renderer support and deferred work.
+- `STYLE_GUIDE.md` - supported style parser, token, HTML, and native style
+  subset behavior.
 - `TESTING_GUIDE.md` - snapshot, HTML, native surface, window driver, PNG, and
   backend acceptance testing guidance.
 - `WIDGET_CONTRACTS.md` - core widget, control node, UI component, callback,
