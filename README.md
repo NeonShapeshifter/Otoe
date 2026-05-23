@@ -134,6 +134,9 @@ otoe render examples.quickstart:app --out preview.png --native --css app.css
 otoe dev examples.live_counter:app --port 8767 --css app.css
 ```
 
+`otoe new my_app` writes a small renderable app plus `styles.css`; pass
+`--no-css` when you want only the Python scaffold.
+
 Render an importable Otoe node or zero-argument factory to HTML:
 
 ```bash

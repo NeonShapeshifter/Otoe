@@ -2,7 +2,7 @@
 
 **Status:** v0.1.1 released; Phase 4 developer experience planning
 **Updated:** May 22, 2026
-**Current baseline:** 297 tests passing
+**Current baseline:** 298 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -328,7 +328,7 @@ Remaining:
   - `otoe dev` **Done for app objects/factories, CSS serving, root classes, and CLI validation; reload semantics deferred**
   - `otoe render` **Done for HTML/native output paths, CSS input, and strict-style control**
   - `otoe check` **Done for compile checks, optional pytest, custom paths, and pytest args**
-  - `otoe new` **Started with a minimal renderable app scaffold**
+  - `otoe new` **Done for minimal renderable app scaffolds with optional CSS**
 - Snapshot and renderer testing guides. **Done for current snapshot, HTML,
   native surface, window driver, PNG, and backend acceptance paths.**
 - Example corpus:

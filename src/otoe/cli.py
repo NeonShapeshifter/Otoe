@@ -103,6 +103,11 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="overwrite existing scaffold files",
     )
+    new.add_argument(
+        "--no-css",
+        action="store_true",
+        help="skip writing styles.css",
+    )
     new.set_defaults(func=_new)
 
     return parser
@@ -229,9 +234,15 @@ def _new(args: argparse.Namespace) -> int:
         )
         _write_scaffold_file(
             target / "README.md",
-            _readme_template(app_name),
+            _readme_template(app_name, include_css=not args.no_css),
             force=args.force,
         )
+        if not args.no_css:
+            _write_scaffold_file(
+                target / "styles.css",
+                _css_template(),
+                force=args.force,
+            )
     except CliError as exc:
         print(f"new: {exc}", file=sys.stderr)
         return 1
@@ -336,25 +347,42 @@ def _app_template(app_name: str) -> str:
         f"    title = {app_name!r}\n"
         "    label = computed(lambda: f\"Count: {count.value}\")\n"
         "    return VStack(\n"
-        "        Text(title),\n"
+        "        Text(title, className=\"title\"),\n"
         "        Text(label),\n"
         "        Button(\"Increment\", onClick=lambda: count.set(count.value + 1)),\n"
+        "        className=\"app\",\n"
         "        gap=8,\n"
         "        padding=12,\n"
         "    )\n"
     )
 
 
-def _readme_template(app_name: str) -> str:
+def _readme_template(app_name: str, *, include_css: bool) -> str:
+    css_arg = " --css styles.css" if include_css else ""
     return (
         f"# {app_name}\n"
         "\n"
         "Render the app from this directory:\n"
         "\n"
         "```bash\n"
-        "otoe render app:app --out preview.html --pretty\n"
-        "otoe render app:app --out preview.png --native\n"
+        f"otoe render app:app --out preview.html{css_arg} --pretty\n"
+        f"otoe render app:app --out preview.png --native{css_arg}\n"
         "```\n"
+    )
+
+
+def _css_template() -> str:
+    return (
+        ".app {\n"
+        "  padding: 16;\n"
+        "  gap: 8;\n"
+        "  background: #f8fafc;\n"
+        "}\n"
+        "\n"
+        ".title {\n"
+        "  color: #111827;\n"
+        "  font-size: 20;\n"
+        "}\n"
     )
 
 

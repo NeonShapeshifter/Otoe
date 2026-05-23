@@ -449,15 +449,42 @@ def test_cli_new_scaffolds_renderable_app(tmp_path, monkeypatch, capsys):
     assert result == 0
     assert f"new Hello Otoe: {project}" in captured.out
     assert "def app():" in (project / "app.py").read_text(encoding="utf-8")
-    assert "otoe render app:app" in (project / "README.md").read_text(
-        encoding="utf-8"
-    )
+    assert (project / "styles.css").is_file()
+    assert "otoe render app:app --out preview.html --css styles.css" in (
+        project / "README.md"
+    ).read_text(encoding="utf-8")
 
     monkeypatch.syspath_prepend(str(project))
     output = tmp_path / "preview.html"
 
-    assert main(["render", "app:app", "--out", str(output)]) == 0
+    assert (
+        main(
+            [
+                "render",
+                "app:app",
+                "--out",
+                str(output),
+                "--css",
+                str(project / "styles.css"),
+            ]
+        )
+        == 0
+    )
     assert "Hello Otoe" in output.read_text(encoding="utf-8")
+
+
+def test_cli_new_can_skip_css(tmp_path):
+    project = tmp_path / "plain"
+
+    result = main(["new", str(project), "--no-css"])
+
+    assert result == 0
+    assert not (project / "styles.css").exists()
+    assert "otoe render app:app --out preview.html --pretty" in (
+        project / "README.md"
+    ).read_text(
+        encoding="utf-8"
+    )
 
 
 def test_cli_new_refuses_existing_scaffold_file_without_force(
