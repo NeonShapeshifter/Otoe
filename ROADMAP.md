@@ -327,7 +327,8 @@ Remaining:
   - `otoe render` **Started through HTML and native PNG output paths**
   - `otoe check` **Started through `python -m otoe check` and the installed `otoe` console script**
   - optional `otoe new`
-- Snapshot and renderer testing guides.
+- Snapshot and renderer testing guides. **Done for current snapshot, HTML,
+  native surface, window driver, PNG, and backend acceptance paths.**
 - Example corpus:
   - concise idiomatic components
   - native examples

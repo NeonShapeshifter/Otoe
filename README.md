@@ -311,6 +311,8 @@ Otoe is intentionally split into layers:
 - `NATIVE_WORKFLOWS.md` - when to use HTML render, native PNG,
   `NativeSurface`, `NativeWindowDriver`, and `run_native(...)`.
 - `NATIVE_RENDERER_SPIKE.md` - current native renderer support and deferred work.
+- `TESTING_GUIDE.md` - snapshot, HTML, native surface, window driver, PNG, and
+  backend acceptance testing guidance.
 - `ROADMAP.md` - current status and phase plan.
 
 ## Fixture Data
