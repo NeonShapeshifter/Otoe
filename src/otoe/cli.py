@@ -68,6 +68,19 @@ def _build_parser() -> argparse.ArgumentParser:
     dev.add_argument("--css-route", default="/otoe.css")
     dev.set_defaults(func=_dev)
 
+    new = subcommands.add_parser("new", help="scaffold a small Otoe app")
+    new.add_argument("path", help="directory to create or populate")
+    new.add_argument(
+        "--name",
+        help="display name for the generated app; defaults to the directory name",
+    )
+    new.add_argument(
+        "--force",
+        action="store_true",
+        help="overwrite existing scaffold files",
+    )
+    new.set_defaults(func=_new)
+
     return parser
 
 
@@ -143,6 +156,28 @@ def _dev(args: argparse.Namespace) -> int:
     return 0
 
 
+def _new(args: argparse.Namespace) -> int:
+    target = Path(args.path)
+    app_name = args.name or _display_name_from_path(target)
+    try:
+        target.mkdir(parents=True, exist_ok=True)
+        _write_scaffold_file(
+            target / "app.py",
+            _app_template(app_name),
+            force=args.force,
+        )
+        _write_scaffold_file(
+            target / "README.md",
+            _readme_template(app_name),
+            force=args.force,
+        )
+    except CliError as exc:
+        print(f"new: {exc}", file=sys.stderr)
+        return 1
+    print(f"new {app_name}: {target}")
+    return 0
+
+
 def _load_target(spec: str) -> Any:
     module_name, separator, object_path = spec.partition(":")
     if not separator or not module_name or not object_path:
@@ -189,6 +224,51 @@ def _is_live_preview_app(target: Any) -> bool:
     ):
         return True
     return False
+
+
+def _write_scaffold_file(path: Path, content: str, *, force: bool) -> None:
+    if path.exists() and not force:
+        raise CliError(f"{path} already exists; pass --force to overwrite")
+    path.write_text(content, encoding="utf-8")
+
+
+def _display_name_from_path(path: Path) -> str:
+    name = path.name.strip().replace("_", " ").replace("-", " ")
+    return name.title() if name else "Otoe App"
+
+
+def _app_template(app_name: str) -> str:
+    return (
+        "from otoe import Button, Text, VStack, computed, signal\n"
+        "\n"
+        "\n"
+        "count = signal(0)\n"
+        "\n"
+        "\n"
+        "def app():\n"
+        f"    title = {app_name!r}\n"
+        "    label = computed(lambda: f\"Count: {count.value}\")\n"
+        "    return VStack(\n"
+        "        Text(title),\n"
+        "        Text(label),\n"
+        "        Button(\"Increment\", onClick=lambda: count.set(count.value + 1)),\n"
+        "        gap=8,\n"
+        "        padding=12,\n"
+        "    )\n"
+    )
+
+
+def _readme_template(app_name: str) -> str:
+    return (
+        f"# {app_name}\n"
+        "\n"
+        "Render the app from this directory:\n"
+        "\n"
+        "```bash\n"
+        "otoe render app:app --out preview.html --pretty\n"
+        "otoe render app:app --out preview.png --native\n"
+        "```\n"
+    )
 
 
 class CliError(ValueError):

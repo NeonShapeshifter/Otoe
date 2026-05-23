@@ -253,3 +253,39 @@ def test_cli_dev_rejects_invalid_app_target(tmp_path, monkeypatch, capsys):
     captured = capsys.readouterr()
     assert result == 1
     assert "dev target must expose render_fragment()" in captured.err
+
+
+def test_cli_new_scaffolds_renderable_app(tmp_path, monkeypatch, capsys):
+    project = tmp_path / "hello-otoe"
+
+    result = main(["new", str(project)])
+
+    captured = capsys.readouterr()
+    assert result == 0
+    assert f"new Hello Otoe: {project}" in captured.out
+    assert "def app():" in (project / "app.py").read_text(encoding="utf-8")
+    assert "otoe render app:app" in (project / "README.md").read_text(
+        encoding="utf-8"
+    )
+
+    monkeypatch.syspath_prepend(str(project))
+    output = tmp_path / "preview.html"
+
+    assert main(["render", "app:app", "--out", str(output)]) == 0
+    assert "Hello Otoe" in output.read_text(encoding="utf-8")
+
+
+def test_cli_new_refuses_existing_scaffold_file_without_force(
+    tmp_path,
+    capsys,
+):
+    project = tmp_path / "existing"
+    project.mkdir()
+    (project / "app.py").write_text("# keep me\n", encoding="utf-8")
+
+    result = main(["new", str(project)])
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "already exists; pass --force to overwrite" in captured.err
+    assert (project / "app.py").read_text(encoding="utf-8") == "# keep me\n"

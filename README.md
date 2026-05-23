@@ -117,6 +117,7 @@ Run the local framework health check:
 ```bash
 python -m otoe check
 python -m otoe check --tests
+python -m otoe new my_app
 ```
 
 After installation, the same commands are available through the `otoe` console
@@ -124,6 +125,7 @@ script:
 
 ```bash
 otoe check
+otoe new my_app
 otoe render examples.quickstart:app --out preview.html --pretty
 otoe render examples.quickstart:app --out preview.png --native
 otoe dev examples.live_counter:app --port 8767
