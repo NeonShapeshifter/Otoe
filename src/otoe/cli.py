@@ -41,6 +41,17 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="also run pytest after compile checks",
     )
+    check.add_argument(
+        "--pytest-arg",
+        action="append",
+        default=[],
+        help="extra argument passed to pytest; may be passed more than once",
+    )
+    check.add_argument(
+        "pytest_args",
+        nargs=argparse.REMAINDER,
+        help="pytest arguments after --",
+    )
     check.set_defaults(func=_check)
 
     render = subcommands.add_parser("render", help="render an Otoe target")
@@ -104,7 +115,16 @@ def _check(args: argparse.Namespace) -> int:
     if not ok:
         return 1
     if args.tests:
-        return subprocess.run([sys.executable, "-m", "pytest", "-q"]).returncode
+        command = [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-q",
+            *args.pytest_arg,
+            *_pytest_args(args.pytest_args),
+        ]
+        print(f"pytest: {' '.join(command)}")
+        return subprocess.run(command).returncode
     return 0
 
 
@@ -119,6 +139,12 @@ def _compile_path(path: str) -> bool:
         ok = compileall.compile_file(str(target), quiet=1)
     print(f"compile {path}: {'ok' if ok else 'failed'}")
     return bool(ok)
+
+
+def _pytest_args(args: list[str]) -> list[str]:
+    if args and args[0] == "--":
+        return args[1:]
+    return args
 
 
 def _render(args: argparse.Namespace) -> int:

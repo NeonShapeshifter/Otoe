@@ -1,3 +1,4 @@
+import sys
 import tomllib
 
 from otoe.cli import main
@@ -29,6 +30,50 @@ def test_cli_check_reports_compile_failure(tmp_path, capsys):
     captured = capsys.readouterr()
     assert result == 1
     assert f"compile {module}: failed" in captured.out
+
+
+def test_cli_check_passes_extra_pytest_args(tmp_path, monkeypatch, capsys):
+    module = tmp_path / "surface.py"
+    module.write_text("value = 1\n", encoding="utf-8")
+    calls = []
+
+    class Completed:
+        returncode = 0
+
+    def fake_run(command):
+        calls.append(command)
+        return Completed()
+
+    monkeypatch.setattr("otoe.cli.subprocess.run", fake_run)
+
+    result = main(
+        [
+            "check",
+            "--path",
+            str(module),
+            "--tests",
+            "--pytest-arg",
+            "tests/test_cli.py",
+            "--",
+            "-k",
+            "new",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 0
+    assert calls == [
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-q",
+            "tests/test_cli.py",
+            "-k",
+            "new",
+        ]
+    ]
+    assert "pytest:" in captured.out
 
 
 def test_cli_render_writes_html_from_node_target(tmp_path, monkeypatch, capsys):

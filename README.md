@@ -117,6 +117,7 @@ Run the local framework health check:
 ```bash
 python -m otoe check
 python -m otoe check --tests
+python -m otoe check --tests -- tests/test_cli.py -k new
 python -m otoe new my_app
 ```
 
