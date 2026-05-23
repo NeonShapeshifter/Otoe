@@ -4,6 +4,10 @@ Otoe widgets have explicit contracts. A widget declares the props and events it
 accepts, and `mount(...)` rejects unknown props or event names. Components in
 `otoe.ui` are Python wrappers that expand into those core widgets.
 
+The package includes a `py.typed` marker plus initial core widget/control-flow
+stubs so editors and type checkers can catch common wrong prop names and event
+handler shapes.
+
 ## Contract Rules
 
 - A widget call returns a `Node`; it does not create an OS widget.

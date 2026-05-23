@@ -2,7 +2,7 @@
 
 **Status:** v0.1.1 released; Phase 4 developer experience planning
 **Updated:** May 22, 2026
-**Current baseline:** 282 tests passing
+**Current baseline:** 286 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -306,7 +306,8 @@ Remaining:
 
 ### Scope
 
-- Typed widget stubs and better editor support.
+- Typed widget stubs and better editor support. **Started with PEP 561 marker
+  and core widget/control-flow stubs.**
 - Better diagnostics:
   - unknown prop **Done with widget/component context and known prop list**
   - wrong event name **Started with widget/component context**
