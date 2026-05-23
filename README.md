@@ -128,14 +128,20 @@ script:
 otoe check
 otoe new my_app
 otoe render examples.quickstart:app --out preview.html --pretty
-otoe render examples.quickstart:app --out preview.html --css app.css --pretty
 otoe render examples.quickstart:app --out preview.png --native
-otoe render examples.quickstart:app --out preview.png --native --css app.css
-otoe dev examples.live_counter:app --port 8767 --css app.css
+otoe dev examples.live_counter:app --port 8767
 ```
 
 `otoe new my_app` writes a small renderable app plus `styles.css`; pass
 `--no-css` when you want only the Python scaffold.
+
+Render the generated app with its stylesheet:
+
+```bash
+cd my_app
+otoe render app:app --out preview.html --css styles.css --pretty
+otoe render app:app --out preview.png --native --css styles.css
+```
 
 Render an importable Otoe node or zero-argument factory to HTML:
 
@@ -146,7 +152,7 @@ python -m otoe render examples.quickstart:app --out preview.html --pretty
 Apply an Otoe CSS file inline while rendering:
 
 ```bash
-python -m otoe render examples.quickstart:app --out preview.html --css app.css --pretty
+python -m otoe render examples.quickstart:app --out preview.html --css path/to/styles.css --pretty
 ```
 
 Render the same target through the native PNG path:
