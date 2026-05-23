@@ -22,6 +22,10 @@ after native input, click, Escape, and shortcut dispatch, the native layout text
 and controlled input values must match the same mounted tree rendered through
 `render_html(...)`.
 
+For day-to-day usage decisions, see `NATIVE_WORKFLOWS.md`. For test-surface
+selection, see `TESTING_GUIDE.md`. For style parser and native style behavior,
+see `STYLE_GUIDE.md`.
+
 ## Current Pipeline
 
 The supported path is:

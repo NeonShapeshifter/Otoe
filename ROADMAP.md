@@ -319,7 +319,8 @@ Remaining:
   - component cookbook **Done for current app-state and renderer recipes**
   - widget contracts **Done for core widgets, control nodes, and current UI components**
   - style subset **Done for parser, HTML, and native support matrix**
-  - native renderer subset
+  - native renderer subset **Done through `NATIVE_RENDERER_SPIKE.md` plus
+    workflow/testing/style guides**
   - native workflow guide **Done for current HTML/native/window paths**
   - event signatures **Done for built-in widgets and current UI callback surface**
 - CLI:
