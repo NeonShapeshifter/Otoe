@@ -308,6 +308,8 @@ Otoe is intentionally split into layers:
 - `tests/` - runtime and preview regression tests.
 - `ADR-*.md` - design decisions.
 - `BENCHMARKS.md` - concrete Otoe-vs-Wraith UI change benchmarks.
+- `COMPONENT_COOKBOOK.md` - small component, state, control-flow, live preview,
+  and native smoke recipes.
 - `MENTAL_MODEL.md` - how nodes, components, signals, events, control flow,
   mounting, and renderers fit together.
 - `NATIVE_WORKFLOWS.md` - when to use HTML render, native PNG,

@@ -316,7 +316,7 @@ Remaining:
   - renderer unsupported feature errors with component context where possible **Started**
 - Documentation:
   - mental model **Done for current runtime and renderer boundaries**
-  - component cookbook
+  - component cookbook **Done for current app-state and renderer recipes**
   - widget contracts
   - style subset
   - native renderer subset
