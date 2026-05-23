@@ -166,7 +166,7 @@ Button("Run", onSubmit=lambda: None)  # UnknownEventError with known events
 Wrong handler arity:
 
 ```python
-Input(value="", onChange=lambda: None)  # EventHandlerError when onChange fires
+Input(value="", onChange=lambda: None)  # EventHandlerArityError when onChange fires
 ```
 
 Invalid children:

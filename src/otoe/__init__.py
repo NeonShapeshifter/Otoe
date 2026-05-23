@@ -12,6 +12,7 @@ from .component import component, on_cleanup, on_mount
 from .control import For, Show
 from .errors import (
     DuplicatePrimaryPropError,
+    EventHandlerArityError,
     EventHandlerError,
     OtoeError,
     ReactiveDisposedError,
@@ -113,6 +114,7 @@ __all__ = [
     "Dialog",
     "DuplicatePrimaryPropError",
     "Effect",
+    "EventHandlerArityError",
     "EventHandlerError",
     "EventSignature",
     "EXPERIMENTAL_APIS",

@@ -6,7 +6,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any, Callable
 
-from .errors import EventHandlerError
+from .errors import EventHandlerArityError
 
 
 @dataclass(frozen=True)
@@ -78,7 +78,7 @@ def _validate_handler_args(
             else context
         )
         subject = f"{event_label} handler" if event_label is not None else "Event handler"
-        raise EventHandlerError(
+        raise EventHandlerArityError(
             f"{subject} {_handler_name(handler)} expected {signature}; "
             f"got {len(args)} argument(s)."
         ) from exc

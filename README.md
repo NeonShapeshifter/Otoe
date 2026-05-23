@@ -260,7 +260,8 @@ tree = mount(Counter())
 
 Built-in widget event handlers are plain callables. Otoe validates the handler
 arity when the event fires and includes the widget/event contract in developer
-errors.
+errors. Arity mismatches raise `EventHandlerArityError`, which remains an
+`EventHandlerError` for compatibility.
 
 | Widget | Event | Handler shape |
 | --- | --- | --- |

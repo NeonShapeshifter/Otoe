@@ -15,7 +15,11 @@ class DuplicatePrimaryPropError(OtoeError):
 
 
 class EventHandlerError(OtoeError):
-    """Raised when an event value is not callable."""
+    """Raised when an event handler is invalid."""
+
+
+class EventHandlerArityError(EventHandlerError):
+    """Raised when an event handler cannot accept the event arguments."""
 
 
 class ReactiveDisposedError(OtoeError):

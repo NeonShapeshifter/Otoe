@@ -42,6 +42,7 @@ PREVIEW_APIS = frozenset(
         "Dialog",
         "DuplicatePrimaryPropError",
         "Effect",
+        "EventHandlerArityError",
         "EventHandlerError",
         "EventSignature",
         "EXPERIMENTAL_APIS",

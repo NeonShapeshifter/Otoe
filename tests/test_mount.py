@@ -5,6 +5,7 @@ import pytest
 from otoe import (
     Button,
     DuplicatePrimaryPropError,
+    EventHandlerArityError,
     EventHandlerError,
     HStack,
     Input,
@@ -128,6 +129,10 @@ def test_non_callable_event_raises():
         mount(Button("Save", onClick="not-callable"))
 
 
+def test_event_handler_arity_error_is_event_handler_error():
+    assert issubclass(EventHandlerArityError, EventHandlerError)
+
+
 def test_event_handler_arity_errors_are_developer_facing():
     def handle_change(value):
         return value
@@ -135,7 +140,7 @@ def test_event_handler_arity_errors_are_developer_facing():
     widget = root_widget(mount(Input(value="", onChange=handle_change)))
 
     with pytest.raises(
-        EventHandlerError,
+        EventHandlerArityError,
         match=r"Input\.onChange\(value\) handler handle_change expected",
     ):
         widget.trigger("onChange")
@@ -148,7 +153,7 @@ def test_event_handler_arity_errors_include_widget_context():
     widget = root_widget(mount(Button("Run", onKeyDown=handle_key)))
 
     with pytest.raises(
-        EventHandlerError,
+        EventHandlerArityError,
         match=r"Button\.onKeyDown\(key\) handler handle_key expected",
     ):
         widget.trigger("onKeyDown", "Enter")
@@ -173,7 +178,7 @@ def test_event_handler_errors_include_component_context():
     widget = root_widget(mount(SearchBox()))
 
     with pytest.raises(
-        EventHandlerError,
+        EventHandlerArityError,
         match=r"SearchBox > Input\.onChange\(value\) handler handle_change expected",
     ):
         widget.trigger("onChange")

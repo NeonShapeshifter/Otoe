@@ -328,7 +328,10 @@ Slider(onChange=lambda value: ...)                # (value: float)
 Window(onResize=lambda width, height: ...)        # (width: int, height: int)
 ```
 
-The event name and signature are part of the widget's documented contract. Type stubs and docstrings describe them. There is no runtime signature inspection or arity detection.
+The event name and signature are part of the widget's documented contract.
+Type stubs and docs describe them, and the runtime raises
+`EventHandlerArityError` when a handler cannot accept the delivered event
+arguments.
 
 Event handlers are classified before data-prop reactivity. A callable assigned to a declared event name is always a handler, never a reactive expression:
 

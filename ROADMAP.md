@@ -2,7 +2,7 @@
 
 **Status:** v0.1.1 released; Phase 4 developer experience planning
 **Updated:** May 22, 2026
-**Current baseline:** 286 tests passing
+**Current baseline:** 287 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -311,7 +311,7 @@ Remaining:
 - Better diagnostics:
   - unknown prop **Done with widget/component context and known prop list**
   - wrong event name **Done with widget/component context, known event signatures, and a specific error type**
-  - wrong handler arity **Started with widget/event/component context**
+  - wrong handler arity **Done with widget/event/component context and a specific error type**
   - disposed reactive read **Done for computed values**
   - mutation during mount **Done for subscribed-signal mutation during component render**
   - renderer unsupported feature errors with component context where possible **Started**
