@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## v0.1.1 - Renderer Contract Hardening
+
+- Added a backend-replay acceptance surface that drives a framework-neutral tree
+  through `NativeWindowDriver` and `NativeSurface`.
+- Expanded native stack layout support for `alignItems` and `justifyContent`,
+  including start/end/stretch and spacing distribution values.
+- Added native layout guardrails for negative dimensions while preserving
+  `ScrollView(scrollY=...)` clamp behavior.
+- Aligned native hit-testing, painter order, and focus hit-testing so
+  overlapping controls choose the same topmost path.
+- Hardened native diagnostics for strict stylesheet classes, layout dimensions,
+  paint colors, PNG command failures, and `NativeSurface` input/focus errors.
+- Documented the Phase 2B backend boundary and exit cleanup status.
+
 ## v0.1.0 - Native Renderer Spike
 
 - Added `NativeSurface` to package mount/layout/paint/click/rerender into one

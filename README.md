@@ -318,7 +318,7 @@ perform security operations.
 
 ## Status
 
-Current status: Phase 2B renderer backend hardening / native demo proof. See
+Current status: Phase 2B exit cleanup / renderer contract hardening. See
 `ROADMAP.md` for the active plan.
 
 ## License
