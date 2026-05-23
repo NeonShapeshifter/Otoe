@@ -331,10 +331,10 @@ Remaining:
 - Snapshot and renderer testing guides. **Done for current snapshot, HTML,
   native surface, window driver, PNG, and backend acceptance paths.**
 - Example corpus:
-  - concise idiomatic components
-  - native examples
-  - HTML preview examples
-  - case-study examples
+  - concise idiomatic components **Indexed in `EXAMPLES_GUIDE.md`**
+  - native examples **Indexed in `EXAMPLES_GUIDE.md`**
+  - HTML preview examples **Indexed in `EXAMPLES_GUIDE.md`**
+  - case-study examples **Indexed in `EXAMPLES_GUIDE.md`**
 
 Phase 4 should not outrun the renderer contract. DX work is highest value when
 it explains or tests a boundary that has already been proven by the native demo.
