@@ -317,7 +317,7 @@ Remaining:
 - Documentation:
   - mental model **Done for current runtime and renderer boundaries**
   - component cookbook **Done for current app-state and renderer recipes**
-  - widget contracts
+  - widget contracts **Done for core widgets, control nodes, and current UI components**
   - style subset
   - native renderer subset
   - native workflow guide **Done for current HTML/native/window paths**

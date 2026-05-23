@@ -317,6 +317,8 @@ Otoe is intentionally split into layers:
 - `NATIVE_RENDERER_SPIKE.md` - current native renderer support and deferred work.
 - `TESTING_GUIDE.md` - snapshot, HTML, native surface, window driver, PNG, and
   backend acceptance testing guidance.
+- `WIDGET_CONTRACTS.md` - core widget, control node, UI component, callback,
+  and model contracts.
 - `ROADMAP.md` - current status and phase plan.
 
 ## Fixture Data
