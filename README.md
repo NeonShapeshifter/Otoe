@@ -77,6 +77,7 @@ backend, or backend compatibility promise. See
 `ADR-013-native-layout-hardening.md` for the current layout-hardening contract.
 `ADR-014-native-overflow-clipping.md` defines the current overflow policy:
 normal containers do not clip, while `ScrollView` clips paint and hit testing.
+For day-to-day workflow choices, see `NATIVE_WORKFLOWS.md`.
 
 Native and window-facing exports are intentionally marked as experimental. The
 imports remain available for examples and tests, but they are not backend
@@ -307,6 +308,8 @@ Otoe is intentionally split into layers:
 - `tests/` - runtime and preview regression tests.
 - `ADR-*.md` - design decisions.
 - `BENCHMARKS.md` - concrete Otoe-vs-Wraith UI change benchmarks.
+- `NATIVE_WORKFLOWS.md` - when to use HTML render, native PNG,
+  `NativeSurface`, `NativeWindowDriver`, and `run_native(...)`.
 - `NATIVE_RENDERER_SPIKE.md` - current native renderer support and deferred work.
 - `ROADMAP.md` - current status and phase plan.
 
@@ -318,7 +321,7 @@ perform security operations.
 
 ## Status
 
-Current status: Phase 2B exit cleanup / renderer contract hardening. See
+Current status: v0.1.1 released; Phase 4 developer experience planning. See
 `ROADMAP.md` for the active plan.
 
 ## License

@@ -320,6 +320,7 @@ Remaining:
   - widget contracts
   - style subset
   - native renderer subset
+  - native workflow guide **Done for current HTML/native/window paths**
   - event signatures **Done for built-in widgets and current UI callback surface**
 - CLI:
   - `otoe dev` **Started through `python -m otoe dev MODULE:APP` and the installed `otoe` console script**
@@ -416,8 +417,8 @@ it explains or tests a boundary that has already been proven by the native demo.
    until the next patch.
 2. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
    after each native input/style/layout change.
-3. Add a compact developer guide for when to use HTML render, native PNG,
-   `NativeSurface`, `NativeWindowDriver`, and `run_native(...)`.
+3. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter
+   semantics change.
 4. Use the backend-replay acceptance test as the first guardrail for any future
    Taffy, Skia, or windowing backend experiment.
 5. Defer `otoe dev` reload semantics and additional CLI polish until the native
