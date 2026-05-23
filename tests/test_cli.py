@@ -309,6 +309,8 @@ def test_cli_dev_runs_live_preview_for_app_target(tmp_path, monkeypatch):
             "8899",
             "--title",
             "Dev App",
+            "--root-class",
+            "dev-root",
         ]
     )
 
@@ -317,6 +319,7 @@ def test_cli_dev_runs_live_preview_for_app_target(tmp_path, monkeypatch):
     assert calls[0]["host"] == "127.0.0.1"
     assert calls[0]["port"] == 8899
     assert calls[0]["config"].title == "Dev App"
+    assert calls[0]["config"].root_class == "dev-root"
     assert calls[0]["config"].css_path is None
     assert calls[0]["app_factory"]().render_fragment() == "<p>ok</p>"
 
@@ -354,12 +357,15 @@ def test_cli_dev_uses_callable_preview_object_without_calling_it(
 def test_cli_dev_runs_live_preview_for_factory_target(tmp_path, monkeypatch):
     module = tmp_path / "dev_app_factory.py"
     module.write_text(
+        "calls = 0\n"
         "class App:\n"
         "    def render_fragment(self):\n"
         "        return '<p>factory</p>'\n"
         "    def dispatch_event(self, event_id, *args):\n"
         "        return '<p>updated</p>'\n"
         "def app():\n"
+        "    global calls\n"
+        "    calls += 1\n"
         "    return App()\n",
         encoding="utf-8",
     )
@@ -374,7 +380,31 @@ def test_cli_dev_runs_live_preview_for_factory_target(tmp_path, monkeypatch):
     result = main(["dev", "dev_app_factory:app"])
 
     assert result == 0
+    module_obj = __import__("dev_app_factory")
+    assert module_obj.calls == 0
     assert calls[0]["app_factory"]().render_fragment() == "<p>factory</p>"
+    assert module_obj.calls == 1
+
+
+def test_cli_dev_rejects_missing_css_file(tmp_path, monkeypatch, capsys):
+    module = tmp_path / "dev_app.py"
+    module.write_text(
+        "class App:\n"
+        "    def render_fragment(self):\n"
+        "        return '<p>ok</p>'\n"
+        "    def dispatch_event(self, event_id, *args):\n"
+        "        return '<p>updated</p>'\n"
+        "app = App()\n",
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(["dev", "dev_app:app", "--css", str(tmp_path / "missing.css")])
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "dev: css file" in captured.err
+    assert "does not exist" in captured.err
 
 
 def test_cli_dev_live_counter_example(monkeypatch):

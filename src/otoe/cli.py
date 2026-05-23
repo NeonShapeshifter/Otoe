@@ -5,7 +5,7 @@ import compileall
 import importlib
 import subprocess
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -89,6 +89,7 @@ def _build_parser() -> argparse.ArgumentParser:
     dev.add_argument("--title", default="Otoe Dev")
     dev.add_argument("--css", help="optional CSS file to serve")
     dev.add_argument("--css-route", default="/otoe.css")
+    dev.add_argument("--root-class", default="", help="class added to the live root")
     dev.set_defaults(func=_dev)
 
     new = subcommands.add_parser("new", help="scaffold a small Otoe app")
@@ -190,24 +191,29 @@ def _render(args: argparse.Namespace) -> int:
 def _dev(args: argparse.Namespace) -> int:
     try:
         target = _load_target(args.target)
-        app = _coerce_dev_app(target)
+        app_factory = _coerce_dev_app_factory(target)
+        css_path = _dev_css_path(args.css)
     except CliError as exc:
         print(f"dev: {exc}", file=sys.stderr)
         return 1
 
-    css_path = Path(args.css) if args.css else None
     config = LivePreviewConfig(
         title=args.title,
         css_route=args.css_route,
         css_path=css_path,
+        root_class=args.root_class,
     )
-    run_live_preview(
-        app_factory=lambda: app,
-        config=config,
-        host=args.host,
-        port=args.port,
-        label="Otoe dev",
-    )
+    try:
+        run_live_preview(
+            app_factory=app_factory,
+            config=config,
+            host=args.host,
+            port=args.port,
+            label="Otoe dev",
+        )
+    except CliError as exc:
+        print(f"dev: {exc}", file=sys.stderr)
+        return 1
     return 0
 
 
@@ -274,12 +280,17 @@ def _coerce_render_target(target: Any) -> MountedNode:
     )
 
 
+def _coerce_dev_app_factory(target: Any) -> Callable[[], LivePreviewApp]:
+    if _is_live_preview_app(target):
+        return lambda: target
+    if callable(target):
+        return lambda: _coerce_dev_app(target())
+    return _coerce_dev_app(target)
+
+
 def _coerce_dev_app(target: Any) -> LivePreviewApp:
     if _is_live_preview_app(target):
         return target
-    app = target() if callable(target) else target
-    if _is_live_preview_app(app):
-        return app
     raise CliError(
         "dev target must expose render_fragment() and dispatch_event(event_id, *args)"
     )
@@ -291,6 +302,15 @@ def _is_live_preview_app(target: Any) -> bool:
     ):
         return True
     return False
+
+
+def _dev_css_path(path: str | None) -> Path | None:
+    if path is None:
+        return None
+    css_path = Path(path)
+    if not css_path.exists():
+        raise CliError(f"css file {path!r} does not exist")
+    return css_path
 
 
 def _write_scaffold_file(path: Path, content: str, *, force: bool) -> None:

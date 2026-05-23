@@ -131,7 +131,7 @@ otoe render examples.quickstart:app --out preview.html --pretty
 otoe render examples.quickstart:app --out preview.html --css app.css --pretty
 otoe render examples.quickstart:app --out preview.png --native
 otoe render examples.quickstart:app --out preview.png --native --css app.css
-otoe dev examples.live_counter:app --port 8767
+otoe dev examples.live_counter:app --port 8767 --css app.css
 ```
 
 Render an importable Otoe node or zero-argument factory to HTML:
