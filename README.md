@@ -92,7 +92,7 @@ assert api_status("NativeSurface").category == "experimental-native"
 
 Use Python 3.11 or newer.
 
-Install from PyPI after the next successful package release:
+Install the latest published package from PyPI:
 
 ```bash
 python -m pip install otoe

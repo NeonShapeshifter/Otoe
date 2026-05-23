@@ -1,6 +1,6 @@
 # Otoe Roadmap
 
-**Status:** Phase 2B exit cleanup
+**Status:** v0.1.1 released; Phase 4 developer experience planning
 **Updated:** May 22, 2026
 **Current baseline:** 281 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
@@ -13,7 +13,7 @@ Otoe is an experimental Python UI framework for building professional desktop-st
 
 The project is framework-first. Case studies such as Wraith and SaaS previews are validation pressure, not product ownership. They prove whether the API can support dense operational UI, softer dashboard UI, overlays, commands, keyboard handling, and app-shaped state without coupling the core runtime to one application.
 
-The current technical question is no longer whether components, signals, control flow, live previews, headless rendering, and an optional native window smoke can work. They do. The next question is which backend slice should replace the marker renderer first while preserving the small adapter contract.
+The current technical question is no longer whether components, signals, control flow, live previews, headless rendering, and an optional native window smoke can work. They do. The next question is how to turn the proven renderer boundary into repeatable developer workflows and documentation, while future backend candidates remain behind the small adapter contract.
 
 ---
 
@@ -36,9 +36,9 @@ The current technical question is no longer whether components, signals, control
 | 0 | Case Study and First Slice | Done | Architecture and validation direction are established. |
 | 1 | Pure Python Runtime Core | Done | Core reactivity, components, mounting, lifecycle, events, control flow, batching, and tests are implemented. |
 | 2A | Headless Native Renderer Spike | Done | Otoe trees can produce deterministic layout, paint commands, PNG output, hit-tested input, focus, keyboard, text input, and scroll in tests. |
-| 2B | Renderer Backend Hardening | Exit cleanup | Renderer split, executable support matrices, ADRs, layout policy, overflow policy, API boundary, backend adapter interface, Tk Canvas paint/text/scale proof, stack hardening, backend-replay acceptance, and native diagnostics exist. |
+| 2B | Renderer Backend Hardening | Done for v0.1.1 | Renderer split, executable support matrices, ADRs, layout policy, overflow policy, API boundary, backend adapter interface, Tk Canvas paint/text/scale proof, stack hardening, backend-replay acceptance, and native diagnostics exist. |
 | 3 | Interactive Native Demo | Done | `NativeWindowDriver`, optional Tk wrapper, native window demo, and manual Tk launch smoke are covered; Tk windows now show readable scaled Canvas text while PNG output remains marker-level. |
-| 4 | Developer Experience | Started | Improve docs, diagnostics, stubs, CLI, and app authoring ergonomics. |
+| 4 | Developer Experience | Active next | Improve docs, diagnostics, stubs, CLI, and app authoring ergonomics. |
 | 5 | Case Study Migration Option | Planned | Decide whether one real app surface should adopt Otoe. |
 | 6 | Optional Framework Extraction | Planned | Decide whether Otoe becomes a reusable public or semi-public framework. |
 
@@ -185,11 +185,11 @@ Remaining:
 
 ### Phase 2B - Renderer Backend Hardening
 
-**Status:** Exit cleanup
+**Status:** Done for v0.1.1
 
 **Goal:** make the native renderer contract smaller, clearer, and easier to replace before adopting a real layout, paint, or windowing backend.
 
-This track can run alongside Phase 3, but it should not expand the public API until the current contract is cleaned up.
+This track is the closed `v0.1.1` baseline for future backend work. New backend experiments should reproduce the backend-replay acceptance surface first; near-term DX work should explain and exercise this boundary instead of expanding the public API.
 
 #### Scope
 
@@ -291,10 +291,10 @@ Closed:
 
 Remaining:
 
-- Decide whether Phase 2B closes after the current guardrails, or needs one
-  final backend-contract pass around CLI/docs before a patch release.
 - Keep the backend-replay acceptance surface small while evaluating future
   layout, paint, or windowing backend candidates.
+- Move near-term work to Phase 4 docs, diagnostics, and command ergonomics
+  unless a backend candidate starts.
 
 ---
 
@@ -412,10 +412,13 @@ it explains or tests a boundary that has already been proven by the native demo.
 
 ## Immediate Next Actions
 
-1. Push the current Phase 2B guardrail commit before cutting another release.
+1. Confirm the `v0.1.1` release automation, then leave version metadata alone
+   until the next patch.
 2. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
    after each native input/style/layout change.
-3. Use the backend-replay acceptance test as the first guardrail for any future
+3. Add a compact developer guide for when to use HTML render, native PNG,
+   `NativeSurface`, `NativeWindowDriver`, and `run_native(...)`.
+4. Use the backend-replay acceptance test as the first guardrail for any future
    Taffy, Skia, or windowing backend experiment.
-4. Defer `otoe dev` reload semantics and additional CLI polish until the native
+5. Defer `otoe dev` reload semantics and additional CLI polish until the native
    boundary work stops changing the framework-facing shape.
