@@ -3,7 +3,11 @@ class OtoeError(Exception):
 
 
 class UnknownPropError(OtoeError):
-    """Raised when a widget receives a prop/event that its schema does not declare."""
+    """Raised when a widget receives a prop that its schema does not declare."""
+
+
+class UnknownEventError(UnknownPropError):
+    """Raised when a widget receives an event that its schema does not declare."""
 
 
 class DuplicatePrimaryPropError(OtoeError):

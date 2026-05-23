@@ -88,6 +88,7 @@ PREVIEW_APIS = frozenset(
         "Token",
         "Toolbar",
         "UI_EVENT_SIGNATURES",
+        "UnknownEventError",
         "UnknownPropError",
         "UnknownStyleClassError",
         "VStack",

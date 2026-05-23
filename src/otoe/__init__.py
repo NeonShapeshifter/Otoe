@@ -16,6 +16,7 @@ from .errors import (
     OtoeError,
     ReactiveDisposedError,
     ReactiveMutationError,
+    UnknownEventError,
     UnknownPropError,
 )
 from .events import EventSignature, event_signature_for, format_event_signature
@@ -172,6 +173,7 @@ __all__ = [
     "TkNativeBackendAdapter",
     "TkNativeWindow",
     "UI_EVENT_SIGNATURES",
+    "UnknownEventError",
     "UnknownPropError",
     "UnknownStyleClassError",
     "VStack",

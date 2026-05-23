@@ -310,7 +310,7 @@ Remaining:
   and core widget/control-flow stubs.**
 - Better diagnostics:
   - unknown prop **Done with widget/component context and known prop list**
-  - wrong event name **Started with widget/component context**
+  - wrong event name **Done with widget/component context, known event signatures, and a specific error type**
   - wrong handler arity **Started with widget/event/component context**
   - disposed reactive read **Done for computed values**
   - mutation during mount **Done for subscribed-signal mutation during component render**

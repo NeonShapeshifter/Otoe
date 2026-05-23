@@ -5,7 +5,7 @@ from typing import Any, Callable
 
 from .component import is_component_tag
 from .control import is_control_tag, is_for_tag, is_show_tag, list_from_value, resolve_value
-from .errors import EventHandlerError, UnknownPropError
+from .errors import EventHandlerError, UnknownEventError, UnknownPropError
 from .events import dispatch_event, event_signature_for, format_event_catalog
 from .node import Node
 from .owner import CURRENT_MOUNT_PHASE, CURRENT_OWNER, Owner, current_owner
@@ -113,7 +113,7 @@ def _mount_widget(
         else:
             kind = "event" if name.startswith("on") else "prop"
             if kind == "event":
-                raise UnknownPropError(_unknown_event_message(widget, name, events))
+                raise UnknownEventError(_unknown_event_message(widget, name, events))
             raise UnknownPropError(_unknown_prop_message(widget, name, data_props))
 
     for child in node.children:

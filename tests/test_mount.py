@@ -9,6 +9,7 @@ from otoe import (
     HStack,
     Input,
     Text,
+    UnknownEventError,
     UnknownPropError,
     component,
     computed,
@@ -155,7 +156,7 @@ def test_event_handler_arity_errors_include_widget_context():
 
 def test_unknown_event_error_lists_known_signatures():
     with pytest.raises(
-        UnknownPropError,
+        UnknownEventError,
         match=r"Known events: onBlur\(\), onClick\(\), onFocus\(\), onKeyDown\(key\)",
     ):
         mount(Button("Save", onTap=lambda: None))
@@ -184,7 +185,7 @@ def test_unknown_event_errors_include_component_context():
         return Button("Run", onTap=lambda: None)
 
     with pytest.raises(
-        UnknownPropError,
+        UnknownEventError,
         match=r"BrokenButton > Button received unknown event 'onTap'",
     ):
         mount(BrokenButton())

@@ -160,7 +160,7 @@ The error includes the widget/component context and the known prop names.
 Unknown event:
 
 ```python
-Button("Run", onSubmit=lambda: None)  # UnknownPropError with known events
+Button("Run", onSubmit=lambda: None)  # UnknownEventError with known events
 ```
 
 Wrong handler arity:
