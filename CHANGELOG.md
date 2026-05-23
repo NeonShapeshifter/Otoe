@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+## v0.1.2 - Developer Experience Closeout
+
+- Added framework mental model, component cookbook, widget contracts, style
+  guide, native workflow guide, testing guide, and example index docs.
+- Added widget, control-flow, and UI component/model typing stubs with PEP 561
+  packaging metadata.
+- Added `mypy` smoke coverage for valid public API usage and common widget/UI
+  typing mistakes.
+- Improved unknown prop, unknown event, handler arity, reactive mutation, and
+  native renderer diagnostic context.
+- Added `otoe new` for minimal app scaffolds with optional `styles.css`.
+- Expanded `otoe render` with CSS input, native PNG output, and strict-style
+  control.
+- Expanded `otoe check` with optional pytest execution, custom paths, and
+  pytest argument forwarding.
+- Improved `otoe dev` handling for app objects, factories, CSS serving, root
+  classes, and CLI validation.
+
 ## v0.1.1 - Renderer Contract Hardening
 
 - Added a backend-replay acceptance surface that drives a framework-neutral tree
