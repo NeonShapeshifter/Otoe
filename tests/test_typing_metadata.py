@@ -1,7 +1,9 @@
 import tomllib
 from pathlib import Path
 
+import otoe.ui as ui
 import otoe.widgets as widgets
+from otoe.component import Component
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -22,6 +24,7 @@ def test_core_typing_artifacts_exist():
     assert (package_root / "py.typed").is_file()
     assert (package_root / "widgets.pyi").is_file()
     assert (package_root / "control.pyi").is_file()
+    assert (package_root / "ui.pyi").is_file()
 
 
 def test_widget_stub_covers_runtime_widgets():
@@ -44,3 +47,30 @@ def test_control_stub_declares_public_helpers():
 
     for signature in ("def Show(", "def For(", "def is_control_tag(", "def list_from_value("):
         assert signature in control_stub
+
+
+def test_ui_stub_covers_runtime_components_and_models():
+    ui_stub = (PROJECT_ROOT / "src" / "otoe" / "ui.pyi").read_text(encoding="utf-8")
+    component_names = sorted(
+        name
+        for name, value in vars(ui).items()
+        if isinstance(value, Component)
+        and getattr(value, "__module__", None) == "otoe.ui"
+    )
+
+    assert component_names
+    for name in component_names:
+        assert f"def {name}(" in ui_stub
+
+    for name in (
+        "Command",
+        "CommandRegistry",
+        "MenuItem",
+        "NavRoute",
+        "SelectOption",
+        "TableColumn",
+    ):
+        assert f"class {name}:" in ui_stub
+
+    assert "UI_EVENT_SIGNATURES: dict[str, EventSignature]" in ui_stub
+    assert "def class_names(" in ui_stub

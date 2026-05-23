@@ -306,8 +306,8 @@ Remaining:
 
 ### Scope
 
-- Typed widget stubs and better editor support. **Started with PEP 561 marker
-  and core widget/control-flow stubs.**
+- Typed widget stubs and better editor support. **Expanded with PEP 561 marker,
+  core widget/control-flow stubs, and current UI component/model stubs.**
 - Better diagnostics:
   - unknown prop **Done with widget/component context and known prop list**
   - wrong event name **Done with widget/component context, known event signatures, and a specific error type**
