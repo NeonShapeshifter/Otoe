@@ -114,7 +114,7 @@ def _mount_widget(
             kind = "event" if name.startswith("on") else "prop"
             if kind == "event":
                 raise UnknownPropError(_unknown_event_message(widget, name, events))
-            raise UnknownPropError(f"{widget.name} received unknown {kind} {name!r}.")
+            raise UnknownPropError(_unknown_prop_message(widget, name, data_props))
 
     for child in node.children:
         child_mounted = _mount(child, component_stack=component_stack)
@@ -249,6 +249,13 @@ def _unknown_event_message(widget: FakeWidget, name: str, events: set[str]) -> s
         return message
     signatures = getattr(widget.tag, "event_signatures", {})
     return f"{message} Known events: {format_event_catalog(events, signatures)}."
+
+
+def _unknown_prop_message(widget: FakeWidget, name: str, props: set[str]) -> str:
+    message = f"{_widget_context(widget)} received unknown prop {name!r}."
+    if not props:
+        return message
+    return f"{message} Known props: {', '.join(sorted(props))}."
 
 
 def _event_context(*, widget: FakeWidget, event_name: str) -> str:

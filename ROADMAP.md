@@ -2,7 +2,7 @@
 
 **Status:** v0.1.1 released; Phase 4 developer experience planning
 **Updated:** May 22, 2026
-**Current baseline:** 281 tests passing
+**Current baseline:** 282 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -308,7 +308,7 @@ Remaining:
 
 - Typed widget stubs and better editor support.
 - Better diagnostics:
-  - unknown prop
+  - unknown prop **Done with widget/component context and known prop list**
   - wrong event name **Started with widget/component context**
   - wrong handler arity **Started with widget/event/component context**
   - disposed reactive read **Done for computed values**

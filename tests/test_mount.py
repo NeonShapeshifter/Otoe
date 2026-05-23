@@ -115,7 +115,10 @@ def test_async_event_handler_error_is_observable_from_running_loop():
 
 
 def test_unknown_props_raise_developer_facing_error():
-    with pytest.raises(UnknownPropError, match="unknown prop"):
+    with pytest.raises(
+        UnknownPropError,
+        match=r"Text received unknown prop 'typo'. Known props: className, color, content, id",
+    ):
         mount(Text("Hello", typo=True))
 
 
@@ -185,6 +188,21 @@ def test_unknown_event_errors_include_component_context():
         match=r"BrokenButton > Button received unknown event 'onTap'",
     ):
         mount(BrokenButton())
+
+
+def test_unknown_prop_errors_include_component_context_and_known_props():
+    @component
+    def BrokenLabel():
+        return Text("Run", typo=True)
+
+    with pytest.raises(
+        UnknownPropError,
+        match=(
+            r"BrokenLabel > Text received unknown prop 'typo'. "
+            r"Known props: className, color, content, id"
+        ),
+    ):
+        mount(BrokenLabel())
 
 
 def test_event_handler_internal_type_errors_still_propagate():

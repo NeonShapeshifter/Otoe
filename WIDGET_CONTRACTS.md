@@ -151,6 +151,8 @@ Unknown prop:
 Button("Run", href="/start")  # UnknownPropError
 ```
 
+The error includes the widget/component context and the known prop names.
+
 Unknown event:
 
 ```python
