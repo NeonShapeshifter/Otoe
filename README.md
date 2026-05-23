@@ -127,7 +127,9 @@ script:
 otoe check
 otoe new my_app
 otoe render examples.quickstart:app --out preview.html --pretty
+otoe render examples.quickstart:app --out preview.html --css app.css --pretty
 otoe render examples.quickstart:app --out preview.png --native
+otoe render examples.quickstart:app --out preview.png --native --css app.css
 otoe dev examples.live_counter:app --port 8767
 ```
 
@@ -135,6 +137,12 @@ Render an importable Otoe node or zero-argument factory to HTML:
 
 ```bash
 python -m otoe render examples.quickstart:app --out preview.html --pretty
+```
+
+Apply an Otoe CSS file inline while rendering:
+
+```bash
+python -m otoe render examples.quickstart:app --out preview.html --css app.css --pretty
 ```
 
 Render the same target through the native PNG path:

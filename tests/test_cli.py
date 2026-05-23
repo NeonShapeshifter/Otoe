@@ -68,6 +68,64 @@ def test_cli_render_writes_html_from_callable_target(tmp_path, monkeypatch):
     assert "Callable" in output.read_text(encoding="utf-8")
 
 
+def test_cli_render_applies_css_inline(tmp_path, monkeypatch):
+    module = tmp_path / "styled_surface.py"
+    module.write_text(
+        "from otoe import Text\n"
+        "app = Text('Styled', className='title')\n",
+        encoding="utf-8",
+    )
+    styles = tmp_path / "styles.css"
+    styles.write_text(".title { color: #ff0000; }\n", encoding="utf-8")
+    output = tmp_path / "preview.html"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "render",
+            "styled_surface:app",
+            "--out",
+            str(output),
+            "--css",
+            str(styles),
+        ]
+    )
+
+    assert result == 0
+    assert 'style="color:#ff0000"' in output.read_text(encoding="utf-8")
+
+
+def test_cli_render_can_ignore_missing_css_classes(
+    tmp_path,
+    monkeypatch,
+):
+    module = tmp_path / "loose_surface.py"
+    module.write_text(
+        "from otoe import Text\n"
+        "app = Text('Loose', className='missing')\n",
+        encoding="utf-8",
+    )
+    styles = tmp_path / "styles.css"
+    styles.write_text(".known { color: #ff0000; }\n", encoding="utf-8")
+    output = tmp_path / "preview.html"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "render",
+            "loose_surface:app",
+            "--out",
+            str(output),
+            "--css",
+            str(styles),
+            "--no-strict-styles",
+        ]
+    )
+
+    assert result == 0
+    assert "Loose" in output.read_text(encoding="utf-8")
+
+
 def test_cli_render_quickstart_example(tmp_path):
     output = tmp_path / "quickstart.html"
 
@@ -91,6 +149,34 @@ def test_cli_render_writes_native_png(tmp_path):
             "--native",
             "--background",
             "#f8fafc",
+        ]
+    )
+
+    assert result == 0
+    assert output.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+
+
+def test_cli_render_writes_native_png_with_css(tmp_path, monkeypatch):
+    module = tmp_path / "native_styled_surface.py"
+    module.write_text(
+        "from otoe import Text, VStack\n"
+        "app = VStack(Text('Native'), className='shell')\n",
+        encoding="utf-8",
+    )
+    styles = tmp_path / "styles.css"
+    styles.write_text(".shell { padding: 8; background: #f8fafc; }\n", encoding="utf-8")
+    output = tmp_path / "preview.png"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "render",
+            "native_styled_surface:app",
+            "--out",
+            str(output),
+            "--native",
+            "--css",
+            str(styles),
         ]
     )
 
@@ -123,6 +209,30 @@ def test_cli_render_rejects_invalid_target(tmp_path, monkeypatch, capsys):
     captured = capsys.readouterr()
     assert result == 1
     assert "render target must be a Node, MountedNode" in captured.err
+
+
+def test_cli_render_reports_css_errors(tmp_path, monkeypatch, capsys):
+    module = tmp_path / "surface.py"
+    module.write_text("from otoe import Text\napp = Text('Bad CSS')\n", encoding="utf-8")
+    styles = tmp_path / "styles.css"
+    styles.write_text(".bad { nope: 1; }\n", encoding="utf-8")
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "render",
+            "surface:app",
+            "--out",
+            str(tmp_path / "preview.html"),
+            "--css",
+            str(styles),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "render: css file" in captured.err
+    assert "Unknown style property 'nope'" in captured.err
 
 
 def test_cli_dev_runs_live_preview_for_app_target(tmp_path, monkeypatch):

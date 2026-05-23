@@ -14,6 +14,7 @@ from .live_server import LivePreviewApp, LivePreviewConfig, run_live_preview
 from .mount import MountedNode, mount
 from .native import render_native_png
 from .node import Node
+from .style import StyleError, StyleSheet, css
 
 DEFAULT_CHECK_PATHS = ("src", "examples", "tests")
 
@@ -47,6 +48,17 @@ def _build_parser() -> argparse.ArgumentParser:
     render.add_argument("--out", required=True, help="output HTML path")
     render.add_argument("--pretty", action="store_true", help="pretty-print HTML")
     render.add_argument("--indent", type=int, default=0, help="base HTML indent")
+    render.add_argument(
+        "--css",
+        help="optional Otoe CSS file to apply inline during render",
+    )
+    render.add_argument(
+        "--no-strict-styles",
+        action="store_false",
+        default=True,
+        dest="strict_styles",
+        help="ignore class names missing from --css",
+    )
     render.add_argument(
         "--native",
         action="store_true",
@@ -113,21 +125,38 @@ def _render(args: argparse.Namespace) -> int:
     try:
         target = _load_target(args.target)
         mounted = _coerce_render_target(target)
+        stylesheet = _load_stylesheet(args.css)
     except CliError as exc:
         print(f"render: {exc}", file=sys.stderr)
         return 1
 
     output = Path(args.out)
     output.parent.mkdir(parents=True, exist_ok=True)
-    if args.native:
-        render_native_png(mounted, output, background=args.background)
-        print(f"render native {args.target}: {output}")
-        return 0
+    try:
+        if args.native:
+            render_native_png(
+                mounted,
+                output,
+                stylesheet=stylesheet,
+                strict_styles=args.strict_styles,
+                background=args.background,
+            )
+            print(f"render native {args.target}: {output}")
+            return 0
 
-    output.write_text(
-        render_html(mounted, pretty=args.pretty, indent=args.indent),
-        encoding="utf-8",
-    )
+        output.write_text(
+            render_html(
+                mounted,
+                pretty=args.pretty,
+                indent=args.indent,
+                stylesheet=stylesheet,
+                strict_styles=args.strict_styles,
+            ),
+            encoding="utf-8",
+        )
+    except (StyleError, ValueError) as exc:
+        print(f"render: {exc}", file=sys.stderr)
+        return 1
     print(f"render {args.target}: {output}")
     return 0
 
@@ -192,6 +221,18 @@ def _load_target(spec: str) -> Any:
         except AttributeError as exc:
             raise CliError(f"{spec!r} could not resolve attribute {part!r}") from exc
     return value
+
+
+def _load_stylesheet(path: str | None) -> StyleSheet | None:
+    if path is None:
+        return None
+    source = Path(path)
+    if not source.exists():
+        raise CliError(f"css file {path!r} does not exist")
+    try:
+        return css(source.read_text(encoding="utf-8"))
+    except StyleError as exc:
+        raise CliError(f"css file {path!r}: {exc}") from exc
 
 
 def _coerce_render_target(target: Any) -> MountedNode:

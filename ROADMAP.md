@@ -2,7 +2,7 @@
 
 **Status:** v0.1.1 released; Phase 4 developer experience planning
 **Updated:** May 22, 2026
-**Current baseline:** 291 tests passing
+**Current baseline:** 295 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -326,7 +326,7 @@ Remaining:
   - event signatures **Done for built-in widgets and current UI callback surface**
 - CLI:
   - `otoe dev` **Started through `python -m otoe dev MODULE:APP` and the installed `otoe` console script**
-  - `otoe render` **Started through HTML and native PNG output paths**
+  - `otoe render` **Done for HTML/native output paths, CSS input, and strict-style control**
   - `otoe check` **Started through `python -m otoe check` and the installed `otoe` console script**
   - `otoe new` **Started with a minimal renderable app scaffold**
 - Snapshot and renderer testing guides. **Done for current snapshot, HTML,
