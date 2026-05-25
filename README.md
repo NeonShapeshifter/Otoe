@@ -354,7 +354,7 @@ perform security operations.
 
 ## Status
 
-Current status: v0.1.2 released; Phase 5 case-study planning. See
+Current status: v0.1.2 released; Phase 5 professional UI/reference app planning. See
 `ROADMAP.md` for the active plan.
 
 ## License

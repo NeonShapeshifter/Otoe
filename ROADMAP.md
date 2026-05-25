@@ -1,6 +1,6 @@
 # Otoe Roadmap
 
-**Status:** v0.1.2 released; Phase 5 case-study planning
+**Status:** v0.1.2 released; Phase 5 professional UI/reference app planning
 **Updated:** May 23, 2026
 **Current baseline:** 301 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
@@ -350,26 +350,37 @@ it explains or tests a boundary that has already been proven by the native demo.
 
 ---
 
-## Phase 5 - Case Study Migration Option
+## Phase 5 - Professional UI Kit and Reference Apps
 
-**Status:** Planning after v0.1.2
+**Status:** Started after v0.1.2
 
-**Goal:** decide whether Otoe should become a real dependency for one existing app surface.
+**Goal:** make Otoe useful for professional Python apps beyond the author's
+private projects while keeping the author as the primary customer.
 
 ### Scope
 
-- Do not migrate any app wholesale.
-- Pick one low-risk surface only after the standalone native demo proves the runtime and renderer model.
-- Keep service/runtime/data boundaries unchanged.
-- Build an adapter that lets Otoe screens consume app services without importing the legacy UI backend.
-- Run Otoe and legacy surfaces side by side where possible.
-- Preserve operational behavior and tests.
+- Keep examples framework-neutral unless they are explicitly case studies.
+- Build reference apps that look and feel production-shaped, not toy demos.
+- Start with a professional hardware/control-panel reference app backed by a
+  fake provider that can later be swapped for serial, USB, GPIO, SQLite, or a
+  local service adapter.
+- Improve design-system defaults: variants, tone, spacing, tables, cards,
+  shell navigation, command surfaces, settings, telemetry, and status patterns.
+- Keep Wraith as pressure, not the next migration target, until a stronger
+  layout/paint/window backend exists.
+- Preserve the public API's ability to serve users outside the author's own
+  projects.
 
 ### Exit Criteria
 
-- One real app surface can be implemented in Otoe without weakening runtime safety.
-- The migration reduces maintenance burden enough to justify dependency risk.
-- The app can still ship without Otoe if Otoe is not ready.
+- A new user can build a polished small app from docs and examples without
+  reading internals.
+- At least three reference apps cover distinct professional app shapes:
+  hardware/control panel, local admin/settings, and data/table workflow.
+- Reference apps use explicit provider or adapter boundaries instead of global
+  fixture data embedded directly in components.
+- The UI kit has enough defaults and variants to feel professional before a
+  custom stylesheet is written.
 
 ---
 
@@ -417,12 +428,13 @@ it explains or tests a boundary that has already been proven by the native demo.
 
 ## Immediate Next Actions
 
-1. Choose one low-risk case-study surface for a side-by-side Otoe proof.
-2. Define the adapter boundary that lets that surface consume app services
-   without importing the legacy UI backend.
-3. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
+1. Finish the hardware control panel reference app with static preview, live
+   preview, provider contract tests, and docs.
+2. Extract repeated reference-app patterns into UI kit improvements only when
+   duplication becomes real.
+3. Define the next two neutral reference apps: local admin/settings and
+   data/table workflow.
+4. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
    after each native input/style/layout change.
-4. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter
+5. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter
    semantics change.
-5. Use the backend-replay acceptance test as the first guardrail for any future
-   Taffy, Skia, or windowing backend experiment.

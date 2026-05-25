@@ -136,6 +136,32 @@ PYTHONPATH=src:. python -m examples.saas.live_preview
 
 This is a case study, not a product dependency.
 
+## Hardware Control Panel
+
+Paths:
+
+- `examples/hardware/control_panel.py`
+- `examples/hardware/preview.py`
+- `examples/hardware/live_preview.py`
+
+Use this as the first Phase 5 reference app: a professional Python/hardware
+surface that is framework-neutral but shaped like something that could later
+read serial, USB, GPIO, SQLite, or a local service adapter.
+
+- device status and connection state
+- telemetry cards and table
+- event stream
+- safe operator controls
+- provider boundary with fake data for tests
+
+```bash
+PYTHONPATH=src:. python -m examples.hardware.preview > preview/hardware.html
+PYTHONPATH=src:. python -m examples.hardware.live_preview
+```
+
+This example uses fake data intentionally. The fake provider is the test
+boundary; the component surface should remain ready for a real provider.
+
 ## Wraith Previews
 
 Paths:
@@ -179,6 +205,7 @@ assumptions into the runtime.
 | Window-driver or Tk smoke | `examples.native.window_demo` |
 | Shared UI primitive regression | `examples.ui.kitchen_sink` |
 | Product-dashboard case study | `examples.saas.overview` |
+| Professional hardware reference app | `examples.hardware.control_panel` |
 | Dense operational case study | `examples.wraith.mission_exec_surface` |
 
 ## Example Rules

@@ -203,12 +203,17 @@ def StatCard(
     tone: str = "neutral",
     className: str | None = None,
 ):
+    detail_class = (
+        computed(lambda: class_names("ui-stat-detail", f"is-{_value(tone)}"))
+        if is_reactive(tone)
+        else class_names("ui-stat-detail", f"is-{tone}")
+    )
     return Card(
         VStack(
             Text(label, className="ui-stat-label"),
             Text(value, className="ui-stat-value"),
             Show(
-                Text(detail, className=class_names("ui-stat-detail", f"is-{tone}")),
+                Text(detail, className=detail_class),
                 when=computed(lambda: _has_value(detail)),
             ),
             className="ui-stat-body",

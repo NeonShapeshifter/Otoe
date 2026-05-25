@@ -1,0 +1,433 @@
+:root {
+  color-scheme: light;
+  --bg: #f4f6f8;
+  --panel: #ffffff;
+  --panel-soft: #f8fafc;
+  --ink: #151c27;
+  --muted: #637083;
+  --quiet: #8a95a5;
+  --line: #dfe5ec;
+  --line-strong: #cbd5e1;
+  --blue: #2563eb;
+  --blue-soft: #e8efff;
+  --green: #16835b;
+  --green-soft: #e8f7ef;
+  --amber: #b77912;
+  --amber-soft: #fff4da;
+  --red: #c8374b;
+  --red-soft: #ffe8ec;
+  --violet: #6d5bd0;
+  --shadow: rgba(20, 31, 48, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    linear-gradient(180deg, #ffffff 0, #f4f6f8 320px),
+    var(--bg);
+  color: var(--ink);
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  line-height: 1.45;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.otoe-stack {
+  gap: var(--otoe-gap, 0);
+  padding: var(--otoe-padding, 0);
+}
+
+.otoe-vstack {
+  display: flex;
+  flex-direction: column;
+}
+
+.otoe-hstack {
+  display: flex;
+  align-items: center;
+}
+
+.otoe-panel {
+  min-width: 0;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 18px 44px var(--shadow);
+}
+
+.otoe-panel-title {
+  display: none;
+}
+
+.otoe-text {
+  min-width: 0;
+}
+
+.otoe-button {
+  min-height: 38px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--blue);
+  color: #ffffff;
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 760;
+  cursor: pointer;
+}
+
+.otoe-button:hover,
+.otoe-button:focus-visible {
+  background: #1d4ed8;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+}
+
+.otoe-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.otoe-input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--ink);
+  padding: 0 12px;
+}
+
+.otoe-fragment {
+  display: contents;
+}
+
+.hardware-app {
+  width: min(1280px, 100%);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.hardware-topbar {
+  min-height: 68px;
+  margin-bottom: 16px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 16px 34px rgba(20, 31, 48, 0.08);
+}
+
+.hardware-brand {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.hardware-device,
+.hardware-mode,
+.hardware-sidebar-copy,
+.hardware-sidebar-meta,
+.hardware-table-note {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.hardware-connection,
+.hardware-section-badge,
+.hardware-signal-badge,
+.hardware-event-badge,
+.hardware-table-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.is-success {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.is-info {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.is-warn {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.is-danger {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.is-neutral {
+  background: #eef2f6;
+  color: var(--muted);
+}
+
+.is-ghost {
+  background: #ffffff;
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.is-ghost:hover,
+.is-ghost:focus-visible {
+  background: var(--panel-soft);
+  box-shadow: 0 0 0 4px rgba(99, 112, 131, 0.12);
+}
+
+.is-sm {
+  min-height: 34px;
+  padding-inline: 12px;
+  font-size: 13px;
+}
+
+.hardware-app .ui-app-main {
+  align-items: stretch;
+  gap: 16px;
+}
+
+.hardware-sidebar {
+  width: 226px;
+  flex: 0 0 226px;
+  padding: 12px;
+}
+
+.hardware-sidebar-brand {
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.hardware-sidebar .ui-nav-item {
+  width: 100%;
+  min-height: 48px;
+  justify-content: flex-start;
+  background: transparent;
+  color: var(--muted);
+  border: 0;
+  box-shadow: none;
+  padding: 0 10px;
+}
+
+.hardware-sidebar .ui-nav-item.is-active {
+  background: #eef4ff;
+  color: var(--blue);
+}
+
+.hardware-sidebar .ui-nav-row {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.hardware-sidebar .ui-nav-label {
+  font-weight: 850;
+}
+
+.hardware-sidebar .ui-nav-description {
+  color: var(--quiet);
+  font-size: 12px;
+}
+
+.hardware-sidebar .ui-nav-badge {
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.hardware-route,
+.hardware-page {
+  min-width: 0;
+  width: 100%;
+}
+
+.hardware-stat-grid,
+.hardware-overview-grid,
+.hardware-control-grid {
+  align-items: stretch;
+}
+
+.hardware-stat {
+  flex: 1 1 0;
+}
+
+.hardware-stat .ui-stat-body {
+  padding: 16px;
+}
+
+.ui-stat-label,
+.hardware-section-title {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.ui-stat-value {
+  margin-top: 8px;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.ui-stat-detail {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.hardware-panel {
+  padding: 16px;
+}
+
+.hardware-telemetry-panel {
+  flex: 1.12;
+}
+
+.hardware-events-panel,
+.hardware-safety-panel {
+  flex: 0.88;
+}
+
+.hardware-command-panel,
+.hardware-settings-panel {
+  flex: 1;
+}
+
+.hardware-section-heading,
+.hardware-signal-row,
+.hardware-event-row,
+.hardware-command-row,
+.hardware-setting-row {
+  justify-content: space-between;
+}
+
+.hardware-signal-row,
+.hardware-event-row,
+.hardware-command-row,
+.hardware-setting-row {
+  min-height: 58px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.hardware-signal-row:first-child,
+.hardware-event-row:first-child,
+.hardware-command-row:first-child,
+.hardware-setting-row:first-child {
+  border-top: 0;
+}
+
+.hardware-signal-name,
+.hardware-event-source,
+.hardware-command-title,
+.hardware-setting-label {
+  font-weight: 850;
+}
+
+.hardware-signal-detail,
+.hardware-event-message,
+.hardware-command-copy {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.hardware-signal-value {
+  margin-left: auto;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.hardware-event-time {
+  width: 66px;
+  color: var(--quiet);
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+}
+
+.hardware-event-row .otoe-vstack,
+.hardware-command-row .otoe-vstack {
+  flex: 1;
+}
+
+.hardware-table .ui-table-head,
+.hardware-table .ui-table-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 150px minmax(220px, 1.2fr);
+  align-items: center;
+}
+
+.hardware-table .ui-table-head {
+  min-height: 42px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
+}
+
+.hardware-table .ui-table-row {
+  min-height: 60px;
+  border-bottom: 1px solid var(--line);
+}
+
+.hardware-table-value {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.hardware-setting-value {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+@media (max-width: 840px) {
+  .hardware-app {
+    padding: 16px;
+  }
+
+  .hardware-app .ui-app-main,
+  .hardware-overview-grid,
+  .hardware-control-grid,
+  .hardware-stat-grid {
+    flex-direction: column;
+  }
+
+  .hardware-sidebar {
+    width: 100%;
+    flex-basis: auto;
+  }
+
+  .hardware-table .ui-table-head,
+  .hardware-table .ui-table-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 12px 0;
+  }
+}

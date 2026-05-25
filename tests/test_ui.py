@@ -84,6 +84,27 @@ def test_badge_reacts_to_tone_signal():
     assert badge.props["className"] == "ui-badge is-success"
 
 
+def test_stat_card_reacts_to_tone_signal():
+    tone = signal("info")
+    stat = root_widget(
+        mount(
+            StatCard(
+                label="Thermal",
+                value="18C",
+                detail="Headroom",
+                tone=tone,
+            )
+        )
+    )
+    detail = stat.children[0].children[2].children[0]
+
+    assert detail.props["className"] == "ui-stat-detail is-info"
+
+    tone.set("warn")
+
+    assert detail.props["className"] == "ui-stat-detail is-warn"
+
+
 def test_card_tabs_and_stat_card_compose_primitives():
     card = root_widget(
         mount(
