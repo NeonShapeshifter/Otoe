@@ -1,6 +1,6 @@
 # Otoe Roadmap
 
-**Status:** v0.1.2 prepared; Phase 4 developer experience closeout
+**Status:** v0.1.2 released; Phase 5 case-study planning
 **Updated:** May 23, 2026
 **Current baseline:** 301 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
@@ -352,7 +352,7 @@ it explains or tests a boundary that has already been proven by the native demo.
 
 ## Phase 5 - Case Study Migration Option
 
-**Status:** Planned
+**Status:** Planning after v0.1.2
 
 **Goal:** decide whether Otoe should become a real dependency for one existing app surface.
 
@@ -417,12 +417,12 @@ it explains or tests a boundary that has already been proven by the native demo.
 
 ## Immediate Next Actions
 
-1. Push the `v0.1.2` release prep commit, confirm CI, then tag `v0.1.2`.
-2. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
+1. Choose one low-risk case-study surface for a side-by-side Otoe proof.
+2. Define the adapter boundary that lets that surface consume app services
+   without importing the legacy UI backend.
+3. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
    after each native input/style/layout change.
-3. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter
+4. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter
    semantics change.
-4. Use the backend-replay acceptance test as the first guardrail for any future
+5. Use the backend-replay acceptance test as the first guardrail for any future
    Taffy, Skia, or windowing backend experiment.
-5. Start Phase 5 only after the patch release is green and one low-risk
-   case-study surface is chosen explicitly.

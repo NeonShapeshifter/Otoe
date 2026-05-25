@@ -354,7 +354,7 @@ perform security operations.
 
 ## Status
 
-Current status: v0.1.2 prepared; Phase 4 developer experience closeout. See
+Current status: v0.1.2 released; Phase 5 case-study planning. See
 `ROADMAP.md` for the active plan.
 
 ## License
