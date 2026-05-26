@@ -13,7 +13,10 @@ def test_reference_app_patterns_tracks_current_phase5_apps():
     assert "Provider Contract" in text
     assert "Feedback Pattern" in text
     assert "Table Pattern" in text
-    assert "Full-suite baseline after the current reference app pattern pass: `332 passed`." in text
+    assert "SectionHeader" in text
+    assert "EmptyState" in text
+    assert "FeedbackToast" in text
+    assert "Full-suite baseline after the first UI-kit extraction pass: `334 passed`." in text
 
 
 def test_readme_links_reference_app_patterns():

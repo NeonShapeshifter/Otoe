@@ -8,10 +8,13 @@ from otoe import (
     CommandRegistry,
     DataTable,
     Dialog,
+    EmptyState,
+    FeedbackToast,
     Menu,
     MenuItem,
     NavRoute,
     RouteView,
+    SectionHeader,
     ShortcutScope,
     Select,
     SelectOption,
@@ -259,6 +262,57 @@ def test_toast_reacts_to_tone_signal():
     assert toast.props["className"] == "ui-toast is-success"
     assert badge.props["className"] == "ui-badge is-success ui-toast-badge"
     assert badge.props["content"] == "SUCCESS"
+
+
+def test_reference_app_helpers_compose_common_markup():
+    header = root_widget(
+        mount(
+            SectionHeader(
+                "Telemetry table",
+                detail="1s sample rate",
+                badge="Live",
+                badge_tone="info",
+                className="custom-section",
+            )
+        )
+    )
+    empty = root_widget(
+        mount(
+            EmptyState(
+                "No records",
+                description="Try another filter.",
+                className="custom-empty",
+            )
+        )
+    )
+
+    assert header.name == "HStack"
+    assert header.props["className"] == "ui-section-header custom-section"
+    copy = header.children[0]
+    assert copy.children[0].props["content"] == "Telemetry table"
+    assert copy.children[0].props["className"] == "ui-section-title"
+    assert copy.children[1].children[0].props["content"] == "1s sample rate"
+    assert header.children[1].children[0].props["content"] == "Live"
+    assert header.children[1].children[0].props["className"] == "ui-badge is-info ui-section-badge"
+
+    assert empty.name == "VStack"
+    assert empty.props["className"] == "ui-empty-state custom-empty"
+    assert empty.children[0].props["content"] == "No records"
+    assert empty.children[1].children[0].props["content"] == "Try another filter."
+
+
+def test_feedback_toast_renders_when_feedback_is_present():
+    feedback = signal(None)
+    toast = root_widget(mount(FeedbackToast(feedback, className="custom-feedback")))
+
+    assert toast.children == []
+
+    feedback.set({"title": "Saved", "detail": "Provider accepted changes.", "tone": "success"})
+
+    rendered = toast.children[0]
+    assert rendered.props["className"] == "ui-toast is-success custom-feedback"
+    assert rendered.children[0].children[0].props["content"] == "Saved"
+    assert rendered.children[0].children[1].children[0].props["content"] == "Provider accepted changes."
 
 
 def test_command_palette_filters_and_dispatches_selection():

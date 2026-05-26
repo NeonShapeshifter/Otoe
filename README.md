@@ -21,7 +21,7 @@ stable public framework or a production desktop renderer.
 - First `otoe.ui` primitives: cards, badges, action buttons, tabs, toolbars,
   stat cards, data tables, dialogs, toasts, command palettes, app shells,
   sidebar navigation, route views, command registries, shortcut scopes, menus,
-  and controlled selects.
+  controlled selects, section headers, empty states, and feedback toasts.
 - Keyboard handling for command palettes, menus, selects, and button-backed
   controls in the live preview backend.
 - `FocusScope` support for live focus trapping and focus restoration in dialogs

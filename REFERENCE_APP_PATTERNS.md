@@ -39,9 +39,11 @@ The repeated app shape is now stable enough to document:
 - static preview and live preview entry points
 - tests for static HTML, provider behavior, and live event dispatch
 
-Do not add a new primitive merely because one app wants prettier markup. Add or
-extract shared UI only when at least two reference apps repeat the same shape
-and the existing `otoe.ui` primitive cannot express it clearly.
+Do not add a new primitive merely because one app wants prettier markup. Shared
+UI extraction is justified when at least two reference apps repeat the same
+shape and the existing `otoe.ui` primitive cannot express it clearly. The first
+extracted helpers from this rule are `SectionHeader`, `EmptyState`, and
+`FeedbackToast`.
 
 ## Provider Contract
 
@@ -112,12 +114,16 @@ assets or the project adds a documented preview theme layer. Do not use CSS
 `@import` for the shared base yet; each live preview currently exposes one CSS
 route.
 
-Safe near-term extraction targets:
+Current extracted targets:
+
+- `SectionHeader` for repeated section title, detail, badge, and action rows
+- `EmptyState` for repeated empty-route, empty-list, and empty-table fallbacks
+- `FeedbackToast` for snapshot-owned feedback objects with title/detail/tone
+
+Remaining safe extraction targets:
 
 - documented class naming conventions for app, topbar, sidebar, route shell,
-  panel, section heading, stat grid, table, empty state, and feedback
-- optional UI-kit helpers for section headings, empty states, and feedback
-  toasts if more examples repeat the same markup
+  panel, stat grid, and table
 - a shared preview theme only after static preview and live preview both serve
   it predictably
 
@@ -130,7 +136,7 @@ Every reference app should have focused tests for three layers:
 - provider: happy path, blocked path, and state invariants
 - live preview: event ID lookup, dispatch, and rerendered content
 
-Full-suite baseline after the current reference app pattern pass: `332 passed`.
+Full-suite baseline after the first UI-kit extraction pass: `334 passed`.
 
 ## Current Decision
 
@@ -140,6 +146,5 @@ with provider boundaries and tests.
 
 The next implementation decision should be one of:
 
-- extract a small UI helper only where markup repeats across at least two apps
 - improve preview theme delivery so shared CSS can be served safely
 - return to backend work with these apps as acceptance surfaces

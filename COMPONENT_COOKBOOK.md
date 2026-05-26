@@ -160,6 +160,40 @@ def TaskList():
 The `key` should be stable for each logical item. If an item keeps the same key
 but changes data, Otoe remounts that keyed child so visible props update.
 
+## Reference App Helpers
+
+Use the shared UI helpers for repeated professional-app markup instead of
+rebuilding section headings, empty states, and feedback toasts in every app.
+
+```python
+from otoe import EmptyState, FeedbackToast, SectionHeader, VStack, signal
+
+
+feedback = signal(None)
+
+
+def run_action():
+    feedback.set(
+        {
+            "title": "Batch approved",
+            "detail": "3 records moved to approved.",
+            "tone": "success",
+        }
+    )
+
+
+surface = VStack(
+    FeedbackToast(feedback),
+    SectionHeader("Selected records", badge="3 rows", badge_tone="warn"),
+    EmptyState("No records selected", description="Choose rows from the queue."),
+)
+```
+
+`FeedbackToast` expects a feedback object or dict with `title`, `detail`, and
+`tone` fields by default. Providers should put feedback in the snapshot so
+static previews, live previews, and tests all see the same operator-visible
+state.
+
 ## Conditional UI With Show
 
 Use `Show(...)` for modal, empty, and detail states. Keep the state in a signal

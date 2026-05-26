@@ -61,10 +61,12 @@ def test_public_typing_accepts_valid_widget_and_ui_usage(tmp_path):
             ActionButton,
             Button,
             DataTable,
+            EmptyState,
             HStack,
             NavRoute,
             Node,
             RouteView,
+            SectionHeader,
             SidebarNav,
             TableColumn,
             Text,
@@ -95,8 +97,10 @@ def test_public_typing_accepts_valid_widget_and_ui_usage(tmp_path):
 
         app: Node = VStack(
             HStack(Text("Otoe"), Button("Run", onClick=lambda: None)),
+            SectionHeader("Records", detail="Filtered queue"),
             ActionButton("Save", onClick=lambda: None),
             DataTable(columns=columns, rows=rows, key=row_key, render_cell=render_cell),
+            EmptyState("No rows", description="Try another filter."),
             SidebarNav(routes=routes, active="overview", on_navigate=navigate),
             RouteView(route="overview", routes=routes, render=render_route),
         )

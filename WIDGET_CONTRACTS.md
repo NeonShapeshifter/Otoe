@@ -107,6 +107,9 @@ above.
 | `DataTable` | `columns`, `rows`, `key`, `render_cell`, `empty`, `className` | none |
 | `Dialog` | children, `open`, `title`, `description`, `className` | none |
 | `Toast` | `title`, `description`, `tone="neutral"`, `className` | none |
+| `FeedbackToast` | `feedback`, `title_key="title"`, `description_key="detail"`, `tone_key="tone"`, `className` | none |
+| `SectionHeader` | `title`, `detail`, `badge`, `badge_tone="neutral"`, `actions`, `className` | none |
+| `EmptyState` | `title`, `description`, `action`, `className` | none |
 | `CommandPalette` | `query`, `commands`, `placeholder`, `empty`, `autoFocus`, `className` | `on_query(value)`, `on_select(command_id)` |
 | `Menu` | `items`, `open=True`, `active`, `focused`, `empty`, `className` | `on_select(item_id)`, `on_focus(item_id)`, `on_open_change(open)` |
 | `Select` | `options`, `value`, `open`, `placeholder`, `empty`, `className` | `on_change(value)`, `on_open_change(open)` |

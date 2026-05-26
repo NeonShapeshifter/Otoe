@@ -276,11 +276,18 @@ input {
 }
 
 .ui-stat-label,
-.admin-section-title {
+.admin-section-title,
+.admin-app .ui-section-title {
   color: var(--muted);
   font-size: 13px;
   font-weight: 850;
   text-transform: uppercase;
+}
+
+.admin-app .ui-section-detail {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .ui-stat-value {

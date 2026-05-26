@@ -324,6 +324,84 @@ def Toast(
 
 
 @component
+def FeedbackToast(
+    feedback,
+    *,
+    title_key: str = "title",
+    description_key: str = "detail",
+    tone_key: str = "tone",
+    className: str | None = None,
+):
+    return Show(
+        Toast(
+            computed(lambda: _feedback_field(feedback, title_key, "")),
+            description=computed(lambda: _feedback_field(feedback, description_key, None)),
+            tone=computed(lambda: _feedback_field(feedback, tone_key, "neutral")),
+            className=className,
+        ),
+        when=computed(lambda: _value(feedback) is not None),
+    )
+
+
+@component
+def SectionHeader(
+    title,
+    *,
+    detail=None,
+    badge=None,
+    badge_tone: str = "neutral",
+    actions=None,
+    className: str | None = None,
+):
+    children = [
+        VStack(
+            Text(title, className="ui-section-title"),
+            Show(
+                Text(detail, className="ui-section-detail"),
+                when=computed(lambda: _has_value(detail)),
+            ),
+            className="ui-section-copy",
+            gap=2,
+        ),
+        Show(
+            Badge(badge, tone=badge_tone, className="ui-section-badge"),
+            when=computed(lambda: _has_value(badge)),
+        ),
+    ]
+    if actions is not None:
+        children.append(_slot_node(actions, "ui-section-actions"))
+    return HStack(
+        *children,
+        className=class_names("ui-section-header", className),
+        gap=10,
+    )
+
+
+@component
+def EmptyState(
+    title,
+    *,
+    description=None,
+    action=None,
+    className: str | None = None,
+):
+    children = [
+        Text(title, className="ui-empty-title"),
+        Show(
+            Text(description, className="ui-empty-description"),
+            when=computed(lambda: _has_value(description)),
+        ),
+    ]
+    if action is not None:
+        children.append(_slot_node(action, "ui-empty-action"))
+    return VStack(
+        *children,
+        className=class_names("ui-empty-state", className),
+        gap=4,
+    )
+
+
+@component
 def CommandPalette(
     *,
     query,
@@ -594,6 +672,15 @@ def _row_value(row: Any, key: str) -> Any:
     if isinstance(row, dict):
         return row.get(key, "")
     return getattr(row, key)
+
+
+def _feedback_field(feedback, field: str, default: Any) -> Any:
+    value = _value(feedback)
+    if value is None:
+        return default
+    if isinstance(value, dict):
+        return value.get(field, default)
+    return getattr(value, field, default)
 
 
 def _command_item(command: Command, on_select) -> Node:

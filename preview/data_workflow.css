@@ -379,9 +379,16 @@ input {
   font-weight: 760;
 }
 
-.data-section-title {
+.data-section-title,
+.data-app .ui-section-title {
   font-size: 18px;
   font-weight: 900;
+}
+
+.data-app .ui-section-detail {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .data-selected-row,

@@ -285,11 +285,18 @@ input {
 }
 
 .ui-stat-label,
-.hardware-section-title {
+.hardware-section-title,
+.hardware-app .ui-section-title {
   color: var(--muted);
   font-size: 13px;
   font-weight: 850;
   text-transform: uppercase;
+}
+
+.hardware-app .ui-section-detail {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .ui-stat-value {

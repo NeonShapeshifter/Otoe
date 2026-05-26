@@ -24,6 +24,9 @@ def test_ui_kit_preview_contains_component_kitchen_sink():
     assert "Command palette" in html
     assert "Review Customers" in html
     assert "Controlled inputs" in html
+    assert "Reference app helpers" in html
+    assert "Feedback helper" in html
+    assert "No rows selected" in html
     assert "ui-select-popover" in html
     assert "Inspect surface" in html
     assert 'data-otoe-focus-scope="trap"' in html

@@ -11,10 +11,13 @@ from otoe.ui import (
     CommandRegistry,
     DataTable,
     Dialog,
+    EmptyState,
+    FeedbackToast,
     Menu,
     MenuItem,
     NavRoute,
     RouteView,
+    SectionHeader,
     ShortcutScope,
     Select,
     SelectOption,
@@ -29,7 +32,7 @@ from otoe.ui import (
 
 
 ROUTES = [
-    NavRoute("ui", "UI Kit", "Shared primitives", badge="19", tone="info"),
+    NavRoute("ui", "UI Kit", "Shared primitives", badge="22", tone="info"),
     NavRoute("saas", "SaaS", "Commercial dashboard", badge="Live", tone="success"),
     NavRoute("wraith", "Wraith", "Operational surface", badge="Ops", tone="warn"),
 ]
@@ -282,7 +285,7 @@ def UIKitRoute(
         HStack(
             StatCard(
                 label="Primitives",
-                value="19",
+                value="22",
                 detail="Shared surface",
                 tone="good",
                 className="ui-demo-stat",
@@ -324,6 +327,30 @@ def UIKitRoute(
                     description=computed(lambda: f"Selected: {_selected_label(selected.value)}"),
                     tone=selected_tone,
                     className="ui-demo-toast",
+                ),
+                Card(
+                    VStack(
+                        SectionHeader(
+                            "Reference app helpers",
+                            detail="Shared section, feedback, and empty-state primitives.",
+                            badge="New",
+                            badge_tone="success",
+                        ),
+                        FeedbackToast(
+                            {
+                                "title": "Feedback helper",
+                                "detail": "Provider feedback can render from one snapshot field.",
+                                "tone": "success",
+                            },
+                            className="ui-demo-toast",
+                        ),
+                        EmptyState(
+                            "No rows selected",
+                            description="Use this for table, route, and list fallbacks.",
+                        ),
+                        gap=12,
+                    ),
+                    className="ui-reference-helper-card",
                 ),
                 Card(
                     VStack(

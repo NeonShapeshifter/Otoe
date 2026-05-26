@@ -10,12 +10,14 @@ from otoe.ui import (
     Badge,
     Card,
     DataTable,
+    EmptyState,
+    FeedbackToast,
     NavRoute,
     RouteView,
+    SectionHeader,
     SidebarNav,
     StatCard,
     TableColumn,
-    Toast,
     Toolbar,
 )
 
@@ -295,14 +297,9 @@ def AdminTopBar(*, snapshot, on_action):
 
 @component
 def FeedbackPanel(*, snapshot):
-    return Show(
-        Toast(
-            computed(lambda: _snap(snapshot).last_feedback.title),
-            description=computed(lambda: _snap(snapshot).last_feedback.detail),
-            tone=computed(lambda: _snap(snapshot).last_feedback.tone),
-            className="admin-feedback",
-        ),
-        when=computed(lambda: _snap(snapshot).last_feedback is not None),
+    return FeedbackToast(
+        computed(lambda: _snap(snapshot).last_feedback),
+        className="admin-feedback",
     )
 
 
@@ -337,12 +334,12 @@ def OverviewView(*, snapshot):
         HStack(
             Card(
                 VStack(
-                    Text("Settings requiring review", className="admin-section-title"),
+                    SectionHeader("Settings requiring review"),
                     For(
                         each=computed(lambda: _dirty_settings(_snap(snapshot))),
                         key=lambda setting: setting.id,
                         children=lambda setting: DirtySettingRow(setting=setting),
-                        fallback=Text("No pending settings", className="admin-empty-state"),
+                        fallback=EmptyState("No pending settings", className="admin-empty-state"),
                     ),
                     gap=10,
                 ),
@@ -350,7 +347,7 @@ def OverviewView(*, snapshot):
             ),
             Card(
                 VStack(
-                    Text("Recent activity", className="admin-section-title"),
+                    SectionHeader("Recent activity"),
                     For(
                         each=computed(lambda: _snap(snapshot).audit_events[:4]),
                         key=lambda event: event.id,
@@ -372,7 +369,7 @@ def OverviewView(*, snapshot):
 def SettingsView(*, snapshot, on_setting_change):
     return Card(
         VStack(
-            Text("Workspace settings", className="admin-section-title"),
+            SectionHeader("Workspace settings"),
             For(
                 each=computed(lambda: _snap(snapshot).settings),
                 key=lambda setting: setting.id,
@@ -388,7 +385,7 @@ def SettingsView(*, snapshot, on_setting_change):
 def AccessView(*, snapshot, on_rule_toggle):
     return Card(
         VStack(
-            Text("Access rules", className="admin-section-title"),
+            SectionHeader("Access rules"),
             For(
                 each=computed(lambda: _snap(snapshot).access_rules),
                 key=lambda rule: rule.id,
@@ -404,9 +401,9 @@ def AccessView(*, snapshot, on_rule_toggle):
 def AuditView(*, snapshot):
     return Card(
         VStack(
-            HStack(
-                Text("Audit trail", className="admin-section-title"),
-                Text("Local-only activity log", className="admin-table-note"),
+            SectionHeader(
+                "Audit trail",
+                detail="Local-only activity log",
                 className="admin-section-heading",
             ),
             DataTable(
@@ -577,7 +574,7 @@ def _route_view(route, *, snapshot, on_setting_change, on_action, on_rule_toggle
         return AccessView(snapshot=snapshot, on_rule_toggle=on_rule_toggle)
     if route.id == "audit":
         return AuditView(snapshot=snapshot)
-    return Text("Route not found", className="admin-empty-state")
+    return EmptyState("Route not found", className="admin-empty-state")
 
 
 def _update_setting(setting: AdminSetting, value: str) -> AdminSetting:

@@ -294,6 +294,10 @@ input {
   flex: 1;
 }
 
+.ui-reference-helper-card {
+  padding: 16px;
+}
+
 .ui-command-launcher {
   min-height: 174px;
   padding: 16px;
@@ -314,6 +318,24 @@ input {
   font-weight: 950;
 }
 
+.ui-section-header {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.ui-section-title {
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.ui-section-detail,
+.ui-empty-description {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 760;
+}
+
 .ui-route-heading {
   justify-content: space-between;
 }
@@ -326,6 +348,17 @@ input {
 .ui-command,
 .ui-dialog-body {
   padding: 16px;
+}
+
+.ui-empty-state {
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.ui-empty-title {
+  font-weight: 900;
 }
 
 .ui-stat-body {

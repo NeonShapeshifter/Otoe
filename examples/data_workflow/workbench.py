@@ -3,21 +3,23 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Protocol
 
-from otoe import For, HStack, Input, Show, Text, VStack, component, computed
+from otoe import For, HStack, Input, Text, VStack, component, computed
 from otoe.ui import (
     ActionButton,
     AppShell,
     Badge,
     Card,
     DataTable,
+    EmptyState,
+    FeedbackToast,
     NavRoute,
     RouteView,
+    SectionHeader,
     SidebarNav,
     StatCard,
     TabButton,
     TableColumn,
     Tabs,
-    Toast,
     Toolbar,
 )
 
@@ -345,14 +347,9 @@ def DataTopBar(*, snapshot, on_action):
 
 @component
 def FeedbackPanel(*, snapshot):
-    return Show(
-        Toast(
-            computed(lambda: _snap(snapshot).last_feedback.title),
-            description=computed(lambda: _snap(snapshot).last_feedback.detail),
-            tone=computed(lambda: _snap(snapshot).last_feedback.tone),
-            className="data-feedback",
-        ),
-        when=computed(lambda: _snap(snapshot).last_feedback is not None),
+    return FeedbackToast(
+        computed(lambda: _snap(snapshot).last_feedback),
+        className="data-feedback",
     )
 
 
@@ -407,7 +404,10 @@ def QueueView(*, snapshot, on_query, on_stage_filter, on_toggle_record):
                         on_toggle_record,
                     ),
                     className="data-record-table",
-                    empty="No records match current filters",
+                    empty=EmptyState(
+                        "No records match current filters",
+                        className="data-empty-state",
+                    ),
                 ),
                 gap=12,
             ),
@@ -439,13 +439,10 @@ def StageTabs(*, snapshot, on_stage_filter):
 def SelectedView(*, snapshot, on_toggle_record, on_action):
     return Card(
         VStack(
-            HStack(
-                Text("Selected records", className="data-section-title"),
-                Badge(
-                    computed(lambda: f"{len(selected_records(_snap(snapshot)))} rows"),
-                    tone="warn",
-                    className="data-section-badge",
-                ),
+            SectionHeader(
+                "Selected records",
+                badge=computed(lambda: f"{len(selected_records(_snap(snapshot)))} rows"),
+                badge_tone="warn",
                 className="data-section-heading",
             ),
             For(
@@ -455,7 +452,7 @@ def SelectedView(*, snapshot, on_toggle_record, on_action):
                     record=record,
                     on_toggle_record=on_toggle_record,
                 ),
-                fallback=Text("No records selected", className="data-empty-state"),
+                fallback=EmptyState("No records selected", className="data-empty-state"),
             ),
             HStack(
                 ActionButton("Clear selection", variant="ghost", onClick=lambda: on_action("clear")),
@@ -493,12 +490,12 @@ def SelectedRecord(*, record, on_toggle_record):
 def HistoryView(*, snapshot):
     return Card(
         VStack(
-            Text("Workflow history", className="data-section-title"),
+            SectionHeader("Workflow history"),
             For(
                 each=computed(lambda: _snap(snapshot).events),
                 key=lambda event: event.id,
                 children=lambda event: HistoryEvent(event=event),
-                fallback=Text("No workflow events", className="data-empty-state"),
+                fallback=EmptyState("No workflow events", className="data-empty-state"),
             ),
             gap=10,
         ),
@@ -654,7 +651,7 @@ def _route_view(route, *, snapshot, on_query, on_stage_filter, on_toggle_record,
         )
     if route.id == "history":
         return HistoryView(snapshot=snapshot)
-    return Text("Route not found", className="data-empty-state")
+    return EmptyState("Route not found", className="data-empty-state")
 
 
 def _record_cell(record: WorkflowRecord, column: TableColumn, on_toggle_record):

@@ -247,6 +247,36 @@ def Toast(
 ) -> Node: ...
 
 
+def FeedbackToast(
+    feedback: Any,
+    *,
+    title_key: str = ...,
+    description_key: str = ...,
+    tone_key: str = ...,
+    className: str | None = ...,
+) -> Node: ...
+
+
+def SectionHeader(
+    title: Any,
+    *,
+    detail: Any = ...,
+    badge: Any = ...,
+    badge_tone: Any = ...,
+    actions: Any = ...,
+    className: str | None = ...,
+) -> Node: ...
+
+
+def EmptyState(
+    title: Any,
+    *,
+    description: Any = ...,
+    action: Any = ...,
+    className: str | None = ...,
+) -> Node: ...
+
+
 def CommandPalette(
     *,
     query: Any,

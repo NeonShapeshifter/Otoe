@@ -10,8 +10,10 @@ from otoe.ui import (
     Badge,
     Card,
     DataTable,
+    EmptyState,
     NavRoute,
     RouteView,
+    SectionHeader,
     SidebarNav,
     StatCard,
     TableColumn,
@@ -253,16 +255,17 @@ def OverviewView(*, snapshot, on_command):
         HStack(
             Card(
                 VStack(
-                    HStack(
-                        Text("Priority telemetry", className="hardware-section-title"),
-                        Badge("Live sample", tone="info", className="hardware-section-badge"),
+                    SectionHeader(
+                        "Priority telemetry",
+                        badge="Live sample",
+                        badge_tone="info",
                         className="hardware-section-heading",
                     ),
                     For(
                         each=metrics,
                         key=lambda metric: metric.id,
                         children=lambda metric: SensorRow(metric=metric),
-                        fallback=Text("No telemetry samples", className="hardware-empty-state"),
+                        fallback=EmptyState("No telemetry samples", className="hardware-empty-state"),
                     ),
                     gap=10,
                 ),
@@ -270,9 +273,9 @@ def OverviewView(*, snapshot, on_command):
             ),
             Card(
                 VStack(
-                    HStack(
-                        Text("Event stream", className="hardware-section-title"),
-                        ActionButton(
+                    SectionHeader(
+                        "Event stream",
+                        actions=ActionButton(
                             "Clear",
                             variant="ghost",
                             size="sm",
@@ -284,7 +287,7 @@ def OverviewView(*, snapshot, on_command):
                         each=events,
                         key=lambda event: event.id,
                         children=lambda event: EventRow(event=event),
-                        fallback=Text("No hardware events", className="hardware-empty-state"),
+                        fallback=EmptyState("No hardware events", className="hardware-empty-state"),
                     ),
                     gap=10,
                 ),
@@ -347,9 +350,9 @@ def StatusBanner(*, snapshot):
 def TelemetryView(*, snapshot):
     return Card(
         VStack(
-            HStack(
-                Text("Telemetry table", className="hardware-section-title"),
-                Text(computed(lambda: _snap(snapshot).sample_rate), className="hardware-table-note"),
+            SectionHeader(
+                "Telemetry table",
+                detail=computed(lambda: _snap(snapshot).sample_rate),
                 className="hardware-section-heading",
             ),
             DataTable(
@@ -371,13 +374,10 @@ def ControlsView(*, snapshot, on_command):
     return HStack(
         Card(
             VStack(
-                HStack(
-                    Text("Operator controls", className="hardware-section-title"),
-                    Badge(
-                        computed(lambda: _snap(snapshot).status.upper()),
-                        tone=computed(lambda: _snap(snapshot).connection_tone),
-                        className="hardware-section-badge",
-                    ),
+                SectionHeader(
+                    "Operator controls",
+                    badge=computed(lambda: _snap(snapshot).status.upper()),
+                    badge_tone=computed(lambda: _snap(snapshot).connection_tone),
                     className="hardware-section-heading",
                 ),
                 For(
@@ -391,7 +391,7 @@ def ControlsView(*, snapshot, on_command):
         ),
         Card(
             VStack(
-                Text("Safety envelope", className="hardware-section-title"),
+                SectionHeader("Safety envelope"),
                 SettingRow(label="Output limit", value="80% PWM ceiling"),
                 SettingRow(label="Thermal guard", value="Trip at 70 deg C"),
                 SettingRow(label="Command mode", value=computed(lambda: _snap(snapshot).mode)),
@@ -409,7 +409,7 @@ def ControlsView(*, snapshot, on_command):
 def SettingsView(*, snapshot):
     return Card(
         VStack(
-            Text("Device settings", className="hardware-section-title"),
+            SectionHeader("Device settings"),
             SettingRow(label="Provider state", value=computed(lambda: _snap(snapshot).status)),
             SettingRow(label="State detail", value=computed(lambda: _snap(snapshot).status_detail)),
             SettingRow(label="Transport", value="USB serial"),
@@ -642,7 +642,7 @@ def _route_view(route, *, snapshot, on_command):
         return ControlsView(snapshot=snapshot, on_command=on_command)
     if route.id == "settings":
         return SettingsView(snapshot=snapshot)
-    return Text("Route not found", className="hardware-empty")
+    return EmptyState("Route not found", className="hardware-empty")
 
 
 def _metric_cell(metric: TelemetryMetric, column: TableColumn):
