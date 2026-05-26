@@ -2,7 +2,7 @@
 
 **Status:** v0.1.2 released; Phase 5 professional UI/reference app buildout
 **Updated:** May 26, 2026
-**Current baseline:** 330 tests passing
+**Current baseline:** 332 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
@@ -432,8 +432,9 @@ private projects while keeping the author as the primary customer.
 
 ## Immediate Next Actions
 
-1. Extract repeated reference-app patterns into UI kit improvements only when
-   duplication becomes real.
+1. Use `REFERENCE_APP_PATTERNS.md` to decide whether repeated reference-app
+   markup should become UI-kit helpers, shared preview theme work, or backend
+   acceptance coverage.
 2. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
    after each native input/style/layout change.
 3. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter

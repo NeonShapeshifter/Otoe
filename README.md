@@ -322,6 +322,8 @@ Otoe is intentionally split into layers:
 
 - `src/otoe/` - runtime package.
 - `examples/native/` - framework-neutral native renderer spike demos.
+- `examples/hardware/`, `examples/admin/`, and `examples/data_workflow/` -
+  Phase 5 professional reference apps.
 - `examples/wraith/` - Wraith-shaped components and live previews.
 - `examples/saas/` - SaaS-shaped generality case study.
 - `examples/ui/` - shared UI primitive kitchen-sink preview.
@@ -333,6 +335,8 @@ Otoe is intentionally split into layers:
   and native smoke recipes.
 - `EXAMPLES_GUIDE.md` - current quickstart, live, native, UI kit, SaaS, and
   Wraith example surfaces.
+- `REFERENCE_APP_PATTERNS.md` - Phase 5 reference app boundaries, provider
+  contracts, and extraction rules.
 - `MENTAL_MODEL.md` - how nodes, components, signals, events, control flow,
   mounting, and renderers fit together.
 - `NATIVE_WORKFLOWS.md` - when to use HTML render, native PNG,
@@ -354,7 +358,7 @@ perform security operations.
 
 ## Status
 
-Current status: v0.1.2 released; Phase 5 professional UI/reference app planning. See
+Current status: v0.1.2 released; Phase 5 professional UI/reference app buildout. See
 `ROADMAP.md` for the active plan.
 
 ## License

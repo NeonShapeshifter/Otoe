@@ -4,6 +4,10 @@ Otoe examples are validation surfaces. They should stay framework-neutral where
 possible and case-study-shaped where useful. Use this guide to pick the smallest
 example that proves the behavior you want to inspect.
 
+The Phase 5 reference app extraction rules live in
+`REFERENCE_APP_PATTERNS.md`. Use that document before adding another broad
+example or moving repeated markup into `otoe.ui`.
+
 ## Quickstart
 
 Path: `examples/quickstart.py`
