@@ -71,3 +71,14 @@ def test_template_rejects_unknown_tags_and_expressions():
 
     with pytest.raises(TemplateError, match="Unknown template expression"):
         template("<Text>{missing}</Text>")
+
+
+def test_template_rejects_implicit_primary_content_mixed_with_child_nodes():
+    with pytest.raises(TemplateError, match="cannot mix primary content"):
+        template("<Button>Save <Text>now</Text></Button>")
+
+
+def test_template_allows_explicit_primary_prop_with_child_nodes():
+    node = template('<Button label="Save"><Text>now</Text></Button>')
+
+    assert node == Button("Save", Text("now"))

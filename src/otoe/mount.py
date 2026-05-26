@@ -173,7 +173,7 @@ def _mount_for(node: Node, *, component_stack: tuple[str, ...]) -> MountedNode:
         keyed_children: dict[Any, MountedNode] = mounted._keyed_children  # type: ignore[attr-defined]
         keyed_items: dict[Any, Any] = mounted._keyed_items  # type: ignore[attr-defined]
         next_keys = [key_fn(item) for item in items]
-        next_key_set = set(next_keys)
+        next_key_set = _validated_key_set(widget, next_keys)
 
         fallback_mounted = mounted._fallback_mounted  # type: ignore[attr-defined]
         if items and fallback_mounted is not None:
@@ -297,6 +297,24 @@ def _items_equal(left: Any, right: Any) -> bool:
     except Exception:
         return left is right
     return result if isinstance(result, bool) else left is right
+
+
+def _validated_key_set(widget: FakeWidget, keys: list[Any]) -> set[Any]:
+    seen: set[Any] = set()
+    for key in keys:
+        try:
+            if key in seen:
+                raise ValueError(
+                    f"{_widget_context(widget)} received duplicate key {key!r}. "
+                    "For keys must be unique."
+                )
+            seen.add(key)
+        except TypeError as exc:
+            raise TypeError(
+                f"{_widget_context(widget)} received unhashable key {key!r}. "
+                "For keys must be hashable."
+            ) from exc
+    return seen
 
 
 def unmount(mounted: MountedNode) -> None:

@@ -1,3 +1,5 @@
+import pytest
+
 from otoe import For, HStack, Show, Text, component, effect, mount, on_cleanup, root_widget, signal
 
 
@@ -119,6 +121,24 @@ def test_for_updates_same_key_when_item_data_changes():
         "cleanup:WiFi Scan",
         "mount:WiFi Survey",
     ]
+
+
+def test_for_rejects_duplicate_keys():
+    missions = signal(
+        [
+            {"id": "wifi", "name": "WiFi Scan"},
+            {"id": "wifi", "name": "WiFi Survey"},
+        ]
+    )
+
+    with pytest.raises(ValueError, match="duplicate key 'wifi'"):
+        mount(
+            For(
+                each=missions,
+                key=lambda mission: mission["id"],
+                children=lambda mission: Text(mission["name"]),
+            )
+        )
 
 
 def test_for_disposes_removed_key_and_renders_fallback():
