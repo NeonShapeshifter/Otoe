@@ -26,6 +26,7 @@ def build_preview_html(snapshot: WorkflowSnapshot | None = None, route: str = "q
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Otoe Data Workflow Console</title>
+  <link rel="stylesheet" href="reference_theme.css">
   <link rel="stylesheet" href="data_workflow.css">
 </head>
 <body>

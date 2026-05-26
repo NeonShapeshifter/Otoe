@@ -16,7 +16,14 @@ def test_reference_app_patterns_tracks_current_phase5_apps():
     assert "SectionHeader" in text
     assert "EmptyState" in text
     assert "FeedbackToast" in text
-    assert "Full-suite baseline after the first UI-kit extraction pass: `334 passed`." in text
+    assert "Full-suite baseline after the shared preview theme pass: `336 passed`." in text
+
+
+def test_reference_theme_covers_extracted_ui_helpers():
+    theme = (ROOT / "preview" / "reference_theme.css").read_text(encoding="utf-8")
+
+    for selector in (".ui-section-header", ".ui-empty-state", ".ui-toast"):
+        assert selector in theme
 
 
 def test_readme_links_reference_app_patterns():

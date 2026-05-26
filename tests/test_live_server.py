@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from otoe.live_server import LivePreviewConfig, render_live_page
+from otoe.live_server import LivePreviewConfig, LivePreviewStylesheet, render_live_page
 
 
 class DummyPreview:
@@ -27,6 +27,28 @@ def test_render_live_page_wraps_fragment_with_shared_shell():
     assert '<link rel="stylesheet" href="/dummy.css">' in html
     assert '<div id="otoe-root" class="dummy-root">' in html
     assert 'data-otoe-click="x:onClick"' in html
+
+
+def test_render_live_page_links_extra_stylesheets_before_primary_css():
+    config = LivePreviewConfig(
+        title="Dummy",
+        css_route="/dummy.css",
+        css_path=Path("dummy.css"),
+        extra_css=(
+            LivePreviewStylesheet("/theme.css", Path("theme.css")),
+            LivePreviewStylesheet("/helpers.css", Path("helpers.css")),
+        ),
+    )
+
+    html = render_live_page(DummyPreview(), config)
+
+    assert [
+        stylesheet.route
+        for stylesheet in config.stylesheets()
+    ] == ["/theme.css", "/helpers.css", "/dummy.css"]
+    assert html.index('href="/theme.css"') < html.index('href="/dummy.css"')
+    assert config.stylesheet_for("/helpers.css").path == Path("helpers.css")
+    assert config.stylesheet_for("/missing.css") is None
 
 
 def test_render_live_page_includes_click_input_and_keydown_dispatchers():

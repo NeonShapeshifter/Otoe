@@ -19,11 +19,30 @@ class LivePreviewApp(Protocol):
 
 
 @dataclass(frozen=True)
+class LivePreviewStylesheet:
+    route: str
+    path: Path | None
+
+
+@dataclass(frozen=True)
 class LivePreviewConfig:
     title: str
     css_route: str
     css_path: Path | None
     root_class: str = ""
+    extra_css: tuple[LivePreviewStylesheet, ...] = ()
+
+    def stylesheets(self) -> tuple[LivePreviewStylesheet, ...]:
+        return (
+            *self.extra_css,
+            LivePreviewStylesheet(route=self.css_route, path=self.css_path),
+        )
+
+    def stylesheet_for(self, route: str) -> LivePreviewStylesheet | None:
+        for stylesheet in self.stylesheets():
+            if stylesheet.route == route:
+                return stylesheet
+        return None
 
 
 LIVE_SCRIPT = r"""
@@ -243,6 +262,10 @@ LIVE_SCRIPT = r"""
 
 def render_live_page(app: LivePreviewApp, config: LivePreviewConfig) -> str:
     root_class = f' class="{config.root_class}"' if config.root_class else ""
+    stylesheet_links = "\n".join(
+        f'  <link rel="stylesheet" href="{stylesheet.route}">'
+        for stylesheet in config.stylesheets()
+    )
     fragment = app.render_fragment()
     return f"""<!doctype html>
 <html lang="en">
@@ -250,7 +273,7 @@ def render_live_page(app: LivePreviewApp, config: LivePreviewConfig) -> str:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{config.title}</title>
-  <link rel="stylesheet" href="{config.css_route}">
+{stylesheet_links}
 </head>
 <body>
   <div id="otoe-root"{root_class}>
@@ -310,12 +333,13 @@ class _LivePreviewHandler(BaseHTTPRequestHandler):
                 "text/html; charset=utf-8",
             )
             return
-        if path == self.config.css_route:
-            if self.config.css_path is None:
+        stylesheet = self.config.stylesheet_for(path)
+        if stylesheet is not None:
+            if stylesheet.path is None:
                 self._send_text("", "text/css; charset=utf-8")
                 return
             self._send_text(
-                self.config.css_path.read_text(encoding="utf-8"),
+                stylesheet.path.read_text(encoding="utf-8"),
                 "text/css; charset=utf-8",
             )
             return

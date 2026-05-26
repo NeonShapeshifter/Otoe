@@ -103,16 +103,25 @@ Tests should cover:
 
 ## CSS Pattern
 
-The three Phase 5 CSS files intentionally repeat some base rules for now:
+Reference apps now load one shared helper theme before app-specific CSS:
+
+- `preview/reference_theme.css`
+
+The shared theme covers the first extracted helper shapes:
+
+- `SectionHeader`
+- `EmptyState`
+- `FeedbackToast`/`Toast`
+
+Each app still owns its product-specific layout, density, and visual treatment:
 
 - `preview/hardware.css`
 - `preview/admin.css`
 - `preview/data_workflow.css`
 
-That duplication is acceptable until live preview serving supports shared CSS
-assets or the project adds a documented preview theme layer. Do not use CSS
-`@import` for the shared base yet; each live preview currently exposes one CSS
-route.
+Static previews link `reference_theme.css` before the app stylesheet. Live
+previews use `LivePreviewConfig.extra_css` so shared CSS is served explicitly
+without `@import`.
 
 Current extracted targets:
 
@@ -124,8 +133,8 @@ Remaining safe extraction targets:
 
 - documented class naming conventions for app, topbar, sidebar, route shell,
   panel, stat grid, and table
-- a shared preview theme only after static preview and live preview both serve
-  it predictably
+- migration of common shell, panel, table, and stat-grid rules into the shared
+  theme after those rules prove stable across all three reference apps
 
 ## Test Pattern
 
@@ -136,7 +145,7 @@ Every reference app should have focused tests for three layers:
 - provider: happy path, blocked path, and state invariants
 - live preview: event ID lookup, dispatch, and rerendered content
 
-Full-suite baseline after the first UI-kit extraction pass: `334 passed`.
+Full-suite baseline after the shared preview theme pass: `336 passed`.
 
 ## Current Decision
 
@@ -146,5 +155,5 @@ with provider boundaries and tests.
 
 The next implementation decision should be one of:
 
-- improve preview theme delivery so shared CSS can be served safely
+- continue extracting stable reference-app CSS into `reference_theme.css`
 - return to backend work with these apps as acceptance surfaces

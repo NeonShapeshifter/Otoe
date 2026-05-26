@@ -1,6 +1,6 @@
 import re
 
-from examples.data_workflow.live_preview import DataWorkflowLivePreview
+from examples.data_workflow.live_preview import LIVE_CONFIG, DataWorkflowLivePreview
 from examples.data_workflow.preview import build_preview_html
 from examples.data_workflow.workbench import (
     MemoryDataWorkflowProvider,
@@ -38,6 +38,8 @@ def test_data_workflow_preview_contains_reference_app_surface():
 
     assert "<!doctype html>" in html
     assert "<title>Otoe Data Workflow Console</title>" in html
+    assert '<link rel="stylesheet" href="reference_theme.css">' in html
+    assert LIVE_CONFIG.stylesheets()[0].route == "/reference_theme.css"
     assert "Data Workflow Console" in html
     assert "Quarterly intake review" in html
     assert "Quality gate" in html

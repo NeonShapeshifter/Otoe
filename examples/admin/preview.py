@@ -25,6 +25,7 @@ def build_preview_html(snapshot: AdminSnapshot | None = None, route: str = "over
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Otoe Local Admin Console</title>
+  <link rel="stylesheet" href="reference_theme.css">
   <link rel="stylesheet" href="admin.css">
 </head>
 <body>

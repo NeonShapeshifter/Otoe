@@ -20,6 +20,7 @@ def build_preview_html(snapshot: DeviceSnapshot | None = None, route: str = "ove
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Otoe Hardware Control Panel</title>
+  <link rel="stylesheet" href="reference_theme.css">
   <link rel="stylesheet" href="hardware.css">
 </head>
 <body>

@@ -2,7 +2,7 @@
 
 **Status:** v0.1.2 released; Phase 5 professional UI/reference app buildout
 **Updated:** May 26, 2026
-**Current baseline:** 334 tests passing
+**Current baseline:** 336 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
@@ -370,6 +370,8 @@ private projects while keeping the author as the primary customer.
   bulk actions, and workflow history.
 - Improve design-system defaults: variants, tone, spacing, tables, cards,
   shell navigation, command surfaces, settings, telemetry, and status patterns.
+- Serve shared reference-app preview CSS explicitly for both static and live
+  previews before moving more common styling into the theme layer.
 - Keep Wraith as pressure, not the next migration target, until a stronger
   layout/paint/window backend exists.
 - Preserve the public API's ability to serve users outside the author's own
@@ -432,8 +434,9 @@ private projects while keeping the author as the primary customer.
 
 ## Immediate Next Actions
 
-1. Decide whether the next Phase 5 pass should improve shared preview theme
-   delivery or return to backend candidate acceptance coverage.
+1. Decide whether the next Phase 5 pass should continue extracting stable
+   reference-app CSS into `preview/reference_theme.css` or return to backend
+   candidate acceptance coverage.
 2. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
    after each native input/style/layout change.
 3. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter

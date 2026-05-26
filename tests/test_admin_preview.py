@@ -1,6 +1,6 @@
 import re
 
-from examples.admin.live_preview import AdminLivePreview
+from examples.admin.live_preview import LIVE_CONFIG, AdminLivePreview
 from examples.admin.preview import build_preview_html
 from examples.admin.settings_console import (
     MemoryAdminSettingsProvider,
@@ -35,6 +35,8 @@ def test_admin_preview_contains_reference_app_surface():
 
     assert "<!doctype html>" in html
     assert "<title>Otoe Local Admin Console</title>" in html
+    assert '<link rel="stylesheet" href="reference_theme.css">' in html
+    assert LIVE_CONFIG.stylesheets()[0].route == "/reference_theme.css"
     assert "Otoe Admin Console" in html
     assert "Local Workspace" in html
     assert "Settings requiring review" in html

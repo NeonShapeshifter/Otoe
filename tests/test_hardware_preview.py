@@ -8,7 +8,7 @@ from examples.hardware.control_panel import (
     loading_snapshot,
     offline_snapshot,
 )
-from examples.hardware.live_preview import HardwareLivePreview
+from examples.hardware.live_preview import LIVE_CONFIG, HardwareLivePreview
 from examples.hardware.preview import build_preview_html
 
 
@@ -31,6 +31,8 @@ def test_hardware_preview_contains_reference_app_surface():
 
     assert "<!doctype html>" in html
     assert "<title>Otoe Hardware Control Panel</title>" in html
+    assert '<link rel="stylesheet" href="reference_theme.css">' in html
+    assert LIVE_CONFIG.stylesheets()[0].route == "/reference_theme.css"
     assert "Otoe Hardware Lab" in html
     assert "Bench Controller A17" in html
     assert "Provider healthy" in html

@@ -12,6 +12,7 @@ from examples.live_server import (
     render_live_page,
     run_live_preview,
 )
+from examples.reference_theme import REFERENCE_THEME_STYLESHEET
 from otoe import LiveHtmlRenderer, mount, signal
 
 
@@ -21,6 +22,7 @@ LIVE_CONFIG = LivePreviewConfig(
     title="Otoe Hardware Live Preview",
     css_route="/hardware.css",
     css_path=CSS_PATH,
+    extra_css=(REFERENCE_THEME_STYLESHEET,),
 )
 
 
