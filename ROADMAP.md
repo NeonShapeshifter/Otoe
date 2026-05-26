@@ -38,8 +38,8 @@ The current technical question is no longer whether components, signals, control
 | 2A | Headless Native Renderer Spike | Done | Otoe trees can produce deterministic layout, paint commands, PNG output, hit-tested input, focus, keyboard, text input, and scroll in tests. |
 | 2B | Renderer Backend Hardening | Done for v0.1.1 | Renderer split, executable support matrices, ADRs, layout policy, overflow policy, API boundary, backend adapter interface, Tk Canvas paint/text/scale proof, stack hardening, backend-replay acceptance, and native diagnostics exist. |
 | 3 | Interactive Native Demo | Done | `NativeWindowDriver`, optional Tk wrapper, native window demo, and manual Tk launch smoke are covered; Tk windows now show readable scaled Canvas text while PNG output remains marker-level. |
-| 4 | Developer Experience | Active next | Improve docs, diagnostics, stubs, CLI, and app authoring ergonomics. |
-| 5 | Case Study Migration Option | Planned | Decide whether one real app surface should adopt Otoe. |
+| 4 | Developer Experience | Done for v0.1.2; maintenance as needed | Docs, diagnostics, stubs, CLI, and app authoring ergonomics have a usable baseline. |
+| 5 | Professional UI Kit and Reference Apps | Active | Reference apps, shared UI helpers, and preview theme extraction are the current product-shape validation surface. |
 | 6 | Optional Framework Extraction | Planned | Decide whether Otoe becomes a reusable public or semi-public framework. |
 
 ---
@@ -352,7 +352,7 @@ it explains or tests a boundary that has already been proven by the native demo.
 
 ## Phase 5 - Professional UI Kit and Reference Apps
 
-**Status:** Started after v0.1.2
+**Status:** Active after v0.1.2; initial reference-app shape landed
 
 **Goal:** make Otoe useful for professional Python apps beyond the author's
 private projects while keeping the author as the primary customer.
@@ -378,6 +378,27 @@ private projects while keeping the author as the primary customer.
   layout/paint/window backend exists.
 - Preserve the public API's ability to serve users outside the author's own
   projects.
+
+### Current Exit Status
+
+Closed for the first Phase 5 pass:
+
+- Hardware/control panel, local admin/settings, and data/table workflow
+  reference apps exist with provider or adapter boundaries.
+- Reference apps cover static preview, live preview, provider behavior, guarded
+  actions, alternate states, and feedback rendering.
+- `SectionHeader`, `EmptyState`, and `FeedbackToast` are extracted into
+  `otoe.ui` after appearing across multiple reference apps.
+- Static and live previews can serve `reference_theme.css` before app-specific
+  CSS, and the shared theme now owns base Otoe selectors, tone variants, and the
+  extracted helper styling.
+
+Remaining:
+
+- Do not keep expanding CSS until a repeated app shell/nav/table shape proves it
+  needs extraction.
+- Use these reference apps as acceptance pressure for the next backend-candidate
+  evaluation.
 
 ### Exit Criteria
 
@@ -436,12 +457,12 @@ private projects while keeping the author as the primary customer.
 
 ## Immediate Next Actions
 
-1. Decide whether the next Phase 5 pass should extract shared app shell/nav
-   CSS into `preview/reference_theme.css` or return to backend candidate
-   acceptance coverage.
+1. Define backend-candidate acceptance coverage against the existing
+   `NativeSurface`, `NativeWindowDriver`, native task board, and Phase 5
+   reference-app surfaces before adding Taffy, Skia, or another backend.
 2. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
-   after each native input/style/layout change.
+   before any backend-candidate implementation starts.
 3. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter
    semantics change.
-4. Decide whether the Phase 5 reference apps now satisfy enough product shape
-   to move back into core UI-kit polish or a backend candidate spike.
+4. Keep Phase 5 CSS extraction paused except for bug fixes or selector shapes
+   repeated across at least two reference apps.

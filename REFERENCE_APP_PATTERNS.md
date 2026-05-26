@@ -156,7 +156,6 @@ The Phase 5 reference apps satisfy the initial product-shape requirement:
 hardware/control panel, local admin/settings, and data/table workflow all exist
 with provider boundaries and tests.
 
-The next implementation decision should be one of:
-
-- continue extracting stable reference-app CSS into `reference_theme.css`
-- return to backend work with these apps as acceptance surfaces
+The current implementation direction is to return to backend work with these
+apps as acceptance surfaces. More CSS extraction should wait until at least two
+reference apps repeat the same shell, nav, table, or stat-grid selector shape.
