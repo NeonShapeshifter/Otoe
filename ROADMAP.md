@@ -429,7 +429,7 @@ private projects while keeping the author as the primary customer.
 ## Immediate Next Actions
 
 1. Continue hardening the hardware control panel reference app with richer
-   provider adapters, command feedback, and operator-state regressions.
+   provider adapters and transport-shaped regressions.
 2. Extract repeated reference-app patterns into UI kit improvements only when
    duplication becomes real.
 3. Define the next two neutral reference apps: local admin/settings and

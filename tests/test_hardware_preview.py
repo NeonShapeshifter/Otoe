@@ -49,6 +49,9 @@ def test_hardware_provider_queues_command_events():
     assert snapshot.mode == "Self-test queued"
     assert snapshot.events[0].source == "diagnostics"
     assert snapshot.events[0].message == "Self-test scheduled"
+    assert snapshot.last_feedback is not None
+    assert snapshot.last_feedback.title == "Self-test queued"
+    assert snapshot.last_feedback.tone == "success"
 
 
 def test_hardware_provider_blocks_disabled_commands():
@@ -59,6 +62,9 @@ def test_hardware_provider_blocks_disabled_commands():
     assert snapshot.mode == "Closed-loop monitor"
     assert snapshot.events[0].source == "safety"
     assert snapshot.events[0].message == "Arm safe mode blocked: Supervisor key required."
+    assert snapshot.last_feedback is not None
+    assert snapshot.last_feedback.title == "Command blocked"
+    assert snapshot.last_feedback.detail == "Arm safe mode: Supervisor key required."
 
 
 def test_hardware_preview_renders_offline_state_and_locked_controls():
@@ -76,6 +82,7 @@ def test_hardware_preview_renders_offline_overview_state():
     assert "OFFLINE" in html
     assert "Last heartbeat missed" in html
     assert "No live sample" in html
+    assert "Provider offline" in html
 
 
 def test_hardware_preview_renders_disabled_command_reasons():
@@ -98,8 +105,10 @@ def test_hardware_preview_renders_loading_and_error_fixtures():
 
     assert "LOADING" in loading_html
     assert "Opening USB serial" in loading_html
+    assert "Connecting to provider" in loading_html
     assert "ERROR" in error_html
     assert "Resolve provider error first." in error_html
+    assert "Provider error" in error_html
 
 
 def test_hardware_live_preview_dispatches_command():
@@ -111,6 +120,7 @@ def test_hardware_live_preview_dispatches_command():
 
     assert "Mode: Self-test queued" in html
     assert "Self-test scheduled" in html
+    assert "Diagnostics will run without changing output state." in html
 
 
 def test_hardware_live_preview_navigates_to_controls_and_runs_calibration():
@@ -128,3 +138,4 @@ def test_hardware_live_preview_navigates_to_controls_and_runs_calibration():
 
     assert "Mode: Calibration queued" in html
     assert "Calibration queued" in html
+    assert "Sensor offsets are waiting for operator review." in html

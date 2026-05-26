@@ -155,6 +155,7 @@ input {
 .hardware-signal-badge,
 .hardware-event-badge,
 .hardware-status-badge,
+.hardware-feedback-badge,
 .hardware-table-badge {
   display: inline-flex;
   align-items: center;
@@ -263,6 +264,7 @@ input {
 }
 
 .hardware-route,
+.hardware-route-shell,
 .hardware-page {
   min-width: 0;
   width: 100%;
@@ -307,34 +309,45 @@ input {
   padding: 16px;
 }
 
-.hardware-status {
+.hardware-status,
+.hardware-feedback {
   padding: 14px 16px;
   box-shadow: none;
 }
 
-.hardware-status.is-ready {
+.hardware-status.is-ready,
+.hardware-feedback.is-success {
   border-color: rgba(22, 131, 91, 0.24);
 }
 
-.hardware-status.is-loading {
+.hardware-status.is-loading,
+.hardware-feedback.is-info {
   border-color: rgba(37, 99, 235, 0.24);
 }
 
 .hardware-status.is-offline,
-.hardware-status.is-error {
+.hardware-status.is-error,
+.hardware-feedback.is-danger {
   border-color: rgba(200, 55, 75, 0.28);
 }
 
-.hardware-status-row {
+.hardware-feedback.is-warn {
+  border-color: rgba(183, 121, 18, 0.28);
+}
+
+.hardware-status-row,
+.hardware-feedback-row {
   align-items: center;
   justify-content: flex-start;
 }
 
-.hardware-status-title {
+.hardware-status-title,
+.hardware-feedback-title {
   font-weight: 900;
 }
 
 .hardware-status-copy,
+.hardware-feedback-copy,
 .hardware-empty-state,
 .hardware-command-reason {
   color: var(--muted);

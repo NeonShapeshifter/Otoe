@@ -170,6 +170,8 @@ Provider contract:
   actions
 - return disabled commands with a `disabled_reason` instead of hiding unsafe
   controls
+- return `last_feedback` after commands so operators see the result or block
+  reason outside the event stream
 - model connection state explicitly with `status`, `status_detail`,
   `connection`, and `connection_tone`
 - use fixture helpers such as `loading_snapshot()`, `offline_snapshot()`,

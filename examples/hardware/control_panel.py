@@ -49,6 +49,14 @@ class HardwareCommand:
 
 
 @dataclass(frozen=True)
+class CommandFeedback:
+    command_id: str
+    title: str
+    detail: str
+    tone: str = "info"
+
+
+@dataclass(frozen=True)
 class DeviceSnapshot:
     device_name: str
     connection: str
@@ -62,6 +70,7 @@ class DeviceSnapshot:
     metrics: list[TelemetryMetric]
     events: list[HardwareEvent]
     commands: list[HardwareCommand]
+    last_feedback: CommandFeedback | None = None
 
 
 class HardwareProvider(Protocol):
@@ -105,15 +114,24 @@ class FakeHardwareProvider:
         command = _command_by_id(self._snapshot, command_id)
         if command is None:
             event = _blocked_event(command_id, "Command is not registered.", self._runs)
-            self._snapshot = replace(self._snapshot, events=[event, *self._snapshot.events][:8])
+            self._snapshot = replace(
+                self._snapshot,
+                events=[event, *self._snapshot.events][:8],
+                last_feedback=_blocked_feedback(command_id, "Command is not registered."),
+            )
             return self._snapshot
         if not command.enabled:
             reason = command.disabled_reason or "Command is currently unavailable."
             event = _blocked_event(command.label, reason, self._runs)
-            self._snapshot = replace(self._snapshot, events=[event, *self._snapshot.events][:8])
+            self._snapshot = replace(
+                self._snapshot,
+                events=[event, *self._snapshot.events][:8],
+                last_feedback=_blocked_feedback(command.label, reason),
+            )
             return self._snapshot
 
         event = _command_event(command_id, self._runs)
+        feedback = _command_feedback(command_id)
         next_mode = {
             "self-test": "Self-test queued",
             "calibrate": "Calibration queued",
@@ -125,6 +143,7 @@ class FakeHardwareProvider:
             self._snapshot,
             mode=next_mode,
             events=[event, *self._snapshot.events][:8],
+            last_feedback=feedback,
         )
         return self._snapshot
 
@@ -155,11 +174,16 @@ def HardwareControlPanel(
             ),
             className="hardware-sidebar",
         ),
-        content=RouteView(
-            route=active_route,
-            routes=HARDWARE_ROUTES,
-            render=lambda route: _route_view(route, snapshot=snapshot, on_command=on_command),
-            className="hardware-route",
+        content=VStack(
+            CommandFeedbackPanel(snapshot=snapshot),
+            RouteView(
+                route=active_route,
+                routes=HARDWARE_ROUTES,
+                render=lambda route: _route_view(route, snapshot=snapshot, on_command=on_command),
+                className="hardware-route",
+            ),
+            className="hardware-route-shell",
+            gap=14,
         ),
         className="hardware-app",
     )
@@ -271,6 +295,30 @@ def OverviewView(*, snapshot, on_command):
         ),
         className="hardware-page",
         gap=14,
+    )
+
+
+@component
+def CommandFeedbackPanel(*, snapshot):
+    return Show(
+        Card(
+            HStack(
+                Badge(
+                    computed(lambda: _snap(snapshot).last_feedback.tone.upper()),
+                    tone=computed(lambda: _snap(snapshot).last_feedback.tone),
+                    className="hardware-feedback-badge",
+                ),
+                VStack(
+                    Text(computed(lambda: _snap(snapshot).last_feedback.title), className="hardware-feedback-title"),
+                    Text(computed(lambda: _snap(snapshot).last_feedback.detail), className="hardware-feedback-copy"),
+                    gap=2,
+                ),
+                className="hardware-feedback-row",
+                gap=12,
+            ),
+            className=computed(lambda: f"hardware-feedback is-{_snap(snapshot).last_feedback.tone}"),
+        ),
+        when=computed(lambda: _snap(snapshot).last_feedback is not None),
     )
 
 
@@ -508,6 +556,12 @@ def loading_snapshot() -> DeviceSnapshot:
             reason="Waiting for provider handshake.",
             allow={"refresh"},
         ),
+        last_feedback=CommandFeedback(
+            "connect",
+            "Connecting to provider",
+            "Telemetry and operator controls unlock after the first heartbeat.",
+            "info",
+        ),
     )
 
 
@@ -532,6 +586,12 @@ def offline_snapshot() -> DeviceSnapshot:
             reason="Device is offline.",
             allow={"refresh"},
         ),
+        last_feedback=CommandFeedback(
+            "offline",
+            "Provider offline",
+            "Refresh is available; all output-affecting commands remain locked.",
+            "danger",
+        ),
     )
 
 
@@ -553,6 +613,12 @@ def error_snapshot() -> DeviceSnapshot:
             demo_snapshot().commands,
             reason="Resolve provider error first.",
             allow={"refresh"},
+        ),
+        last_feedback=CommandFeedback(
+            "error",
+            "Provider error",
+            "Inspect transport logs before running calibration or output commands.",
+            "danger",
         ),
     )
 
@@ -605,6 +671,27 @@ def _command_event(command_id: str, index: int) -> HardwareEvent:
         source=source,
         message=message,
         tone=tone,
+    )
+
+
+def _command_feedback(command_id: str) -> CommandFeedback:
+    feedback = {
+        "self-test": ("Self-test queued", "Diagnostics will run without changing output state.", "success"),
+        "calibrate": ("Calibration queued", "Sensor offsets are waiting for operator review.", "warn"),
+        "safe-mode": ("Safe mode armed", "Output limits were reduced until manual release.", "danger"),
+        "clear-log": ("Log review acknowledged", "Event stream remains retained in the provider.", "info"),
+        "refresh": ("Telemetry refresh requested", "The provider will return one immediate sample.", "info"),
+    }
+    title, detail, tone = feedback.get(command_id, ("Command queued", f"{command_id} queued.", "info"))
+    return CommandFeedback(command_id, title, detail, tone)
+
+
+def _blocked_feedback(command_label: str, reason: str) -> CommandFeedback:
+    return CommandFeedback(
+        command_label,
+        "Command blocked",
+        f"{command_label}: {reason}",
+        "danger",
     )
 
 
