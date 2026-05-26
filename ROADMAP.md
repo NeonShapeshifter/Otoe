@@ -1,6 +1,6 @@
 # Otoe Roadmap
 
-**Status:** v0.1.3 prepared; Phase 5 professional UI/reference app buildout
+**Status:** v0.1.3 released; Phase 5 professional UI/reference app buildout
 **Updated:** May 26, 2026
 **Current baseline:** 342 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
