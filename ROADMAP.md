@@ -2,8 +2,8 @@
 
 **Status:** v0.1.2 released; Phase 5 professional UI/reference app planning
 **Updated:** May 26, 2026
-**Current baseline:** 315 tests passing
-**Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
+**Current baseline:** 322 tests passing
+**Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, hardware control panel, local admin/settings console, Wraith Mission Exec preview
 
 ---
 
@@ -361,9 +361,11 @@ private projects while keeping the author as the primary customer.
 
 - Keep examples framework-neutral unless they are explicitly case studies.
 - Build reference apps that look and feel production-shaped, not toy demos.
-- Start with a professional hardware/control-panel reference app backed by a
+- Continue from the professional hardware/control-panel reference app backed by a
   fake provider that can later be swapped for serial, USB, GPIO, SQLite, or a
   local service adapter.
+- Add a local admin/settings reference app with editable provider-backed state,
+  validation, access controls, and audit history.
 - Improve design-system defaults: variants, tone, spacing, tables, cards,
   shell navigation, command surfaces, settings, telemetry, and status patterns.
 - Keep Wraith as pressure, not the next migration target, until a stronger
@@ -428,8 +430,8 @@ private projects while keeping the author as the primary customer.
 
 ## Immediate Next Actions
 
-1. Define the next two neutral reference apps: local admin/settings and
-   data/table workflow.
+1. Start the data/table workflow reference app as the third neutral Phase 5
+   app shape.
 2. Extract repeated reference-app patterns into UI kit improvements only when
    duplication becomes real.
 3. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices

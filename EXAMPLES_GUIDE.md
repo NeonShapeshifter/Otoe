@@ -189,6 +189,47 @@ Adapter contract:
 - use `MemoryHardwareTransport` for deterministic tests before adding serial,
   USB, GPIO, SQLite, or local service adapters
 
+## Local Admin Settings Console
+
+Paths:
+
+- `examples/admin/settings_console.py`
+- `examples/admin/preview.py`
+- `examples/admin/live_preview.py`
+
+Use this as the second Phase 5 reference app: a local-first admin/settings
+surface with editable provider-backed state, validation, safe actions, access
+rules, and audit history.
+
+- editable workspace and runtime settings
+- validation and blocked saves
+- save, reset, and reload actions
+- access-rule toggles with audit feedback
+- route-driven overview, settings, access, and audit views
+- provider boundary with deterministic fixture data for tests
+
+```bash
+PYTHONPATH=src:. python -m examples.admin.preview > preview/admin.html
+PYTHONPATH=src:. python -m examples.admin.live_preview
+```
+
+This example is also fake-data-backed intentionally. The provider is the
+boundary between UI and local state; the component surface should remain ready
+for a SQLite, file, device, or service-backed provider.
+
+Provider contract:
+
+- implement `snapshot() -> AdminSnapshot` for the first render
+- implement `update_setting(setting_id, value)` for controlled drafts and
+  validation
+- implement `run_action(action_id)` for save, reset, reload, or future local
+  actions
+- implement `toggle_access_rule(rule_id)` for local permission controls
+- return `last_feedback` after edits or actions so operators see the result
+  outside the changed row
+- model pending and invalid state explicitly with `pending_changes`, `status`,
+  and `status_tone`
+
 ## Wraith Previews
 
 Paths:
@@ -233,6 +274,7 @@ assumptions into the runtime.
 | Shared UI primitive regression | `examples.ui.kitchen_sink` |
 | Product-dashboard case study | `examples.saas.overview` |
 | Professional hardware reference app | `examples.hardware.control_panel` |
+| Local admin/settings reference app | `examples.admin.settings_console` |
 | Dense operational case study | `examples.wraith.mission_exec_surface` |
 
 ## Example Rules
