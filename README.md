@@ -328,7 +328,7 @@ Otoe is intentionally split into layers:
 - `examples/saas/` - SaaS-shaped generality case study.
 - `examples/ui/` - shared UI primitive kitchen-sink preview.
 - `preview/` - generated HTML/CSS preview artifacts, including the shared
-  `reference_theme.css` used by the Phase 5 reference apps.
+  `reference_theme.css` base used by the Phase 5 reference apps.
 - `tests/` - runtime and preview regression tests.
 - `ADR-*.md` - design decisions.
 - `BENCHMARKS.md` - concrete Otoe-vs-Wraith UI change benchmarks.

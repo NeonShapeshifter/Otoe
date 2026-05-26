@@ -372,6 +372,8 @@ private projects while keeping the author as the primary customer.
   shell navigation, command surfaces, settings, telemetry, and status patterns.
 - Serve shared reference-app preview CSS explicitly for both static and live
   previews before moving more common styling into the theme layer.
+- Keep extracting proven shared preview defaults only after at least two
+  reference apps repeat the same selector shape.
 - Keep Wraith as pressure, not the next migration target, until a stronger
   layout/paint/window backend exists.
 - Preserve the public API's ability to serve users outside the author's own
@@ -434,9 +436,9 @@ private projects while keeping the author as the primary customer.
 
 ## Immediate Next Actions
 
-1. Decide whether the next Phase 5 pass should continue extracting stable
-   reference-app CSS into `preview/reference_theme.css` or return to backend
-   candidate acceptance coverage.
+1. Decide whether the next Phase 5 pass should extract shared app shell/nav
+   CSS into `preview/reference_theme.css` or return to backend candidate
+   acceptance coverage.
 2. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
    after each native input/style/layout change.
 3. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter

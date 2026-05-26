@@ -5,7 +5,8 @@ Open `wraith_mission_exec.html` for the extracted Mission Exec surface.
 Open `saas.html` for a softer SaaS-style case study using the same Otoe runtime.
 Open `ui.html` for the shared UI kit kitchen-sink preview.
 Reference app previews use `reference_theme.css` before their app-specific
-stylesheets so static and live runs share the same helper styling.
+stylesheets so static and live runs share the same base Otoe selector styling,
+tone variants, and extracted helper styling.
 
 The checked-in HTML is a convenience artifact generated from the current Otoe
 fake tree with the pretty HTML renderer:

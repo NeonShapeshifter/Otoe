@@ -22,8 +22,27 @@ def test_reference_app_patterns_tracks_current_phase5_apps():
 def test_reference_theme_covers_extracted_ui_helpers():
     theme = (ROOT / "preview" / "reference_theme.css").read_text(encoding="utf-8")
 
-    for selector in (".ui-section-header", ".ui-empty-state", ".ui-toast"):
+    for selector in (
+        ".otoe-stack",
+        ".otoe-panel",
+        ".otoe-button",
+        ".otoe-input",
+        ".is-success",
+        ".ui-section-header",
+        ".ui-empty-state",
+        ".ui-toast",
+    ):
         assert selector in theme
+
+    app_css = [
+        (ROOT / "preview" / "admin.css").read_text(encoding="utf-8"),
+        (ROOT / "preview" / "hardware.css").read_text(encoding="utf-8"),
+        (ROOT / "preview" / "data_workflow.css").read_text(encoding="utf-8"),
+    ]
+    for css in app_css:
+        assert ".otoe-button {" not in css
+        assert ".otoe-panel {" not in css
+        assert ".otoe-input {" not in css
 
 
 def test_readme_links_reference_app_patterns():

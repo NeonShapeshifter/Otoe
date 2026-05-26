@@ -109,6 +109,8 @@ Reference apps now load one shared helper theme before app-specific CSS:
 
 The shared theme covers the first extracted helper shapes:
 
+- base Otoe preview selectors: reset, `.otoe-stack`, `.otoe-panel`,
+  `.otoe-button`, `.otoe-input`, `.otoe-fragment`, and tone variants
 - `SectionHeader`
 - `EmptyState`
 - `FeedbackToast`/`Toast`
@@ -133,8 +135,9 @@ Remaining safe extraction targets:
 
 - documented class naming conventions for app, topbar, sidebar, route shell,
   panel, stat grid, and table
-- migration of common shell, panel, table, and stat-grid rules into the shared
-  theme after those rules prove stable across all three reference apps
+- migration of common app shell, topbar, sidebar, nav, table, and stat-grid
+  rules into the shared theme after those rules prove stable across all three
+  reference apps
 
 ## Test Pattern
 
