@@ -1,8 +1,8 @@
 # Otoe Roadmap
 
-**Status:** v0.1.2 released; Phase 5 professional UI/reference app buildout
+**Status:** v0.1.3 prepared; Phase 5 professional UI/reference app buildout
 **Updated:** May 26, 2026
-**Current baseline:** 336 tests passing
+**Current baseline:** 342 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
@@ -352,7 +352,7 @@ it explains or tests a boundary that has already been proven by the native demo.
 
 ## Phase 5 - Professional UI Kit and Reference Apps
 
-**Status:** Active after v0.1.2; initial reference-app shape landed
+**Status:** Active after v0.1.3; initial reference-app shape landed
 
 **Goal:** make Otoe useful for professional Python apps beyond the author's
 private projects while keeping the author as the primary customer.

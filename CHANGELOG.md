@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## v0.1.3 - Reference Apps and Live Preview Hardening
+
+- Added hardware/control panel, local admin/settings, and data workflow
+  reference apps with provider or adapter boundaries, static previews, live
+  previews, alternate states, guarded actions, feedback rendering, and tests.
+- Added `REFERENCE_APP_PATTERNS.md` to document Phase 5 app-shape, provider,
+  route, table, CSS, and test extraction rules.
+- Added shared reference preview styling through `preview/reference_theme.css`
+  and live preview `extra_css` support.
+- Added `SectionHeader`, `EmptyState`, and `FeedbackToast` UI helpers after
+  repeated reference-app usage.
 - Fixed keyed `For` mounting so duplicate keys are rejected instead of
   reusing one mounted child in multiple positions.
 - Escaped live-preview shell metadata and stylesheet routes before rendering

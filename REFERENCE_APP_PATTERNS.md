@@ -148,7 +148,7 @@ Every reference app should have focused tests for three layers:
 - provider: happy path, blocked path, and state invariants
 - live preview: event ID lookup, dispatch, and rerendered content
 
-Full-suite baseline after the shared preview theme pass: `336 passed`.
+Full-suite baseline after the shared preview theme pass: `342 passed`.
 
 ## Current Decision
 
