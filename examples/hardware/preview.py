@@ -1,13 +1,13 @@
-from examples.hardware.control_panel import FakeHardwareProvider, HardwareControlPanel
+from examples.hardware.control_panel import DeviceSnapshot, FakeHardwareProvider, HardwareControlPanel
 from otoe import mount, render_html, signal
 
 
-def build_preview_html() -> str:
-    provider = FakeHardwareProvider()
+def build_preview_html(snapshot: DeviceSnapshot | None = None, route: str = "overview") -> str:
+    provider = FakeHardwareProvider(snapshot)
     app = mount(
         HardwareControlPanel(
             snapshot=signal(provider.snapshot()),
-            active_route=signal("overview"),
+            active_route=signal(route),
             on_navigate=lambda route_id: None,
             on_command=lambda command_id: None,
         )

@@ -152,7 +152,8 @@ read serial, USB, GPIO, SQLite, or a local service adapter.
 - telemetry cards and table
 - event stream
 - safe operator controls
-- provider boundary with fake data for tests
+- provider boundary with fake data and alternate states for tests
+- loading, offline, error, and empty telemetry surfaces
 
 ```bash
 PYTHONPATH=src:. python -m examples.hardware.preview > preview/hardware.html
@@ -161,6 +162,18 @@ PYTHONPATH=src:. python -m examples.hardware.live_preview
 
 This example uses fake data intentionally. The fake provider is the test
 boundary; the component surface should remain ready for a real provider.
+
+Provider contract:
+
+- implement `snapshot() -> DeviceSnapshot` for the first render
+- implement `run_command(command_id: str) -> DeviceSnapshot` for operator
+  actions
+- return disabled commands with a `disabled_reason` instead of hiding unsafe
+  controls
+- model connection state explicitly with `status`, `status_detail`,
+  `connection`, and `connection_tone`
+- use fixture helpers such as `loading_snapshot()`, `offline_snapshot()`,
+  `error_snapshot()`, and `empty_snapshot()` to test non-happy paths
 
 ## Wraith Previews
 

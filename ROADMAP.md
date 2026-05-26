@@ -1,8 +1,8 @@
 # Otoe Roadmap
 
 **Status:** v0.1.2 released; Phase 5 professional UI/reference app planning
-**Updated:** May 23, 2026
-**Current baseline:** 301 tests passing
+**Updated:** May 26, 2026
+**Current baseline:** 312 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -428,8 +428,8 @@ private projects while keeping the author as the primary customer.
 
 ## Immediate Next Actions
 
-1. Finish the hardware control panel reference app with static preview, live
-   preview, provider contract tests, and docs.
+1. Continue hardening the hardware control panel reference app with richer
+   provider adapters, command feedback, and operator-state regressions.
 2. Extract repeated reference-app patterns into UI kit improvements only when
    duplication becomes real.
 3. Define the next two neutral reference apps: local admin/settings and

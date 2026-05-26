@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Protocol
 
-from otoe import For, HStack, Text, VStack, component, computed
+from otoe import For, HStack, Show, Text, VStack, component, computed
 from otoe.ui import (
     ActionButton,
     AppShell,
@@ -45,6 +45,7 @@ class HardwareCommand:
     description: str
     tone: str = "info"
     enabled: bool = True
+    disabled_reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,8 @@ class DeviceSnapshot:
     device_name: str
     connection: str
     connection_tone: str
+    status: str
+    status_detail: str
     firmware: str
     uptime: str
     mode: str
@@ -99,6 +102,17 @@ class FakeHardwareProvider:
 
     def run_command(self, command_id: str) -> DeviceSnapshot:
         self._runs += 1
+        command = _command_by_id(self._snapshot, command_id)
+        if command is None:
+            event = _blocked_event(command_id, "Command is not registered.", self._runs)
+            self._snapshot = replace(self._snapshot, events=[event, *self._snapshot.events][:8])
+            return self._snapshot
+        if not command.enabled:
+            reason = command.disabled_reason or "Command is currently unavailable."
+            event = _blocked_event(command.label, reason, self._runs)
+            self._snapshot = replace(self._snapshot, events=[event, *self._snapshot.events][:8])
+            return self._snapshot
+
         event = _command_event(command_id, self._runs)
         next_mode = {
             "self-test": "Self-test queued",
@@ -171,8 +185,18 @@ def HardwareTopBar(*, snapshot, on_command):
             computed(lambda: f"Mode: {_snap(snapshot).mode}"),
             className="hardware-mode",
         ),
-        ActionButton("Refresh", variant="ghost", onClick=lambda: on_command("refresh")),
-        ActionButton("Run self-test", variant="primary", onClick=lambda: on_command("self-test")),
+        ActionButton(
+            "Refresh",
+            variant="ghost",
+            disabled=computed(lambda: not _command_enabled(_snap(snapshot), "refresh")),
+            onClick=lambda: on_command("refresh"),
+        ),
+        ActionButton(
+            "Run self-test",
+            variant="primary",
+            disabled=computed(lambda: not _command_enabled(_snap(snapshot), "self-test")),
+            onClick=lambda: on_command("self-test"),
+        ),
         className="hardware-topbar",
         gap=12,
     )
@@ -182,9 +206,9 @@ def HardwareTopBar(*, snapshot, on_command):
 def OverviewView(*, snapshot, on_command):
     metrics = computed(lambda: _snap(snapshot).metrics)
     events = computed(lambda: _snap(snapshot).events[:4])
-    first_metric = computed(lambda: metrics.value[0])
-    second_metric = computed(lambda: metrics.value[1])
-    third_metric = computed(lambda: metrics.value[2])
+    first_metric = computed(lambda: _metric_at(metrics.value, 0, "Bus voltage"))
+    second_metric = computed(lambda: _metric_at(metrics.value, 1, "Motor current"))
+    third_metric = computed(lambda: _metric_at(metrics.value, 2, "Thermal headroom"))
 
     return VStack(
         HStack(
@@ -201,6 +225,7 @@ def OverviewView(*, snapshot, on_command):
             className="hardware-stat-grid",
             gap=12,
         ),
+        StatusBanner(snapshot=snapshot),
         HStack(
             Card(
                 VStack(
@@ -213,6 +238,7 @@ def OverviewView(*, snapshot, on_command):
                         each=metrics,
                         key=lambda metric: metric.id,
                         children=lambda metric: SensorRow(metric=metric),
+                        fallback=Text("No telemetry samples", className="hardware-empty-state"),
                     ),
                     gap=10,
                 ),
@@ -234,6 +260,7 @@ def OverviewView(*, snapshot, on_command):
                         each=events,
                         key=lambda event: event.id,
                         children=lambda event: EventRow(event=event),
+                        fallback=Text("No hardware events", className="hardware-empty-state"),
                     ),
                     gap=10,
                 ),
@@ -244,6 +271,27 @@ def OverviewView(*, snapshot, on_command):
         ),
         className="hardware-page",
         gap=14,
+    )
+
+
+@component
+def StatusBanner(*, snapshot):
+    return Card(
+        HStack(
+            Badge(
+                computed(lambda: _snap(snapshot).status.upper()),
+                tone=computed(lambda: _snap(snapshot).connection_tone),
+                className="hardware-status-badge",
+            ),
+            VStack(
+                Text(computed(lambda: _snap(snapshot).connection), className="hardware-status-title"),
+                Text(computed(lambda: _snap(snapshot).status_detail), className="hardware-status-copy"),
+                gap=2,
+            ),
+            className="hardware-status-row",
+            gap=12,
+        ),
+        className=computed(lambda: f"hardware-status is-{_snap(snapshot).status}"),
     )
 
 
@@ -262,6 +310,7 @@ def TelemetryView(*, snapshot):
                 key=lambda metric: metric.id,
                 render_cell=_metric_cell,
                 className="hardware-table",
+                empty="No telemetry samples",
             ),
             gap=10,
         ),
@@ -274,7 +323,15 @@ def ControlsView(*, snapshot, on_command):
     return HStack(
         Card(
             VStack(
-                Text("Operator controls", className="hardware-section-title"),
+                HStack(
+                    Text("Operator controls", className="hardware-section-title"),
+                    Badge(
+                        computed(lambda: _snap(snapshot).status.upper()),
+                        tone=computed(lambda: _snap(snapshot).connection_tone),
+                        className="hardware-section-badge",
+                    ),
+                    className="hardware-section-heading",
+                ),
                 For(
                     each=computed(lambda: _snap(snapshot).commands),
                     key=lambda command: command.id,
@@ -305,6 +362,8 @@ def SettingsView(*, snapshot):
     return Card(
         VStack(
             Text("Device settings", className="hardware-section-title"),
+            SettingRow(label="Provider state", value=computed(lambda: _snap(snapshot).status)),
+            SettingRow(label="State detail", value=computed(lambda: _snap(snapshot).status_detail)),
             SettingRow(label="Transport", value="USB serial"),
             SettingRow(label="Device", value=computed(lambda: _snap(snapshot).device_name)),
             SettingRow(label="Firmware", value=computed(lambda: _snap(snapshot).firmware)),
@@ -363,6 +422,10 @@ def CommandRow(*, command, on_command):
         VStack(
             Text(command.label, className="hardware-command-title"),
             Text(command.description, className="hardware-command-copy"),
+            Show(
+                Text(command.disabled_reason, className="hardware-command-reason"),
+                when=command.disabled_reason,
+            ),
             gap=2,
         ),
         ActionButton(
@@ -391,6 +454,8 @@ def demo_snapshot() -> DeviceSnapshot:
         device_name="Bench Controller A17",
         connection="Online",
         connection_tone="success",
+        status="ready",
+        status_detail="Provider healthy. Telemetry is live and operator controls are available.",
         firmware="FW 1.8.4",
         uptime="Uptime 04:18:22",
         mode="Closed-loop monitor",
@@ -411,8 +476,94 @@ def demo_snapshot() -> DeviceSnapshot:
             HardwareCommand("refresh", "Refresh telemetry", "Pull one immediate sample from the provider.", "info"),
             HardwareCommand("self-test", "Run self-test", "Queue a non-destructive controller self-test.", "success"),
             HardwareCommand("calibrate", "Calibrate sensors", "Apply lab calibration offsets after operator review.", "warn"),
-            HardwareCommand("safe-mode", "Arm safe mode", "Reduce output envelope until manually released.", "danger"),
+            HardwareCommand(
+                "safe-mode",
+                "Arm safe mode",
+                "Reduce output envelope until manually released.",
+                "danger",
+                enabled=False,
+                disabled_reason="Supervisor key required.",
+            ),
         ],
+    )
+
+
+def loading_snapshot() -> DeviceSnapshot:
+    return replace(
+        demo_snapshot(),
+        connection="Connecting",
+        connection_tone="info",
+        status="loading",
+        status_detail="Opening USB serial and waiting for the first heartbeat.",
+        firmware="Detecting firmware",
+        uptime="No active session",
+        mode="Handshake pending",
+        sample_rate="Waiting for sample",
+        metrics=_placeholder_metrics("Waiting for sample", "info"),
+        events=[
+            HardwareEvent("connect", "08:41:58", "transport", "Opening USB serial", "info"),
+        ],
+        commands=_lock_commands(
+            demo_snapshot().commands,
+            reason="Waiting for provider handshake.",
+            allow={"refresh"},
+        ),
+    )
+
+
+def offline_snapshot() -> DeviceSnapshot:
+    return replace(
+        demo_snapshot(),
+        connection="Offline",
+        connection_tone="danger",
+        status="offline",
+        status_detail="Last heartbeat missed. Controls are locked until the provider reconnects.",
+        firmware="Unknown",
+        uptime="No active session",
+        mode="Waiting for device",
+        sample_rate="No live sample",
+        metrics=_placeholder_metrics("No signal", "danger"),
+        events=[
+            HardwareEvent("offline", "08:44:02", "transport", "Heartbeat timeout", "danger"),
+            HardwareEvent("lock", "08:44:03", "safety", "Operator controls locked", "warn"),
+        ],
+        commands=_lock_commands(
+            demo_snapshot().commands,
+            reason="Device is offline.",
+            allow={"refresh"},
+        ),
+    )
+
+
+def error_snapshot() -> DeviceSnapshot:
+    return replace(
+        demo_snapshot(),
+        connection="Error",
+        connection_tone="danger",
+        status="error",
+        status_detail="Provider rejected the latest frame checksum. Inspect transport logs.",
+        mode="Transport fault",
+        sample_rate="Sample rejected",
+        metrics=_placeholder_metrics("Frame invalid", "danger"),
+        events=[
+            HardwareEvent("crc", "08:45:11", "transport", "Checksum mismatch on sample frame", "danger"),
+            HardwareEvent("hold", "08:45:12", "safety", "Calibration and output commands held", "warn"),
+        ],
+        commands=_lock_commands(
+            demo_snapshot().commands,
+            reason="Resolve provider error first.",
+            allow={"refresh"},
+        ),
+    )
+
+
+def empty_snapshot() -> DeviceSnapshot:
+    return replace(
+        demo_snapshot(),
+        status_detail="Provider is connected, but no telemetry sample has arrived yet.",
+        sample_rate="Awaiting first sample",
+        metrics=[],
+        events=[],
     )
 
 
@@ -455,6 +606,59 @@ def _command_event(command_id: str, index: int) -> HardwareEvent:
         message=message,
         tone=tone,
     )
+
+
+def _blocked_event(command_label: str, reason: str, index: int) -> HardwareEvent:
+    return HardwareEvent(
+        id=f"blocked-{index}",
+        time=f"08:43:{index:02d}",
+        source="safety",
+        message=f"{command_label} blocked: {reason}",
+        tone="danger",
+    )
+
+
+def _command_by_id(snapshot: DeviceSnapshot, command_id: str) -> HardwareCommand | None:
+    for command in snapshot.commands:
+        if command.id == command_id:
+            return command
+    return None
+
+
+def _command_enabled(snapshot: DeviceSnapshot, command_id: str) -> bool:
+    command = _command_by_id(snapshot, command_id)
+    return bool(command and command.enabled)
+
+
+def _lock_commands(
+    commands: list[HardwareCommand],
+    *,
+    reason: str,
+    allow: set[str] | None = None,
+) -> list[HardwareCommand]:
+    allowed = allow or set()
+    locked: list[HardwareCommand] = []
+    for command in commands:
+        if command.id in allowed:
+            locked.append(command)
+            continue
+        locked.append(replace(command, enabled=False, disabled_reason=reason))
+    return locked
+
+
+def _placeholder_metrics(detail: str, tone: str) -> list[TelemetryMetric]:
+    return [
+        TelemetryMetric("voltage", "Bus voltage", "--", "", tone, detail),
+        TelemetryMetric("current", "Motor current", "--", "", tone, detail),
+        TelemetryMetric("thermal", "Thermal headroom", "--", "", tone, detail),
+        TelemetryMetric("vibration", "Vibration RMS", "--", "", tone, detail),
+    ]
+
+
+def _metric_at(metrics: list[TelemetryMetric], index: int, label: str) -> TelemetryMetric:
+    if index < len(metrics):
+        return metrics[index]
+    return TelemetryMetric(f"empty-{index}", label, "--", "", "neutral", "No telemetry sample")
 
 
 def _snap(snapshot) -> DeviceSnapshot:

@@ -154,6 +154,7 @@ input {
 .hardware-section-badge,
 .hardware-signal-badge,
 .hardware-event-badge,
+.hardware-status-badge,
 .hardware-table-badge {
   display: inline-flex;
   align-items: center;
@@ -304,6 +305,52 @@ input {
 
 .hardware-panel {
   padding: 16px;
+}
+
+.hardware-status {
+  padding: 14px 16px;
+  box-shadow: none;
+}
+
+.hardware-status.is-ready {
+  border-color: rgba(22, 131, 91, 0.24);
+}
+
+.hardware-status.is-loading {
+  border-color: rgba(37, 99, 235, 0.24);
+}
+
+.hardware-status.is-offline,
+.hardware-status.is-error {
+  border-color: rgba(200, 55, 75, 0.28);
+}
+
+.hardware-status-row {
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.hardware-status-title {
+  font-weight: 900;
+}
+
+.hardware-status-copy,
+.hardware-empty-state,
+.hardware-command-reason {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.hardware-command-reason {
+  color: var(--red);
+}
+
+.hardware-empty-state {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  border-top: 1px solid var(--line);
 }
 
 .hardware-telemetry-panel {
