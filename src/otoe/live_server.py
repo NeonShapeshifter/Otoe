@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from dataclasses import dataclass
+from html import escape
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -49,6 +50,7 @@ LIVE_SCRIPT = r"""
 (() => {
   const root = document.getElementById("otoe-root");
   let lastFocusOutsideScope = null;
+  let latestEventRequest = 0;
 
   const escapeSelector = (value) => {
     if (window.CSS && CSS.escape) {
@@ -172,28 +174,38 @@ LIVE_SCRIPT = r"""
   };
 
   const sendEvent = async (id, args, activeInput = null) => {
+    const requestId = ++latestEventRequest;
     const restoreSelector = activeInput && isInsideRestoringScope(activeInput)
       ? lastFocusOutsideScope
       : null;
     if (activeInput && !isInsideRestoringScope(activeInput)) {
       lastFocusOutsideScope = focusSelectorFor(activeInput) || lastFocusOutsideScope;
     }
-    const response = await fetch("/event", {
-      method: "POST",
-      headers: {"content-type": "application/json"},
-      body: JSON.stringify({id, args}),
-    });
-    const payload = await response.json();
-    if (!payload.ok) {
-      throw new Error(payload.error || "Otoe event failed");
+    try {
+      const response = await fetch("/event", {
+        method: "POST",
+        headers: {"content-type": "application/json"},
+        body: JSON.stringify({id, args}),
+      });
+      const payload = await response.json();
+      if (requestId !== latestEventRequest) {
+        return;
+      }
+      if (!payload.ok) {
+        throw new Error(payload.error || "Otoe event failed");
+      }
+      replaceRoot(
+        payload.html,
+        activeInput,
+        activeInput?.selectionStart,
+        activeInput?.selectionEnd,
+        restoreSelector,
+      );
+    } catch (error) {
+      if (requestId === latestEventRequest) {
+        throw error;
+      }
     }
-    replaceRoot(
-      payload.html,
-      activeInput,
-      activeInput?.selectionStart,
-      activeInput?.selectionEnd,
-      restoreSelector,
-    );
   };
 
   const keyPayload = (event) => ({
@@ -261,18 +273,23 @@ LIVE_SCRIPT = r"""
 
 
 def render_live_page(app: LivePreviewApp, config: LivePreviewConfig) -> str:
-    root_class = f' class="{config.root_class}"' if config.root_class else ""
+    root_class = (
+        f' class="{escape(config.root_class, quote=True)}"'
+        if config.root_class
+        else ""
+    )
     stylesheet_links = "\n".join(
-        f'  <link rel="stylesheet" href="{stylesheet.route}">'
+        f'  <link rel="stylesheet" href="{escape(stylesheet.route, quote=True)}">'
         for stylesheet in config.stylesheets()
     )
     fragment = app.render_fragment()
+    title = escape(config.title)
     return f"""<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{config.title}</title>
+  <title>{title}</title>
 {stylesheet_links}
 </head>
 <body>

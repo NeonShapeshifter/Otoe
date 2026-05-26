@@ -136,15 +136,28 @@ class _TemplateParser(HTMLParser):
 
     def _node_from_frame(self, frame: _Frame) -> Node:
         primary_prop = getattr(frame.tag, "primary_prop", None)
-        if primary_prop and primary_prop not in frame.props:
+        if primary_prop:
+            primary_values = [child for child in frame.children if not isinstance(child, Node)]
+            child_nodes = [child for child in frame.children if isinstance(child, Node)]
+            if primary_prop in frame.props:
+                if primary_values:
+                    raise TemplateError(
+                        f"<{frame.tag_name}> received primary content while "
+                        f"{primary_prop!r} was passed explicitly."
+                    )
+                return Node(tag=frame.tag, props=frame.props, children=child_nodes)
             if not frame.children:
                 return create_node(frame.tag, **frame.props)
-            if all(not isinstance(child, Node) for child in frame.children):
+            if primary_values and not child_nodes:
                 return create_node(
                     frame.tag,
-                    _primary_text_value(frame.children),
+                    _primary_text_value(primary_values),
                     **frame.props,
                 )
+            raise TemplateError(
+                f"<{frame.tag_name}> cannot mix primary content with child nodes; "
+                f"pass {primary_prop!r} explicitly when nesting nodes."
+            )
         children = [child for child in frame.children if isinstance(child, Node)]
         return create_node(frame.tag, *children, **frame.props)
 

@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Fixed keyed `For` mounting so duplicate keys are rejected instead of
+  reusing one mounted child in multiple positions.
+- Escaped live-preview shell metadata and stylesheet routes before rendering
+  the dev HTML wrapper.
+- Added live-preview client-side ordering so stale event responses cannot
+  overwrite newer UI.
+- Hardened `template(...)` primary-content parsing for widgets that also nest
+  child nodes.
+
 ## v0.1.2 - Developer Experience Closeout
 
 - Added framework mental model, component cookbook, widget contracts, style

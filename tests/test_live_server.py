@@ -51,6 +51,24 @@ def test_render_live_page_links_extra_stylesheets_before_primary_css():
     assert config.stylesheet_for("/missing.css") is None
 
 
+def test_render_live_page_escapes_shell_config_values():
+    html = render_live_page(
+        DummyPreview(),
+        LivePreviewConfig(
+            title="<script>alert(1)</script>",
+            css_route='"/><script>alert(2)</script>',
+            css_path=Path("dummy.css"),
+            root_class='root" onclick="alert(3)',
+        ),
+    )
+
+    assert "<title>&lt;script&gt;alert(1)&lt;/script&gt;</title>" in html
+    assert 'href="&quot;/&gt;&lt;script&gt;alert(2)&lt;/script&gt;"' in html
+    assert 'class="root&quot; onclick=&quot;alert(3)"' in html
+    assert "<script>alert(2)</script>" not in html
+    assert 'onclick="alert(3)' not in html
+
+
 def test_render_live_page_includes_click_input_and_keydown_dispatchers():
     html = render_live_page(
         DummyPreview(),
@@ -76,3 +94,17 @@ def test_render_live_page_includes_click_input_and_keydown_dispatchers():
     assert "ctrlKey" in html
     assert "metaKey" in html
     assert 'fetch("/event"' in html
+
+
+def test_render_live_page_ignores_stale_event_responses():
+    html = render_live_page(
+        DummyPreview(),
+        LivePreviewConfig(
+            title="Dummy",
+            css_route="/dummy.css",
+            css_path=Path("dummy.css"),
+        ),
+    )
+
+    assert "latestEventRequest" in html
+    assert "requestId !== latestEventRequest" in html
