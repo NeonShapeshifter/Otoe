@@ -230,6 +230,45 @@ Provider contract:
 - model pending and invalid state explicitly with `pending_changes`, `status`,
   and `status_tone`
 
+## Data Workflow Console
+
+Paths:
+
+- `examples/data_workflow/workbench.py`
+- `examples/data_workflow/preview.py`
+- `examples/data_workflow/live_preview.py`
+
+Use this as the third Phase 5 reference app: a table-first workflow for
+reviewing imported records, filtering a queue, selecting a batch, and running
+bulk actions.
+
+- search and stage filters over a table-backed record set
+- selected-row workflow and batch summary
+- blocked bulk approval when invalid rows are selected
+- export preparation action for the filtered view
+- route-driven queue, selected, and history views
+- provider boundary with deterministic records and workflow events
+
+```bash
+PYTHONPATH=src:. python -m examples.data_workflow.preview > preview/data_workflow.html
+PYTHONPATH=src:. python -m examples.data_workflow.live_preview
+```
+
+This example keeps data operations local and deterministic. A real app can
+replace the provider with CSV, SQLite, API, or hardware/service-backed data
+without changing the component tree.
+
+Provider contract:
+
+- implement `snapshot() -> WorkflowSnapshot` for the first render
+- implement `set_query(value)` and `set_stage_filter(value)` for table filters
+- implement `toggle_record(record_id)` for row selection
+- implement `run_action(action_id)` for approve, clear, export, or future bulk
+  actions
+- keep invalid-row guards in the provider so the UI cannot approve blocked data
+- return `last_feedback` and append workflow events after actions that change
+  operator-visible state
+
 ## Wraith Previews
 
 Paths:
@@ -275,6 +314,7 @@ assumptions into the runtime.
 | Product-dashboard case study | `examples.saas.overview` |
 | Professional hardware reference app | `examples.hardware.control_panel` |
 | Local admin/settings reference app | `examples.admin.settings_console` |
+| Data/table workflow reference app | `examples.data_workflow.workbench` |
 | Dense operational case study | `examples.wraith.mission_exec_surface` |
 
 ## Example Rules

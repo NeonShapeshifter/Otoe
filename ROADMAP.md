@@ -1,9 +1,9 @@
 # Otoe Roadmap
 
-**Status:** v0.1.2 released; Phase 5 professional UI/reference app planning
+**Status:** v0.1.2 released; Phase 5 professional UI/reference app buildout
 **Updated:** May 26, 2026
-**Current baseline:** 322 tests passing
-**Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, hardware control panel, local admin/settings console, Wraith Mission Exec preview
+**Current baseline:** 330 tests passing
+**Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
 
@@ -366,6 +366,8 @@ private projects while keeping the author as the primary customer.
   local service adapter.
 - Add a local admin/settings reference app with editable provider-backed state,
   validation, access controls, and audit history.
+- Add a data/table workflow reference app with filtering, row selection, guarded
+  bulk actions, and workflow history.
 - Improve design-system defaults: variants, tone, spacing, tables, cards,
   shell navigation, command surfaces, settings, telemetry, and status patterns.
 - Keep Wraith as pressure, not the next migration target, until a stronger
@@ -430,11 +432,11 @@ private projects while keeping the author as the primary customer.
 
 ## Immediate Next Actions
 
-1. Start the data/table workflow reference app as the third neutral Phase 5
-   app shape.
-2. Extract repeated reference-app patterns into UI kit improvements only when
+1. Extract repeated reference-app patterns into UI kit improvements only when
    duplication becomes real.
-3. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
+2. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
    after each native input/style/layout change.
-4. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter
+3. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter
    semantics change.
+4. Decide whether the Phase 5 reference apps now satisfy enough product shape
+   to move back into core UI-kit polish or a backend candidate spike.
