@@ -2,7 +2,7 @@
 
 **Status:** v0.1.2 released; Phase 5 professional UI/reference app planning
 **Updated:** May 26, 2026
-**Current baseline:** 312 tests passing
+**Current baseline:** 315 tests passing
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, Wraith Mission Exec preview
 
 ---
@@ -428,13 +428,11 @@ private projects while keeping the author as the primary customer.
 
 ## Immediate Next Actions
 
-1. Continue hardening the hardware control panel reference app with richer
-   provider adapters and transport-shaped regressions.
+1. Define the next two neutral reference apps: local admin/settings and
+   data/table workflow.
 2. Extract repeated reference-app patterns into UI kit improvements only when
    duplication becomes real.
-3. Define the next two neutral reference apps: local admin/settings and
-   data/table workflow.
-4. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
+3. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
    after each native input/style/layout change.
-5. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter
+4. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter
    semantics change.

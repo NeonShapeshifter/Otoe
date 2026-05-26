@@ -4,7 +4,8 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from examples.hardware.control_panel import FakeHardwareProvider, HardwareControlPanel
+from examples.hardware.adapters import MemoryHardwareTransport, TransportHardwareProvider
+from examples.hardware.control_panel import HardwareControlPanel
 from examples.live_server import (
     LivePreviewConfig,
     parse_host_port,
@@ -26,7 +27,7 @@ LIVE_CONFIG = LivePreviewConfig(
 class HardwareLivePreview:
     def __init__(self) -> None:
         self._lock = threading.RLock()
-        self.provider = FakeHardwareProvider()
+        self.provider = TransportHardwareProvider(MemoryHardwareTransport())
         self.renderer = LiveHtmlRenderer()
         self.snapshot = signal(self.provider.snapshot())
         self.active_route = signal("overview")

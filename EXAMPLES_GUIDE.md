@@ -141,6 +141,7 @@ This is a case study, not a product dependency.
 Paths:
 
 - `examples/hardware/control_panel.py`
+- `examples/hardware/adapters.py`
 - `examples/hardware/preview.py`
 - `examples/hardware/live_preview.py`
 
@@ -176,6 +177,17 @@ Provider contract:
   `connection`, and `connection_tone`
 - use fixture helpers such as `loading_snapshot()`, `offline_snapshot()`,
   `error_snapshot()`, and `empty_snapshot()` to test non-happy paths
+
+Adapter contract:
+
+- implement `HardwareTransport.read_snapshot()` for the latest transport state
+- implement `HardwareTransport.write_command(command_id)` for one operator
+  action
+- adapt transport responses through `TransportHardwareProvider`
+- keep unsafe command guards in the provider layer so a disabled command does
+  not write to the transport
+- use `MemoryHardwareTransport` for deterministic tests before adding serial,
+  USB, GPIO, SQLite, or local service adapters
 
 ## Wraith Previews
 
