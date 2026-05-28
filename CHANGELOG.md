@@ -12,6 +12,8 @@
   and `--check` modes and catch targets that only import from the workspace.
 - Added `otoe-run.py --verify` bundle integrity checks for referenced files,
   sizes, and SHA-256 hashes.
+- Added `otoe pack` to verify offline bundles and write cache-free `.tar.gz`
+  deployment archives.
 
 ## v0.1.4 - Native Backend Acceptance Hardening
 

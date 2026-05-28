@@ -31,6 +31,7 @@ from .live_server import LivePreviewApp, LivePreviewConfig, run_live_preview
 from .mount import MountedNode, mount
 from .native import render_native_png
 from .node import Node
+from .pack import PackError, pack_bundle
 from .plan import PlanError, format_plan, plan_mounted, plan_to_dict
 from .profile import (
     DEFAULT_PROFILE_FILENAME,
@@ -209,6 +210,18 @@ def _build_parser() -> argparse.ArgumentParser:
         help="run the generated bundle runner with --check after writing artifacts",
     )
     build.set_defaults(func=_build)
+
+    pack = subcommands.add_parser(
+        "pack",
+        help="verify and package an offline Otoe bundle",
+    )
+    pack.add_argument("bundle", help="bundle directory written by otoe build")
+    pack.add_argument(
+        "--out",
+        required=True,
+        help="output .tar.gz path",
+    )
+    pack.set_defaults(func=_pack)
 
     deps = subcommands.add_parser(
         "deps",
@@ -417,6 +430,20 @@ def _build(args: argparse.Namespace) -> int:
     print(f"manifest: {manifest_path}")
     if args.validate:
         print("validation: ok")
+    return 0
+
+
+def _pack(args: argparse.Namespace) -> int:
+    try:
+        result = pack_bundle(Path(args.bundle), Path(args.out))
+    except PackError as exc:
+        print(f"pack: {exc}", file=sys.stderr)
+        return 1
+
+    print(f"pack {Path(args.bundle)}: {Path(args.out)}")
+    print(f"files: {result.files}")
+    print(f"size: {result.size}")
+    print(f"sha256: {result.sha256}")
     return 0
 
 

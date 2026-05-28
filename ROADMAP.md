@@ -2,7 +2,7 @@
 
 **Status:** v0.1.4 public snapshot released; Phase 5 utility-first styling and offline build planning
 **Updated:** May 28, 2026
-**Current baseline:** 389 tests passing, 1 skipped when `mypy` is unavailable
+**Current baseline:** 392 tests passing, 1 skipped when `mypy` is unavailable
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, utility ops console, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
@@ -53,6 +53,8 @@ explicit app runtime file copying now exist as the first file policy, and the
 first native framework/runtime file copy policy is recorded in `frameworkFiles`.
 The bundle now includes a generated `otoe-run.py` integrity verify, load/check,
 and headless PNG entry, plus optional `otoe build --validate` runner checks.
+`otoe pack` verifies those bundle files and creates a cache-free `.tar.gz`
+deployment archive.
 Runtime installs on the target device are a non-goal; no runtime dependency
 installs should happen on hardware targets.
 

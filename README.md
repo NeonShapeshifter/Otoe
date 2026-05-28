@@ -224,6 +224,7 @@ Write the first minimal offline bundle contract:
 ```bash
 python -m otoe build app:app --profile-file otoe.profile.toml --out dist/cage
 python -m otoe build app:app --profile-file otoe.profile.toml --out dist/cage --validate
+python -m otoe pack dist/cage --out dist/cage.tar.gz
 ```
 
 `otoe build` currently writes `dist/cage/otoe-plan.json`,
@@ -244,6 +245,11 @@ to check referenced bundle files, sizes, and SHA-256 hashes. Pass `otoe build
 --validate` to run the generated runner's `--verify` and `--check` modes after
 writing the bundle; this confirms the copied files are intact and the target
 loads from the bundle instead of only from the workspace.
+
+`otoe pack` verifies the bundle with `otoe-run.py --verify` and writes a
+portable `.tar.gz` archive for deployment. The pack step keeps the bundle rooted
+at the archive top level and excludes local cache directories such as
+`__pycache__/` and `.pytest_cache/`.
 
 Run an importable live preview app locally:
 

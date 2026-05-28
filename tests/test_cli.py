@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import sys
+import tarfile
 import tomllib
 
 from otoe.cli import main
@@ -902,6 +903,139 @@ def test_cli_build_writes_runner_that_loads_copied_runtime_target(
     assert "sha256 mismatch" in tampered.stderr
     assert missing.returncode == 1
     assert "bundle file 'app/bundled_runner_app.py' does not exist" in missing.stderr
+
+
+def test_cli_pack_writes_verified_tarball(tmp_path, monkeypatch, capsys):
+    app = tmp_path / "packed_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Packed app')\n",
+        encoding="utf-8",
+    )
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[runtime]\n"
+        'files = ["packed_app.py"]\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "pack-build"
+    archive = tmp_path / "dist" / "pack-build.tar.gz"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    assert (
+        main(
+            [
+                "build",
+                "packed_app:app",
+                "--profile-file",
+                str(profile_file),
+                "--out",
+                str(output),
+                "--validate",
+            ]
+        )
+        == 0
+    )
+    (output / "app" / "__pycache__").mkdir(exist_ok=True)
+    (output / "app" / "__pycache__" / "ignored.pyc").write_bytes(b"ignored")
+    (output / ".pytest_cache").mkdir()
+    (output / ".pytest_cache" / "ignored").write_text("ignored", encoding="utf-8")
+    (output / "frame.png").write_bytes(b"not part of the deploy bundle")
+
+    result = main(["pack", str(output), "--out", str(archive)])
+
+    captured = capsys.readouterr()
+    assert result == 0
+    assert f"pack {output}: {archive}" in captured.out
+    assert "sha256:" in captured.out
+    with tarfile.open(archive, "r:gz") as tar:
+        names = tar.getnames()
+        for member in tar.getmembers():
+            target = tmp_path / "extracted" / member.name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            source = tar.extractfile(member)
+            assert source is not None
+            target.write_bytes(source.read())
+    assert "manifest.json" in names
+    assert "otoe-plan.json" in names
+    assert "otoe-deps.json" in names
+    assert "otoe-run.py" in names
+    assert "app/packed_app.py" in names
+    assert "framework/otoe/native.py" in names
+    assert "frame.png" not in names
+    assert all("__pycache__" not in name for name in names)
+    assert all(".pytest_cache" not in name for name in names)
+
+    extracted = tmp_path / "extracted"
+    verify = subprocess.run(
+        [sys.executable, str(extracted / "otoe-run.py"), "--verify"],
+        capture_output=True,
+        cwd=extracted,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+    assert verify.returncode == 0, verify.stderr
+    assert "verified: manifest.json" in verify.stdout
+
+
+def test_cli_pack_rejects_tampered_bundle(tmp_path, monkeypatch, capsys):
+    app = tmp_path / "tampered_pack_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Packed app')\n",
+        encoding="utf-8",
+    )
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[runtime]\n"
+        'files = ["tampered_pack_app.py"]\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "tampered-pack"
+    archive = tmp_path / "dist" / "tampered-pack.tar.gz"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    assert (
+        main(
+            [
+                "build",
+                "tampered_pack_app:app",
+                "--profile-file",
+                str(profile_file),
+                "--out",
+                str(output),
+            ]
+        )
+        == 0
+    )
+    copied_app = output / "app" / "tampered_pack_app.py"
+    copied_app.write_text(
+        copied_app.read_text(encoding="utf-8").replace("Packed app", "Tampered!!"),
+        encoding="utf-8",
+    )
+
+    result = main(["pack", str(output), "--out", str(archive)])
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert not archive.exists()
+    assert "pack: runner verification failed:" in captured.err
+    assert "sha256 mismatch" in captured.err
+
+
+def test_cli_pack_rejects_missing_manifest(tmp_path, capsys):
+    bundle = tmp_path / "empty-bundle"
+    bundle.mkdir()
+
+    result = main(["pack", str(bundle), "--out", str(tmp_path / "bundle.tar.gz")])
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "pack: bundle is missing manifest.json" in captured.err
 
 
 def test_cli_build_validate_rejects_target_missing_from_bundle(

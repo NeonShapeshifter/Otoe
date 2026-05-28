@@ -18,6 +18,8 @@ def test_offline_profile_build_adr_captures_hardware_direction():
     assert "otoe plan" in text
     assert "otoe build" in text
     assert "otoe deps" in text
+    assert "otoe pack" in text
+    assert "dist/cage.tar.gz" in text
     assert "audit-only" in text
     assert "--json" in text
     assert "--out" in text
@@ -37,6 +39,7 @@ def test_offline_profile_build_adr_captures_hardware_direction():
     assert "--check" in text
     assert "--png" in text
     assert "--validate" in text
+    assert "__pycache__" in text
     assert "allow_runtime_installs = false" in text
     assert "--profile cage" in text
     assert "No runtime dependency installs" in text
@@ -55,6 +58,8 @@ def test_style_guide_points_css_at_offline_profiles():
     assert "dist/otoe-plan.json" in text
     assert "dist/cage" in text
     assert "otoe deps" in text
+    assert "otoe pack" in text
+    assert "dist/cage.tar.gz" in text
     assert "manifest.json" in text
     assert "otoe-deps.json" in text
     assert "otoe-run.py" in text
@@ -67,6 +72,7 @@ def test_style_guide_points_css_at_offline_profiles():
     assert "asset, and runtime file paths" in text
     assert "allow_runtime_installs = true" in text
     assert "without installing packages" in single_spaced
+    assert ".tar.gz" in text
     assert "--profile cage" in text
 
 
@@ -78,6 +84,7 @@ def test_roadmap_keeps_low_level_build_work_in_scope():
     assert "offline profile planner" in text
     assert "otoe plan" in text
     assert "otoe deps" in text
+    assert "otoe pack" in text
     assert "otoe plan --json/--out" in text
     assert "otoe.profile.toml" in text
     assert "manifest-first" in text
@@ -86,4 +93,5 @@ def test_roadmap_keeps_low_level_build_work_in_scope():
     assert "explicit app runtime file copying" in text
     assert "otoe build --profile cage" in text
     assert "--validate" in text
+    assert ".tar.gz" in text
     assert "no runtime dependency installs" in text

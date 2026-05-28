@@ -27,6 +27,7 @@ otoe plan app:app --profile cage
 otoe deps app:app --profile cage
 otoe build app:app --profile cage --out dist/cage
 otoe build app:app --profile cage --out dist/cage --validate
+otoe pack dist/cage --out dist/cage.tar.gz
 ```
 
 `otoe plan` is implemented as an import/mount/style diagnostic. It supports a
@@ -39,6 +40,8 @@ install packages, touch the network, or write artifacts when run directly.
 `manifest.json`, plus a generated `otoe-run.py` runner. The first framework copy
 policy supports the built-in `native` backend only; future backend candidates
 must add explicit file sets instead of relying on import discovery.
+`otoe pack` is implemented as a verify-before-archive step that creates a
+portable `.tar.gz` from the generated bundle without local cache directories.
 
 The initial profile file shape is:
 
@@ -87,6 +90,9 @@ deployment artifact is built.
 - optional bundle validation through `otoe build --validate`, which runs the
   generated runner in `--verify` and `--check` modes after writing artifacts so
   the copied bundle must be intact and load the manifest target
+- a deployment archive step, currently `otoe pack`, that runs the generated
+  runner in `--verify` mode, writes a top-level bundle `.tar.gz`, and excludes
+  local cache directories such as `__pycache__/` and `.pytest_cache/`
 - assets copied for the profile with manifest entries containing source path,
   bundle path, byte size, and SHA-256
 - a compiled portable style plan, initially shaped by the `otoe plan --out`

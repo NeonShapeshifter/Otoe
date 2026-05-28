@@ -118,6 +118,7 @@ otoe plan app:app --profile-file otoe.profile.toml --out dist/otoe-plan.json
 otoe deps app:app --profile-file otoe.profile.toml --json
 otoe build app:app --profile-file otoe.profile.toml --out dist/cage
 otoe build app:app --profile-file otoe.profile.toml --out dist/cage --validate
+otoe pack dist/cage --out dist/cage.tar.gz
 otoe plan app:app --profile cage --no-strict-styles
 ```
 
@@ -177,6 +178,11 @@ for validation, supports `--verify` for file size/hash checks, and supports
 `--png` for a single headless native frame. `otoe build --validate` runs that
 copied runner in `--verify` and `--check` modes after writing the bundle, so
 missing, modified, or unbundled files are caught before deployment.
+
+`otoe pack` is the first deployment archive step. It runs the copied runner in
+`--verify` mode, writes a `.tar.gz` with the bundle contents at archive root,
+and excludes local cache directories such as `__pycache__/` and
+`.pytest_cache/`.
 
 ## Supported Parsed Properties
 
