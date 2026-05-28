@@ -80,6 +80,7 @@ def build_manifest(
     deps: dict[str, Any],
     profile_config: PlanProfileConfig,
     assets: list[dict[str, Any]] | None = None,
+    artifacts: list[dict[str, Any]] | None = None,
     framework_files: list[dict[str, Any]] | None = None,
     runner: dict[str, Any] | None = None,
     runtime_files: list[dict[str, Any]] | None = None,
@@ -96,6 +97,7 @@ def build_manifest(
         "runtimeInstallsAllowed": profile_config.allow_runtime_installs,
         "plan": PLAN_ARTIFACT_FILENAME,
         "deps": DEPS_ARTIFACT_FILENAME,
+        "artifacts": artifacts or [],
         "assets": assets or [],
         "frameworkFiles": framework_files or [],
         "runner": runner or {},
@@ -150,7 +152,24 @@ def write_runner(*, output_dir: Path) -> dict[str, Any]:
     return {
         "path": RUNNER_FILENAME,
         "pythonPath": list(RUNNER_PYTHON_PATH),
-        "modes": ["check", "png"],
+        "modes": ["check", "png", "verify"],
+        "size": len(data),
+        "sha256": hashlib.sha256(data).hexdigest(),
+    }
+
+
+def bundle_artifact(path: Path, *, output_dir: Path) -> dict[str, Any]:
+    if not path.is_file():
+        raise BuildError(f"bundle artifact {str(path)!r} does not exist")
+    data = path.read_bytes()
+    try:
+        relative = path.relative_to(output_dir)
+    except ValueError as exc:
+        raise BuildError(
+            f"bundle artifact {str(path)!r} is not inside {str(output_dir)!r}"
+        ) from exc
+    return {
+        "path": relative.as_posix(),
         "size": len(data),
         "sha256": hashlib.sha256(data).hexdigest(),
     }
@@ -160,7 +179,9 @@ def _framework_files(profile_config: PlanProfileConfig) -> tuple[BundleFile, ...
     backend_name = profile_config.backend_name or "native"
     if backend_name not in BACKEND_RUNTIME_FILES:
         supported = ", ".join(sorted(BACKEND_RUNTIME_FILES))
-        raise BuildError(f"unsupported build backend {backend_name!r}; supported: {supported}")
+        raise BuildError(
+            f"unsupported build backend {backend_name!r}; supported: {supported}"
+        )
     paths = _unique_paths(CORE_RUNTIME_FILES + BACKEND_RUNTIME_FILES[backend_name])
     return tuple(
         BundleFile(
@@ -186,6 +207,7 @@ def _runner_source() -> str:
     return '''from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib
 import json
 import sys
@@ -202,11 +224,17 @@ def main(argv: list[str] | None = None) -> int:
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--check", action="store_true", help="load the bundled target")
     mode.add_argument("--png", help="render one native PNG frame")
+    mode.add_argument("--verify", action="store_true", help="verify bundled files")
     parser.add_argument("--background", default="#ffffff", help="PNG background")
     args = parser.parse_args(argv)
 
-    _install_pythonpath()
     manifest = _load_manifest()
+    if args.verify:
+        _verify_bundle(manifest)
+        print("verified: manifest.json")
+        return 0
+
+    _install_pythonpath()
     mounted = _coerce_target(_load_target(manifest["target"]))
     if args.png:
         from otoe import render_native_png
@@ -228,6 +256,49 @@ def _install_pythonpath() -> None:
 
 def _load_manifest() -> dict[str, Any]:
     return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+
+
+def _verify_bundle(manifest: dict[str, Any]) -> None:
+    for key in ("plan", "deps"):
+        _require_bundle_file(manifest[key])
+    for artifact in manifest.get("artifacts", []):
+        _verify_manifest_file(artifact, path_key="path")
+    runner = manifest.get("runner")
+    if runner:
+        _verify_manifest_file(runner, path_key="path")
+    for group in ("assets", "frameworkFiles", "runtimeFiles"):
+        for entry in manifest.get(group, []):
+            _verify_manifest_file(entry, path_key="bundlePath")
+
+
+def _verify_manifest_file(entry: dict[str, Any], *, path_key: str) -> None:
+    relative = entry[path_key]
+    path = _require_bundle_file(relative)
+    data = path.read_bytes()
+    expected_size = entry.get("size")
+    if expected_size is not None and len(data) != expected_size:
+        raise ValueError(
+            f"{relative}: expected size {expected_size}, got {len(data)}"
+        )
+    expected_sha = entry.get("sha256")
+    if expected_sha is not None:
+        actual_sha = hashlib.sha256(data).hexdigest()
+        if actual_sha != expected_sha:
+            raise ValueError(f"{relative}: sha256 mismatch")
+
+
+def _require_bundle_file(relative: str) -> Path:
+    path = _bundle_path(relative)
+    if not path.is_file():
+        raise FileNotFoundError(f"bundle file {relative!r} does not exist")
+    return path
+
+
+def _bundle_path(relative: str) -> Path:
+    path = Path(relative)
+    if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+        raise ValueError(f"bundle path {relative!r} is not safe")
+    return ROOT / path
 
 
 def _load_target(spec: str) -> Any:

@@ -33,6 +33,7 @@ def test_offline_profile_build_adr_captures_hardware_direction():
     assert 'extras = ["dev"]' in text
     assert "SHA-256" in text
     assert "built-in `native`" in text
+    assert "--verify" in text
     assert "--check" in text
     assert "--png" in text
     assert "--validate" in text

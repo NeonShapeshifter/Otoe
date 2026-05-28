@@ -173,9 +173,10 @@ auto-discover imports yet. Copied framework files are recorded in
 
 The build also writes `otoe-run.py` as the first executable bundle entry. It
 loads the manifest target from the copied app/framework paths, supports `--check`
-for validation, and supports `--png` for a single headless native frame.
-`otoe build --validate` runs that copied runner in `--check` mode after writing
-the bundle, so missing app runtime files are caught before deployment.
+for validation, supports `--verify` for file size/hash checks, and supports
+`--png` for a single headless native frame. `otoe build --validate` runs that
+copied runner in `--verify` and `--check` modes after writing the bundle, so
+missing, modified, or unbundled files are caught before deployment.
 
 ## Supported Parsed Properties
 

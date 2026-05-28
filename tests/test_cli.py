@@ -752,8 +752,25 @@ def test_cli_build_writes_minimal_bundle_manifest(tmp_path, monkeypatch, capsys)
     assert f"deps artifact: {output / 'otoe-deps.json'}" in captured.out
     assert plan["status"] == "ok"
     assert deps["status"] == "ok"
+    artifacts = manifest.pop("artifacts")
     framework_files = manifest.pop("frameworkFiles")
     runner = manifest.pop("runner")
+    assert artifacts == [
+        {
+            "path": "otoe-plan.json",
+            "size": (output / "otoe-plan.json").stat().st_size,
+            "sha256": hashlib.sha256(
+                (output / "otoe-plan.json").read_bytes()
+            ).hexdigest(),
+        },
+        {
+            "path": "otoe-deps.json",
+            "size": (output / "otoe-deps.json").stat().st_size,
+            "sha256": hashlib.sha256(
+                (output / "otoe-deps.json").read_bytes()
+            ).hexdigest(),
+        },
+    ]
     assert {
         "source": "otoe/native.py",
         "bundlePath": "framework/otoe/native.py",
@@ -774,7 +791,7 @@ def test_cli_build_writes_minimal_bundle_manifest(tmp_path, monkeypatch, capsys)
     assert runner == {
         "path": "otoe-run.py",
         "pythonPath": ["app", "framework"],
-        "modes": ["check", "png"],
+        "modes": ["check", "png", "verify"],
         "size": (output / "otoe-run.py").stat().st_size,
         "sha256": hashlib.sha256((output / "otoe-run.py").read_bytes()).hexdigest(),
     }
@@ -828,6 +845,13 @@ def test_cli_build_writes_runner_that_loads_copied_runtime_target(
 
     captured = capsys.readouterr()
     env = {**os.environ, "PYTHONPATH": ""}
+    verify = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--verify"],
+        capture_output=True,
+        cwd=output,
+        env=env,
+        text=True,
+    )
     check = subprocess.run(
         [sys.executable, str(output / "otoe-run.py"), "--check"],
         capture_output=True,
@@ -846,10 +870,38 @@ def test_cli_build_writes_runner_that_loads_copied_runtime_target(
 
     assert result == 0
     assert "validation: ok" in captured.out
+    assert verify.returncode == 0, verify.stderr
+    assert "verified: manifest.json" in verify.stdout
     assert check.returncode == 0, check.stderr
     assert "loaded: bundled_runner_app:app" in check.stdout
     assert png.returncode == 0, png.stderr
     assert frame.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+
+    copied_app = output / "app" / "bundled_runner_app.py"
+    copied_app.write_text(
+        copied_app.read_text(encoding="utf-8").replace("Bundled app", "Bundled bad"),
+        encoding="utf-8",
+    )
+    tampered = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--verify"],
+        capture_output=True,
+        cwd=output,
+        env=env,
+        text=True,
+    )
+    copied_app.unlink()
+    missing = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--verify"],
+        capture_output=True,
+        cwd=output,
+        env=env,
+        text=True,
+    )
+
+    assert tampered.returncode == 1
+    assert "sha256 mismatch" in tampered.stderr
+    assert missing.returncode == 1
+    assert "bundle file 'app/bundled_runner_app.py' does not exist" in missing.stderr
 
 
 def test_cli_build_validate_rejects_target_missing_from_bundle(

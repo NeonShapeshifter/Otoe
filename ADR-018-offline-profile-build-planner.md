@@ -82,11 +82,11 @@ deployment artifact is built.
   size, and SHA-256
 - a generated runner entry, initially `otoe-run.py`, that adds the copied
   `app/` and `framework/` directories to `sys.path`, loads the manifest target,
-  supports a load-only `--check`, and can render one headless PNG frame with
-  `--png`
+  supports file integrity `--verify`, supports a load-only `--check`, and can
+  render one headless PNG frame with `--png`
 - optional bundle validation through `otoe build --validate`, which runs the
-  generated runner in `--check` mode after writing artifacts so the copied bundle
-  must load the manifest target
+  generated runner in `--verify` and `--check` modes after writing artifacts so
+  the copied bundle must be intact and load the manifest target
 - assets copied for the profile with manifest entries containing source path,
   bundle path, byte size, and SHA-256
 - a compiled portable style plan, initially shaped by the `otoe plan --out`

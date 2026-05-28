@@ -239,10 +239,11 @@ copied framework files in `frameworkFiles`, and records copied app files in
 The bundle also includes `otoe-run.py`, a minimal generated runner. It adds the
 copied `app/` and `framework/` directories to `sys.path`, loads the manifest
 target, supports `--check` for import/load validation, and supports `--png
-frame.png` for a single headless native PNG frame. Pass `otoe build --validate`
-to run the generated runner's `--check` mode after writing the bundle; this
-confirms the target loads from the copied bundle instead of only from the
-workspace.
+frame.png` for a single headless native PNG frame. It also supports `--verify`
+to check referenced bundle files, sizes, and SHA-256 hashes. Pass `otoe build
+--validate` to run the generated runner's `--verify` and `--check` modes after
+writing the bundle; this confirms the copied files are intact and the target
+loads from the bundle instead of only from the workspace.
 
 Run an importable live preview app locally:
 

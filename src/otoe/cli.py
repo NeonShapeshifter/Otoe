@@ -19,6 +19,7 @@ from .build import (
     RUNNER_FILENAME,
     BuildError,
     build_manifest,
+    bundle_artifact,
     copy_assets,
     copy_framework_files,
     copy_runtime_files,
@@ -377,6 +378,10 @@ def _build(args: argparse.Namespace) -> int:
             raise BuildError(
                 "dependency audit invalid; refusing to write build manifest"
             )
+        artifact_manifest = [
+            bundle_artifact(plan_path, output_dir=output),
+            bundle_artifact(deps_path, output_dir=output),
+        ]
         framework_file_manifest = copy_framework_files(
             profile_config,
             output_dir=output,
@@ -393,6 +398,7 @@ def _build(args: argparse.Namespace) -> int:
             deps=deps_dict,
             profile_config=profile_config,
             assets=asset_manifest,
+            artifacts=artifact_manifest,
             framework_files=framework_file_manifest,
             runner=runner_manifest,
             runtime_files=runtime_file_manifest,
@@ -415,7 +421,12 @@ def _build(args: argparse.Namespace) -> int:
 
 
 def _validate_build_runner(output: Path) -> None:
-    command = [sys.executable, str(output / RUNNER_FILENAME), "--check"]
+    _run_build_runner(output, "--verify", label="verification")
+    _run_build_runner(output, "--check", label="validation")
+
+
+def _run_build_runner(output: Path, mode: str, *, label: str) -> None:
+    command = [sys.executable, str(output / RUNNER_FILENAME), mode]
     result = subprocess.run(
         command,
         capture_output=True,
@@ -428,7 +439,7 @@ def _validate_build_runner(output: Path) -> None:
     details = result.stderr.strip() or result.stdout.strip()
     if not details:
         details = f"runner exited with status {result.returncode}"
-    raise BuildError(f"runner validation failed: {details}")
+    raise BuildError(f"runner {label} failed: {details}")
 
 
 def _deps(args: argparse.Namespace) -> int:

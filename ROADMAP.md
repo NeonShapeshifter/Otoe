@@ -51,10 +51,10 @@ offline profile planner: `otoe plan`, audit-only `otoe deps`, and the first
 backend selection, and dependency metadata before hardware deployment. Asset and
 explicit app runtime file copying now exist as the first file policy, and the
 first native framework/runtime file copy policy is recorded in `frameworkFiles`.
-The bundle now includes a generated `otoe-run.py` load/check and headless PNG
-entry, plus optional `otoe build --validate` runner checks. Runtime installs on
-the target device are a non-goal; no runtime dependency installs should happen
-on hardware targets.
+The bundle now includes a generated `otoe-run.py` integrity verify, load/check,
+and headless PNG entry, plus optional `otoe build --validate` runner checks.
+Runtime installs on the target device are a non-goal; no runtime dependency
+installs should happen on hardware targets.
 
 ---
 

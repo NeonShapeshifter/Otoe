@@ -8,8 +8,10 @@
   manifest-first `otoe build` with `otoe-plan.json`, `otoe-deps.json`,
   `frameworkFiles`, explicit runtime files, and a generated `otoe-run.py`
   load/check plus headless PNG runner.
-- Added `otoe build --validate` to run the generated bundle runner in `--check`
-  mode and catch targets that only import from the workspace.
+- Added `otoe build --validate` to run the generated bundle runner in `--verify`
+  and `--check` modes and catch targets that only import from the workspace.
+- Added `otoe-run.py --verify` bundle integrity checks for referenced files,
+  sizes, and SHA-256 hashes.
 
 ## v0.1.4 - Native Backend Acceptance Hardening
 
