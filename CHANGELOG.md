@@ -16,6 +16,8 @@
   deployment archives.
 - Added `otoe-styles.json` build artifacts and taught the generated runner to
   render PNG frames with bundled compiled styles.
+- Added generated runner `--layout-check` validation and wired
+  `otoe build --validate` to catch layout/paint failures from compiled styles.
 
 ## v0.1.4 - Native Backend Acceptance Hardening
 

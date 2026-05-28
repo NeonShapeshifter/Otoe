@@ -801,7 +801,7 @@ def test_cli_build_writes_minimal_bundle_manifest(tmp_path, monkeypatch, capsys)
     assert runner == {
         "path": "otoe-run.py",
         "pythonPath": ["app", "framework"],
-        "modes": ["check", "png", "verify"],
+        "modes": ["check", "layout-check", "png", "verify"],
         "size": (output / "otoe-run.py").stat().st_size,
         "sha256": hashlib.sha256((output / "otoe-run.py").read_bytes()).hexdigest(),
     }
@@ -870,6 +870,13 @@ def test_cli_build_writes_runner_that_loads_copied_runtime_target(
         env=env,
         text=True,
     )
+    layout_check = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--layout-check"],
+        capture_output=True,
+        cwd=output,
+        env=env,
+        text=True,
+    )
     frame = output / "frame.png"
     png = subprocess.run(
         [sys.executable, str(output / "otoe-run.py"), "--png", str(frame)],
@@ -885,6 +892,8 @@ def test_cli_build_writes_runner_that_loads_copied_runtime_target(
     assert "verified: manifest.json" in verify.stdout
     assert check.returncode == 0, check.stderr
     assert "loaded: bundled_runner_app:app" in check.stdout
+    assert layout_check.returncode == 0, layout_check.stderr
+    assert "layout checked: bundled_runner_app:app" in layout_check.stdout
     assert png.returncode == 0, png.stderr
     assert frame.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
 
@@ -1032,6 +1041,89 @@ def test_cli_build_runner_png_accepts_html_only_missing_class(
     assert preview_rule["declarations"] == {}
     assert png.returncode == 0, png.stderr
     assert frame.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+
+
+def test_cli_build_validate_rejects_bad_compiled_styles(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    app = tmp_path / "bad_compiled_styles_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Bad style', className='text-sm')\n",
+        encoding="utf-8",
+    )
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[runtime]\n"
+        'files = ["bad_compiled_styles_app.py"]\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "bad-compiled-styles"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    def bad_compiled_styles(plan, *, target, stylesheet):
+        return {
+            "schemaVersion": 1,
+            "target": target,
+            "profile": plan.profile,
+            "status": "ok",
+            "classes": {
+                "used": ["text-sm"],
+                "planned": ["text-sm"],
+                "htmlOnly": [],
+                "invalid": [],
+            },
+            "styleCounts": {
+                "portable": 1,
+                "html-only": 0,
+                "deferred": 0,
+                "invalid": 0,
+            },
+            "directStyleCounts": {
+                "portable": 0,
+                "html-only": 0,
+                "deferred": 0,
+                "invalid": 0,
+            },
+            "tokens": {},
+            "rules": [
+                {
+                    "className": "text-sm",
+                    "selector": ".text-sm",
+                    "declarations": {
+                        "fontSize": {"type": "literal", "value": "large"}
+                    },
+                    "omittedDeclarations": [],
+                    "missing": False,
+                }
+            ],
+            "diagnostics": [],
+        }
+
+    monkeypatch.setattr("otoe.cli.compiled_styles_to_dict", bad_compiled_styles)
+
+    result = main(
+        [
+            "build",
+            "bad_compiled_styles_app:app",
+            "--profile-file",
+            str(profile_file),
+            "--out",
+            str(output),
+            "--utilities",
+            "--validate",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert (output / "manifest.json").is_file()
+    assert "build: runner layout validation failed:" in captured.err
+    assert "Native layout expected numeric fontSize" in captured.err
 
 
 def test_cli_pack_writes_verified_tarball(tmp_path, monkeypatch, capsys):

@@ -154,7 +154,7 @@ def write_runner(*, output_dir: Path) -> dict[str, Any]:
     return {
         "path": RUNNER_FILENAME,
         "pythonPath": list(RUNNER_PYTHON_PATH),
-        "modes": ["check", "png", "verify"],
+        "modes": ["check", "layout-check", "png", "verify"],
         "size": len(data),
         "sha256": hashlib.sha256(data).hexdigest(),
     }
@@ -225,6 +225,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="otoe-run")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--check", action="store_true", help="load the bundled target")
+    mode.add_argument(
+        "--layout-check",
+        action="store_true",
+        help="layout and paint the bundled target without writing output",
+    )
     mode.add_argument("--png", help="render one native PNG frame")
     mode.add_argument("--verify", action="store_true", help="verify bundled files")
     parser.add_argument("--background", default="#ffffff", help="PNG background")
@@ -238,6 +243,15 @@ def main(argv: list[str] | None = None) -> int:
 
     _install_pythonpath()
     mounted = _coerce_target(_load_target(manifest["target"]))
+    if args.layout_check:
+        from otoe import layout_native, paint_native
+
+        stylesheet = _load_stylesheet(manifest)
+        layout = layout_native(mounted, stylesheet=stylesheet)
+        paint_native(layout, background=args.background)
+        print(f"layout checked: {manifest['target']}")
+        return 0
+
     if args.png:
         from otoe import render_native_png
 

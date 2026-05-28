@@ -243,11 +243,13 @@ The bundle also includes `otoe-run.py`, a minimal generated runner. It adds the
 copied `app/` and `framework/` directories to `sys.path`, loads the manifest
 target, supports `--check` for import/load validation, and supports `--png
 frame.png` for a single headless native PNG frame using the bundled compiled
-styles. It also supports `--verify` to check referenced bundle files, sizes, and
-SHA-256 hashes. Pass `otoe build
---validate` to run the generated runner's `--verify` and `--check` modes after
-writing the bundle; this confirms the copied files are intact and the target
-loads from the bundle instead of only from the workspace.
+styles. It also supports `--verify` to check referenced bundle files, sizes,
+SHA-256 hashes, and `--layout-check` to run native layout/paint validation
+without writing a PNG. Pass `otoe build --validate` to run the generated
+runner's `--verify`, `--check`, and `--layout-check` modes after writing the
+bundle; this confirms the copied files are intact, the target loads from the
+bundle instead of only from the workspace, and compiled styles can drive native
+rendering.
 
 `otoe pack` verifies the bundle with `otoe-run.py --verify` and writes a
 portable `.tar.gz` archive for deployment. The pack step keeps the bundle rooted

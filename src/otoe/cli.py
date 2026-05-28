@@ -214,7 +214,7 @@ def _build_parser() -> argparse.ArgumentParser:
     build.add_argument(
         "--validate",
         action="store_true",
-        help="run the generated bundle runner with --check after writing artifacts",
+        help="run the generated bundle runner after writing artifacts",
     )
     build.set_defaults(func=_build)
 
@@ -468,6 +468,7 @@ def _pack(args: argparse.Namespace) -> int:
 def _validate_build_runner(output: Path) -> None:
     _run_build_runner(output, "--verify", label="verification")
     _run_build_runner(output, "--check", label="validation")
+    _run_build_runner(output, "--layout-check", label="layout validation")
 
 
 def _run_build_runner(output: Path, mode: str, *, label: str) -> None:

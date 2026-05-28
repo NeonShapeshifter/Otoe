@@ -174,13 +174,14 @@ recorded in `frameworkFiles`.
 
 The build also writes `otoe-run.py` as the first executable bundle entry. It
 loads the manifest target from the copied app/framework paths, supports `--check`
-for validation, supports `--verify` for file size/hash checks, and supports
+for import validation, supports `--verify` for file size/hash checks, supports
+`--layout-check` for layout/paint validation without writing a PNG, and supports
 `--png` for a single headless native frame using the bundled compiled styles.
 `otoe-styles.json` records used classes, resolved portable declarations, omitted
 html-only/deferred declarations, diagnostics, and tokens. `otoe build
---validate` runs that copied runner in `--verify` and `--check` modes after
-writing the bundle, so missing, modified, or unbundled files are caught before
-deployment.
+--validate` runs that copied runner in `--verify`, `--check`, and
+`--layout-check` modes after writing the bundle, so missing, modified,
+unbundled, or renderer-invalid files are caught before deployment.
 
 `otoe pack` is the first deployment archive step. It runs the copied runner in
 `--verify` mode, writes a `.tar.gz` with the bundle contents at archive root,
