@@ -749,6 +749,7 @@ def test_cli_build_writes_minimal_bundle_manifest(tmp_path, monkeypatch, capsys)
     plan = json.loads((output / "otoe-plan.json").read_text(encoding="utf-8"))
     deps = json.loads((output / "otoe-deps.json").read_text(encoding="utf-8"))
     manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    runtime_data = module.read_bytes()
     assert result == 0
     assert f"build build_surface:app: {output}" in captured.out
     assert f"deps artifact: {output / 'otoe-deps.json'}" in captured.out
@@ -815,7 +816,14 @@ def test_cli_build_writes_minimal_bundle_manifest(tmp_path, monkeypatch, capsys)
         "deps": "otoe-deps.json",
         "styles": "otoe-styles.json",
         "assets": [],
-        "runtimeFiles": [],
+        "runtimeFiles": [
+            {
+                "source": "build_surface.py",
+                "bundlePath": "app/build_surface.py",
+                "size": len(runtime_data),
+                "sha256": hashlib.sha256(runtime_data).hexdigest(),
+            }
+        ],
         "status": "ok",
     }
 
@@ -888,6 +896,15 @@ def test_cli_build_writes_runner_that_loads_copied_runtime_target(
 
     assert result == 0
     assert "validation: ok" in captured.out
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["runtimeFiles"] == [
+        {
+            "source": "bundled_runner_app.py",
+            "bundlePath": "app/bundled_runner_app.py",
+            "size": app.stat().st_size,
+            "sha256": hashlib.sha256(app.read_bytes()).hexdigest(),
+        }
+    ]
     assert verify.returncode == 0, verify.stderr
     assert "verified: manifest.json" in verify.stdout
     assert check.returncode == 0, check.stderr
@@ -1273,24 +1290,66 @@ def _png_contains_rgba(data: bytes, rgba: tuple[int, int, int, int]) -> bool:
     return bytes(rgba) in zlib.decompress(b"".join(idat))
 
 
-def test_cli_build_validate_rejects_target_missing_from_bundle(
+def test_cli_build_validate_auto_copies_simple_target_module(
     tmp_path,
     monkeypatch,
     capsys,
 ):
-    module = tmp_path / "workspace_only_app.py"
+    module = tmp_path / "auto_runtime_app.py"
     module.write_text(
         "from otoe import Text\n"
-        "app = Text('Workspace only')\n",
+        "app = Text('Auto runtime')\n",
         encoding="utf-8",
     )
-    output = tmp_path / "dist" / "validate-missing"
+    output = tmp_path / "dist" / "auto-runtime"
     monkeypatch.syspath_prepend(str(tmp_path))
 
     result = main(
         [
             "build",
-            "workspace_only_app:app",
+            "auto_runtime_app:app",
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    data = module.read_bytes()
+    assert result == 0
+    assert "validation: ok" in captured.out
+    assert (output / "app" / "auto_runtime_app.py").read_bytes() == data
+    assert manifest["runtimeFiles"] == [
+        {
+            "source": "auto_runtime_app.py",
+            "bundlePath": "app/auto_runtime_app.py",
+            "size": len(data),
+            "sha256": hashlib.sha256(data).hexdigest(),
+        }
+    ]
+
+
+def test_cli_build_validate_rejects_package_target_without_runtime_files(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    package = tmp_path / "workspace_pkg"
+    package.mkdir()
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "app.py").write_text(
+        "from otoe import Text\n"
+        "app = Text('Package runtime')\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "package-missing"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "workspace_pkg.app:app",
             "--out",
             str(output),
             "--validate",
@@ -1299,11 +1358,9 @@ def test_cli_build_validate_rejects_target_missing_from_bundle(
 
     captured = capsys.readouterr()
     assert result == 1
-    assert (output / "otoe-plan.json").is_file()
-    assert (output / "otoe-deps.json").is_file()
     assert (output / "manifest.json").is_file()
     assert "build: runner validation failed:" in captured.err
-    assert "No module named 'workspace_only_app'" in captured.err
+    assert "No module named 'workspace_pkg'" in captured.err
 
 
 def test_cli_build_copies_runtime_files_into_bundle(tmp_path, monkeypatch):
@@ -1341,9 +1398,16 @@ def test_cli_build_copies_runtime_files_into_bundle(tmp_path, monkeypatch):
     copied = output / "app" / "app.py"
     manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
     data = entry.read_bytes()
+    module_data = module.read_bytes()
     assert result == 0
     assert copied.read_bytes() == data
     assert manifest["runtimeFiles"] == [
+        {
+            "source": "runtime_build_surface.py",
+            "bundlePath": "app/runtime_build_surface.py",
+            "size": len(module_data),
+            "sha256": hashlib.sha256(module_data).hexdigest(),
+        },
         {
             "source": "app.py",
             "bundlePath": "app/app.py",

@@ -2,7 +2,7 @@
 
 **Status:** v0.1.4 public snapshot released; Phase 5 utility-first styling and offline build planning
 **Updated:** May 28, 2026
-**Current baseline:** 395 tests passing, 1 skipped when `mypy` is unavailable
+**Current baseline:** 396 tests passing, 1 skipped when `mypy` is unavailable
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, utility ops console, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
@@ -48,9 +48,10 @@ Otoe should stay CSS-facing for developer ergonomics without becoming
 browser-CSS-powered on constrained targets. `ADR-018` defines the proposed
 offline profile planner: `otoe plan`, audit-only `otoe deps`, and the first
 `otoe build --profile cage` manifest slice should compile portable styles,
-backend selection, and dependency metadata before hardware deployment. Asset and
-explicit app runtime file copying now exist as the first file policy, and the
-first native framework/runtime file copy policy is recorded in `frameworkFiles`.
+backend selection, and dependency metadata before hardware deployment. Asset,
+simple local target module, and explicit app runtime file copying now exist as
+the first file policy, and the first native framework/runtime file copy policy
+is recorded in `frameworkFiles`.
 The bundle now includes a generated `otoe-run.py` integrity verify, load/check,
 layout/paint dry-run, and headless PNG entry, plus optional `otoe build
 --validate` runner checks.

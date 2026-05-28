@@ -230,14 +230,18 @@ python -m otoe pack dist/cage --out dist/cage.tar.gz
 `otoe build` currently writes `dist/cage/otoe-plan.json`,
 `dist/cage/otoe-deps.json`, `dist/cage/otoe-styles.json`,
 `dist/cage/manifest.json`, copies declared assets under `dist/cage/assets/`,
-copies selected Otoe framework/runtime files under `dist/cage/framework/`, and
-copies declared runtime files under `dist/cage/app/`.
+copies selected Otoe framework/runtime files under `dist/cage/framework/`,
+copies the simple local target module under `dist/cage/app/` when the target is
+shaped like `app:app`, and copies declared extra runtime files under
+`dist/cage/app/`.
 It fails when the plan, dependency audit, or backend selection is invalid,
 allows warning plans, and does not install dependencies, download anything, or
-auto-discover imports yet. The manifest references `otoe-deps.json`, records
-copied framework files in `frameworkFiles`, and records copied app files in
-`runtimeFiles`. The style artifact records used classes, resolved portable
-declarations, omitted html-only/deferred declarations, diagnostics, and tokens.
+auto-discover imports or package modules yet. `[runtime] files` remains the
+explicit place for imported helpers, packages, and extra app files. The manifest
+references `otoe-deps.json`, records copied framework files in `frameworkFiles`,
+and records copied app files in `runtimeFiles`. The style artifact records used
+classes, resolved portable declarations, omitted html-only/deferred
+declarations, diagnostics, and tokens.
 
 The bundle also includes `otoe-run.py`, a minimal generated runner. It adds the
 copied `app/` and `framework/` directories to `sys.path`, loads the manifest

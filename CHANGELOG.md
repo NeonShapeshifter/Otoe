@@ -18,6 +18,8 @@
   render PNG frames with bundled compiled styles.
 - Added generated runner `--layout-check` validation and wired
   `otoe build --validate` to catch layout/paint failures from compiled styles.
+- Added build-time auto-copying for simple local target modules while keeping
+  imports, packages, and extra files explicit through `[runtime] files`.
 
 ## v0.1.4 - Native Backend Acceptance Hardening
 

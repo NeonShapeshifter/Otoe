@@ -44,6 +44,7 @@ from .profile import (
     DEFAULT_PROFILE_FILENAME,
     PlanProfileConfig,
     ProfileError,
+    ProfileRuntimeFile,
     load_plan_profile,
 )
 from .style import StyleError, StyleSheet, css
@@ -418,7 +419,7 @@ def _build(args: argparse.Namespace) -> int:
         )
         asset_manifest = copy_assets(profile_config.assets, output_dir=output)
         runtime_file_manifest = copy_runtime_files(
-            profile_config.runtime_files,
+            _build_runtime_files(args.target, profile_config),
             output_dir=output,
         )
         runner_manifest = write_runner(output_dir=output)
@@ -486,6 +487,38 @@ def _run_build_runner(output: Path, mode: str, *, label: str) -> None:
     if not details:
         details = f"runner exited with status {result.returncode}"
     raise BuildError(f"runner {label} failed: {details}")
+
+
+def _build_runtime_files(
+    target: str,
+    profile_config: PlanProfileConfig,
+) -> tuple[ProfileRuntimeFile, ...]:
+    files = [*_auto_target_runtime_files(target), *profile_config.runtime_files]
+    deduped: list[ProfileRuntimeFile] = []
+    seen = set()
+    for file in files:
+        key = file.relative_path.as_posix()
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(file)
+    return tuple(deduped)
+
+
+def _auto_target_runtime_files(target: str) -> tuple[ProfileRuntimeFile, ...]:
+    module_name, _ = _parse_target_spec(target)
+    if "." in module_name:
+        return ()
+    module = sys.modules.get(module_name)
+    source = getattr(module, "__file__", None)
+    if source is None:
+        return ()
+    path = Path(source)
+    if path.suffix != ".py" or path.name != f"{module_name}.py":
+        return ()
+    if not path.is_file():
+        return ()
+    return (ProfileRuntimeFile(source=path, relative_path=Path(path.name)),)
 
 
 def _deps(args: argparse.Namespace) -> int:

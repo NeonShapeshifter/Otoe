@@ -78,9 +78,10 @@ deployment artifact is built.
 
 `otoe build` should emit an offline bundle containing:
 
-- app code/runtime files copied from explicit `[runtime] files` entries with
-  `runtimeFiles` manifest entries containing source path, bundle path, byte
-  size, and SHA-256
+- app code/runtime files copied from a simple local target module such as
+  `app.py` for `app:app`, plus explicit `[runtime] files` entries for helper
+  modules, package code, and extra files, with `runtimeFiles` manifest entries
+  containing source path, bundle path, byte size, and SHA-256
 - selected backend/runtime framework files copied under `framework/` with
   `frameworkFiles` manifest entries containing source path, bundle path, byte
   size, and SHA-256

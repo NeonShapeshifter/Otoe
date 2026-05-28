@@ -166,11 +166,14 @@ hardware/cage target. During `otoe build`, the same audit is written as
 `otoe build` is the first bundle contract. It writes `otoe-plan.json`,
 `otoe-deps.json`, `otoe-styles.json`, and `manifest.json` into the output
 directory, copies selected Otoe framework/runtime files under `framework/`,
-copies declared assets under `assets/`, and copies declared app runtime files
-under `app/`. Invalid plans, dependency audits, or backend selections stop the
-build before a manifest is written; warning plans are allowed and recorded in
-the manifest. It does not auto-discover imports yet. Copied framework files are
-recorded in `frameworkFiles`.
+copies declared assets under `assets/`, auto-copies a simple local target module
+such as `app.py` for a target shaped like `app:app`, and copies declared extra
+runtime files under `app/`. Invalid plans, dependency audits, or backend
+selections stop the build before a manifest is written; warning plans are
+allowed and recorded in the manifest. It does not auto-discover imports or
+package modules yet, so `[runtime] files` remains the explicit place for helper
+modules and package code. Copied framework files are recorded in
+`frameworkFiles`.
 
 The build also writes `otoe-run.py` as the first executable bundle entry. It
 loads the manifest target from the copied app/framework paths, supports `--check`
