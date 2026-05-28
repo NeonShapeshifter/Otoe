@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import compileall
 import importlib
 import json
@@ -518,7 +519,50 @@ def _auto_target_runtime_files(target: str) -> tuple[ProfileRuntimeFile, ...]:
         return ()
     if not path.is_file():
         return ()
-    return (ProfileRuntimeFile(source=path, relative_path=Path(path.name)),)
+    return tuple(_local_runtime_files(path, seen=set()))
+
+
+def _local_runtime_files(
+    path: Path,
+    *,
+    seen: set[Path],
+) -> list[ProfileRuntimeFile]:
+    resolved = path.resolve()
+    if resolved in seen:
+        return []
+    seen.add(resolved)
+
+    files = [ProfileRuntimeFile(source=path, relative_path=Path(path.name))]
+    for candidate in _local_import_files(path):
+        files.extend(_local_runtime_files(candidate, seen=seen))
+    return files
+
+
+def _local_import_files(path: Path) -> list[Path]:
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    except SyntaxError as exc:
+        raise BuildError(f"could not parse runtime module {str(path)!r}: {exc}") from exc
+
+    imports: list[Path] = []
+    for name in _local_import_module_names(tree):
+        candidate = path.parent / f"{name}.py"
+        if candidate.is_file():
+            imports.append(candidate)
+    return imports
+
+
+def _local_import_module_names(tree: ast.AST) -> tuple[str, ...]:
+    names: list[str] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if "." not in alias.name:
+                    names.append(alias.name)
+        elif isinstance(node, ast.ImportFrom):
+            if node.level == 0 and node.module and "." not in node.module:
+                names.append(node.module)
+    return tuple(dict.fromkeys(names))
 
 
 def _deps(args: argparse.Namespace) -> int:

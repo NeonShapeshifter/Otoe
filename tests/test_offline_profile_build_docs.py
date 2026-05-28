@@ -33,6 +33,7 @@ def test_offline_profile_build_adr_captures_hardware_direction():
     assert 'assets = ["static/logo.png"]' in text
     assert 'files = ["app.py"]' in text
     assert "simple local target module" in text
+    assert "same-directory imports" in text
     assert 'packages = ["pytest"]' in text
     assert 'extras = ["dev"]' in text
     assert "SHA-256" in text
@@ -76,6 +77,7 @@ def test_style_guide_points_css_at_offline_profiles():
     assert 'extras = ["dev"]' in text
     assert "asset, and runtime file paths" in text
     assert "simple local target module" in text
+    assert "same-directory imports" in text
     assert "package modules" in text
     assert "allow_runtime_installs = true" in text
     assert "without installing packages" in single_spaced
@@ -99,8 +101,8 @@ def test_roadmap_keeps_low_level_build_work_in_scope():
     assert "manifest-first" in text
     assert "otoe-styles.json" in text
     assert "audit-only" in text
-    assert "Asset, simple local target module, and explicit app runtime file copying" in single_spaced
-    assert "explicit app runtime file copying" in text
+    assert "Asset, simple local target module, same-directory import, and explicit app runtime file copying" in single_spaced
+    assert "explicit app runtime file copying" in single_spaced
     assert "otoe build --profile cage" in text
     assert "--validate" in text
     assert "layout/paint" in text

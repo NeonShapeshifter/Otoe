@@ -20,6 +20,8 @@
   `otoe build --validate` to catch layout/paint failures from compiled styles.
 - Added build-time auto-copying for simple local target modules while keeping
   imports, packages, and extra files explicit through `[runtime] files`.
+- Added recursive auto-copying for simple same-directory imports used by
+  auto-bundled target modules.
 
 ## v0.1.4 - Native Backend Acceptance Hardening
 

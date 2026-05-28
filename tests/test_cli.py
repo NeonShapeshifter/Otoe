@@ -1330,6 +1330,59 @@ def test_cli_build_validate_auto_copies_simple_target_module(
     ]
 
 
+def test_cli_build_validate_auto_copies_simple_local_imports(
+    tmp_path,
+    monkeypatch,
+):
+    module = tmp_path / "auto_import_app.py"
+    module.write_text(
+        "from otoe import Text\n"
+        "from helper_view import view_text\n"
+        "app = Text(view_text())\n",
+        encoding="utf-8",
+    )
+    helper = tmp_path / "helper_view.py"
+    helper.write_text(
+        "from palette import LABEL\n"
+        "def view_text():\n"
+        "    return LABEL\n",
+        encoding="utf-8",
+    )
+    palette = tmp_path / "palette.py"
+    palette.write_text('LABEL = "Auto import"\n', encoding="utf-8")
+    output = tmp_path / "dist" / "auto-imports"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "auto_import_app:app",
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    runtime_files = {entry["bundlePath"]: entry for entry in manifest["runtimeFiles"]}
+    assert result == 0
+    assert sorted(runtime_files) == [
+        "app/auto_import_app.py",
+        "app/helper_view.py",
+        "app/palette.py",
+    ]
+    for source in (module, helper, palette):
+        bundle_path = f"app/{source.name}"
+        data = source.read_bytes()
+        assert (output / bundle_path).read_bytes() == data
+        assert runtime_files[bundle_path] == {
+            "source": source.name,
+            "bundlePath": bundle_path,
+            "size": len(data),
+            "sha256": hashlib.sha256(data).hexdigest(),
+        }
+
+
 def test_cli_build_validate_rejects_package_target_without_runtime_files(
     tmp_path,
     monkeypatch,

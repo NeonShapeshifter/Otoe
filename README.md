@@ -232,12 +232,14 @@ python -m otoe pack dist/cage --out dist/cage.tar.gz
 `dist/cage/manifest.json`, copies declared assets under `dist/cage/assets/`,
 copies selected Otoe framework/runtime files under `dist/cage/framework/`,
 copies the simple local target module under `dist/cage/app/` when the target is
-shaped like `app:app`, and copies declared extra runtime files under
-`dist/cage/app/`.
+shaped like `app:app`, follows simple same-directory imports such as
+`import helpers` and `from helpers import view`, and copies declared extra
+runtime files under `dist/cage/app/`.
 It fails when the plan, dependency audit, or backend selection is invalid,
 allows warning plans, and does not install dependencies, download anything, or
-auto-discover imports or package modules yet. `[runtime] files` remains the
-explicit place for imported helpers, packages, and extra app files. The manifest
+auto-discover package modules or arbitrary dynamic imports yet. `[runtime]
+files` remains the explicit place for packages, dynamic imports, and extra app
+files. The manifest
 references `otoe-deps.json`, records copied framework files in `frameworkFiles`,
 and records copied app files in `runtimeFiles`. The style artifact records used
 classes, resolved portable declarations, omitted html-only/deferred
