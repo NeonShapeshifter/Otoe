@@ -17,11 +17,16 @@ stable public framework or a production desktop renderer.
 - Static HTML preview rendering.
 - Shared live HTML preview server with click/input event dispatch.
 - Optional JSX-like `template(...)` syntax that returns the same `Node` tree.
-- Experimental portable `css(...)` / `StyleSheet` API.
+- Experimental portable `css(...)` / `StyleSheet` API plus low-level
+  `utility_css()` / `utility_stylesheet()` helpers for app styling.
+- `otoe plan` diagnostics for checking an app against the first offline
+  hardware/cage profile before any deployment bundle exists.
 - First `otoe.ui` primitives: cards, badges, action buttons, tabs, toolbars,
   stat cards, data tables, dialogs, toasts, command palettes, app shells,
   sidebar navigation, route views, command registries, shortcut scopes, menus,
   controlled selects, section headers, empty states, and feedback toasts.
+- Modern default presets for no-custom-CSS app surfaces: app frames, sidebars,
+  topbars, surfaces, metric grids, metric tiles, status pills, and list rows.
 - Keyboard handling for command palettes, menus, selects, and button-backed
   controls in the live preview backend.
 - `FocusScope` support for live focus trapping and focus restoration in dialogs
@@ -29,6 +34,7 @@ stable public framework or a production desktop renderer.
 - Live autofocus support for command overlays and other focused inputs.
 - Wraith-shaped and SaaS-shaped case studies using the same UI primitives.
 - UI kit kitchen-sink preview for validating primitives outside one product shape.
+- Utility-first reference app for validating low-level styling ergonomics.
 - Headless native layout, paint, PNG output, hit-testing, and click dispatch
   for the first renderer spike.
 - `NativeSurface` for mounting a tree, rendering PNG frames, dispatching
@@ -129,6 +135,8 @@ otoe check
 otoe new my_app
 otoe render examples.quickstart:app --out preview.html --pretty
 otoe render examples.quickstart:app --out preview.png --native
+otoe plan examples.quickstart:app --profile cage --no-strict-styles
+otoe build examples.quickstart:app --out dist/cage --no-strict-styles
 otoe dev examples.live_counter:app --port 8767
 ```
 
@@ -160,6 +168,77 @@ Render the same target through the native PNG path:
 ```bash
 python -m otoe render examples.quickstart:app --out preview.png --native
 ```
+
+Check an app against the first offline hardware/cage profile:
+
+```bash
+python -m otoe plan app:app --profile cage --css styles.css
+python -m otoe plan app:app --profile cage --utilities
+python -m otoe plan app:app --profile cage --utilities --out dist/otoe-plan.json
+python -m otoe plan app:app --profile cage --utilities --json
+python -m otoe plan app:app --profile-file otoe.profile.toml --out dist/otoe-plan.json
+python -m otoe deps app:app --profile-file otoe.profile.toml --json
+```
+
+`otoe plan` is diagnostic only. It imports and mounts the target, checks used
+classes against the selected style sources, and reports portable, html-only,
+deferred, and invalid style work before building or deploying a bundle.
+`--json` emits the same report as machine-readable JSON, and `--out` writes that
+JSON as the first plan artifact.
+
+When `otoe.profile.toml` exists in the current directory, `otoe plan` uses it by
+default. CSS paths are relative to the profile file:
+
+```toml
+profile = "cage"
+utilities = true
+css = ["styles.css"]
+assets = ["static/logo.png"]
+
+[runtime]
+allow_runtime_installs = false
+files = ["app.py"]
+
+[backend]
+name = "native"
+
+[deps]
+packages = ["pytest"]
+extras = ["dev"]
+```
+
+Explicit CLI flags override the profile file. For example, `--css custom.css`
+replaces the profile `css` list, and `--no-utilities` disables profile-enabled
+utilities.
+
+`otoe deps` audits declared `[deps]` entries against the current build
+environment. It reports installed and missing packages plus known and unknown
+Otoe extras. It does not install anything, download anything, import the app
+target, or write files; missing packages must be installed manually before a
+hardware/cage deployment. During `otoe build`, the same audit is written as
+`otoe-deps.json` and invalid dependency audits stop the build before
+`manifest.json` is written.
+
+Write the first minimal offline bundle contract:
+
+```bash
+python -m otoe build app:app --profile-file otoe.profile.toml --out dist/cage
+```
+
+`otoe build` currently writes `dist/cage/otoe-plan.json`,
+`dist/cage/otoe-deps.json`, `dist/cage/manifest.json`, copies declared assets
+under `dist/cage/assets/`, copies selected Otoe framework/runtime files under
+`dist/cage/framework/`, and copies declared runtime files under `dist/cage/app/`.
+It fails when the plan, dependency audit, or backend selection is invalid,
+allows warning plans, and does not install dependencies, download anything, or
+auto-discover imports yet. The manifest references `otoe-deps.json`, records
+copied framework files in `frameworkFiles`, and records copied app files in
+`runtimeFiles`.
+
+The bundle also includes `otoe-run.py`, a minimal generated runner. It adds the
+copied `app/` and `framework/` directories to `sys.path`, loads the manifest
+target, supports `--check` for import/load validation, and supports `--png
+frame.png` for a single headless native PNG frame.
 
 Run an importable live preview app locally:
 
@@ -359,7 +438,7 @@ perform security operations.
 
 ## Status
 
-Current status: v0.1.4 released; Phase 5 native backend acceptance hardening. See
+Current status: v0.1.4 public snapshot released; Phase 5 utility-first styling and offline build planning. See
 `ROADMAP.md` for the active plan.
 
 ## License

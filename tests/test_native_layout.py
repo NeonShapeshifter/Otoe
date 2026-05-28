@@ -135,6 +135,7 @@ def test_native_style_support_matrix_covers_css_properties():
     assert native_style_support("width") == "layout"
     assert native_style_support("background") == "paint"
     assert native_style_support("borderWidth") == "layout+paint"
+    assert native_style_support("borderStyle") == "ignored"
     assert native_style_support("margin") == "ignored"
     assert native_style_support("lineHeight") is None
 
@@ -183,6 +184,7 @@ def test_native_layout_accepts_documented_ignored_styles_without_effect():
     sheet = css(
         """
         .box {
+          border-style: solid;
           display: flex;
           font-weight: 800;
           margin: 99;
@@ -197,6 +199,7 @@ def test_native_layout_accepts_documented_ignored_styles_without_effect():
 
     assert layout.root.width == 24
     assert layout.root.height == 26
+    assert dict(layout.root.style)["borderStyle"] == "solid"
     assert dict(layout.root.style)["margin"].value == 99
 
 

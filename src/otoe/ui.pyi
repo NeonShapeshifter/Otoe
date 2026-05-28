@@ -157,11 +157,94 @@ def AppShell(
 ) -> Node: ...
 
 
+def AppFrame(
+    *,
+    sidebar: Any,
+    content: Any,
+    topbar: Any = ...,
+    feedback: Any = ...,
+    className: str | None = ...,
+    shellClassName: str | None = ...,
+    contentClassName: str | None = ...,
+    max_width: str = ...,
+) -> Node: ...
+
+
+def SidebarFrame(
+    *items: Node,
+    brand: Any,
+    subtitle: Any = ...,
+    footer: Any = ...,
+    className: str | None = ...,
+) -> Node: ...
+
+
+def SidebarItem(
+    label: Any,
+    *,
+    detail: Any = ...,
+    tone: Any = ...,
+    active: Any = ...,
+    className: str | None = ...,
+) -> Node: ...
+
+
 def Card(
     *children: Node,
     className: str | None = ...,
     tone: Any = ...,
     title: Any = ...,
+    padding: Any = ...,
+    gap: Any = ...,
+) -> Node: ...
+
+
+def StatusPill(
+    label: Any,
+    *,
+    tone: Any = ...,
+    className: str | None = ...,
+) -> Node: ...
+
+
+def TopBar(
+    title: Any,
+    *,
+    subtitle: Any = ...,
+    status: Any = ...,
+    status_tone: Any = ...,
+    actions: Any = ...,
+    className: str | None = ...,
+) -> Node: ...
+
+
+def Surface(
+    *children: Node,
+    title: Any = ...,
+    detail: Any = ...,
+    badge: Any = ...,
+    badge_tone: Any = ...,
+    actions: Any = ...,
+    tone: Any = ...,
+    padding: int = ...,
+    gap: int = ...,
+    className: str | None = ...,
+) -> Node: ...
+
+
+def MetricGrid(
+    *children: Node,
+    className: str | None = ...,
+) -> Node: ...
+
+
+def MetricTile(
+    *,
+    label: Any,
+    value: Any,
+    detail: Any = ...,
+    tone: Any = ...,
+    className: str | None = ...,
 ) -> Node: ...
 
 
@@ -180,6 +263,9 @@ def ActionButton(
     size: Any = ...,
     className: str | None = ...,
     disabled: Any = ...,
+    leading: Any = ...,
+    trailing: Any = ...,
+    full_width: bool = ...,
     onClick: ClickHandler | None = ...,
 ) -> Node: ...
 
@@ -264,6 +350,9 @@ def SectionHeader(
     badge: Any = ...,
     badge_tone: Any = ...,
     actions: Any = ...,
+    action_label: Any = ...,
+    on_action: ClickHandler | None = ...,
+    action_variant: Any = ...,
     className: str | None = ...,
 ) -> Node: ...
 
@@ -273,6 +362,25 @@ def EmptyState(
     *,
     description: Any = ...,
     action: Any = ...,
+    action_label: Any = ...,
+    on_action: ClickHandler | None = ...,
+    action_variant: Any = ...,
+    className: str | None = ...,
+) -> Node: ...
+
+
+def ListRow(
+    *,
+    title: Any,
+    detail: Any = ...,
+    meta: Any = ...,
+    badge: Any = ...,
+    badge_tone: Any = ...,
+    tone: Any = ...,
+    action: Any = ...,
+    action_label: Any = ...,
+    on_action: ClickHandler | None = ...,
+    action_variant: Any = ...,
     className: str | None = ...,
 ) -> Node: ...
 

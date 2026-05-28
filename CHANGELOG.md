@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Added utility-first styling helpers and modern `otoe.ui` presets for
+  no-custom-CSS app surfaces.
+- Added the first offline hardware/cage workflow: `otoe plan`, `otoe deps`, and
+  manifest-first `otoe build` with `otoe-plan.json`, `otoe-deps.json`,
+  `frameworkFiles`, explicit runtime files, and a generated `otoe-run.py`
+  load/check plus headless PNG runner.
+
 ## v0.1.4 - Native Backend Acceptance Hardening
 
 - Hardened the backend acceptance contract with reusable named-path harness and

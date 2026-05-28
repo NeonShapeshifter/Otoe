@@ -257,6 +257,7 @@ The following parsed properties are accepted and preserved in `LayoutBox.style`,
 but intentionally have no native effect yet:
 
 - `display`
+- `borderStyle`
 - `fontWeight`
 - `margin`
 - `opacity`

@@ -59,6 +59,7 @@ EXPECTED_PAINT_ONLY_STYLES = frozenset(
 EXPECTED_LAYOUT_AND_PAINT_STYLES = frozenset({"borderWidth", "fontSize"})
 EXPECTED_IGNORED_STYLES = frozenset(
     {
+        "borderStyle",
         "display",
         "fontWeight",
         "margin",
@@ -134,6 +135,7 @@ def test_native_style_matrix_matches_layout_acceptance_behavior():
           background: #ffffff;
           border-color: #d0d7de;
           border-radius: 4;
+          border-style: solid;
           border-width: 1;
           color: #111827;
           display: flex;
@@ -162,6 +164,7 @@ def test_native_style_matrix_matches_layout_acceptance_behavior():
 
     assert style["alignItems"] == "center"
     assert style["justifyContent"] == "center"
+    assert style["borderStyle"] == "solid"
     assert style["margin"].value == 10
     assert layout.root.width == 180
     assert layout.root.height == 80

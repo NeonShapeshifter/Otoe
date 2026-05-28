@@ -35,6 +35,145 @@ VStack(..., className="surface")
 Multiple classes are applied left to right; later classes override earlier
 declarations for the same property.
 
+## Utility Layer
+
+Otoe includes a first low-level utility layer for app-shaped HTML previews and
+portable renderer tests:
+
+```python
+from otoe import HStack, Text, VStack, utility_css, utility_stylesheet
+
+html_css = utility_css()
+portable_styles = utility_stylesheet()
+
+view = VStack(
+    HStack(Text("Queue", className="text-muted text-sm"), className="gap-2"),
+    className="p-4 bg-panel rounded-md border",
+)
+```
+
+`utility_css()` emits a normal CSS string with design tokens and classes for
+spacing, colors, borders, radius, shadows, typography, display, alignment, and
+common text helpers. It is the right path for linked HTML/live-preview CSS.
+
+`utility_stylesheet()` returns a `StyleSheet` with the portable subset of those
+same class names. HTML-only classes such as `shadow-sm`, `truncate`, `px-4`, and
+`flex-col` are still known to strict class resolution, but they intentionally
+become no-ops for the native renderer until a real backend can honor them.
+
+Most apps should not assemble every screen from raw classes. `otoe.ui` includes
+modern presets built on these utilities:
+
+- `AppFrame`
+- `SidebarFrame` and `SidebarItem`
+- `TopBar`
+- `Surface`
+- `MetricGrid` and `MetricTile`
+- `StatusPill`
+- `ListRow`
+
+Those presets are the default path for polished no-custom-CSS screens. Drop to
+raw utilities when the preset shape is close but needs local adjustment, and use
+custom CSS when an application needs its own visual identity.
+
+Initial stable utility families:
+
+- spacing: `p-0` through `p-12`, `m-*`, `gap-*`, plus HTML `px-*`/`py-*`
+- color tokens: `bg-panel`, `bg-panel-soft`, `text-muted`, `border-line`, etc.
+- borders and radius: `border`, `border-0`, `rounded-sm`, `rounded-md`,
+  `rounded-lg`, `rounded-full`
+- typography: `text-xs`, `text-sm`, `text-base`, `text-lg`, `font-medium`,
+  `font-semibold`, `font-bold`
+- layout helpers: `flex`, `grid`, `items-center`, `justify-between`,
+  `min-w-0`, `min-h-0`
+- HTML-only polish: `shadow-sm`, `shadow-md`, `truncate`, `overflow-hidden`
+
+## Offline Profile Direction
+
+For browser previews, CSS can stay as normal linked or inline CSS. For future
+hardware, cage, or OS-style profiles, Otoe should treat CSS as an authoring
+format that is compiled before deployment.
+
+The intended direction is documented in
+`ADR-018-offline-profile-build-planner.md`: `otoe plan` now provides the first
+diagnostic slice, and future `otoe build` work should resolve tokens, utility
+classes, custom portable CSS, assets, and profile dependencies on the
+development/build machine. A device runtime should receive a compact offline
+bundle and a compiled style plan, not a full browser CSS engine.
+
+That means Otoe can be CSS-facing without being browser-CSS-powered. The style
+planner should classify declarations as portable, html-only, deferred, or
+invalid for a selected profile such as `--profile cage`. `utility_css()` and
+`utility_stylesheet()` are the first small pieces of that path; they are not a
+complete production build system yet.
+
+Current examples:
+
+```bash
+otoe plan app:app --profile cage --css styles.css
+otoe plan app:app --profile cage --utilities
+otoe plan app:app --profile cage --utilities --out dist/otoe-plan.json
+otoe plan app:app --profile cage --utilities --json
+otoe plan app:app --profile-file otoe.profile.toml --out dist/otoe-plan.json
+otoe deps app:app --profile-file otoe.profile.toml --json
+otoe build app:app --profile-file otoe.profile.toml --out dist/cage
+otoe plan app:app --profile cage --no-strict-styles
+```
+
+By default, missing class rules are invalid because a constrained runtime cannot
+rely on external browser CSS. `--no-strict-styles` downgrades missing classes to
+html-only warnings for auditing existing preview surfaces.
+
+`--json` prints a stable plan report with `schemaVersion`, target, profile,
+status, class groups, style counts, direct style counts, and diagnostics.
+`--out` writes the same JSON report as an artifact so future build steps can
+consume it without scraping terminal text.
+
+`otoe.profile.toml` is the first profile manifest shape:
+
+```toml
+profile = "cage"
+utilities = true
+css = ["styles.css"]
+assets = ["static/logo.png"]
+
+[runtime]
+allow_runtime_installs = false
+files = ["app.py"]
+
+[backend]
+name = "native"
+
+[deps]
+packages = ["pytest"]
+extras = ["dev"]
+```
+
+Profile CSS, asset, and runtime file paths are relative to the TOML file. Asset
+and runtime file paths must be relative files and must not contain `.` or `..`.
+Explicit CLI flags override the profile file. `allow_runtime_installs = true`
+is invalid for `cage`.
+
+`otoe deps` audits `[deps]` against the current build environment without
+installing packages, touching the network, importing the app, or writing
+artifacts. Missing packages are user-managed setup work, not runtime work for a
+hardware/cage target. During `otoe build`, the same audit is written as
+`otoe-deps.json` and invalid dependency audits stop the build before
+`manifest.json` is written.
+
+`otoe build` is the first bundle contract. It writes `otoe-plan.json`,
+`otoe-deps.json`, and `manifest.json` into the output directory, copies selected
+Otoe framework/runtime files under `framework/`, copies declared assets under
+`assets/`, and copies declared app runtime files under `app/`. Invalid plans,
+dependency audits, or backend selections stop the build before a manifest is
+written; warning plans are allowed and recorded in the manifest. It does not
+auto-discover imports yet. Copied framework files are recorded in
+`frameworkFiles`.
+
+The build also writes `otoe-run.py` as the first executable bundle entry. It
+loads the manifest target from the copied app/framework paths, supports `--check`
+for validation, and supports `--png` for a single headless native frame.
+
 ## Supported Parsed Properties
 
 `css(...)` accepts only these CSS property names:
@@ -45,6 +184,7 @@ declarations for the same property.
 | `background` | `background` | color/token |
 | `border-color` | `borderColor` | color/token |
 | `border-radius` | `borderRadius` | dimension |
+| `border-style` | `borderStyle` | accepted, native no-op |
 | `border-width` | `borderWidth` | dimension |
 | `color` | `color` | color/token |
 | `display` | `display` | accepted, native no-op |
@@ -140,6 +280,7 @@ Native layout-and-paint properties:
 
 Accepted but intentionally ignored in native rendering:
 
+- `borderStyle`
 - `display`
 - `fontWeight`
 - `margin`
@@ -219,7 +360,7 @@ styles.resolve("missing-class")  # UnknownStyleClassError
 - Full CSS selectors.
 - Descendant, attribute, pseudo-class, or media queries.
 - CSS cascade parity.
-- Tailwind-style utility generation.
+- Tailwind compatibility or arbitrary-value utility parsing.
 - Native percent layout resolution.
 - Native margins.
 - Native font weight behavior.

@@ -9,6 +9,7 @@ Current reference apps:
 - `examples.hardware.control_panel` - hardware/control panel
 - `examples.admin.settings_console` - local admin/settings
 - `examples.data_workflow.workbench` - data/table workflow
+- `examples.utility.ops_console` - utility-first app styling pressure test
 
 ## Purpose
 
@@ -131,6 +132,12 @@ Current extracted targets:
 - `EmptyState` for repeated empty-route, empty-list, and empty-table fallbacks
 - `FeedbackToast` for snapshot-owned feedback objects with title/detail/tone
 
+The utility-first reference app uses `utility_css()` instead of an app-specific
+stylesheet to prove whether low-level classes plus modern presets can build a
+professional surface without custom CSS for every screen. The current preset
+set is `AppFrame`, `SidebarFrame`, `SidebarItem`, `TopBar`, `Surface`,
+`MetricGrid`, `MetricTile`, `StatusPill`, and `ListRow`.
+
 Remaining safe extraction targets:
 
 - documented class naming conventions for app, topbar, sidebar, route shell,
@@ -148,7 +155,7 @@ Every reference app should have focused tests for three layers:
 - provider: happy path, blocked path, and state invariants
 - live preview: event ID lookup, dispatch, and rerendered content
 
-Full-suite baseline after the shared preview theme pass: `342 passed`.
+Full-suite baseline after the utility-first styling pass: `356 passed`.
 
 ## Current Decision
 
@@ -159,3 +166,6 @@ with provider boundaries and tests.
 The current implementation direction is to return to backend work with these
 apps as acceptance surfaces. More CSS extraction should wait until at least two
 reference apps repeat the same shell, nav, table, or stat-grid selector shape.
+The utility-first reference app is the exception: it exists specifically to
+pressure-test low-level styling ergonomics before those utilities are promoted
+into public guidance.

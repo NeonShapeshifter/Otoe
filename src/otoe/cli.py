@@ -3,18 +3,40 @@ from __future__ import annotations
 import argparse
 import compileall
 import importlib
+import json
 import subprocess
 import sys
 from collections.abc import Callable, Sequence
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
+from .build import (
+    BUILD_MANIFEST_FILENAME,
+    DEPS_ARTIFACT_FILENAME,
+    PLAN_ARTIFACT_FILENAME,
+    BuildError,
+    build_manifest,
+    copy_assets,
+    copy_framework_files,
+    copy_runtime_files,
+    write_runner,
+)
+from .deps import audit_deps, deps_to_dict, format_deps
 from .html import render_html
 from .live_server import LivePreviewApp, LivePreviewConfig, run_live_preview
 from .mount import MountedNode, mount
 from .native import render_native_png
 from .node import Node
+from .plan import PlanError, format_plan, plan_mounted, plan_to_dict
+from .profile import (
+    DEFAULT_PROFILE_FILENAME,
+    PlanProfileConfig,
+    ProfileError,
+    load_plan_profile,
+)
 from .style import StyleError, StyleSheet, css
+from .utilities import utility_stylesheet
 
 DEFAULT_CHECK_PATHS = ("src", "examples", "tests")
 
@@ -81,6 +103,126 @@ def _build_parser() -> argparse.ArgumentParser:
         help="native PNG background",
     )
     render.set_defaults(func=_render)
+
+    plan = subcommands.add_parser(
+        "plan",
+        help="diagnose an Otoe target for an offline deployment profile",
+    )
+    plan.add_argument("target", help="import target in MODULE:OBJECT form")
+    plan.add_argument(
+        "--profile",
+        default=None,
+        choices=["cage"],
+        help="offline target profile to diagnose",
+    )
+    plan.add_argument(
+        "--profile-file",
+        help="optional TOML profile file; defaults to otoe.profile.toml when present",
+    )
+    plan.add_argument(
+        "--css",
+        action="append",
+        help="optional Otoe CSS file to include in the style plan",
+    )
+    utilities = plan.add_mutually_exclusive_group()
+    utilities.add_argument(
+        "--utilities",
+        action="store_true",
+        default=None,
+        help="include Otoe's built-in utility stylesheet",
+    )
+    utilities.add_argument(
+        "--no-utilities",
+        action="store_false",
+        dest="utilities",
+        help="disable built-in utilities even when a profile file enables them",
+    )
+    plan.add_argument(
+        "--no-strict-styles",
+        action="store_false",
+        default=True,
+        dest="strict_styles",
+        help="treat missing class rules as html-only warnings",
+    )
+    plan.add_argument(
+        "--json",
+        action="store_true",
+        help="write the plan report as JSON to stdout",
+    )
+    plan.add_argument(
+        "--out",
+        help="optional path to write the JSON plan artifact",
+    )
+    plan.set_defaults(func=_plan)
+
+    build = subcommands.add_parser(
+        "build",
+        help="write a minimal offline bundle manifest for an Otoe target",
+    )
+    build.add_argument("target", help="import target in MODULE:OBJECT form")
+    build.add_argument(
+        "--out",
+        required=True,
+        help="output bundle directory",
+    )
+    build.add_argument(
+        "--profile",
+        default=None,
+        choices=["cage"],
+        help="offline target profile to build",
+    )
+    build.add_argument(
+        "--profile-file",
+        help="optional TOML profile file; defaults to otoe.profile.toml when present",
+    )
+    build.add_argument(
+        "--css",
+        action="append",
+        help="optional Otoe CSS file to include in the style plan",
+    )
+    build_utilities = build.add_mutually_exclusive_group()
+    build_utilities.add_argument(
+        "--utilities",
+        action="store_true",
+        default=None,
+        help="include Otoe's built-in utility stylesheet",
+    )
+    build_utilities.add_argument(
+        "--no-utilities",
+        action="store_false",
+        dest="utilities",
+        help="disable built-in utilities even when a profile file enables them",
+    )
+    build.add_argument(
+        "--no-strict-styles",
+        action="store_false",
+        default=True,
+        dest="strict_styles",
+        help="treat missing class rules as html-only warnings",
+    )
+    build.set_defaults(func=_build)
+
+    deps = subcommands.add_parser(
+        "deps",
+        help="audit profile dependencies without installing anything",
+    )
+    deps.add_argument("target", help="import target label in MODULE:OBJECT form")
+    deps.add_argument(
+        "--profile",
+        default=None,
+        choices=["cage"],
+        help="offline target profile to audit",
+    )
+    deps.add_argument(
+        "--profile-file",
+        help="optional TOML profile file; defaults to otoe.profile.toml when present",
+    )
+    deps.add_argument(
+        "--json",
+        action="store_true",
+        help="write the dependency audit as JSON to stdout",
+    )
+    deps.set_defaults(func=_deps)
 
     dev = subcommands.add_parser("dev", help="run a local live preview app")
     dev.add_argument("target", help="app target in MODULE:APP form")
@@ -193,6 +335,92 @@ def _render(args: argparse.Namespace) -> int:
     return 0
 
 
+def _plan(args: argparse.Namespace) -> int:
+    try:
+        _, plan, plan_dict = _resolve_plan_request(args)
+        if args.out:
+            _write_json_artifact(Path(args.out), plan_dict)
+    except (CliError, PlanError) as exc:
+        print(f"plan: {exc}", file=sys.stderr)
+        return 1
+
+    if args.json:
+        print(json.dumps(plan_dict, indent=2, sort_keys=True))
+    else:
+        print(format_plan(plan, target=args.target))
+        if args.out:
+            print(f"plan artifact: {Path(args.out)}")
+    return 1 if plan.has_errors else 0
+
+
+def _build(args: argparse.Namespace) -> int:
+    try:
+        profile_config, plan, plan_dict = _resolve_plan_request(args)
+        output = Path(args.out)
+        output.mkdir(parents=True, exist_ok=True)
+        plan_path = output / PLAN_ARTIFACT_FILENAME
+        _write_json_artifact(plan_path, plan_dict)
+        if plan.has_errors:
+            raise BuildError("plan invalid; refusing to write build manifest")
+        deps_audit = audit_deps(target=args.target, profile_config=profile_config)
+        deps_dict = deps_to_dict(deps_audit)
+        deps_path = output / DEPS_ARTIFACT_FILENAME
+        _write_json_artifact(deps_path, deps_dict)
+        if deps_audit.has_errors:
+            raise BuildError(
+                "dependency audit invalid; refusing to write build manifest"
+            )
+        framework_file_manifest = copy_framework_files(
+            profile_config,
+            output_dir=output,
+        )
+        asset_manifest = copy_assets(profile_config.assets, output_dir=output)
+        runtime_file_manifest = copy_runtime_files(
+            profile_config.runtime_files,
+            output_dir=output,
+        )
+        runner_manifest = write_runner(output_dir=output)
+        manifest = build_manifest(
+            target=args.target,
+            plan=plan_dict,
+            deps=deps_dict,
+            profile_config=profile_config,
+            assets=asset_manifest,
+            framework_files=framework_file_manifest,
+            runner=runner_manifest,
+            runtime_files=runtime_file_manifest,
+        )
+        manifest_path = output / BUILD_MANIFEST_FILENAME
+        _write_json_artifact(manifest_path, manifest)
+    except (BuildError, CliError, PlanError) as exc:
+        print(f"build: {exc}", file=sys.stderr)
+        return 1
+
+    print(f"build {args.target}: {output}")
+    print(f"plan artifact: {plan_path}")
+    print(f"deps artifact: {deps_path}")
+    print(f"manifest: {manifest_path}")
+    return 0
+
+
+def _deps(args: argparse.Namespace) -> int:
+    try:
+        _parse_target_spec(args.target)
+        profile_config = _load_plan_profile_config(args.profile_file)
+        if args.profile is not None:
+            profile_config = replace(profile_config, profile=args.profile)
+        audit = audit_deps(target=args.target, profile_config=profile_config)
+    except CliError as exc:
+        print(f"deps: {exc}", file=sys.stderr)
+        return 1
+
+    if args.json:
+        print(json.dumps(deps_to_dict(audit), indent=2, sort_keys=True))
+    else:
+        print(format_deps(audit))
+    return 1 if audit.has_errors else 0
+
+
 def _dev(args: argparse.Namespace) -> int:
     try:
         target = _load_target(args.target)
@@ -251,9 +479,7 @@ def _new(args: argparse.Namespace) -> int:
 
 
 def _load_target(spec: str) -> Any:
-    module_name, separator, object_path = spec.partition(":")
-    if not separator or not module_name or not object_path:
-        raise CliError("target must use MODULE:OBJECT syntax")
+    module_name, object_path = _parse_target_spec(spec)
     try:
         value = importlib.import_module(module_name)
     except Exception as exc:
@@ -266,7 +492,14 @@ def _load_target(spec: str) -> Any:
     return value
 
 
-def _load_stylesheet(path: str | None) -> StyleSheet | None:
+def _parse_target_spec(spec: str) -> tuple[str, str]:
+    module_name, separator, object_path = spec.partition(":")
+    if not separator or not module_name or not object_path:
+        raise CliError("target must use MODULE:OBJECT syntax")
+    return module_name, object_path
+
+
+def _load_stylesheet(path: str | Path | None) -> StyleSheet | None:
     if path is None:
         return None
     source = Path(path)
@@ -276,6 +509,74 @@ def _load_stylesheet(path: str | None) -> StyleSheet | None:
         return css(source.read_text(encoding="utf-8"))
     except StyleError as exc:
         raise CliError(f"css file {path!r}: {exc}") from exc
+
+
+def _load_plan_profile_config(path: str | None) -> PlanProfileConfig:
+    profile_path = Path(path) if path is not None else Path(DEFAULT_PROFILE_FILENAME)
+    if not profile_path.exists():
+        if path is not None:
+            raise CliError(f"profile file {path!r} does not exist")
+        return PlanProfileConfig()
+    try:
+        return load_plan_profile(profile_path)
+    except ProfileError as exc:
+        raise CliError(str(exc)) from exc
+
+
+def _resolve_plan_request(
+    args: argparse.Namespace,
+) -> tuple[PlanProfileConfig, Any, dict[str, Any]]:
+    target = _load_target(args.target)
+    mounted = _coerce_render_target(target)
+    profile_config = _load_plan_profile_config(args.profile_file)
+    profile = args.profile or profile_config.profile
+    include_utilities = profile_config.utilities if args.utilities is None else args.utilities
+    css_paths = tuple(args.css or profile_config.css_paths)
+    stylesheet = _load_plan_stylesheet(
+        css_paths,
+        include_utilities=include_utilities,
+    )
+    plan = plan_mounted(
+        mounted,
+        profile=profile,
+        stylesheet=stylesheet,
+        strict_styles=args.strict_styles,
+    )
+    return profile_config, plan, plan_to_dict(plan, target=args.target)
+
+
+def _load_plan_stylesheet(
+    paths: Sequence[str | Path],
+    *,
+    include_utilities: bool,
+) -> StyleSheet | None:
+    stylesheets: list[StyleSheet] = []
+    if include_utilities:
+        stylesheets.append(utility_stylesheet())
+    for path in paths:
+        stylesheet = _load_stylesheet(path)
+        if stylesheet is not None:
+            stylesheets.append(stylesheet)
+    if not stylesheets:
+        return None
+    return _merge_stylesheets(stylesheets)
+
+
+def _merge_stylesheets(stylesheets: list[StyleSheet]) -> StyleSheet:
+    rules = {}
+    tokens = {}
+    for stylesheet in stylesheets:
+        rules.update(stylesheet.rules)
+        tokens.update(stylesheet.tokens)
+    return StyleSheet(rules=rules, tokens=tokens)
+
+
+def _write_json_artifact(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
 
 def _coerce_render_target(target: Any) -> MountedNode:

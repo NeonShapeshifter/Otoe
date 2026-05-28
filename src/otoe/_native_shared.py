@@ -38,6 +38,7 @@ NATIVE_PAINT_STYLE_PROPERTIES = frozenset(
 )
 NATIVE_IGNORED_STYLE_PROPERTIES = frozenset(
     {
+        "borderStyle",
         "display",
         "fontWeight",
         "margin",

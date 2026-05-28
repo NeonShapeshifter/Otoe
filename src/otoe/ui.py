@@ -67,6 +67,17 @@ UI_EVENT_SIGNATURES = {
     "TabButton.onClick": EventSignature(),
 }
 
+_SURFACE_CLASSES = {
+    "default": "bg-panel border border-line",
+    "neutral": "bg-panel border border-line",
+    "soft": "bg-panel-soft border border-line",
+    "info": "bg-accent-soft border border-accent",
+    "success": "bg-success-soft border border-success",
+    "good": "bg-success-soft border border-success",
+    "warn": "bg-warn-soft border border-warn",
+    "danger": "bg-danger-soft border border-danger",
+}
+
 
 @component
 def ShortcutScope(*children, onKeyDown, className: str | None = None):
@@ -119,11 +130,224 @@ def AppShell(
 
 
 @component
-def Card(*children, className: str | None = None, tone: str = "default", title=None):
+def AppFrame(
+    *,
+    sidebar,
+    content,
+    topbar=None,
+    feedback=None,
+    className: str | None = None,
+    shellClassName: str | None = None,
+    contentClassName: str | None = None,
+    max_width: str = "7xl",
+):
+    main_children = []
+    if topbar is not None:
+        main_children.append(_as_node(topbar))
+    if feedback is not None:
+        main_children.append(_as_node(feedback))
+    main_children.append(_as_node(content))
+
+    return VStack(
+        HStack(
+            _as_node(sidebar),
+            VStack(
+                *main_children,
+                className=class_names("ui-frame-content flex-1 min-w-0 gap-4", contentClassName),
+            ),
+            className=class_names(
+                "ui-frame-shell",
+                f"max-w-{max_width}",
+                "mx-auto w-full p-6 gap-4 items-start flex-wrap",
+                shellClassName,
+            ),
+        ),
+        className=class_names("ui-frame min-h-screen bg-bg text-ink", className),
+    )
+
+
+@component
+def SidebarFrame(
+    *items,
+    brand,
+    subtitle=None,
+    footer=None,
+    className: str | None = None,
+):
+    children = [
+        VStack(
+            Text(brand, className="text-xl font-bold text-white"),
+            Show(
+                Text(subtitle, className="text-sm text-accent-soft"),
+                when=computed(lambda: _has_value(subtitle)),
+            ),
+            gap=1,
+        ),
+        VStack(*items, gap=2),
+    ]
+    if footer is not None:
+        children.append(_slot_node(footer, "ui-sidebar-frame-footer"))
+    return VStack(
+        *children,
+        className=class_names(
+            "ui-sidebar-frame w-72 shrink-0 p-4 gap-5 bg-ink rounded-xl shadow-md",
+            className,
+        ),
+    )
+
+
+@component
+def SidebarItem(
+    label,
+    *,
+    detail=None,
+    tone: str = "neutral",
+    active=False,
+    className: str | None = None,
+):
+    return HStack(
+        StatusPill(" ", tone=tone),
+        VStack(
+            Text(label, className="text-sm font-semibold text-white"),
+            Show(
+                Text(detail, className="text-xs text-accent-soft"),
+                when=computed(lambda: _has_value(detail)),
+            ),
+            gap=1,
+            className="min-w-0",
+        ),
+        className=_state_class(
+            "ui-sidebar-item p-3 gap-3 rounded-md bg-muted",
+            active=active,
+            extra=className,
+        ),
+    )
+
+
+@component
+def Card(
+    *children,
+    className: str | None = None,
+    tone: str = "default",
+    title=None,
+    padding=None,
+    gap=None,
+):
+    if padding is not None or gap is not None:
+        body_props: dict[str, Any] = {"className": "ui-card-body"}
+        if padding is not None:
+            body_props["padding"] = padding
+        if gap is not None:
+            body_props["gap"] = gap
+        children = (VStack(*children, **body_props),)
     return Panel(
         *children,
         className=_variant_class("ui-card", tone, className),
         title=title,
+    )
+
+
+@component
+def StatusPill(label, *, tone: str = "neutral", className: str | None = None):
+    return Badge(
+        label,
+        tone=tone,
+        className=class_names("ui-status-pill shrink-0", className),
+    )
+
+
+@component
+def TopBar(
+    title,
+    *,
+    subtitle=None,
+    status=None,
+    status_tone: str = "neutral",
+    actions=None,
+    className: str | None = None,
+):
+    side_children = []
+    if status is not None:
+        side_children.append(StatusPill(status, tone=status_tone))
+    if actions is not None:
+        side_children.append(_as_node(actions))
+    return Toolbar(
+        VStack(
+            Text(title, className="text-xl font-bold text-ink"),
+            Show(
+                Text(subtitle, className="text-sm text-muted"),
+                when=computed(lambda: _has_value(subtitle)),
+            ),
+            gap=1,
+            className="min-w-0 flex-1",
+        ),
+        HStack(
+            *side_children,
+            className="gap-2 items-center shrink-0",
+        ),
+        className=class_names(
+            "ui-topbar justify-between p-5 bg-panel border border-line rounded-xl shadow-md",
+            className,
+        ),
+    )
+
+
+@component
+def Surface(
+    *children,
+    title=None,
+    detail=None,
+    badge=None,
+    badge_tone: str = "neutral",
+    actions=None,
+    tone: str = "default",
+    padding: int = 16,
+    gap: int = 12,
+    className: str | None = None,
+):
+    body = []
+    if title is not None:
+        body.append(
+            SectionHeader(
+                title,
+                detail=detail,
+                badge=badge,
+                badge_tone=badge_tone,
+                actions=actions,
+            )
+        )
+    body.extend(children)
+    return Card(
+        *body,
+        padding=padding,
+        gap=gap,
+        className=_surface_class("ui-surface rounded-xl shadow-sm", tone, className),
+    )
+
+
+@component
+def MetricGrid(*children, className: str | None = None):
+    return HStack(
+        *children,
+        className=class_names("ui-metric-grid gap-3 flex-wrap", className),
+    )
+
+
+@component
+def MetricTile(
+    *,
+    label,
+    value,
+    detail=None,
+    tone: str = "neutral",
+    className: str | None = None,
+):
+    return StatCard(
+        label=label,
+        value=value,
+        detail=detail,
+        tone=tone,
+        className=_surface_class("ui-metric-tile flex-1 min-w-0 rounded-xl shadow-sm", tone, className),
     )
 
 
@@ -143,14 +367,36 @@ def ActionButton(
     size: str = "md",
     className: str | None = None,
     disabled: bool = False,
+    leading=None,
+    trailing=None,
+    full_width: bool = False,
     onClick=None,
 ):
+    button_class = _multi_variant_class("ui-button", variant, size, className)
+    if full_width:
+        if is_reactive(button_class):
+            base_class = button_class
+            button_class = computed(lambda: class_names(base_class.value, "is-full"))
+        else:
+            button_class = class_names(button_class, "is-full")
     props = {
-        "className": _multi_variant_class("ui-button", variant, size, className),
+        "className": button_class,
         "disabled": disabled,
     }
     if onClick is not None:
         props["onClick"] = onClick
+    if leading is not None or trailing is not None:
+        content = []
+        if leading is not None:
+            content.append(_slot_node(leading, "ui-button-leading"))
+        content.append(Text(label, className="ui-button-label"))
+        if trailing is not None:
+            content.append(_slot_node(trailing, "ui-button-trailing"))
+        return Button(
+            label,
+            HStack(*content, className="ui-button-content", gap=8),
+            **props,
+        )
     return Button(label, **props)
 
 
@@ -351,8 +597,18 @@ def SectionHeader(
     badge=None,
     badge_tone: str = "neutral",
     actions=None,
+    action_label=None,
+    on_action=None,
+    action_variant: str = "ghost",
     className: str | None = None,
 ):
+    if actions is None and action_label is not None:
+        actions = ActionButton(
+            action_label,
+            variant=action_variant,
+            size="sm",
+            onClick=on_action,
+        )
     children = [
         VStack(
             Text(title, className="ui-section-title"),
@@ -383,8 +639,18 @@ def EmptyState(
     *,
     description=None,
     action=None,
+    action_label=None,
+    on_action=None,
+    action_variant: str = "ghost",
     className: str | None = None,
 ):
+    if action is None and action_label is not None:
+        action = ActionButton(
+            action_label,
+            variant=action_variant,
+            size="sm",
+            onClick=on_action,
+        )
     children = [
         Text(title, className="ui-empty-title"),
         Show(
@@ -398,6 +664,52 @@ def EmptyState(
         *children,
         className=class_names("ui-empty-state", className),
         gap=4,
+    )
+
+
+@component
+def ListRow(
+    *,
+    title,
+    detail=None,
+    meta=None,
+    badge=None,
+    badge_tone: str = "neutral",
+    tone: str = "default",
+    action=None,
+    action_label=None,
+    on_action=None,
+    action_variant: str = "ghost",
+    className: str | None = None,
+):
+    resolved_action = action
+    if resolved_action is None and action_label is not None:
+        resolved_action = ActionButton(
+            action_label,
+            variant=action_variant,
+            size="sm",
+            onClick=on_action,
+        )
+    children = [
+        VStack(
+            Text(title, className="font-semibold text-ink"),
+            Show(
+                Text(detail, className="text-sm text-muted truncate"),
+                when=computed(lambda: _has_value(detail)),
+            ),
+            gap=1,
+            className="flex-1 min-w-0",
+        )
+    ]
+    if badge is not None:
+        children.append(StatusPill(badge, tone=badge_tone))
+    if meta is not None:
+        children.append(Text(meta, className="text-sm text-muted shrink-0"))
+    if resolved_action is not None:
+        children.append(_as_node(resolved_action))
+    return HStack(
+        *children,
+        className=_surface_class("ui-list-row p-3 gap-3 rounded-lg items-center", tone, className),
     )
 
 
@@ -672,6 +984,18 @@ def _row_value(row: Any, key: str) -> Any:
     if isinstance(row, dict):
         return row.get(key, "")
     return getattr(row, key)
+
+
+def _surface_class(base: str, tone, extra: str | None = None):
+    if is_reactive(tone) or is_reactive(extra):
+        return computed(
+            lambda: class_names(
+                base,
+                _SURFACE_CLASSES.get(str(_value(tone)), _SURFACE_CLASSES["default"]),
+                _value(extra),
+            )
+        )
+    return class_names(base, _SURFACE_CLASSES.get(str(tone), _SURFACE_CLASSES["default"]), extra)
 
 
 def _feedback_field(feedback, field: str, default: Any) -> Any:

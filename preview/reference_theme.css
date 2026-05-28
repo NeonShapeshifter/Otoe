@@ -151,6 +151,31 @@ input {
   font-size: 13px;
 }
 
+.is-full {
+  width: 100%;
+}
+
+.ui-card-body {
+  width: 100%;
+  min-width: 0;
+}
+
+.ui-button-content {
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.ui-button-label {
+  min-width: 0;
+}
+
+.ui-button-leading,
+.ui-button-trailing {
+  flex: 0 0 auto;
+}
+
 .ui-section-header {
   width: 100%;
   min-width: 0;

@@ -118,6 +118,26 @@ PYTHONPATH=src:. python -m examples.ui.live_preview
 This example is intentionally broader than quickstart; it catches primitive
 integration issues.
 
+## Utility Ops Preview
+
+Paths:
+
+- `examples/utility/ops_console.py`
+- `examples/utility/preview.py`
+
+Use this when changing `utility_css()`, `utility_stylesheet()`, or modern preset
+ergonomics. It is the first utility-first reference app: the screen is composed
+with `AppFrame`, `SidebarFrame`, `TopBar`, `Surface`, `MetricGrid`,
+`MetricTile`, `ListRow`, `FeedbackToast`, and `ActionButton`, without an
+app-specific CSS file.
+
+```bash
+PYTHONPATH=src:. python -m examples.utility.preview > preview/utility_ops.html
+```
+
+This example should stay small. Its job is to answer whether a new Otoe user can
+assemble a polished operational surface without inventing selectors first.
+
 ## SaaS Preview
 
 Paths:

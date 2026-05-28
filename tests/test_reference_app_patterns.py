@@ -10,13 +10,17 @@ def test_reference_app_patterns_tracks_current_phase5_apps():
     assert "examples.hardware.control_panel" in text
     assert "examples.admin.settings_console" in text
     assert "examples.data_workflow.workbench" in text
+    assert "examples.utility.ops_console" in text
     assert "Provider Contract" in text
     assert "Feedback Pattern" in text
     assert "Table Pattern" in text
     assert "SectionHeader" in text
     assert "EmptyState" in text
     assert "FeedbackToast" in text
-    assert "Full-suite baseline after the shared preview theme pass: `342 passed`." in text
+    assert "AppFrame" in text
+    assert "MetricTile" in text
+    assert "ListRow" in text
+    assert "Full-suite baseline after the utility-first styling pass: `356 passed`." in text
 
 
 def test_reference_theme_covers_extracted_ui_helpers():
@@ -31,6 +35,8 @@ def test_reference_theme_covers_extracted_ui_helpers():
         ".ui-section-header",
         ".ui-empty-state",
         ".ui-toast",
+        ".ui-button-content",
+        ".ui-card-body",
     ):
         assert selector in theme
 

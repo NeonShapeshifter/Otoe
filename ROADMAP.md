@@ -1,9 +1,9 @@
 # Otoe Roadmap
 
-**Status:** v0.1.4 released; Phase 5 native backend acceptance hardening
+**Status:** v0.1.4 public snapshot released; Phase 5 utility-first styling and offline build planning
 **Updated:** May 28, 2026
-**Current baseline:** 344 tests passing with dev typing extras installed
-**Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
+**Current baseline:** 388 tests passing, 1 skipped when `mypy` is unavailable
+**Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, utility ops console, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
 
@@ -41,6 +41,19 @@ The current technical question is no longer whether components, signals, control
 | 4 | Developer Experience | Done for v0.1.2; maintenance as needed | Docs, diagnostics, stubs, CLI, and app authoring ergonomics have a usable baseline. |
 | 5 | Professional UI Kit and Reference Apps | Active | Reference apps, shared UI helpers, and preview theme extraction are the current product-shape validation surface. |
 | 6 | Optional Framework Extraction | Planned | Decide whether Otoe becomes a reusable public or semi-public framework. |
+
+### Low-Level Build Direction
+
+Otoe should stay CSS-facing for developer ergonomics without becoming
+browser-CSS-powered on constrained targets. `ADR-018` defines the proposed
+offline profile planner: `otoe plan`, audit-only `otoe deps`, and the first
+`otoe build --profile cage` manifest slice should compile portable styles,
+backend selection, and dependency metadata before hardware deployment. Asset and
+explicit app runtime file copying now exist as the first file policy, and the
+first native framework/runtime file copy policy is recorded in `frameworkFiles`.
+The bundle now includes a generated `otoe-run.py` load/check and headless PNG
+entry. Runtime installs on the target device are a non-goal; no runtime
+dependency installs should happen on hardware targets.
 
 ---
 
@@ -448,6 +461,8 @@ Remaining:
 - No generic virtual DOM.
 - No DOM-style event bubbling/capture before native input ownership is clearer.
 - No broad Tailwind clone before the current style subset hardens.
+- No browser CSS engine or runtime dependency installer inside hardware/cage
+  targets.
 - No custom animation system before layout, input, lifecycle, and renderer invalidation are stable.
 - No public branding push before the native demo is credible.
 - No public framework stability promises before native layout, paint, input, diagnostics, and backend boundaries are proven.
@@ -460,9 +475,14 @@ Remaining:
 1. Keep backend-candidate acceptance coverage anchored on the existing
    `NativeSurface`, `NativeWindowDriver`, native task board replay, and fake
    adapter replay before adding Taffy, Skia, or another backend.
-2. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
+2. Expand the first offline profile/build planner slice from `ADR-018`: keep
+   `otoe plan --json/--out`, audit-only `otoe deps`, and `otoe.profile.toml` as
+   build inputs, keep `otoe build` manifest-first, and harden the native
+   `frameworkFiles` policy while preserving the no runtime dependency installs
+   rule for hardware targets.
+3. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
    before any backend-candidate implementation starts.
-3. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter
+4. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter
    semantics change.
-4. Keep Phase 5 CSS extraction paused except for bug fixes or selector shapes
-   repeated across at least two reference apps.
+5. Keep Phase 5 CSS extraction focused on portable utility/style-planner needs
+   instead of broad browser CSS parity.

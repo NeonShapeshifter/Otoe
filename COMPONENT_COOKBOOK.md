@@ -160,6 +160,53 @@ def TaskList():
 The `key` should be stable for each logical item. If an item keeps the same key
 but changes data, Otoe remounts that keyed child so visible props update.
 
+## Modern Default Surfaces
+
+Use the modern presets when you want a polished app surface without starting
+from app-specific CSS:
+
+```python
+from otoe import (
+    ActionButton,
+    AppFrame,
+    ListRow,
+    MetricGrid,
+    MetricTile,
+    SidebarFrame,
+    SidebarItem,
+    Surface,
+    TopBar,
+)
+
+
+screen = AppFrame(
+    sidebar=SidebarFrame(
+        SidebarItem("Overview", detail="Live", tone="success", active=True),
+        brand="Otoe",
+        subtitle="Utility Ops",
+    ),
+    topbar=TopBar(
+        "Operations",
+        subtitle="No custom CSS",
+        status="Ready",
+        status_tone="success",
+        actions=ActionButton("Sync", size="sm"),
+    ),
+    content=Surface(
+        MetricGrid(MetricTile(label="Velocity", value="31 ms", tone="success")),
+        ListRow(title="Utility layer smoke", badge="Ready", tone="success"),
+        title="Active jobs",
+        badge="Preset",
+        badge_tone="info",
+    ),
+)
+```
+
+These presets are inspired by utility-first systems and component libraries:
+clear slots, tone variants, soft surfaces, compact rows, and responsive shell
+classes. They still render as normal Otoe nodes and can be combined with custom
+CSS when a product needs a stronger identity.
+
 ## Reference App Helpers
 
 Use the shared UI helpers for repeated professional-app markup instead of
@@ -184,15 +231,28 @@ def run_action():
 
 surface = VStack(
     FeedbackToast(feedback),
-    SectionHeader("Selected records", badge="3 rows", badge_tone="warn"),
-    EmptyState("No records selected", description="Choose rows from the queue."),
+    SectionHeader(
+        "Selected records",
+        badge="3 rows",
+        badge_tone="warn",
+        action_label="Approve",
+        on_action=run_action,
+    ),
+    EmptyState(
+        "No records selected",
+        description="Choose rows from the queue.",
+        action_label="Refresh",
+        on_action=run_action,
+    ),
 )
 ```
 
 `FeedbackToast` expects a feedback object or dict with `title`, `detail`, and
 `tone` fields by default. Providers should put feedback in the snapshot so
 static previews, live previews, and tests all see the same operator-visible
-state.
+state. `SectionHeader` and `EmptyState` can build common action buttons directly
+with `action_label`/`on_action`; pass an explicit `actions` or `action` node only
+when a custom control group is needed.
 
 ## Conditional UI With Show
 

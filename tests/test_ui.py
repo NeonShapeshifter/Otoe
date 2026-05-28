@@ -1,5 +1,6 @@
 from otoe import (
     ActionButton,
+    AppFrame,
     AppShell,
     Badge,
     Card,
@@ -18,13 +19,21 @@ from otoe import (
     ShortcutScope,
     Select,
     SelectOption,
+    SidebarFrame,
+    SidebarItem,
     SidebarNav,
+    ListRow,
+    MetricGrid,
+    MetricTile,
     StatCard,
+    StatusPill,
+    Surface,
     TabButton,
     TableColumn,
     Tabs,
     Text,
     Toast,
+    TopBar,
     VStack,
     class_names,
     mount,
@@ -70,6 +79,35 @@ def test_badge_and_action_button_mount_with_ui_classes_and_events():
     assert badge.props["className"] == "ui-badge is-success custom"
     assert button.name == "Button"
     assert button.props["className"] == "ui-button is-ghost is-sm"
+
+    button.trigger("onClick")
+
+    assert clicked.value is True
+
+
+def test_action_button_supports_content_slots_and_full_width():
+    clicked = signal(False)
+    button = root_widget(
+        mount(
+            ActionButton(
+                "Deploy",
+                leading="*",
+                trailing="Enter",
+                full_width=True,
+                onClick=lambda: clicked.set(True),
+            )
+        )
+    )
+
+    assert button.name == "Button"
+    assert button.props["label"] == "Deploy"
+    assert button.props["className"] == "ui-button is-primary is-md is-full"
+    content = button.children[0]
+    assert content.props["className"] == "ui-button-content"
+    assert content.children[0].props["className"] == "ui-button-leading"
+    assert content.children[1].props["className"] == "ui-button-label"
+    assert content.children[1].props["content"] == "Deploy"
+    assert content.children[2].props["className"] == "ui-button-trailing"
 
     button.trigger("onClick")
 
@@ -143,6 +181,110 @@ def test_card_tabs_and_stat_card_compose_primitives():
     body = stat.children[0]
     assert body.children[0].props["content"] == "Pipeline"
     assert body.children[1].props["content"] == "$42,000"
+
+
+def test_card_can_wrap_children_with_spacing_body():
+    card = root_widget(
+        mount(
+            Card(
+                Text("Summary"),
+                padding=16,
+                gap=8,
+                className="surface",
+            )
+        )
+    )
+
+    assert card.name == "Panel"
+    assert card.props["className"] == "ui-card is-default surface"
+    body = card.children[0]
+    assert body.name == "VStack"
+    assert body.props["className"] == "ui-card-body"
+    assert body.props["padding"] == 16
+    assert body.props["gap"] == 8
+    assert body.children[0].props["content"] == "Summary"
+
+
+def test_modern_presets_compose_default_utility_surfaces():
+    clicked = signal(None)
+    frame = root_widget(
+        mount(
+            AppFrame(
+                sidebar=SidebarFrame(
+                    SidebarItem("Overview", detail="Live", tone="success", active=True),
+                    brand="Otoe",
+                    subtitle="Modern",
+                ),
+                topbar=TopBar(
+                    "Command surface",
+                    subtitle="Preset defaults",
+                    status="Ready",
+                    status_tone="success",
+                    actions=ActionButton("Sync", size="sm", onClick=lambda: clicked.set("sync")),
+                ),
+                feedback=Toast("Loaded", tone="info"),
+                content=VStack(
+                    MetricGrid(
+                        MetricTile(label="Velocity", value="31 ms", detail="render", tone="success"),
+                    ),
+                    Surface(
+                        ListRow(
+                            title="Utility layer smoke",
+                            detail="Design systems",
+                            badge="Ready",
+                            badge_tone="success",
+                            meta="2m",
+                            tone="success",
+                            action_label="Open",
+                            on_action=lambda: clicked.set("open"),
+                        ),
+                        title="Jobs",
+                        detail="1 visible",
+                        badge="Preset",
+                        badge_tone="info",
+                    ),
+                    gap=4,
+                ),
+                className="custom-frame",
+            )
+        )
+    )
+
+    assert frame.props["className"] == "ui-frame min-h-screen bg-bg text-ink custom-frame"
+    shell = frame.children[0]
+    assert shell.props["className"] == (
+        "ui-frame-shell max-w-7xl mx-auto w-full p-6 gap-4 items-start flex-wrap"
+    )
+    sidebar = shell.children[0]
+    assert sidebar.props["className"] == "ui-sidebar-frame w-72 shrink-0 p-4 gap-5 bg-ink rounded-xl shadow-md"
+    assert sidebar.children[1].children[0].props["className"] == (
+        "ui-sidebar-item p-3 gap-3 rounded-md bg-muted is-active"
+    )
+    main = shell.children[1]
+    topbar = main.children[0]
+    assert topbar.props["className"] == (
+        "ui-toolbar ui-topbar justify-between p-5 bg-panel border border-line rounded-xl shadow-md"
+    )
+    sync = topbar.children[1].children[1]
+    sync.trigger("onClick")
+    assert clicked.value == "sync"
+
+    content = main.children[2]
+    metric = content.children[0].children[0]
+    assert metric.props["className"] == (
+        "ui-card is-default ui-stat-card ui-metric-tile flex-1 min-w-0 "
+        "rounded-xl shadow-sm bg-success-soft border border-success"
+    )
+    surface = content.children[1]
+    assert surface.props["className"] == (
+        "ui-card is-default ui-surface rounded-xl shadow-sm bg-panel border border-line"
+    )
+    row = surface.children[0].children[1]
+    assert row.props["className"] == (
+        "ui-list-row p-3 gap-3 rounded-lg items-center bg-success-soft border border-success"
+    )
+    row.children[-1].trigger("onClick")
+    assert clicked.value == "open"
 
 
 def test_tab_button_reacts_to_active_signal():
@@ -299,6 +441,40 @@ def test_reference_app_helpers_compose_common_markup():
     assert empty.props["className"] == "ui-empty-state custom-empty"
     assert empty.children[0].props["content"] == "No records"
     assert empty.children[1].children[0].props["content"] == "Try another filter."
+
+
+def test_section_header_and_empty_state_can_build_actions():
+    selected = signal(None)
+    header = root_widget(
+        mount(
+            SectionHeader(
+                "Providers",
+                action_label="Refresh",
+                on_action=lambda: selected.set("header"),
+            )
+        )
+    )
+    empty = root_widget(
+        mount(
+            EmptyState(
+                "No providers",
+                action_label="Create",
+                action_variant="primary",
+                on_action=lambda: selected.set("empty"),
+            )
+        )
+    )
+
+    header_action = header.children[2].children[0]
+    empty_action = empty.children[2].children[0]
+    assert header_action.props["className"] == "ui-button is-ghost is-sm"
+    assert empty_action.props["className"] == "ui-button is-primary is-sm"
+
+    header_action.trigger("onClick")
+    assert selected.value == "header"
+
+    empty_action.trigger("onClick")
+    assert selected.value == "empty"
 
 
 def test_feedback_toast_renders_when_feedback_is_present():

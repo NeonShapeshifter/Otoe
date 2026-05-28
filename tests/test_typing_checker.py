@@ -59,17 +59,25 @@ def test_public_typing_accepts_valid_widget_and_ui_usage(tmp_path):
 
         from otoe import (
             ActionButton,
+            AppFrame,
             Button,
             DataTable,
             EmptyState,
             HStack,
+            ListRow,
+            MetricGrid,
+            MetricTile,
             NavRoute,
             Node,
             RouteView,
             SectionHeader,
+            SidebarFrame,
+            SidebarItem,
             SidebarNav,
+            Surface,
             TableColumn,
             Text,
+            TopBar,
             VStack,
         )
 
@@ -103,6 +111,15 @@ def test_public_typing_accepts_valid_widget_and_ui_usage(tmp_path):
             EmptyState("No rows", description="Try another filter."),
             SidebarNav(routes=routes, active="overview", on_navigate=navigate),
             RouteView(route="overview", routes=routes, render=render_route),
+            AppFrame(
+                sidebar=SidebarFrame(SidebarItem("Overview"), brand="Otoe"),
+                topbar=TopBar("Ops", status="Ready"),
+                content=Surface(
+                    MetricGrid(MetricTile(label="Velocity", value="31 ms")),
+                    ListRow(title="Job", badge="Ready"),
+                    title="Modern defaults",
+                ),
+            ),
         )
         """,
     )

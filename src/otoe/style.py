@@ -10,6 +10,7 @@ SUPPORTED_PROPERTIES = {
     "background": "background",
     "border-color": "borderColor",
     "border-radius": "borderRadius",
+    "border-style": "borderStyle",
     "border-width": "borderWidth",
     "color": "color",
     "display": "display",
