@@ -4,6 +4,7 @@ import argparse
 import compileall
 import importlib
 import json
+import os
 import subprocess
 import sys
 from collections.abc import Callable, Sequence
@@ -15,6 +16,7 @@ from .build import (
     BUILD_MANIFEST_FILENAME,
     DEPS_ARTIFACT_FILENAME,
     PLAN_ARTIFACT_FILENAME,
+    RUNNER_FILENAME,
     BuildError,
     build_manifest,
     copy_assets,
@@ -199,6 +201,11 @@ def _build_parser() -> argparse.ArgumentParser:
         default=True,
         dest="strict_styles",
         help="treat missing class rules as html-only warnings",
+    )
+    build.add_argument(
+        "--validate",
+        action="store_true",
+        help="run the generated bundle runner with --check after writing artifacts",
     )
     build.set_defaults(func=_build)
 
@@ -392,6 +399,8 @@ def _build(args: argparse.Namespace) -> int:
         )
         manifest_path = output / BUILD_MANIFEST_FILENAME
         _write_json_artifact(manifest_path, manifest)
+        if args.validate:
+            _validate_build_runner(output)
     except (BuildError, CliError, PlanError) as exc:
         print(f"build: {exc}", file=sys.stderr)
         return 1
@@ -400,7 +409,26 @@ def _build(args: argparse.Namespace) -> int:
     print(f"plan artifact: {plan_path}")
     print(f"deps artifact: {deps_path}")
     print(f"manifest: {manifest_path}")
+    if args.validate:
+        print("validation: ok")
     return 0
+
+
+def _validate_build_runner(output: Path) -> None:
+    command = [sys.executable, str(output / RUNNER_FILENAME), "--check"]
+    result = subprocess.run(
+        command,
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+    if result.returncode == 0:
+        return
+    details = result.stderr.strip() or result.stdout.strip()
+    if not details:
+        details = f"runner exited with status {result.returncode}"
+    raise BuildError(f"runner validation failed: {details}")
 
 
 def _deps(args: argparse.Namespace) -> int:

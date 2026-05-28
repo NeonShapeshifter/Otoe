@@ -795,6 +795,7 @@ def test_cli_build_writes_minimal_bundle_manifest(tmp_path, monkeypatch, capsys)
 def test_cli_build_writes_runner_that_loads_copied_runtime_target(
     tmp_path,
     monkeypatch,
+    capsys,
 ):
     app = tmp_path / "bundled_runner_app.py"
     app.write_text(
@@ -821,9 +822,11 @@ def test_cli_build_writes_runner_that_loads_copied_runtime_target(
             str(profile_file),
             "--out",
             str(output),
+            "--validate",
         ]
     )
 
+    captured = capsys.readouterr()
     env = {**os.environ, "PYTHONPATH": ""}
     check = subprocess.run(
         [sys.executable, str(output / "otoe-run.py"), "--check"],
@@ -842,10 +845,44 @@ def test_cli_build_writes_runner_that_loads_copied_runtime_target(
     )
 
     assert result == 0
+    assert "validation: ok" in captured.out
     assert check.returncode == 0, check.stderr
     assert "loaded: bundled_runner_app:app" in check.stdout
     assert png.returncode == 0, png.stderr
     assert frame.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+
+
+def test_cli_build_validate_rejects_target_missing_from_bundle(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "workspace_only_app.py"
+    module.write_text(
+        "from otoe import Text\n"
+        "app = Text('Workspace only')\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "validate-missing"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "workspace_only_app:app",
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert (output / "otoe-plan.json").is_file()
+    assert (output / "otoe-deps.json").is_file()
+    assert (output / "manifest.json").is_file()
+    assert "build: runner validation failed:" in captured.err
+    assert "No module named 'workspace_only_app'" in captured.err
 
 
 def test_cli_build_copies_runtime_files_into_bundle(tmp_path, monkeypatch):

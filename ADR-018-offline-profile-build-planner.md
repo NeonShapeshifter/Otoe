@@ -26,6 +26,7 @@ The first diagnostic slice exists as `otoe plan`. The broader command shape is:
 otoe plan app:app --profile cage
 otoe deps app:app --profile cage
 otoe build app:app --profile cage --out dist/cage
+otoe build app:app --profile cage --out dist/cage --validate
 ```
 
 `otoe plan` is implemented as an import/mount/style diagnostic. It supports a
@@ -83,6 +84,9 @@ deployment artifact is built.
   `app/` and `framework/` directories to `sys.path`, loads the manifest target,
   supports a load-only `--check`, and can render one headless PNG frame with
   `--png`
+- optional bundle validation through `otoe build --validate`, which runs the
+  generated runner in `--check` mode after writing artifacts so the copied bundle
+  must load the manifest target
 - assets copied for the profile with manifest entries containing source path,
   bundle path, byte size, and SHA-256
 - a compiled portable style plan, initially shaped by the `otoe plan --out`

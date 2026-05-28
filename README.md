@@ -223,6 +223,7 @@ Write the first minimal offline bundle contract:
 
 ```bash
 python -m otoe build app:app --profile-file otoe.profile.toml --out dist/cage
+python -m otoe build app:app --profile-file otoe.profile.toml --out dist/cage --validate
 ```
 
 `otoe build` currently writes `dist/cage/otoe-plan.json`,
@@ -238,7 +239,10 @@ copied framework files in `frameworkFiles`, and records copied app files in
 The bundle also includes `otoe-run.py`, a minimal generated runner. It adds the
 copied `app/` and `framework/` directories to `sys.path`, loads the manifest
 target, supports `--check` for import/load validation, and supports `--png
-frame.png` for a single headless native PNG frame.
+frame.png` for a single headless native PNG frame. Pass `otoe build --validate`
+to run the generated runner's `--check` mode after writing the bundle; this
+confirms the target loads from the copied bundle instead of only from the
+workspace.
 
 Run an importable live preview app locally:
 

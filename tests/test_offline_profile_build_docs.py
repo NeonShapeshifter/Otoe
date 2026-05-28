@@ -35,6 +35,7 @@ def test_offline_profile_build_adr_captures_hardware_direction():
     assert "built-in `native`" in text
     assert "--check" in text
     assert "--png" in text
+    assert "--validate" in text
     assert "allow_runtime_installs = false" in text
     assert "--profile cage" in text
     assert "No runtime dependency installs" in text
@@ -83,4 +84,5 @@ def test_roadmap_keeps_low_level_build_work_in_scope():
     assert "Asset and explicit app runtime file copying" in single_spaced
     assert "explicit app runtime file copying" in text
     assert "otoe build --profile cage" in text
+    assert "--validate" in text
     assert "no runtime dependency installs" in text

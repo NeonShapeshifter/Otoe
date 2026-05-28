@@ -117,6 +117,7 @@ otoe plan app:app --profile cage --utilities --json
 otoe plan app:app --profile-file otoe.profile.toml --out dist/otoe-plan.json
 otoe deps app:app --profile-file otoe.profile.toml --json
 otoe build app:app --profile-file otoe.profile.toml --out dist/cage
+otoe build app:app --profile-file otoe.profile.toml --out dist/cage --validate
 otoe plan app:app --profile cage --no-strict-styles
 ```
 
@@ -173,6 +174,8 @@ auto-discover imports yet. Copied framework files are recorded in
 The build also writes `otoe-run.py` as the first executable bundle entry. It
 loads the manifest target from the copied app/framework paths, supports `--check`
 for validation, and supports `--png` for a single headless native frame.
+`otoe build --validate` runs that copied runner in `--check` mode after writing
+the bundle, so missing app runtime files are caught before deployment.
 
 ## Supported Parsed Properties
 
