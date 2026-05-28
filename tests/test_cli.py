@@ -5,6 +5,7 @@ import subprocess
 import sys
 import tarfile
 import tomllib
+import zlib
 
 from otoe.cli import main
 
@@ -751,6 +752,7 @@ def test_cli_build_writes_minimal_bundle_manifest(tmp_path, monkeypatch, capsys)
     assert result == 0
     assert f"build build_surface:app: {output}" in captured.out
     assert f"deps artifact: {output / 'otoe-deps.json'}" in captured.out
+    assert f"styles artifact: {output / 'otoe-styles.json'}" in captured.out
     assert plan["status"] == "ok"
     assert deps["status"] == "ok"
     artifacts = manifest.pop("artifacts")
@@ -769,6 +771,13 @@ def test_cli_build_writes_minimal_bundle_manifest(tmp_path, monkeypatch, capsys)
             "size": (output / "otoe-deps.json").stat().st_size,
             "sha256": hashlib.sha256(
                 (output / "otoe-deps.json").read_bytes()
+            ).hexdigest(),
+        },
+        {
+            "path": "otoe-styles.json",
+            "size": (output / "otoe-styles.json").stat().st_size,
+            "sha256": hashlib.sha256(
+                (output / "otoe-styles.json").read_bytes()
             ).hexdigest(),
         },
     ]
@@ -804,6 +813,7 @@ def test_cli_build_writes_minimal_bundle_manifest(tmp_path, monkeypatch, capsys)
         "runtimeInstallsAllowed": False,
         "plan": "otoe-plan.json",
         "deps": "otoe-deps.json",
+        "styles": "otoe-styles.json",
         "assets": [],
         "runtimeFiles": [],
         "status": "ok",
@@ -905,6 +915,125 @@ def test_cli_build_writes_runner_that_loads_copied_runtime_target(
     assert "bundle file 'app/bundled_runner_app.py' does not exist" in missing.stderr
 
 
+def test_cli_build_runner_png_uses_compiled_styles(tmp_path, monkeypatch):
+    app = tmp_path / "styled_bundle_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Styled', className='danger')\n",
+        encoding="utf-8",
+    )
+    styles = tmp_path / "styles.css"
+    styles.write_text(
+        ".danger { color: #ff0000; font-size: 18px; }\n",
+        encoding="utf-8",
+    )
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        'css = ["styles.css"]\n'
+        "\n"
+        "[runtime]\n"
+        'files = ["styled_bundle_app.py"]\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "styled-runner"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "styled_bundle_app:app",
+            "--profile-file",
+            str(profile_file),
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+
+    styles_payload = json.loads((output / "otoe-styles.json").read_text("utf-8"))
+    danger_rule = next(
+        rule for rule in styles_payload["rules"] if rule["className"] == "danger"
+    )
+    frame = output / "styled.png"
+    png = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--png", str(frame)],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+
+    assert result == 0
+    assert danger_rule["declarations"]["color"] == {
+        "type": "literal",
+        "value": "#ff0000",
+    }
+    assert danger_rule["declarations"]["fontSize"] == {
+        "type": "size",
+        "value": 18,
+        "unit": "px",
+    }
+    assert png.returncode == 0, png.stderr
+    assert _png_contains_rgba(frame.read_bytes(), (255, 0, 0, 255))
+
+
+def test_cli_build_runner_png_accepts_html_only_missing_class(
+    tmp_path,
+    monkeypatch,
+):
+    app = tmp_path / "html_only_bundle_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Preview class', className='preview-only')\n",
+        encoding="utf-8",
+    )
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[runtime]\n"
+        'files = ["html_only_bundle_app.py"]\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "html-only-runner"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "html_only_bundle_app:app",
+            "--profile-file",
+            str(profile_file),
+            "--out",
+            str(output),
+            "--no-strict-styles",
+            "--validate",
+        ]
+    )
+
+    styles_payload = json.loads((output / "otoe-styles.json").read_text("utf-8"))
+    preview_rule = next(
+        rule
+        for rule in styles_payload["rules"]
+        if rule["className"] == "preview-only"
+    )
+    frame = output / "html-only.png"
+    png = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--png", str(frame)],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+
+    assert result == 0
+    assert preview_rule["missing"] is True
+    assert preview_rule["declarations"] == {}
+    assert png.returncode == 0, png.stderr
+    assert frame.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+
+
 def test_cli_pack_writes_verified_tarball(tmp_path, monkeypatch, capsys):
     app = tmp_path / "packed_app.py"
     app.write_text(
@@ -961,6 +1090,7 @@ def test_cli_pack_writes_verified_tarball(tmp_path, monkeypatch, capsys):
     assert "manifest.json" in names
     assert "otoe-plan.json" in names
     assert "otoe-deps.json" in names
+    assert "otoe-styles.json" in names
     assert "otoe-run.py" in names
     assert "app/packed_app.py" in names
     assert "framework/otoe/native.py" in names
@@ -1036,6 +1166,19 @@ def test_cli_pack_rejects_missing_manifest(tmp_path, capsys):
     captured = capsys.readouterr()
     assert result == 1
     assert "pack: bundle is missing manifest.json" in captured.err
+
+
+def _png_contains_rgba(data: bytes, rgba: tuple[int, int, int, int]) -> bool:
+    idat = []
+    offset = 8
+    while offset < len(data):
+        length = int.from_bytes(data[offset : offset + 4], "big")
+        kind = data[offset + 4 : offset + 8]
+        payload = data[offset + 8 : offset + 8 + length]
+        if kind == b"IDAT":
+            idat.append(payload)
+        offset += length + 12
+    return bytes(rgba) in zlib.decompress(b"".join(idat))
 
 
 def test_cli_build_validate_rejects_target_missing_from_bundle(

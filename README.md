@@ -228,20 +228,23 @@ python -m otoe pack dist/cage --out dist/cage.tar.gz
 ```
 
 `otoe build` currently writes `dist/cage/otoe-plan.json`,
-`dist/cage/otoe-deps.json`, `dist/cage/manifest.json`, copies declared assets
-under `dist/cage/assets/`, copies selected Otoe framework/runtime files under
-`dist/cage/framework/`, and copies declared runtime files under `dist/cage/app/`.
+`dist/cage/otoe-deps.json`, `dist/cage/otoe-styles.json`,
+`dist/cage/manifest.json`, copies declared assets under `dist/cage/assets/`,
+copies selected Otoe framework/runtime files under `dist/cage/framework/`, and
+copies declared runtime files under `dist/cage/app/`.
 It fails when the plan, dependency audit, or backend selection is invalid,
 allows warning plans, and does not install dependencies, download anything, or
 auto-discover imports yet. The manifest references `otoe-deps.json`, records
 copied framework files in `frameworkFiles`, and records copied app files in
-`runtimeFiles`.
+`runtimeFiles`. The style artifact records used classes, resolved portable
+declarations, omitted html-only/deferred declarations, diagnostics, and tokens.
 
 The bundle also includes `otoe-run.py`, a minimal generated runner. It adds the
 copied `app/` and `framework/` directories to `sys.path`, loads the manifest
 target, supports `--check` for import/load validation, and supports `--png
-frame.png` for a single headless native PNG frame. It also supports `--verify`
-to check referenced bundle files, sizes, and SHA-256 hashes. Pass `otoe build
+frame.png` for a single headless native PNG frame using the bundled compiled
+styles. It also supports `--verify` to check referenced bundle files, sizes, and
+SHA-256 hashes. Pass `otoe build
 --validate` to run the generated runner's `--verify` and `--check` modes after
 writing the bundle; this confirms the copied files are intact and the target
 loads from the bundle instead of only from the workspace.

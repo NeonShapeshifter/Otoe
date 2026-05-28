@@ -164,20 +164,23 @@ hardware/cage target. During `otoe build`, the same audit is written as
 `manifest.json` is written.
 
 `otoe build` is the first bundle contract. It writes `otoe-plan.json`,
-`otoe-deps.json`, and `manifest.json` into the output directory, copies selected
-Otoe framework/runtime files under `framework/`, copies declared assets under
-`assets/`, and copies declared app runtime files under `app/`. Invalid plans,
-dependency audits, or backend selections stop the build before a manifest is
-written; warning plans are allowed and recorded in the manifest. It does not
-auto-discover imports yet. Copied framework files are recorded in
-`frameworkFiles`.
+`otoe-deps.json`, `otoe-styles.json`, and `manifest.json` into the output
+directory, copies selected Otoe framework/runtime files under `framework/`,
+copies declared assets under `assets/`, and copies declared app runtime files
+under `app/`. Invalid plans, dependency audits, or backend selections stop the
+build before a manifest is written; warning plans are allowed and recorded in
+the manifest. It does not auto-discover imports yet. Copied framework files are
+recorded in `frameworkFiles`.
 
 The build also writes `otoe-run.py` as the first executable bundle entry. It
 loads the manifest target from the copied app/framework paths, supports `--check`
 for validation, supports `--verify` for file size/hash checks, and supports
-`--png` for a single headless native frame. `otoe build --validate` runs that
-copied runner in `--verify` and `--check` modes after writing the bundle, so
-missing, modified, or unbundled files are caught before deployment.
+`--png` for a single headless native frame using the bundled compiled styles.
+`otoe-styles.json` records used classes, resolved portable declarations, omitted
+html-only/deferred declarations, diagnostics, and tokens. `otoe build
+--validate` runs that copied runner in `--verify` and `--check` modes after
+writing the bundle, so missing, modified, or unbundled files are caught before
+deployment.
 
 `otoe pack` is the first deployment archive step. It runs the copied runner in
 `--verify` mode, writes a `.tar.gz` with the bundle contents at archive root,

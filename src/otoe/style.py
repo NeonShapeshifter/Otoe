@@ -119,6 +119,41 @@ class StyleSheet:
         )
 
 
+def style_value_to_dict(value: Any) -> dict[str, Any]:
+    if isinstance(value, Size):
+        return {"type": "size", "value": value.value, "unit": value.unit}
+    if isinstance(value, Token):
+        return {"type": "token", "name": value.name}
+    return {"type": "literal", "value": value}
+
+
+def style_value_from_dict(payload: dict[str, Any]) -> Any:
+    kind = payload.get("type")
+    if kind == "size":
+        return Size(payload["value"], payload.get("unit", "px"))
+    if kind == "token":
+        return Token(payload["name"])
+    if kind == "literal":
+        return payload.get("value")
+    raise StyleSyntaxError(f"Unknown serialized style value type {kind!r}.")
+
+
+def stylesheet_from_artifact(payload: dict[str, Any]) -> StyleSheet:
+    rules: dict[str, StyleRule] = {}
+    for entry in payload.get("rules", []):
+        selector = entry.get("selector") or f".{entry['className']}"
+        declarations = {
+            prop: style_value_from_dict(value)
+            for prop, value in entry.get("declarations", {}).items()
+        }
+        rules[selector] = StyleRule(selector=selector, declarations=declarations)
+    tokens = {
+        name: style_value_from_dict(value)
+        for name, value in payload.get("tokens", {}).items()
+    }
+    return StyleSheet(rules=rules, tokens=tokens)
+
+
 def css(source: str, *, tokens: dict[str, Any] | None = None) -> StyleSheet:
     rules: dict[str, StyleRule] = {}
     cleaned = _strip_comments(source)

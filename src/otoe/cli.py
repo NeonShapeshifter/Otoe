@@ -17,6 +17,7 @@ from .build import (
     DEPS_ARTIFACT_FILENAME,
     PLAN_ARTIFACT_FILENAME,
     RUNNER_FILENAME,
+    STYLE_ARTIFACT_FILENAME,
     BuildError,
     build_manifest,
     bundle_artifact,
@@ -32,7 +33,13 @@ from .mount import MountedNode, mount
 from .native import render_native_png
 from .node import Node
 from .pack import PackError, pack_bundle
-from .plan import PlanError, format_plan, plan_mounted, plan_to_dict
+from .plan import (
+    PlanError,
+    compiled_styles_to_dict,
+    format_plan,
+    plan_mounted,
+    plan_to_dict,
+)
 from .profile import (
     DEFAULT_PROFILE_FILENAME,
     PlanProfileConfig,
@@ -358,7 +365,7 @@ def _render(args: argparse.Namespace) -> int:
 
 def _plan(args: argparse.Namespace) -> int:
     try:
-        _, plan, plan_dict = _resolve_plan_request(args)
+        _, plan, plan_dict, _ = _resolve_plan_request(args)
         if args.out:
             _write_json_artifact(Path(args.out), plan_dict)
     except (CliError, PlanError) as exc:
@@ -376,7 +383,7 @@ def _plan(args: argparse.Namespace) -> int:
 
 def _build(args: argparse.Namespace) -> int:
     try:
-        profile_config, plan, plan_dict = _resolve_plan_request(args)
+        profile_config, plan, plan_dict, stylesheet = _resolve_plan_request(args)
         output = Path(args.out)
         output.mkdir(parents=True, exist_ok=True)
         plan_path = output / PLAN_ARTIFACT_FILENAME
@@ -391,9 +398,19 @@ def _build(args: argparse.Namespace) -> int:
             raise BuildError(
                 "dependency audit invalid; refusing to write build manifest"
             )
+        style_path = output / STYLE_ARTIFACT_FILENAME
+        _write_json_artifact(
+            style_path,
+            compiled_styles_to_dict(
+                plan,
+                target=args.target,
+                stylesheet=stylesheet,
+            ),
+        )
         artifact_manifest = [
             bundle_artifact(plan_path, output_dir=output),
             bundle_artifact(deps_path, output_dir=output),
+            bundle_artifact(style_path, output_dir=output),
         ]
         framework_file_manifest = copy_framework_files(
             profile_config,
@@ -427,6 +444,7 @@ def _build(args: argparse.Namespace) -> int:
     print(f"build {args.target}: {output}")
     print(f"plan artifact: {plan_path}")
     print(f"deps artifact: {deps_path}")
+    print(f"styles artifact: {style_path}")
     print(f"manifest: {manifest_path}")
     if args.validate:
         print("validation: ok")
@@ -591,7 +609,7 @@ def _load_plan_profile_config(path: str | None) -> PlanProfileConfig:
 
 def _resolve_plan_request(
     args: argparse.Namespace,
-) -> tuple[PlanProfileConfig, Any, dict[str, Any]]:
+) -> tuple[PlanProfileConfig, Any, dict[str, Any], StyleSheet | None]:
     target = _load_target(args.target)
     mounted = _coerce_render_target(target)
     profile_config = _load_plan_profile_config(args.profile_file)
@@ -608,7 +626,7 @@ def _resolve_plan_request(
         stylesheet=stylesheet,
         strict_styles=args.strict_styles,
     )
-    return profile_config, plan, plan_to_dict(plan, target=args.target)
+    return profile_config, plan, plan_to_dict(plan, target=args.target), stylesheet
 
 
 def _load_plan_stylesheet(

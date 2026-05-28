@@ -11,6 +11,7 @@ from .profile import PlanProfileConfig, ProfileAsset, ProfileRuntimeFile
 
 PLAN_ARTIFACT_FILENAME = "otoe-plan.json"
 DEPS_ARTIFACT_FILENAME = "otoe-deps.json"
+STYLE_ARTIFACT_FILENAME = "otoe-styles.json"
 BUILD_MANIFEST_FILENAME = "manifest.json"
 RUNNER_FILENAME = "otoe-run.py"
 ASSET_OUTPUT_DIR = "assets"
@@ -97,6 +98,7 @@ def build_manifest(
         "runtimeInstallsAllowed": profile_config.allow_runtime_installs,
         "plan": PLAN_ARTIFACT_FILENAME,
         "deps": DEPS_ARTIFACT_FILENAME,
+        "styles": STYLE_ARTIFACT_FILENAME,
         "artifacts": artifacts or [],
         "assets": assets or [],
         "frameworkFiles": framework_files or [],
@@ -241,7 +243,13 @@ def main(argv: list[str] | None = None) -> int:
 
         output = Path(args.png)
         output.parent.mkdir(parents=True, exist_ok=True)
-        render_native_png(mounted, output, background=args.background)
+        stylesheet = _load_stylesheet(manifest)
+        render_native_png(
+            mounted,
+            output,
+            stylesheet=stylesheet,
+            background=args.background,
+        )
         print(f"png: {output}")
         return 0
 
@@ -258,9 +266,20 @@ def _load_manifest() -> dict[str, Any]:
     return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
 
 
+def _load_stylesheet(manifest: dict[str, Any]):
+    styles_path = manifest.get("styles")
+    if not styles_path:
+        return None
+    from otoe.style import stylesheet_from_artifact
+
+    payload = json.loads(_require_bundle_file(styles_path).read_text(encoding="utf-8"))
+    return stylesheet_from_artifact(payload)
+
+
 def _verify_bundle(manifest: dict[str, Any]) -> None:
-    for key in ("plan", "deps"):
-        _require_bundle_file(manifest[key])
+    for key in ("plan", "deps", "styles"):
+        if key in manifest:
+            _require_bundle_file(manifest[key])
     for artifact in manifest.get("artifacts", []):
         _verify_manifest_file(artifact, path_key="path")
     runner = manifest.get("runner")

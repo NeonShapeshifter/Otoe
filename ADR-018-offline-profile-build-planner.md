@@ -36,10 +36,11 @@ machine-readable `--json` report, `--out` JSON artifact, and an optional
 dependency check for profile-declared packages and Otoe extras. It does not
 install packages, touch the network, or write artifacts when run directly.
 `otoe build` is implemented as a minimal bundle contract that writes
-`otoe-plan.json`, `otoe-deps.json`, selected `frameworkFiles`, and
-`manifest.json`, plus a generated `otoe-run.py` runner. The first framework copy
-policy supports the built-in `native` backend only; future backend candidates
-must add explicit file sets instead of relying on import discovery.
+`otoe-plan.json`, `otoe-deps.json`, `otoe-styles.json`, selected
+`frameworkFiles`, and `manifest.json`, plus a generated `otoe-run.py` runner.
+The first framework copy policy supports the built-in `native` backend only;
+future backend candidates must add explicit file sets instead of relying on
+import discovery.
 `otoe pack` is implemented as a verify-before-archive step that creates a
 portable `.tar.gz` from the generated bundle without local cache directories.
 
@@ -86,7 +87,7 @@ deployment artifact is built.
 - a generated runner entry, initially `otoe-run.py`, that adds the copied
   `app/` and `framework/` directories to `sys.path`, loads the manifest target,
   supports file integrity `--verify`, supports a load-only `--check`, and can
-  render one headless PNG frame with `--png`
+  render one headless PNG frame with `--png` using the bundled compiled styles
 - optional bundle validation through `otoe build --validate`, which runs the
   generated runner in `--verify` and `--check` modes after writing artifacts so
   the copied bundle must be intact and load the manifest target
@@ -96,7 +97,9 @@ deployment artifact is built.
 - assets copied for the profile with manifest entries containing source path,
   bundle path, byte size, and SHA-256
 - a compiled portable style plan, initially shaped by the `otoe plan --out`
-  JSON artifact
+  JSON artifact and persisted as `otoe-styles.json` with used classes, resolved
+  portable declarations, omitted html-only/deferred declarations, diagnostics,
+  and tokens
 - a dependency audit artifact, currently `otoe-deps.json`, proving that
   profile-declared dependencies passed on the build machine
 - diagnostics for portable, html-only, deferred, and invalid styling

@@ -14,6 +14,8 @@
   sizes, and SHA-256 hashes.
 - Added `otoe pack` to verify offline bundles and write cache-free `.tar.gz`
   deployment archives.
+- Added `otoe-styles.json` build artifacts and taught the generated runner to
+  render PNG frames with bundled compiled styles.
 
 ## v0.1.4 - Native Backend Acceptance Hardening
 

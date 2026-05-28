@@ -11,7 +11,7 @@ from ._native_shared import (
 )
 from ._native_contracts import NativePaintError
 from .mount import MountedNode, root_widget
-from .style import DIMENSION_PROPERTIES, Size, StyleSheet, Token
+from .style import DIMENSION_PROPERTIES, Size, StyleSheet, Token, style_value_to_dict
 
 
 PLAN_STATUSES = ("portable", "html-only", "deferred", "invalid")
@@ -208,6 +208,91 @@ def plan_to_dict(plan: OtoePlan, *, target: str) -> dict[str, Any]:
             for diagnostic in plan.diagnostics
         ],
     }
+
+
+def compiled_styles_to_dict(
+    plan: OtoePlan,
+    *,
+    target: str,
+    stylesheet: StyleSheet | None,
+) -> dict[str, Any]:
+    return {
+        "schemaVersion": 1,
+        "target": target,
+        "profile": plan.profile,
+        "status": plan.status,
+        "classes": {
+            "used": list(plan.used_classes),
+            "planned": list(plan.planned_classes),
+            "htmlOnly": list(plan.html_only_classes),
+            "invalid": list(plan.invalid_classes),
+        },
+        "styleCounts": dict(plan.style_counts),
+        "directStyleCounts": dict(plan.direct_style_counts),
+        "tokens": _compiled_tokens(stylesheet),
+        "rules": _compiled_rules(plan, stylesheet),
+        "diagnostics": [
+            {"level": diagnostic.level, "message": diagnostic.message}
+            for diagnostic in plan.diagnostics
+        ],
+    }
+
+
+def _compiled_tokens(stylesheet: StyleSheet | None) -> dict[str, dict[str, Any]]:
+    if stylesheet is None:
+        return {}
+    return {
+        name: style_value_to_dict(value)
+        for name, value in sorted(stylesheet.tokens.items())
+    }
+
+
+def _compiled_rules(
+    plan: OtoePlan,
+    stylesheet: StyleSheet | None,
+) -> list[dict[str, Any]]:
+    rules: list[dict[str, Any]] = []
+    for class_name in plan.used_classes:
+        selector = f".{class_name}"
+        rule = stylesheet.rules.get(selector) if stylesheet is not None else None
+        if rule is None:
+            rules.append(
+                {
+                    "className": class_name,
+                    "selector": selector,
+                    "declarations": {},
+                    "omittedDeclarations": [],
+                    "missing": True,
+                }
+            )
+            continue
+
+        declarations: dict[str, dict[str, Any]] = {}
+        omitted: list[dict[str, Any]] = []
+        for prop, value in rule.declarations.items():
+            status, message = _classify_style_value(prop, value, stylesheet)
+            resolved = resolve_token(value, stylesheet.tokens)
+            if status == "portable":
+                declarations[prop] = style_value_to_dict(resolved)
+            else:
+                omitted.append(
+                    {
+                        "property": prop,
+                        "status": status,
+                        "value": style_value_to_dict(value),
+                        "message": message,
+                    }
+                )
+        rules.append(
+            {
+                "className": class_name,
+                "selector": selector,
+                "declarations": declarations,
+                "omittedDeclarations": omitted,
+                "missing": False,
+            }
+        )
+    return rules
 
 
 def _classify_style_value(
