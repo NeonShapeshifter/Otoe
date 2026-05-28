@@ -359,7 +359,7 @@ perform security operations.
 
 ## Status
 
-Current status: v0.1.3 released; Phase 5 professional UI/reference app buildout. See
+Current status: v0.1.4 released; Phase 5 native backend acceptance hardening. See
 `ROADMAP.md` for the active plan.
 
 ## License

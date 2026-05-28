@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## v0.1.4 - Native Backend Acceptance Hardening
+
+- Hardened the backend acceptance contract with reusable named-path harness and
+  replay helpers.
+- Added app-shaped native task board replay as a Phase 5 pressure surface for
+  backend candidates.
+- Added fake backend adapter replay through `run_native(...)` to prove adapters
+  receive and drive `NativeWindowDriver`.
+- Updated native workflow and backend docs to keep future backend candidates
+  behind the driver/surface boundary.
+
 ## v0.1.3 - Reference Apps and Live Preview Hardening
 
 - Added hardware/control panel, local admin/settings, and data workflow

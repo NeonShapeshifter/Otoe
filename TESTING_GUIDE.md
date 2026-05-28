@@ -187,6 +187,22 @@ The backend-replay acceptance test is the contract future backend candidates
 must satisfy before claiming parity with the current native path. It should stay
 small and framework-neutral.
 
+The current acceptance harness lives in `tests/test_native_backend_contract.py`.
+It names the required layout paths through `BackendContractPaths`, builds one
+driver/surface pair through `backend_contract_harness()`, and replays the
+contract through focused assertion helpers. Reuse that harness shape before
+adding a second broad acceptance surface.
+
+That file also keeps one app-shaped replay over the native task board demo. The
+task board replay is the Phase 5 pressure surface for backend candidates: it
+proves a realistic search, filtered-list, modal, shortcut-reset, scroll, focus,
+and frame-refresh flow without pulling a full reference app into the native
+contract.
+
+It also includes a fake backend adapter replay through `run_native(...)`. That
+test proves custom adapters receive a `NativeWindowDriver` and can drive the
+same acceptance contract without bypassing the driver/surface boundary.
+
 A good backend acceptance surface proves:
 
 - the tree mounts through `NativeWindowDriver.from_target(...)`
@@ -197,6 +213,8 @@ A good backend acceptance surface proves:
 - hit-tested clicks choose the same topmost path as paint order
 - wheel dispatch updates controlled `ScrollView(scrollY=...)`
 - frame count advances after state-changing native events
+- custom backend adapters enter through `run_native(...)` and receive a
+  replayable `NativeWindowDriver`
 
 Do not expand the acceptance test to cover every widget. Specific layout, paint,
 input, and diagnostic behavior belongs in focused unit tests. The acceptance

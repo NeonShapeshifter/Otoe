@@ -1,8 +1,8 @@
 # Otoe Roadmap
 
-**Status:** v0.1.3 released; Phase 5 professional UI/reference app buildout
-**Updated:** May 26, 2026
-**Current baseline:** 342 tests passing
+**Status:** v0.1.4 released; Phase 5 native backend acceptance hardening
+**Updated:** May 28, 2026
+**Current baseline:** 344 tests passing with dev typing extras installed
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
@@ -457,9 +457,9 @@ Remaining:
 
 ## Immediate Next Actions
 
-1. Define backend-candidate acceptance coverage against the existing
-   `NativeSurface`, `NativeWindowDriver`, native task board, and Phase 5
-   reference-app surfaces before adding Taffy, Skia, or another backend.
+1. Keep backend-candidate acceptance coverage anchored on the existing
+   `NativeSurface`, `NativeWindowDriver`, native task board replay, and fake
+   adapter replay before adding Taffy, Skia, or another backend.
 2. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
    before any backend-candidate implementation starts.
 3. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter

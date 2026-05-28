@@ -99,6 +99,15 @@ Future backend adapters should drive this same contract. If a backend cannot
 replay the current backend acceptance surface through `NativeWindowDriver`, it
 is not equivalent to the current native path yet.
 
+The current backend-candidate acceptance bar has three replay surfaces:
+
+- the minimal harness in `tests/test_native_backend_contract.py`
+- the app-shaped native task board replay
+- the fake adapter replay through `run_native(...)`
+
+New candidates should reproduce those surfaces before adding backend-specific
+layout, paint, text, GPU, or packaging behavior.
+
 ## run_native
 
 Use `run_native(...)` only for local manual experiments:
@@ -118,8 +127,9 @@ sudo apt install python3-tk
 
 The Tk wrapper presents the current paint command stream on a Canvas with
 readable text items and scale-to-fit geometry. It is a manual-test adapter, not
-a production desktop backend. Do not treat Tk window behavior, PNG marker text,
-or current scaling as compatibility promises.
+a production desktop backend or model for future production backends. Do not
+treat Tk window behavior, PNG marker text, or current scaling as compatibility
+promises.
 
 ## Backend Rules
 
@@ -127,7 +137,7 @@ or current scaling as compatibility promises.
 - Renderer tests should prefer `NativeSurface` or `NativeWindowDriver`.
 - Manual OS windows should go through `run_native(...)`, not custom app-level
   mounting/layout/paint wiring.
-- New backend candidates must reproduce the backend-replay acceptance test
-  before expanding backend-specific behavior.
+- New backend candidates must reproduce the minimal harness, native task board
+  replay, and fake adapter replay before expanding backend-specific behavior.
 - Public docs should keep native support framed as headless preview/test support
   until a production backend meets the bar in `ADR-012-native-backend-boundary.md`.

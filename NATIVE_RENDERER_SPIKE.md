@@ -65,8 +65,21 @@ the OS Tk package: `sudo apt install python3-tk`.
 surface. It drives one framework-neutral tree through `NativeWindowDriver` and
 `NativeSurface`, then asserts layout paths, painter order, focused controlled
 input, shortcut dispatch, hit-tested click, controlled wheel scroll, and frame
-refresh. Future layout, paint, raster, or windowing backend experiments should
+refresh. The test keeps named paths and replay steps in small helpers so future
+backend candidates can reuse the same contract instead of copying a one-off
+scenario. Future layout, paint, raster, or windowing backend experiments should
 reproduce that contract before claiming parity with the current native path.
+
+The same test module also replays the native task board through
+`NativeWindowDemo`. That app-shaped replay is intentionally smaller than a full
+Phase 5 reference app, but it proves realistic search, filtered list, modal,
+shortcut reset, scroll, focus, and frame refresh behavior through the same
+driver/surface boundary.
+
+The backend contract module also includes a fake adapter replay through
+`run_native(...)`. That keeps future backend candidates honest about the entry
+point: adapters receive a `NativeWindowDriver` and must replay the same
+driver/surface contract before claiming parity.
 
 The headless PNG path still uses deterministic marker text for tests and file
 output. The Tk wrapper is now a small paint/text proof: it presents the current

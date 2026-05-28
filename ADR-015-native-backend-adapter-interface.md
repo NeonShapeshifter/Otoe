@@ -46,7 +46,8 @@ The adapter receives a `NativeWindowDriver`, not a component tree. That keeps
 component code backend-neutral and preserves the existing testable boundary for
 layout, paint, hit-testing, focus, text input, scroll, and frame refresh.
 `tests/test_native_backend_contract.py` is the current acceptance target for
-that boundary.
+that boundary, including a fake adapter replay through `run_native(...)` that
+proves adapters receive and drive a replayable `NativeWindowDriver`.
 
 ## Contract
 
@@ -75,7 +76,8 @@ A backend adapter must not:
 - Future backend spikes can attach at the adapter boundary first, then decide
   whether layout, paint, and text should remain behind the existing
   `NativeSurface` contract or move behind a deeper backend-specific interface.
-- A backend spike should reproduce the backend-replay acceptance test before it
-  claims parity with the current native path.
+- A backend spike should reproduce the minimal harness, app-shaped native task
+  board replay, and fake adapter replay before it claims parity with the current
+  native path.
 - The next production-quality backend decision should start by implementing this
   protocol, not by changing widgets or app examples.
