@@ -27,6 +27,11 @@
 - Added generated runner schema-version checks for `manifest.json`,
   `otoe-plan.json`, `otoe-deps.json`, and `otoe-styles.json` before verification,
   layout checks, PNG rendering, or packing.
+- Reconciled `NATIVE_RENDERER_SPIKE.md` and `NATIVE_WORKFLOWS.md` with the
+  executable native support matrix and backend-candidate replay surfaces.
+- Added the first native backend-candidate skeleton with a recording adapter,
+  no-window `HeadlessCandidateBackend`, minimal driver replay, task board replay,
+  layout/paint acceptance reports, and text/JSON demo output.
 
 ## v0.1.4 - Native Backend Acceptance Hardening
 

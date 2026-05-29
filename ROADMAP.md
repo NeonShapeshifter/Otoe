@@ -2,7 +2,7 @@
 
 **Status:** v0.1.4 public snapshot released; Phase 5 utility-first styling and offline build planning
 **Updated:** May 28, 2026
-**Current baseline:** 403 tests passing, 1 skipped when `mypy` is unavailable
+**Current baseline:** 414 tests passing, 1 skipped when `mypy` is unavailable
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, utility ops console, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
@@ -62,6 +62,13 @@ that do not appear in the first mounted render, while arbitrary runtime-built
 class names remain outside the hardware/cage contract.
 The generated runner now rejects unsupported artifact schema versions before
 verification, layout checks, PNG rendering, or packing.
+`NATIVE_RENDERER_SPIKE.md` now names the executable native support matrix,
+layout, window, closeout, and backend-candidate replay surfaces that must stay
+aligned before backend replacement work starts.
+The first backend-candidate skeleton now runs a recording adapter and a
+no-window `HeadlessCandidateBackend` through the minimal replay and native task
+board replay, then prints text or JSON acceptance reports without adding Skia,
+Taffy, Tk, or another concrete backend dependency.
 `otoe pack` verifies those bundle files and creates a cache-free `.tar.gz`
 deployment archive.
 Runtime installs on the target device are a non-goal; no runtime dependency
@@ -486,14 +493,17 @@ Remaining:
 
 1. Keep backend-candidate acceptance coverage anchored on the existing
    `NativeSurface`, `NativeWindowDriver`, native task board replay, and fake
-   adapter replay before adding Taffy, Skia, or another backend.
+   adapter replay before adding Taffy, Skia, or another backend; use
+   `examples/native/backend_candidate_skeleton.py` as the no-dependency
+   candidate starting point.
 2. Expand the first offline profile/build planner slice from `ADR-018`: keep
    `otoe plan --json/--out`, audit-only `otoe deps`, and `otoe.profile.toml` as
    build inputs, keep `otoe build` manifest-first, and harden the native
    `frameworkFiles` policy while preserving the no runtime dependency installs
    rule for hardware targets.
-3. Reconcile `NATIVE_RENDERER_SPIKE.md` with the executable support matrices
-   before any backend-candidate implementation starts.
+3. Keep `NATIVE_RENDERER_SPIKE.md` aligned with the executable support matrices
+   and backend-candidate replay surfaces before any backend implementation
+   claims parity.
 4. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter
    semantics change.
 5. Keep Phase 5 CSS extraction focused on portable utility/style-planner needs

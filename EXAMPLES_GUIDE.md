@@ -113,6 +113,26 @@ PYTHONPATH=src:. python -m examples.native.window_demo --window
 The `--window` mode requires Tk and a graphical display. It is a manual
 experiment, not a production desktop backend.
 
+## Native Backend Candidate Skeleton
+
+Path: `examples/native/backend_candidate_skeleton.py`
+
+Use this before adding Skia, Taffy, or another concrete backend. It provides a
+recording backend adapter, `HeadlessCandidateBackend`, and acceptance reports
+that drive:
+
+- minimal driver replay
+- app-shaped native task board replay
+- fake adapter routing through `run_native(...)`
+- layout, paint, focus, frame, and visible-text summaries
+
+The skeleton has no external backend dependency and does not open a window.
+
+```bash
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --json
+```
+
 ## UI Kitchen Sink
 
 Paths:

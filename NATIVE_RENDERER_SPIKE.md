@@ -1,7 +1,7 @@
 # Native Renderer Spike
 
 **Status:** experimental headless spike with optional local window wrapper
-**Updated:** May 22, 2026
+**Updated:** May 29, 2026
 
 This document describes the renderer boundary that exists today. It is not a
 production desktop backend yet. The goal is to keep the contract precise while
@@ -80,6 +80,37 @@ The backend contract module also includes a fake adapter replay through
 `run_native(...)`. That keeps future backend candidates honest about the entry
 point: adapters receive a `NativeWindowDriver` and must replay the same
 driver/surface contract before claiming parity.
+
+## Executable Acceptance Surfaces
+
+The native contract is defined by executable surfaces, not by this document
+alone. Keep these aligned before evaluating a new layout, paint, raster, or
+window backend:
+
+- `tests/test_native_support_matrix.py` mirrors the executable style, widget,
+  and input matrices in `otoe._native_shared`, then checks that this document
+  names every supported, ignored, deferred, and fallback entry.
+- `tests/test_native_layout.py` anchors deterministic stack layout, stylesheet
+  dimensions, component-aware diagnostics, ignored style behavior, fallback
+  containers, reactive prop updates, and `ScrollView` bounds/scroll clamping.
+- `tests/test_native_backend_contract.py` is the backend-candidate acceptance
+  bar. It contains the minimal backend harness, the app-shaped native task board
+  replay, and the fake adapter replay through `run_native(...)`.
+- `examples/native/backend_candidate_skeleton.py` is the first backend-candidate
+  skeleton. It provides a recording adapter, a no-window
+  `HeadlessCandidateBackend`, and acceptance reports that run a minimal driver
+  replay plus the task board replay through `run_native(...)` without opening a
+  window or depending on Skia, Taffy, or Tk.
+- `tests/test_native_window.py` and `tests/test_native_phase3_closeout.py` keep
+  `NativeWindowDriver`, backend adapter routing, optional Tk Canvas
+  presentation, and Phase 3 closeout behavior testable without opening a real
+  OS window.
+
+A backend candidate must reproduce the minimal backend harness, app-shaped
+native task board replay, and fake adapter replay before expanding
+backend-specific layout, paint, text, GPU, packaging, or OS-window behavior.
+Passing the Tk wrapper tests is not enough for a production backend claim: Tk is
+optional, local, and non-production.
 
 The headless PNG path still uses deterministic marker text for tests and file
 output. The Tk wrapper is now a small paint/text proof: it presents the current

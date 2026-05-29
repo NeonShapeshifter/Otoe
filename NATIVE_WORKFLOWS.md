@@ -107,6 +107,21 @@ The current backend-candidate acceptance bar has three replay surfaces:
 
 New candidates should reproduce those surfaces before adding backend-specific
 layout, paint, text, GPU, or packaging behavior.
+`examples/native/backend_candidate_skeleton.py` is the first no-dependency
+starting point for that work: it records a candidate adapter run, provides a
+`HeadlessCandidateBackend`, drives the minimal replay and task board replay
+through `run_native(...)`, and returns small acceptance reports with layout,
+paint, focus, frame, and visible-text summaries.
+
+```bash
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --json
+```
+
+The native support matrix and renderer spike documentation are also executable
+drift checks: `tests/test_native_support_matrix.py` keeps `NATIVE_RENDERER_SPIKE.md`
+aligned with supported style, widget, input, fallback, ignored, and deferred
+entries.
 
 ## run_native
 

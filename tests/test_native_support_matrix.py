@@ -236,3 +236,40 @@ def test_native_support_matrix_is_reflected_in_renderer_spike_doc():
         assert f"`{name}`" in doc
     assert "`Hero`" in doc
     assert "`lineHeight`" in doc
+
+
+def test_native_renderer_spike_documents_executable_acceptance_surfaces():
+    doc = Path("NATIVE_RENDERER_SPIKE.md").read_text(encoding="utf-8")
+    single_spaced = " ".join(doc.split())
+
+    assert "## Executable Acceptance Surfaces" in doc
+    assert "`tests/test_native_support_matrix.py`" in doc
+    assert "`tests/test_native_layout.py`" in doc
+    assert "`tests/test_native_backend_contract.py`" in doc
+    assert "`examples/native/backend_candidate_skeleton.py`" in doc
+    assert "`HeadlessCandidateBackend`" in doc
+    assert "`tests/test_native_window.py`" in doc
+    assert "`tests/test_native_phase3_closeout.py`" in doc
+    assert "minimal backend harness" in doc
+    assert "app-shaped native task board replay" in single_spaced
+    assert "fake adapter replay through `run_native(...)`" in doc
+    assert "A backend candidate must reproduce" in doc
+    assert "Tk is optional, local, and non-production" in single_spaced
+
+
+def test_native_workflows_documents_backend_candidate_replay_bar():
+    doc = Path("NATIVE_WORKFLOWS.md").read_text(encoding="utf-8")
+    single_spaced = " ".join(doc.split())
+
+    assert "The current backend-candidate acceptance bar has three replay surfaces" in doc
+    assert "the minimal harness in `tests/test_native_backend_contract.py`" in doc
+    assert "the app-shaped native task board replay" in doc
+    assert "the fake adapter replay through `run_native(...)`" in doc
+    assert "`examples/native/backend_candidate_skeleton.py`" in doc
+    assert "`HeadlessCandidateBackend`" in doc
+    assert "small acceptance report" in doc
+    assert "layout, paint, focus, frame, and visible-text summaries" in single_spaced
+    assert "python -m examples.native.backend_candidate_skeleton" in doc
+    assert "python -m examples.native.backend_candidate_skeleton --json" in doc
+    assert "`tests/test_native_support_matrix.py` keeps `NATIVE_RENDERER_SPIKE.md`" in doc
+    assert "supported style, widget, input, fallback, ignored, and deferred" in doc
