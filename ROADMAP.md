@@ -2,7 +2,7 @@
 
 **Status:** v0.1.4 public snapshot released; Phase 5 utility-first styling and offline build planning
 **Updated:** May 28, 2026
-**Current baseline:** 401 tests passing, 1 skipped when `mypy` is unavailable
+**Current baseline:** 403 tests passing, 1 skipped when `mypy` is unavailable
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, utility ops console, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
@@ -60,6 +60,8 @@ use bundled portable declarations instead of workspace CSS.
 Profile `[styles].safelist` now lets the build compile dynamic state classes
 that do not appear in the first mounted render, while arbitrary runtime-built
 class names remain outside the hardware/cage contract.
+The generated runner now rejects unsupported artifact schema versions before
+verification, layout checks, PNG rendering, or packing.
 `otoe pack` verifies those bundle files and creates a cache-free `.tar.gz`
 deployment archive.
 Runtime installs on the target device are a non-goal; no runtime dependency

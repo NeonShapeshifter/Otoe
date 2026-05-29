@@ -47,6 +47,7 @@ def test_offline_profile_build_adr_captures_hardware_direction():
     assert "--layout-check" in text
     assert "--png" in text
     assert "bundled compiled styles" in text
+    assert "schemaVersion = 1" in text
     assert "--validate" in text
     assert "__pycache__" in text
     assert "allow_runtime_installs = false" in text
@@ -91,6 +92,7 @@ def test_style_guide_points_css_at_offline_profiles():
     assert "without installing packages" in single_spaced
     assert ".tar.gz" in text
     assert "bundled compiled styles" in text
+    assert "schemaVersion = 1" in text
     assert "--layout-check" in text
     assert "--profile cage" in text
 
@@ -109,6 +111,7 @@ def test_roadmap_keeps_low_level_build_work_in_scope():
     assert "manifest-first" in text
     assert "otoe-styles.json" in text
     assert "[styles].safelist" in text
+    assert "schema versions" in text
     assert "audit-only" in text
     assert "Asset, simple local target module, same-directory import, and explicit app runtime file copying" in single_spaced
     assert "explicit app runtime file copying" in single_spaced

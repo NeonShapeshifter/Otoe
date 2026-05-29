@@ -1024,6 +1024,109 @@ def test_cli_build_writes_runner_that_loads_copied_runtime_target(
     assert "bundle file 'app/bundled_runner_app.py' does not exist" in missing.stderr
 
 
+def test_cli_build_runner_rejects_manifest_schema_version(
+    tmp_path,
+    monkeypatch,
+):
+    app = tmp_path / "manifest_schema_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Manifest schema')\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "manifest-schema"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "manifest_schema_app:app",
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+    manifest_path = output / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["schemaVersion"] = 0
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    verify = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--verify"],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+    layout_check = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--layout-check"],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+
+    assert result == 0
+    assert verify.returncode == 1
+    assert "manifest.json: unsupported schemaVersion 0; expected 1" in verify.stderr
+    assert layout_check.returncode == 1
+    assert "manifest.json: unsupported schemaVersion 0; expected 1" in layout_check.stderr
+
+
+def test_cli_build_runner_rejects_style_artifact_schema_version(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    app = tmp_path / "styles_schema_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Styles schema')\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "styles-schema"
+    archive = tmp_path / "dist" / "styles-schema.tar.gz"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "styles_schema_app:app",
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+    styles_path = output / "otoe-styles.json"
+    styles = json.loads(styles_path.read_text(encoding="utf-8"))
+    styles["schemaVersion"] = 2
+    styles_path.write_text(json.dumps(styles), encoding="utf-8")
+
+    verify = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--verify"],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+    pack_result = main(["pack", str(output), "--out", str(archive)])
+
+    captured = capsys.readouterr()
+    assert result == 0
+    assert verify.returncode == 1
+    assert (
+        "otoe-styles.json: unsupported schemaVersion 2; expected 1"
+        in verify.stderr
+    )
+    assert pack_result == 1
+    assert not archive.exists()
+    assert "pack: runner verification failed:" in captured.err
+    assert (
+        "otoe-styles.json: unsupported schemaVersion 2; expected 1"
+        in captured.err
+    )
+
+
 def test_cli_build_runner_png_uses_compiled_styles(tmp_path, monkeypatch):
     app = tmp_path / "styled_bundle_app.py"
     app.write_text(

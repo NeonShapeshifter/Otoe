@@ -219,6 +219,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent
 MANIFEST_PATH = ROOT / "manifest.json"
+EXPECTED_SCHEMA_VERSION = 1
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -236,6 +237,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     manifest = _load_manifest()
+    _verify_artifact_schemas(manifest)
     if args.verify:
         _verify_bundle(manifest)
         print("verified: manifest.json")
@@ -277,7 +279,9 @@ def _install_pythonpath() -> None:
 
 
 def _load_manifest() -> dict[str, Any]:
-    return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    payload = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    _verify_schema_version(payload, "manifest.json")
+    return payload
 
 
 def _load_stylesheet(manifest: dict[str, Any]):
@@ -286,11 +290,12 @@ def _load_stylesheet(manifest: dict[str, Any]):
         return None
     from otoe.style import stylesheet_from_artifact
 
-    payload = json.loads(_require_bundle_file(styles_path).read_text(encoding="utf-8"))
+    payload = _load_json_bundle_file(styles_path)
     return stylesheet_from_artifact(payload)
 
 
 def _verify_bundle(manifest: dict[str, Any]) -> None:
+    _verify_artifact_schemas(manifest)
     for key in ("plan", "deps", "styles"):
         if key in manifest:
             _require_bundle_file(manifest[key])
@@ -302,6 +307,34 @@ def _verify_bundle(manifest: dict[str, Any]) -> None:
     for group in ("assets", "frameworkFiles", "runtimeFiles"):
         for entry in manifest.get(group, []):
             _verify_manifest_file(entry, path_key="bundlePath")
+
+
+def _verify_artifact_schemas(manifest: dict[str, Any]) -> None:
+    for key in ("plan", "deps", "styles"):
+        path = manifest.get(key)
+        if path:
+            _load_json_bundle_file(path)
+
+
+def _load_json_bundle_file(relative: str) -> dict[str, Any]:
+    payload = json.loads(_require_bundle_file(relative).read_text(encoding="utf-8"))
+    _verify_schema_version(payload, relative)
+    return payload
+
+
+def _verify_schema_version(payload: Any, label: str) -> None:
+    if not isinstance(payload, dict):
+        raise ValueError(f"{label}: expected JSON object")
+    if "schemaVersion" not in payload:
+        raise ValueError(
+            f"{label}: missing schemaVersion; expected {EXPECTED_SCHEMA_VERSION}"
+        )
+    version = payload["schemaVersion"]
+    if version != EXPECTED_SCHEMA_VERSION:
+        raise ValueError(
+            f"{label}: unsupported schemaVersion {version!r}; "
+            f"expected {EXPECTED_SCHEMA_VERSION}"
+        )
 
 
 def _verify_manifest_file(entry: dict[str, Any], *, path_key: str) -> None:

@@ -97,7 +97,10 @@ deployment artifact is built.
   `app/` and `framework/` directories to `sys.path`, loads the manifest target,
   supports file integrity `--verify`, supports a load-only `--check`, supports
   layout/paint dry-run validation with `--layout-check`, and can render one
-  headless PNG frame with `--png` using the bundled compiled styles
+  headless PNG frame with `--png` using the bundled compiled styles. Every
+  runner mode validates `schemaVersion = 1` for `manifest.json`,
+  `otoe-plan.json`, `otoe-deps.json`, and `otoe-styles.json` before loading the
+  target or rendering a frame.
 - optional bundle validation through `otoe build --validate`, which runs the
   generated runner in `--verify`, `--check`, and `--layout-check` modes after
   writing artifacts so the copied bundle must be intact, load the manifest

@@ -187,6 +187,10 @@ loads the manifest target from the copied app/framework paths, supports `--check
 for import validation, supports `--verify` for file size/hash checks, supports
 `--layout-check` for layout/paint validation without writing a PNG, and supports
 `--png` for a single headless native frame using the bundled compiled styles.
+Every runner mode validates `schemaVersion = 1` for `manifest.json`,
+`otoe-plan.json`, `otoe-deps.json`, and `otoe-styles.json` before loading the
+target or rendering a frame, so old bundle formats fail cleanly instead of
+running with ambiguous artifacts.
 `otoe-styles.json` records used classes, safelisted classes, resolved portable
 declarations, omitted html-only/deferred declarations, diagnostics, and tokens.
 For hardware/cage profiles, arbitrary runtime class construction is not a

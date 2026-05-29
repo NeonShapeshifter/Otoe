@@ -24,6 +24,9 @@
   auto-bundled target modules.
 - Added profile `[styles].safelist` support so offline builds compile dynamic
   state classes into `otoe-styles.json` before hardware deployment.
+- Added generated runner schema-version checks for `manifest.json`,
+  `otoe-plan.json`, `otoe-deps.json`, and `otoe-styles.json` before verification,
+  layout checks, PNG rendering, or packing.
 
 ## v0.1.4 - Native Backend Acceptance Hardening
 
