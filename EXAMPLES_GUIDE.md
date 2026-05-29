@@ -39,6 +39,29 @@ otoe dev examples.live_counter:app --port 8767
 
 This is the reference for future tiny live-preview examples.
 
+## Offline Bundle
+
+Path: `examples/offline_bundle/`
+
+Use this when changing the low-level build pipeline:
+
+- simple `app:app` target auto-copying
+- recursive same-directory import copying
+- profile-declared asset copying
+- compiled `otoe-styles.json`
+- generated runner validation
+- verified `.tar.gz` packing
+
+```bash
+cd examples/offline_bundle
+PYTHONPATH=../../src:. python -m otoe build app:app --profile-file otoe.profile.toml --out ../../dist/offline_bundle --validate
+PYTHONPATH=../../src:. python -m otoe pack ../../dist/offline_bundle --out ../../dist/offline_bundle.tar.gz
+```
+
+This example should stay small and hardware-oriented. Its job is to prove that a
+user can build, validate, and pack a self-contained bundle before moving it to a
+target device.
+
 ## Native Counter
 
 Path: `examples/native/counter_demo.py`

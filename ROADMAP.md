@@ -2,7 +2,7 @@
 
 **Status:** v0.1.4 public snapshot released; Phase 5 utility-first styling and offline build planning
 **Updated:** May 28, 2026
-**Current baseline:** 397 tests passing, 1 skipped when `mypy` is unavailable
+**Current baseline:** 398 tests passing, 1 skipped when `mypy` is unavailable
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, utility ops console, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---

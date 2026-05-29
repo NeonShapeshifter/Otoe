@@ -1,0 +1,9 @@
+profile = "cage"
+utilities = true
+assets = ["static/device.txt"]
+
+[runtime]
+allow_runtime_installs = false
+
+[backend]
+name = "native"
