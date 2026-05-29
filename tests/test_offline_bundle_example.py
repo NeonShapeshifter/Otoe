@@ -35,12 +35,17 @@ def test_offline_bundle_example_builds_and_packs(tmp_path, monkeypatch):
     pack_result = main(["pack", str(output), "--out", str(archive)])
 
     manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    styles = json.loads((output / "otoe-styles.json").read_text(encoding="utf-8"))
     runtime_paths = sorted(entry["bundlePath"] for entry in manifest["runtimeFiles"])
     asset_paths = sorted(entry["bundlePath"] for entry in manifest["assets"])
     assert build_result == 0
     assert pack_result == 0
     assert runtime_paths == ["app/app.py", "app/helpers.py", "app/labels.py"]
     assert asset_paths == ["assets/static/device.txt"]
+    assert styles["classes"]["safelisted"] == ["bg-danger", "text-danger"]
+    assert {"bg-danger", "text-danger"}.issubset(
+        {rule["className"] for rule in styles["rules"]}
+    )
     assert (output / "otoe-styles.json").is_file()
     assert archive.is_file()
 

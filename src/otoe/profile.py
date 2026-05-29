@@ -32,6 +32,7 @@ class PlanProfileConfig:
     profile: str = "cage"
     utilities: bool = False
     css_paths: tuple[Path, ...] = ()
+    style_safelist: tuple[str, ...] = ()
     assets: tuple[ProfileAsset, ...] = ()
     runtime_files: tuple[ProfileRuntimeFile, ...] = ()
     allow_runtime_installs: bool = False
@@ -53,7 +54,16 @@ def load_plan_profile(path: str | Path) -> PlanProfileConfig:
     _reject_unknown(
         data,
         "profile file",
-        {"profile", "utilities", "css", "assets", "runtime", "backend", "deps"},
+        {
+            "profile",
+            "utilities",
+            "css",
+            "styles",
+            "assets",
+            "runtime",
+            "backend",
+            "deps",
+        },
     )
 
     profile = _string_value(data, "profile", default="cage", context="profile file")
@@ -68,6 +78,9 @@ def load_plan_profile(path: str | Path) -> PlanProfileConfig:
         context="profile file",
     )
     css_paths = _css_paths(data.get("css"), base=profile_path.parent)
+    styles = _table_value(data, "styles", context="profile file")
+    _reject_unknown(styles, "[styles]", {"safelist"})
+    style_safelist = _style_safelist(styles.get("safelist"))
     assets = _assets(data.get("assets"), base=profile_path.parent)
 
     runtime = _table_value(data, "runtime", context="profile file")
@@ -103,6 +116,7 @@ def load_plan_profile(path: str | Path) -> PlanProfileConfig:
         profile=profile,
         utilities=utilities,
         css_paths=css_paths,
+        style_safelist=style_safelist,
         assets=assets,
         runtime_files=runtime_files,
         allow_runtime_installs=allow_runtime_installs,
@@ -138,6 +152,16 @@ def _assets(value: Any, *, base: Path) -> tuple[ProfileAsset, ...]:
         _validate_relative_file_path(relative, key=f"assets[{index}]")
         assets.append(ProfileAsset(source=base / relative, relative_path=relative))
     return tuple(assets)
+
+
+def _style_safelist(value: Any) -> tuple[str, ...]:
+    class_names = _string_array({"safelist": value}, "safelist", context="[styles]")
+    for index, class_name in enumerate(class_names):
+        if class_name.strip() != class_name or len(class_name.split()) != 1:
+            raise ProfileError(
+                f"[styles] key safelist[{index}] must be one non-empty class name"
+            )
+    return tuple(dict.fromkeys(class_names))
 
 
 def _runtime_files(value: Any, *, base: Path) -> tuple[ProfileRuntimeFile, ...]:

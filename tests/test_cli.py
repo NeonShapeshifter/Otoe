@@ -361,6 +361,7 @@ def test_cli_plan_can_emit_json_report(tmp_path, monkeypatch, capsys):
     assert payload["hasErrors"] is False
     assert payload["classes"] == {
         "used": ["shell", "title"],
+        "safelisted": [],
         "planned": ["shell", "title"],
         "htmlOnly": [],
         "invalid": [],
@@ -397,6 +398,88 @@ def test_cli_plan_writes_json_artifact(tmp_path, monkeypatch, capsys):
     assert payload["target"] == "plan_artifact_surface:app"
     assert payload["status"] == "ok"
     assert payload["classes"]["planned"] == ["p-4", "bg-panel"]
+
+
+def test_cli_plan_compiles_profile_style_safelist(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "safelist_plan_surface.py"
+    module.write_text(
+        "from otoe import Text\n"
+        "app = Text('Dynamic classes', className='base')\n",
+        encoding="utf-8",
+    )
+    styles = tmp_path / "styles.css"
+    styles.write_text(
+        ".base { color: #111827; }\n"
+        ".is-danger { color: #dc2626; }\n",
+        encoding="utf-8",
+    )
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        'css = ["styles.css"]\n'
+        "\n"
+        "[styles]\n"
+        'safelist = ["is-danger"]\n',
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "plan",
+            "safelist_plan_surface:app",
+            "--profile-file",
+            str(profile_file),
+            "--json",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["classes"]["used"] == ["base"]
+    assert payload["classes"]["safelisted"] == ["is-danger"]
+    assert payload["classes"]["planned"] == ["base", "is-danger"]
+    assert payload["styleCounts"]["portable"] == 2
+
+
+def test_cli_plan_rejects_invalid_profile_style_safelist_item(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "bad_safelist_surface.py"
+    module.write_text(
+        "from otoe import Text\n"
+        "app = Text('Bad safelist')\n",
+        encoding="utf-8",
+    )
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[styles]\n"
+        'safelist = ["bad class"]\n',
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "plan",
+            "bad_safelist_surface:app",
+            "--profile-file",
+            str(profile_file),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "[styles] key safelist[0] must be one non-empty class name" in captured.err
 
 
 def test_cli_plan_writes_invalid_json_artifact(tmp_path, monkeypatch, capsys):
@@ -1004,6 +1087,58 @@ def test_cli_build_runner_png_uses_compiled_styles(tmp_path, monkeypatch):
     assert _png_contains_rgba(frame.read_bytes(), (255, 0, 0, 255))
 
 
+def test_cli_build_compiles_profile_style_safelist(tmp_path, monkeypatch):
+    app = tmp_path / "safelist_bundle_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Stateful', className='is-idle')\n",
+        encoding="utf-8",
+    )
+    styles = tmp_path / "styles.css"
+    styles.write_text(
+        ".is-idle { color: #111827; }\n"
+        ".is-danger { color: #dc2626; }\n",
+        encoding="utf-8",
+    )
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        'css = ["styles.css"]\n'
+        "\n"
+        "[styles]\n"
+        'safelist = ["is-danger"]\n'
+        "\n"
+        "[runtime]\n"
+        'files = ["safelist_bundle_app.py"]\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "safelist-runner"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "safelist_bundle_app:app",
+            "--profile-file",
+            str(profile_file),
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+
+    styles_payload = json.loads((output / "otoe-styles.json").read_text("utf-8"))
+    rules = {rule["className"]: rule for rule in styles_payload["rules"]}
+    assert result == 0
+    assert styles_payload["classes"]["used"] == ["is-idle"]
+    assert styles_payload["classes"]["safelisted"] == ["is-danger"]
+    assert styles_payload["classes"]["planned"] == ["is-idle", "is-danger"]
+    assert rules["is-danger"]["declarations"]["color"] == {
+        "type": "literal",
+        "value": "#dc2626",
+    }
+
+
 def test_cli_build_runner_png_accepts_html_only_missing_class(
     tmp_path,
     monkeypatch,
@@ -1090,6 +1225,7 @@ def test_cli_build_validate_rejects_bad_compiled_styles(
             "status": "ok",
             "classes": {
                 "used": ["text-sm"],
+                "safelisted": [],
                 "planned": ["text-sm"],
                 "htmlOnly": [],
                 "invalid": [],

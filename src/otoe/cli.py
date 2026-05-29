@@ -691,7 +691,8 @@ def _resolve_plan_request(
     target = _load_target(args.target)
     mounted = _coerce_render_target(target)
     profile_config = _load_plan_profile_config(args.profile_file)
-    profile = args.profile or profile_config.profile
+    if args.profile is not None:
+        profile_config = replace(profile_config, profile=args.profile)
     include_utilities = profile_config.utilities if args.utilities is None else args.utilities
     css_paths = tuple(args.css or profile_config.css_paths)
     stylesheet = _load_plan_stylesheet(
@@ -700,8 +701,9 @@ def _resolve_plan_request(
     )
     plan = plan_mounted(
         mounted,
-        profile=profile,
+        profile=profile_config.profile,
         stylesheet=stylesheet,
+        safelist=profile_config.style_safelist,
         strict_styles=args.strict_styles,
     )
     return profile_config, plan, plan_to_dict(plan, target=args.target), stylesheet

@@ -52,6 +52,9 @@ utilities = true
 css = ["styles.css"]
 assets = ["static/logo.png"]
 
+[styles]
+safelist = ["is-danger", "bg-alert"]
+
 [runtime]
 allow_runtime_installs = false
 files = ["app.py"]
@@ -66,10 +69,13 @@ extras = ["dev"]
 
 Profile CSS, asset, and runtime file paths are relative to the profile file.
 Asset and runtime file paths must be relative files and must not contain `.` or
-`..`. Explicit CLI flags override the profile file. `allow_runtime_installs =
-true` is invalid for `cage`. Dependency package and extra names are explicit
-build-machine requirements. Missing packages are reported by `otoe deps` so the
-developer can install them manually before building or deploying.
+`..`. `[styles].safelist` declares class names that should be compiled even
+when they do not appear in the first mounted render. Each entry is one class
+name, not a space-separated class list. Explicit CLI flags override the profile
+file. `allow_runtime_installs = true` is invalid for `cage`. Dependency package
+and extra names are explicit build-machine requirements. Missing packages are
+reported by `otoe deps` so the developer can install them manually before
+building or deploying.
 
 Profiles are explicit build targets. A `cage` or hardware profile would declare
 the renderer/backend candidate, allowed style surface, asset policy, optional
@@ -102,9 +108,9 @@ deployment artifact is built.
 - assets copied for the profile with manifest entries containing source path,
   bundle path, byte size, and SHA-256
 - a compiled portable style plan, initially shaped by the `otoe plan --out`
-  JSON artifact and persisted as `otoe-styles.json` with used classes, resolved
-  portable declarations, omitted html-only/deferred declarations, diagnostics,
-  and tokens
+  JSON artifact and persisted as `otoe-styles.json` with used classes,
+  safelisted classes, resolved portable declarations, omitted
+  html-only/deferred declarations, diagnostics, and tokens
 - a dependency audit artifact, currently `otoe-deps.json`, proving that
   profile-declared dependencies passed on the build machine
 - diagnostics for portable, html-only, deferred, and invalid styling
@@ -122,6 +128,8 @@ The style path should compile before deployment:
 
 - Parse Otoe's constrained CSS subset and utility classes into `StyleSheet`.
 - Resolve tokens and class combinations ahead of runtime when possible.
+- Compile profile safelist classes ahead of runtime so dynamic state classes can
+  be selected on-device without parsing arbitrary CSS.
 - Classify declarations by renderer support: portable, html-only, deferred, or
   invalid for the chosen profile.
 - Cache repeated class combinations so the runtime can apply compact style ops.
@@ -131,6 +139,11 @@ The style path should compile before deployment:
 This keeps the authoring format familiar while preserving a small native
 runtime. The device receives a resolved plan; it does not own the full CSS
 language.
+
+Dynamic class names for hardware/cage profiles must be statically knowable:
+they either appear in the initial mounted tree or are listed in
+`[styles].safelist`. Arbitrary string-built classes such as `bg-${color}` remain
+outside the portable contract unless the possible outputs are safelisted.
 
 ## Consequences
 

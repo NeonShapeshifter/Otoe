@@ -48,7 +48,7 @@ Use this when changing the low-level build pipeline:
 - simple `app:app` target auto-copying
 - recursive same-directory import copying
 - profile-declared asset copying
-- compiled `otoe-styles.json`
+- compiled `otoe-styles.json` with profile safelisted dynamic classes
 - generated runner validation
 - verified `.tar.gz` packing
 

@@ -34,6 +34,10 @@ def test_offline_profile_build_adr_captures_hardware_direction():
     assert 'files = ["app.py"]' in text
     assert "simple local target module" in text
     assert "same-directory imports" in text
+    assert "[styles]" in text
+    assert 'safelist = ["is-danger", "bg-alert"]' in text
+    assert "safelisted classes" in text
+    assert "Dynamic class" in text
     assert 'packages = ["pytest"]' in text
     assert 'extras = ["dev"]' in text
     assert "SHA-256" in text
@@ -79,6 +83,10 @@ def test_style_guide_points_css_at_offline_profiles():
     assert "simple local target module" in text
     assert "same-directory imports" in text
     assert "package modules" in text
+    assert "[styles]" in text
+    assert 'safelist = ["is-danger", "bg-alert"]' in text
+    assert "safelisted classes" in text
+    assert "dynamic class" in text
     assert "allow_runtime_installs = true" in text
     assert "without installing packages" in single_spaced
     assert ".tar.gz" in text
@@ -100,6 +108,7 @@ def test_roadmap_keeps_low_level_build_work_in_scope():
     assert "otoe.profile.toml" in text
     assert "manifest-first" in text
     assert "otoe-styles.json" in text
+    assert "[styles].safelist" in text
     assert "audit-only" in text
     assert "Asset, simple local target module, same-directory import, and explicit app runtime file copying" in single_spaced
     assert "explicit app runtime file copying" in single_spaced

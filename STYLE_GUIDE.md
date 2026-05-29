@@ -139,6 +139,9 @@ utilities = true
 css = ["styles.css"]
 assets = ["static/logo.png"]
 
+[styles]
+safelist = ["is-danger", "bg-alert"]
+
 [runtime]
 allow_runtime_installs = false
 files = ["app.py"]
@@ -153,8 +156,10 @@ extras = ["dev"]
 
 Profile CSS, asset, and runtime file paths are relative to the TOML file. Asset
 and runtime file paths must be relative files and must not contain `.` or `..`.
-Explicit CLI flags override the profile file. `allow_runtime_installs = true`
-is invalid for `cage`.
+`[styles].safelist` declares extra class names that should be compiled even
+when they do not appear in the first mounted render. Each safelist entry must be
+one class name, not a space-separated class list. Explicit CLI flags override
+the profile file. `allow_runtime_installs = true` is invalid for `cage`.
 
 `otoe deps` audits `[deps]` against the current build environment without
 installing packages, touching the network, importing the app, or writing
@@ -182,11 +187,14 @@ loads the manifest target from the copied app/framework paths, supports `--check
 for import validation, supports `--verify` for file size/hash checks, supports
 `--layout-check` for layout/paint validation without writing a PNG, and supports
 `--png` for a single headless native frame using the bundled compiled styles.
-`otoe-styles.json` records used classes, resolved portable declarations, omitted
-html-only/deferred declarations, diagnostics, and tokens. `otoe build
---validate` runs that copied runner in `--verify`, `--check`, and
-`--layout-check` modes after writing the bundle, so missing, modified,
-unbundled, or renderer-invalid files are caught before deployment.
+`otoe-styles.json` records used classes, safelisted classes, resolved portable
+declarations, omitted html-only/deferred declarations, diagnostics, and tokens.
+For hardware/cage profiles, arbitrary runtime class construction is not a
+portable contract: a dynamic class must either appear in the initial mounted
+tree or be listed in `[styles].safelist` so the build can resolve it before
+deployment. `otoe build --validate` runs that copied runner in `--verify`,
+`--check`, and `--layout-check` modes after writing the bundle, so missing,
+modified, unbundled, or renderer-invalid files are caught before deployment.
 
 `otoe pack` is the first deployment archive step. It runs the copied runner in
 `--verify` mode, writes a `.tar.gz` with the bundle contents at archive root,

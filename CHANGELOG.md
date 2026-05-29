@@ -22,6 +22,8 @@
   imports, packages, and extra files explicit through `[runtime] files`.
 - Added recursive auto-copying for simple same-directory imports used by
   auto-bundled target modules.
+- Added profile `[styles].safelist` support so offline builds compile dynamic
+  state classes into `otoe-styles.json` before hardware deployment.
 
 ## v0.1.4 - Native Backend Acceptance Hardening
 

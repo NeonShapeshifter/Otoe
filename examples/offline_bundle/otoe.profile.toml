@@ -2,6 +2,9 @@ profile = "cage"
 utilities = true
 assets = ["static/device.txt"]
 
+[styles]
+safelist = ["bg-danger", "text-danger"]
+
 [runtime]
 allow_runtime_installs = false
 
