@@ -137,6 +137,7 @@ otoe render examples.quickstart:app --out preview.html --pretty
 otoe render examples.quickstart:app --out preview.png --native
 otoe plan examples.quickstart:app --profile cage --no-strict-styles
 otoe build examples.quickstart:app --out dist/cage --no-strict-styles
+otoe compare-contract expected.json actual.json
 otoe dev examples.live_counter:app --port 8767
 ```
 
@@ -261,6 +262,28 @@ rendering.
 portable `.tar.gz` archive for deployment. The pack step keeps the bundle rooted
 at the archive top level and excludes local cache directories such as
 `__pycache__/` and `.pytest_cache/`.
+
+Compare JSON contract artifacts:
+
+```bash
+python -m otoe compare-contract expected.json actual.json
+python -m otoe compare-contract expected.json actual.json --json
+python -m otoe compare-contract expected.json actual.json --max-diffs 5
+python -m otoe compare-contract expected.json actual.json --ignore-path /pngSmoke/path --ignore-path /calls/raster/signature/0/subject --ignore-path /calls/raster/hash
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --composed-renderer-contract-json --compact-contract --composed-renderer-png /tmp/composed_renderer_candidate.png --contract-out examples/native/contracts/composed_renderer_compact_expected.json
+```
+
+`otoe compare-contract` performs a deterministic deep JSON comparison, exits
+zero only when the contracts match, and reports JSON-pointer paths for
+differences. Use `--ignore-path` for intentionally environment-specific JSON
+pointer fields. If the composed renderer PNG smoke filename differs from the
+fixture, ignore `/pngSmoke/path`, `/calls/raster/signature/0/subject`, and
+`/calls/raster/hash` together. Use it with compact renderer contracts when
+checking backend candidates in CI. The native backend candidate fixture at
+`examples/native/contracts/composed_renderer_compact_expected.json` is the
+current expected compact composed-renderer contract. Refresh that fixture only
+for intentional contract changes, using `--contract-out` instead of shell
+redirection.
 
 Run an importable live preview app locally:
 
@@ -460,7 +483,7 @@ perform security operations.
 
 ## Status
 
-Current status: v0.1.4 public snapshot released; Phase 5 utility-first styling and offline build planning. See
+Current status: v0.1.5 public sync prepared; Phase 5 renderer contract tooling and offline build planning. See
 `ROADMAP.md` for the active plan.
 
 ## License

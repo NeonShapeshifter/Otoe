@@ -4,14 +4,18 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
-from otoe import NativeWindowDriver, run_native
+from otoe import NativeRendererBackend, NativeWindowDriver, run_native
 
 from .task_board_demo import NativeTaskBoardDemo
 
 
 class NativeWindowDemo:
-    def __init__(self) -> None:
-        self.board = NativeTaskBoardDemo()
+    def __init__(
+        self,
+        *,
+        renderer_backend: NativeRendererBackend | None = None,
+    ) -> None:
+        self.board = NativeTaskBoardDemo(renderer_backend=renderer_backend)
         self.driver = NativeWindowDriver(self.board.surface)
 
     def render(self, path: str | Path):

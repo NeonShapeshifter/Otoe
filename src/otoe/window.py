@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 
+from ._native_backend import NativeRendererBackend
 from .mount import FakeWidget, MountedNode
 from .native import NativePaint, NativeSurface
 from .node import Node
@@ -45,6 +46,7 @@ class NativeWindowDriver:
         stylesheet: StyleSheet | None = None,
         strict_styles: bool = True,
         background: str = "#ffffff",
+        renderer_backend: NativeRendererBackend | None = None,
     ) -> "NativeWindowDriver":
         return cls(
             NativeSurface(
@@ -52,6 +54,7 @@ class NativeWindowDriver:
                 stylesheet=stylesheet,
                 strict_styles=strict_styles,
                 background=background,
+                renderer_backend=renderer_backend,
             )
         )
 
@@ -494,12 +497,23 @@ def run_native(
     background: str = "#ffffff",
     title: str = "Otoe",
     backend: str | NativeBackendAdapter = "tk",
+    renderer_backend: NativeRendererBackend | None = None,
 ) -> None:
     adapter = _resolve_native_backend(backend)
 
     if isinstance(target, NativeWindowDriver):
+        if renderer_backend is not None:
+            raise ValueError(
+                "renderer_backend can only be used when run_native creates "
+                "the NativeWindowDriver."
+            )
         driver = target
     elif isinstance(target, NativeSurface):
+        if renderer_backend is not None:
+            raise ValueError(
+                "renderer_backend can only be used when run_native creates "
+                "the NativeSurface."
+            )
         driver = NativeWindowDriver(target)
     else:
         driver = NativeWindowDriver.from_target(
@@ -507,6 +521,7 @@ def run_native(
             stylesheet=stylesheet,
             strict_styles=strict_styles,
             background=background,
+            renderer_backend=renderer_backend,
         )
     adapter.run(driver, title=title)
 

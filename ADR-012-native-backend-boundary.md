@@ -23,7 +23,11 @@ Otoe will treat native support as three separable layers:
 1. **Headless renderer contract.**
    `NativeSurface`, layout, paint commands, hit testing, focus, input dispatch,
    and PNG output are the current testable contract. The backend-replay
-   acceptance test is the executable end-to-end target for this layer.
+   acceptance test is the executable end-to-end target for this layer. The
+   default implementation is `PythonNativeRendererBackend`, exposed through the
+   experimental `NativeRendererBackend` protocol so future layout, paint, and
+   raster candidates can attach below `NativeSurface` without changing
+   components or window adapters.
 
 2. **Backend adapter contract.**
    A backend adapter owns platform windows, event loops, rasterization, text
@@ -51,10 +55,14 @@ the adapter contract, but it is not the backend contract itself.
   Skia, Taffy, SDL, Qt, or platform APIs.
 - Backend-specific APIs should live behind adapter modules and should not be
   required for HTML preview, static render, or headless native tests.
-- Future Skia/Taffy work should attach below `NativeSurface`/driver boundaries
-  instead of changing the component model.
+- Future Skia/Taffy work should attach through `NativeRendererBackend` below
+  `NativeSurface`/driver boundaries instead of changing the component model.
 - Future backend spikes should first reproduce the backend-replay acceptance
   test before expanding backend-specific behavior.
+- Future renderer backend spikes should also pass
+  `tests/test_native_renderer_backend.py`, proving that injected renderer
+  backends are honored by `NativeSurface`, `NativeWindowDriver`,
+  `render_native_png(...)`, and `run_native(...)`.
 
 ## Open Questions
 

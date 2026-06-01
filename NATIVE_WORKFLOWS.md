@@ -57,6 +57,14 @@ emit paint commands, and rasterize a non-empty frame through the current stdlib
 PNG writer. It is not a production raster backend. Text in PNG output remains
 deterministic marker output rather than real font shaping.
 
+The current implementation is exposed as `PYTHON_NATIVE_RENDERER_BACKEND`, an
+experimental `NativeRendererBackend` that wraps Python layout, paint, and PNG
+writing. Future renderer candidates should attach at this boundary before they
+claim parity with the headless native path.
+The SPI is split by capability (`NativeLayoutBackend`, `NativePaintBackend`, and
+`NativeRasterBackend`), and `ComposedNativeRendererBackend` can combine them.
+Use that split when a candidate only replaces one layer.
+
 ## NativeSurface
 
 Use `NativeSurface` in tests or examples when you need direct access to the
@@ -78,7 +86,9 @@ surface.render_png("frame.png")
 ```
 
 This is the lowest-level framework-facing native workflow. Use it before
-reaching for a window driver.
+reaching for a window driver. Renderer experiments can pass
+`renderer_backend=...` here to prove their layout, paint, and PNG behavior while
+keeping input and focus on the existing surface contract.
 
 ## NativeWindowDriver
 
@@ -89,7 +99,7 @@ the current `NativeSurface` behavior while staying headless.
 ```python
 from otoe import NativeWindowDriver
 
-driver = NativeWindowDriver(App(), stylesheet=styles)
+driver = NativeWindowDriver.from_target(App(), stylesheet=styles)
 driver.click(20, 20)
 driver.key_input("a")
 driver.wheel(80, 120, 40)
@@ -98,6 +108,10 @@ driver.wheel(80, 120, 40)
 Future backend adapters should drive this same contract. If a backend cannot
 replay the current backend acceptance surface through `NativeWindowDriver`, it
 is not equivalent to the current native path yet.
+
+Renderer experiments can also pass `renderer_backend=...` to
+`NativeWindowDriver.from_target(...)` to test a new renderer behind the same
+window-shaped input replay.
 
 The current backend-candidate acceptance bar has three replay surfaces:
 
@@ -109,14 +123,53 @@ New candidates should reproduce those surfaces before adding backend-specific
 layout, paint, text, GPU, or packaging behavior.
 `examples/native/backend_candidate_skeleton.py` is the first no-dependency
 starting point for that work: it records a candidate adapter run, provides a
-`HeadlessCandidateBackend`, drives the minimal replay and task board replay
-through `run_native(...)`, and returns small acceptance reports with layout,
-paint, focus, frame, and visible-text summaries.
+`HeadlessCandidateBackend`, includes a no-dependency `RecordingRendererCandidate`,
+drives the minimal replay and task board replay through `run_native(...)`, and
+returns small acceptance reports with layout, paint, focus, frame,
+renderer-backend, and visible-text summaries. The
+`run_renderer_candidate_acceptance()` helper runs those same replays through the
+renderer SPI and records `layout`, `paint`, and `write_png` calls. The
+`renderer_contract_snapshot_to_dict(...)` helper and
+`--renderer-contract-json` CLI flag produce the schema-versioned JSON snapshot
+used as the golden renderer contract. `RasterOnlyRendererCandidate` is the first
+partial candidate: it keeps Python layout and paint but replaces `write_png`
+with a separate no-dependency raster path. `PaintOnlyRendererCandidate` keeps
+Python layout and raster but replaces `paint(...)` with an alternate compatible
+paint command stream. `LayoutOnlyRendererCandidate` currently covers the
+minimal replay, static task-board layout acceptance, and interactive task-board
+replay while preserving Python paint and raster output. The
+`run_composed_renderer_candidate_acceptance(...)` helper wires
+`LayoutOnlyRendererCandidate`, `PaintOnlyRendererCandidate`, and
+`RasterOnlyRendererCandidate` into `ComposedNativeRendererBackend`, then runs
+the interactive replays plus a PNG smoke so every capability is exercised.
+`--composed-renderer-contract-json` prints that composed contract, and
+`--composed-renderer-png` chooses the PNG smoke path. Add
+`--compact-contract` to either renderer contract command when the desired
+artifact is a smaller signature-and-hash contract instead of the full
+layout/paint snapshot.
 
 ```bash
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --json
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --renderer-contract-json
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --renderer-contract-json --compact-contract
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --composed-renderer-contract-json --composed-renderer-png preview/native/composed_renderer_candidate.png
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --composed-renderer-contract-json --compact-contract --composed-renderer-png preview/native/composed_renderer_candidate.png
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --composed-renderer-contract-json --compact-contract --composed-renderer-png /tmp/composed_renderer_candidate.png --contract-out examples/native/contracts/composed_renderer_compact_expected.json
+PYTHONPATH=src:. python -m otoe compare-contract examples/native/contracts/composed_renderer_compact_expected.json actual-contract.json
+PYTHONPATH=src:. python -m otoe compare-contract examples/native/contracts/composed_renderer_compact_expected.json actual-contract.json --ignore-path /pngSmoke/path --ignore-path /calls/raster/signature/0/subject --ignore-path /calls/raster/hash
 ```
+
+Use `otoe compare-contract` for candidate contract comparisons in CI. It exits
+zero only when the JSON artifacts match, reports JSON-pointer paths for human
+diffs, can emit a machine-readable report with `--json`, and can ignore
+intentional environment-specific fields with `--ignore-path`. If the composed
+renderer PNG smoke filename differs from the fixture, ignore `/pngSmoke/path`,
+`/calls/raster/signature/0/subject`, and `/calls/raster/hash` together. The
+checked-in `examples/native/contracts/composed_renderer_compact_expected.json`
+fixture is the current expected compact composed-renderer contract. Refresh it
+only when an intentional contract change lands, using `--contract-out` so the
+update command does not depend on shell redirection.
 
 The native support matrix and renderer spike documentation are also executable
 drift checks: `tests/test_native_support_matrix.py` keeps `NATIVE_RENDERER_SPIKE.md`
@@ -132,6 +185,11 @@ from otoe import run_native
 
 run_native(App(), stylesheet=styles, title="Otoe", backend="tk")
 ```
+
+When `run_native(...)` receives a raw target, renderer experiments may pass
+`renderer_backend=...`; when they already pass a `NativeSurface` or
+`NativeWindowDriver`, that object must already have the intended renderer
+backend attached.
 
 The built-in `"tk"` backend is optional and requires Python's Tk bindings plus a
 graphical display. On Debian/Ubuntu:
@@ -150,6 +208,14 @@ promises.
 
 - Component code stays backend-neutral.
 - Renderer tests should prefer `NativeSurface` or `NativeWindowDriver`.
+- Renderer backend candidates should implement `NativeRendererBackend` and pass
+  through the minimal harness, native task board replay, fake adapter replay,
+  renderer-candidate replay, and `tests/test_native_renderer_backend.py`.
+- Partial renderer candidates should use the layout/paint/raster capability
+  split and prove which capability they replace.
+- Layout-only candidates must start with the minimal replay, then static
+  task-board layout acceptance, then the interactive app-shaped task board
+  replay.
 - Manual OS windows should go through `run_native(...)`, not custom app-level
   mounting/layout/paint wiring.
 - New backend candidates must reproduce the minimal harness, native task board

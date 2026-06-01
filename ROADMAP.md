@@ -1,8 +1,8 @@
 # Otoe Roadmap
 
-**Status:** v0.1.4 public snapshot released; Phase 5 utility-first styling and offline build planning
-**Updated:** May 28, 2026
-**Current baseline:** 414 tests passing, 1 skipped when `mypy` is unavailable
+**Status:** v0.1.5 public sync prepared; Phase 5 renderer contract tooling and offline build planning
+**Updated:** May 31, 2026
+**Current baseline:** 453 tests passing, 1 skipped when `mypy` is unavailable
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, utility ops console, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
@@ -62,6 +62,8 @@ that do not appear in the first mounted render, while arbitrary runtime-built
 class names remain outside the hardware/cage contract.
 The generated runner now rejects unsupported artifact schema versions before
 verification, layout checks, PNG rendering, or packing.
+Native bundle verification now enforces the required `frameworkFiles` policy so
+a manifest cannot omit framework runtime files needed by the selected backend.
 `NATIVE_RENDERER_SPIKE.md` now names the executable native support matrix,
 layout, window, closeout, and backend-candidate replay surfaces that must stay
 aligned before backend replacement work starts.
@@ -69,6 +71,49 @@ The first backend-candidate skeleton now runs a recording adapter and a
 no-window `HeadlessCandidateBackend` through the minimal replay and native task
 board replay, then prints text or JSON acceptance reports without adding Skia,
 Taffy, Tk, or another concrete backend dependency.
+The current Python layout/paint/PNG path is now wrapped by the experimental
+`NativeRendererBackend` SPI, so future renderer candidates can be injected into
+`NativeSurface`, `NativeWindowDriver.from_target(...)`, `render_native_png(...)`,
+and `run_native(...)` before any Skia/Taffy dependency lands.
+The backend-candidate skeleton now includes a `RecordingRendererCandidate` and
+renderer-candidate acceptance helper, proving the same minimal and task-board
+replays can exercise an injected renderer backend and record layout, paint, and
+PNG calls.
+Those renderer replays now emit a schema-versioned JSON contract snapshot that
+locks down SPI call sequence, layout boxes, paint commands, focus, visible text,
+and clipping boundaries.
+The renderer SPI is now split into layout, paint, and raster capabilities with a
+composed backend helper, and the first partial candidate replaces only PNG
+raster while leaving Python layout and paint intact.
+The second partial candidate replaces paint command generation while preserving
+Python layout and raster output, proving the painter can be swapped behind the
+same acceptance replays.
+The first layout-only candidate now proves widget paths, hit-tested clicks,
+focus, text updates, scroll movement, and PNG output for the small replay, plus
+static first-frame task-board layout and the interactive app-shaped task board
+replay.
+The first composed renderer-candidate acceptance now wires layout-only,
+paint-only, and raster-only candidates through `ComposedNativeRendererBackend`,
+then runs the interactive replays plus a PNG smoke to prove the split
+capabilities can be mixed without collapsing back into one monolithic backend.
+The composed renderer-candidate contract can now be emitted from the CLI with
+`--composed-renderer-contract-json` and an explicit `--composed-renderer-png`
+smoke artifact path.
+Renderer contract commands now also support `--compact-contract`, producing a
+smaller signature-and-hash artifact for candidate comparison without dumping
+full layout and paint snapshots.
+`otoe compare-contract` now compares expected and actual JSON contract artifacts
+with deterministic JSON-pointer diffs and a machine-readable `--json` report,
+giving future backend candidates a practical CI gate.
+The first expected compact composed-renderer contract fixture now lives under
+`examples/native/contracts/`, and the generated candidate contract is compared
+against it in tests.
+The backend-candidate skeleton can refresh contract fixtures with
+`--contract-out`, keeping intentional fixture updates explicit and
+redirection-free.
+`otoe compare-contract --ignore-path` can now ignore intentional
+environment-specific JSON-pointer fields, such as a local PNG smoke filename,
+without weakening the rest of the contract comparison.
 `otoe pack` verifies those bundle files and creates a cache-free `.tar.gz`
 deployment archive.
 Runtime installs on the target device are a non-goal; no runtime dependency

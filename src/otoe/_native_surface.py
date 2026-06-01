@@ -3,11 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from ._native_backend import NativeRendererBackend, PYTHON_NATIVE_RENDERER_BACKEND
 from ._native_contracts import LayoutBox, NativeLayout, NativePaint
 from ._native_hit_test import dispatch_native_click, hit_test_native
-from ._native_layout import layout_native
-from ._native_paint import paint_native
-from ._native_png import write_native_png
 from ._native_shared import (
     clamp_scroll_y,
     max_scroll_y,
@@ -34,10 +32,12 @@ class NativeSurface:
         stylesheet: StyleSheet | None = None,
         strict_styles: bool = True,
         background: str = "#ffffff",
+        renderer_backend: NativeRendererBackend | None = None,
     ) -> None:
         self.stylesheet = stylesheet
         self.strict_styles = strict_styles
         self.background = background
+        self.renderer_backend = renderer_backend or PYTHON_NATIVE_RENDERER_BACKEND
         self.frame = 0
         self.focused_path: tuple[int, ...] | None = None
         self._owns_mount = isinstance(target, Node)
@@ -53,7 +53,7 @@ class NativeSurface:
         self.refresh()
         self.focused_path = self._first_autofocus_path()
         if self.focused_path is not None:
-            self._paint = paint_native(
+            self._paint = self.renderer_backend.paint(
                 self.layout,
                 background=self.background,
                 focused_path=self.focused_path,
@@ -93,14 +93,14 @@ class NativeSurface:
             return None
 
     def refresh(self) -> NativePaint:
-        self._layout = layout_native(
+        self._layout = self.renderer_backend.layout(
             self._target,
             stylesheet=self.stylesheet,
             strict_styles=self.strict_styles,
         )
         self._tree_revision = tree_revision(surface_root_widget(self._target))
         self._sync_focus_after_refresh()
-        self._paint = paint_native(
+        self._paint = self.renderer_backend.paint(
             self._layout,
             background=self.background,
             focused_path=self.focused_path,
@@ -110,7 +110,7 @@ class NativeSurface:
 
     def render_png(self, path: str | Path) -> NativePaint:
         paint = self.refresh()
-        write_native_png(paint, path)
+        self.renderer_backend.write_png(paint, path)
         return paint
 
     def hit_test(

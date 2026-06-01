@@ -49,6 +49,13 @@ layout, paint, hit-testing, focus, text input, scroll, and frame refresh.
 that boundary, including a fake adapter replay through `run_native(...)` that
 proves adapters receive and drive a replayable `NativeWindowDriver`.
 
+The driver's surface now owns a `NativeRendererBackend`. `run_native(...)`,
+`NativeWindowDriver.from_target(...)`, `NativeSurface`, and `render_native_png(...)`
+can receive an explicit renderer backend while still routing platform/window
+ownership through `NativeBackendAdapter`. That keeps window adapters and renderer
+backends separate: a future Skia/Taffy experiment can replace layout, paint, or
+raster behavior without replacing the adapter contract.
+
 ## Contract
 
 A backend adapter owns:
@@ -74,10 +81,14 @@ A backend adapter must not:
   `native_backend_names()`, and `run_native(..., backend=...)`.
 - Unknown or invalid backends fail before the target is mounted.
 - Future backend spikes can attach at the adapter boundary first, then decide
-  whether layout, paint, and text should remain behind the existing
-  `NativeSurface` contract or move behind a deeper backend-specific interface.
+  whether layout, paint, and text should remain behind the current
+  `NativeRendererBackend` protocol or move behind a deeper backend-specific
+  interface.
 - A backend spike should reproduce the minimal harness, app-shaped native task
   board replay, and fake adapter replay before it claims parity with the current
   native path.
+- Renderer backend candidates should also pass
+  `tests/test_native_renderer_backend.py` before being treated as equivalent to
+  the default Python renderer.
 - The next production-quality backend decision should start by implementing this
   protocol, not by changing widgets or app examples.

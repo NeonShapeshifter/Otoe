@@ -1,0 +1,1292 @@
+{
+  "calls": {
+    "layout": {
+      "count": 15,
+      "hash": "sha256:59c3c49ef2c57a9b1e654b9ad9a0c1efe1a644f13aa76b712396c666e133fedb",
+      "signature": [
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 31,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 21,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 21,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 25,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 21,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 31,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 31,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        }
+      ]
+    },
+    "paint": {
+      "count": 18,
+      "hash": "sha256:8b5e0a8c89956190e67e9a17941da74158725450e184aef20f40270e4508d6d7",
+      "signature": [
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 16,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 17,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 17,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 17,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 17,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 17,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 17,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 31,
+          "paintCommands": 32,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 31,
+          "paintCommands": 33,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 21,
+          "paintCommands": 21,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 21,
+          "paintCommands": 21,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 25,
+          "paintCommands": 26,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 21,
+          "paintCommands": 21,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 31,
+          "paintCommands": 33,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 31,
+          "paintCommands": 33,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 16,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 17,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 17,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        }
+      ]
+    },
+    "raster": {
+      "count": 1,
+      "hash": "sha256:ce17fe1b6dc5e06daaa5352b9931a08a9e6f8efe072c965cf018c2356574d531",
+      "signature": [
+        {
+          "layoutBoxes": 0,
+          "paintCommands": 17,
+          "phase": "write_png",
+          "subject": "composed_renderer_candidate.png"
+        }
+      ]
+    }
+  },
+  "capabilities": {
+    "layout": "layout-only-renderer-candidate",
+    "paint": "paint-only-renderer-candidate",
+    "raster": "raster-only-renderer-candidate"
+  },
+  "format": "composed-renderer-contract-compact",
+  "passed": true,
+  "pngSmoke": {
+    "frame": {
+      "anchors": {
+        "clipRects": [
+          [
+            8,
+            98,
+            200,
+            44
+          ]
+        ],
+        "layoutNames": [
+          "ShortcutScope",
+          "VStack",
+          "Input",
+          "HStack",
+          "Button",
+          "Button",
+          "ScrollView",
+          "Button",
+          "Button",
+          "Text",
+          "Text",
+          "Text"
+        ],
+        "textPaths": [
+          {
+            "path": [
+              0,
+              0
+            ],
+            "text": "seed"
+          },
+          {
+            "path": [
+              0,
+              1,
+              0
+            ],
+            "text": "One"
+          },
+          {
+            "path": [
+              0,
+              1,
+              1
+            ],
+            "text": "Two"
+          },
+          {
+            "path": [
+              0,
+              2,
+              0
+            ],
+            "text": "First"
+          },
+          {
+            "path": [
+              0,
+              2,
+              1
+            ],
+            "text": "Second"
+          },
+          {
+            "path": [
+              0,
+              3
+            ],
+            "text": "Echo seed"
+          },
+          {
+            "path": [
+              0,
+              4
+            ],
+            "text": "Clicked none"
+          },
+          {
+            "path": [
+              0,
+              5
+            ],
+            "text": "Shortcuts 0"
+          }
+        ]
+      },
+      "focused": [
+        "Input",
+        "seed"
+      ],
+      "frame": 2,
+      "hashes": {
+        "frame": "sha256:0b7fd2b4bc877381532beb823dcf36ed786cea948813114ff5b190b30081d274",
+        "layout": "sha256:e4bda0797cc159a63d8304dcb308edb518425afa708fc1bc9b780b2b0cf840e4",
+        "paint": "sha256:2917e7986a04cdfc5fd21ebd12a028c7a6e5e051877f4b8f2abdf54d6412d8b3",
+        "visibleText": "sha256:8bb81b1ba654dbd0e02038ee17a3d76a02ae6db206cd8e1f5a1d4f97ff07b81a"
+      },
+      "label": "png_smoke",
+      "layoutBoxes": 12,
+      "layoutSignature": "sha256:7829cfaa280651d7d91121f2b2d60169cab340bbcf6898b5079b93c373f01a4d",
+      "paintCommands": 17,
+      "paintKinds": [
+        "rect",
+        "rect",
+        "rect",
+        "rect",
+        "text",
+        "rect",
+        "text",
+        "rect",
+        "text",
+        "rect",
+        "rect",
+        "text",
+        "rect",
+        "text",
+        "text",
+        "text",
+        "text"
+      ],
+      "paintSignature": "sha256:c2800e5879e538a7de171861488d137d6196637d80fbbd5cdec830dea726740f",
+      "rootName": "ShortcutScope",
+      "size": [
+        220,
+        222
+      ],
+      "visibleText": [
+        "seed",
+        "One",
+        "Two",
+        "First",
+        "Second",
+        "Echo seed",
+        "Clicked none",
+        "Shortcuts 0"
+      ]
+    },
+    "path": "composed_renderer_candidate.png"
+  },
+  "rendererBackend": "composed-layout-paint-raster-candidate",
+  "runs": {
+    "minimal": {
+      "after": {
+        "anchors": {
+          "clipRects": [
+            [
+              8,
+              98,
+              200,
+              44
+            ]
+          ],
+          "layoutNames": [
+            "ShortcutScope",
+            "VStack",
+            "Input",
+            "HStack",
+            "Button",
+            "Button",
+            "ScrollView",
+            "Button",
+            "Button",
+            "Text",
+            "Text",
+            "Text"
+          ],
+          "textPaths": [
+            {
+              "path": [
+                0,
+                0
+              ],
+              "text": "alpha"
+            },
+            {
+              "path": [
+                0,
+                1,
+                0
+              ],
+              "text": "One"
+            },
+            {
+              "path": [
+                0,
+                1,
+                1
+              ],
+              "text": "Two"
+            },
+            {
+              "path": [
+                0,
+                2,
+                0
+              ],
+              "text": "First"
+            },
+            {
+              "path": [
+                0,
+                2,
+                1
+              ],
+              "text": "Second"
+            },
+            {
+              "path": [
+                0,
+                3
+              ],
+              "text": "Echo alpha"
+            },
+            {
+              "path": [
+                0,
+                4
+              ],
+              "text": "Clicked two"
+            },
+            {
+              "path": [
+                0,
+                5
+              ],
+              "text": "Shortcuts 1"
+            }
+          ]
+        },
+        "focused": [
+          "Button",
+          "Two"
+        ],
+        "frame": 6,
+        "hashes": {
+          "frame": "sha256:ac31337e695cd0bfbe225b9ba4be6709882ca9264d1673d662241fa718ad24a4",
+          "layout": "sha256:6c85a0592bee7dce5c190ea283d479116480c09a727f5ab00ec96ae297e791d4",
+          "paint": "sha256:5c47dc7cfcc7533aa8f296038531c890053010c806d76acca11c3eaf51450202",
+          "visibleText": "sha256:d437f5cad52133a0f3532a778c37f1551e57d1696a96f06fdf43b5c4d4cbc75d"
+        },
+        "label": "after",
+        "layoutBoxes": 12,
+        "layoutSignature": "sha256:71b0dd9193713b4da182a1f65c2e963038a20e7af7bf1a1ee6446a77c7b4aa16",
+        "paintCommands": 17,
+        "paintKinds": [
+          "rect",
+          "rect",
+          "rect",
+          "text",
+          "rect",
+          "text",
+          "rect",
+          "rect",
+          "text",
+          "rect",
+          "rect",
+          "text",
+          "rect",
+          "text",
+          "text",
+          "text",
+          "text"
+        ],
+        "paintSignature": "sha256:25648fcaa2d03ec571b64cd852575459e16a5885fb88558f6a46687d017960db",
+        "rootName": "ShortcutScope",
+        "size": [
+          220,
+          222
+        ],
+        "visibleText": [
+          "alpha",
+          "One",
+          "Two",
+          "First",
+          "Second",
+          "Echo alpha",
+          "Clicked two",
+          "Shortcuts 1"
+        ]
+      },
+      "backend": "headless-candidate",
+      "before": {
+        "anchors": {
+          "clipRects": [
+            [
+              8,
+              98,
+              200,
+              44
+            ]
+          ],
+          "layoutNames": [
+            "ShortcutScope",
+            "VStack",
+            "Input",
+            "HStack",
+            "Button",
+            "Button",
+            "ScrollView",
+            "Button",
+            "Button",
+            "Text",
+            "Text",
+            "Text"
+          ],
+          "textPaths": [
+            {
+              "path": [
+                0,
+                0
+              ],
+              "text": "seed"
+            },
+            {
+              "path": [
+                0,
+                1,
+                0
+              ],
+              "text": "One"
+            },
+            {
+              "path": [
+                0,
+                1,
+                1
+              ],
+              "text": "Two"
+            },
+            {
+              "path": [
+                0,
+                2,
+                0
+              ],
+              "text": "First"
+            },
+            {
+              "path": [
+                0,
+                2,
+                1
+              ],
+              "text": "Second"
+            },
+            {
+              "path": [
+                0,
+                3
+              ],
+              "text": "Echo seed"
+            },
+            {
+              "path": [
+                0,
+                4
+              ],
+              "text": "Clicked none"
+            },
+            {
+              "path": [
+                0,
+                5
+              ],
+              "text": "Shortcuts 0"
+            }
+          ]
+        },
+        "focused": [
+          "Input",
+          "seed"
+        ],
+        "frame": 1,
+        "hashes": {
+          "frame": "sha256:8166ab64ee1d023913a9e3b3fe1bd0679cadcade88f6c1ae53b3c8a3ac4678b3",
+          "layout": "sha256:e4bda0797cc159a63d8304dcb308edb518425afa708fc1bc9b780b2b0cf840e4",
+          "paint": "sha256:2917e7986a04cdfc5fd21ebd12a028c7a6e5e051877f4b8f2abdf54d6412d8b3",
+          "visibleText": "sha256:8bb81b1ba654dbd0e02038ee17a3d76a02ae6db206cd8e1f5a1d4f97ff07b81a"
+        },
+        "label": "before",
+        "layoutBoxes": 12,
+        "layoutSignature": "sha256:7829cfaa280651d7d91121f2b2d60169cab340bbcf6898b5079b93c373f01a4d",
+        "paintCommands": 17,
+        "paintKinds": [
+          "rect",
+          "rect",
+          "rect",
+          "rect",
+          "text",
+          "rect",
+          "text",
+          "rect",
+          "text",
+          "rect",
+          "rect",
+          "text",
+          "rect",
+          "text",
+          "text",
+          "text",
+          "text"
+        ],
+        "paintSignature": "sha256:c2800e5879e538a7de171861488d137d6196637d80fbbd5cdec830dea726740f",
+        "rootName": "ShortcutScope",
+        "size": [
+          220,
+          222
+        ],
+        "visibleText": [
+          "seed",
+          "One",
+          "Two",
+          "First",
+          "Second",
+          "Echo seed",
+          "Clicked none",
+          "Shortcuts 0"
+        ]
+      },
+      "passed": true,
+      "rendererBackend": "composed-layout-paint-raster-candidate",
+      "replayPassed": true,
+      "title": "Headless Candidate Minimal"
+    },
+    "taskBoard": {
+      "after": {
+        "anchors": {
+          "clipRects": [
+            [
+              16,
+              137,
+              388,
+              92
+            ]
+          ],
+          "layoutNames": [
+            "ShortcutScope",
+            "VStack",
+            "HStack",
+            "Text",
+            "Text",
+            "HStack",
+            "Input",
+            "Button",
+            "Button",
+            "HStack",
+            "Text",
+            "Text",
+            "ScrollView",
+            "VStack",
+            "For",
+            "HStack",
+            "Text",
+            "Text",
+            "Text",
+            "Button",
+            "HStack",
+            "Text",
+            "Text",
+            "Text",
+            "Button",
+            "HStack",
+            "Text",
+            "Text",
+            "Text",
+            "Button",
+            "Show"
+          ],
+          "textPaths": [
+            {
+              "path": [
+                0,
+                0,
+                0
+              ],
+              "text": "Native Task Board"
+            },
+            {
+              "path": [
+                0,
+                0,
+                1
+              ],
+              "text": "3 visible"
+            },
+            {
+              "path": [
+                0,
+                1,
+                0
+              ],
+              "text": "Search tasks"
+            },
+            {
+              "path": [
+                0,
+                1,
+                1
+              ],
+              "text": "Clear"
+            },
+            {
+              "path": [
+                0,
+                1,
+                2
+              ],
+              "text": "New"
+            },
+            {
+              "path": [
+                0,
+                2,
+                0
+              ],
+              "text": "Shortcuts 2"
+            },
+            {
+              "path": [
+                0,
+                2,
+                1
+              ],
+              "text": "Ctrl+K clears search"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Runtime bridge"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                0,
+                1
+              ],
+              "text": "Core"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                0,
+                2
+              ],
+              "text": "Ready"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                0,
+                3
+              ],
+              "text": "Inspect"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                1,
+                0
+              ],
+              "text": "Input polish"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                1,
+                1
+              ],
+              "text": "Native"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                1,
+                2
+              ],
+              "text": "Active"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                1,
+                3
+              ],
+              "text": "Inspect"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                2,
+                0
+              ],
+              "text": "Docs pass"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                2,
+                1
+              ],
+              "text": "DX"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                2,
+                2
+              ],
+              "text": "Queued"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                2,
+                3
+              ],
+              "text": "Inspect"
+            }
+          ]
+        },
+        "focused": [
+          "Button",
+          "Inspect"
+        ],
+        "frame": 7,
+        "hashes": {
+          "frame": "sha256:f13a7ce269e5d61e0ee8f867f75554adf7eaf9b41fb08f9ef13b9f5e572fb038",
+          "layout": "sha256:0a6a4193f37979ca3e8b1de4c29d196ec626b5edaed4d3878502c1961589e72c",
+          "paint": "sha256:d6150a8e3267003304158a522a544c859d123e1e94cdd27914dcf8b0b03b97ce",
+          "visibleText": "sha256:b06d22f7bd155ff88ccc9ee62f468d593b5264c21aebe47392f4d9d778d24693"
+        },
+        "label": "after",
+        "layoutBoxes": 31,
+        "layoutSignature": "sha256:9c55fce56235d6796004f6d6c8200d7b8ef889468deff09b0470cf32dd753e32",
+        "paintCommands": 33,
+        "paintKinds": [
+          "rect",
+          "rect",
+          "text",
+          "rect",
+          "text",
+          "rect",
+          "text",
+          "rect",
+          "text",
+          "rect",
+          "text",
+          "text",
+          "text",
+          "rect",
+          "rect",
+          "text",
+          "text",
+          "text",
+          "rect",
+          "rect",
+          "text",
+          "rect",
+          "text",
+          "text",
+          "text",
+          "rect",
+          "text",
+          "rect",
+          "text",
+          "text",
+          "text",
+          "rect",
+          "text"
+        ],
+        "paintSignature": "sha256:8c58f1ba6afe122c0f660be096c6b77d63123d044bfbc232633cc55f839aff08",
+        "rootName": "ShortcutScope",
+        "size": [
+          420,
+          257
+        ],
+        "visibleText": [
+          "Native Task Board",
+          "3 visible",
+          "Search tasks",
+          "Clear",
+          "New",
+          "Shortcuts 2",
+          "Ctrl+K clears search",
+          "Runtime bridge",
+          "Core",
+          "Ready",
+          "Inspect",
+          "Input polish",
+          "Native",
+          "Active",
+          "Inspect",
+          "Docs pass",
+          "DX",
+          "Queued",
+          "Inspect"
+        ]
+      },
+      "backend": "headless-candidate",
+      "before": {
+        "anchors": {
+          "clipRects": [
+            [
+              16,
+              137,
+              388,
+              92
+            ]
+          ],
+          "layoutNames": [
+            "ShortcutScope",
+            "VStack",
+            "HStack",
+            "Text",
+            "Text",
+            "HStack",
+            "Input",
+            "Button",
+            "Button",
+            "HStack",
+            "Text",
+            "Text",
+            "ScrollView",
+            "VStack",
+            "For",
+            "HStack",
+            "Text",
+            "Text",
+            "Text",
+            "Button",
+            "HStack",
+            "Text",
+            "Text",
+            "Text",
+            "Button",
+            "HStack",
+            "Text",
+            "Text",
+            "Text",
+            "Button",
+            "Show"
+          ],
+          "textPaths": [
+            {
+              "path": [
+                0,
+                0,
+                0
+              ],
+              "text": "Native Task Board"
+            },
+            {
+              "path": [
+                0,
+                0,
+                1
+              ],
+              "text": "3 visible"
+            },
+            {
+              "path": [
+                0,
+                1,
+                0
+              ],
+              "text": "Search tasks"
+            },
+            {
+              "path": [
+                0,
+                1,
+                1
+              ],
+              "text": "Clear"
+            },
+            {
+              "path": [
+                0,
+                1,
+                2
+              ],
+              "text": "New"
+            },
+            {
+              "path": [
+                0,
+                2,
+                0
+              ],
+              "text": "Shortcuts 0"
+            },
+            {
+              "path": [
+                0,
+                2,
+                1
+              ],
+              "text": "Ctrl+K clears search"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Runtime bridge"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                0,
+                1
+              ],
+              "text": "Core"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                0,
+                2
+              ],
+              "text": "Ready"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                0,
+                3
+              ],
+              "text": "Inspect"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                1,
+                0
+              ],
+              "text": "Input polish"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                1,
+                1
+              ],
+              "text": "Native"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                1,
+                2
+              ],
+              "text": "Active"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                1,
+                3
+              ],
+              "text": "Inspect"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                2,
+                0
+              ],
+              "text": "Docs pass"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                2,
+                1
+              ],
+              "text": "DX"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                2,
+                2
+              ],
+              "text": "Queued"
+            },
+            {
+              "path": [
+                0,
+                3,
+                0,
+                0,
+                2,
+                3
+              ],
+              "text": "Inspect"
+            }
+          ]
+        },
+        "focused": [
+          "Input",
+          "Search tasks"
+        ],
+        "frame": 1,
+        "hashes": {
+          "frame": "sha256:ac70c1958d1ec823bdf56b29326903c0a555b8b2738ecad9095f36507912cf2d",
+          "layout": "sha256:bb83fe40422153380808badcce7185a1496a66e17363debe49df4d4d9843970c",
+          "paint": "sha256:d9ba61dbf63293e484e88cc38a714d1501ce50abd0b6e6e5adfdc0d738b7add1",
+          "visibleText": "sha256:02ec1b7fc43e7a25215f3787f68d373bef8546ca429468a4f47e6aae89dfc7c1"
+        },
+        "label": "before",
+        "layoutBoxes": 31,
+        "layoutSignature": "sha256:fff7cf636cc19ee82a01c1e803576b1b14369e2e4daa6a5d04feb12249a32490",
+        "paintCommands": 33,
+        "paintKinds": [
+          "rect",
+          "rect",
+          "text",
+          "rect",
+          "text",
+          "rect",
+          "rect",
+          "text",
+          "rect",
+          "text",
+          "rect",
+          "text",
+          "text",
+          "text",
+          "rect",
+          "rect",
+          "text",
+          "text",
+          "text",
+          "rect",
+          "text",
+          "rect",
+          "text",
+          "text",
+          "text",
+          "rect",
+          "text",
+          "rect",
+          "text",
+          "text",
+          "text",
+          "rect",
+          "text"
+        ],
+        "paintSignature": "sha256:9cf4334c742d4e20c75035d30a94fd782b50eba5b105ccd5b2558d9e144fc37a",
+        "rootName": "ShortcutScope",
+        "size": [
+          420,
+          257
+        ],
+        "visibleText": [
+          "Native Task Board",
+          "3 visible",
+          "Search tasks",
+          "Clear",
+          "New",
+          "Shortcuts 0",
+          "Ctrl+K clears search",
+          "Runtime bridge",
+          "Core",
+          "Ready",
+          "Inspect",
+          "Input polish",
+          "Native",
+          "Active",
+          "Inspect",
+          "Docs pass",
+          "DX",
+          "Queued",
+          "Inspect"
+        ]
+      },
+      "passed": true,
+      "rendererBackend": "composed-layout-paint-raster-candidate",
+      "replayPassed": true,
+      "title": "Headless Candidate Task Board"
+    }
+  },
+  "schemaVersion": 1
+}

@@ -100,7 +100,8 @@ deployment artifact is built.
   headless PNG frame with `--png` using the bundled compiled styles. Every
   runner mode validates `schemaVersion = 1` for `manifest.json`,
   `otoe-plan.json`, `otoe-deps.json`, and `otoe-styles.json` before loading the
-  target or rendering a frame.
+  target or rendering a frame. It also enforces the backend framework policy so
+  a `native` bundle must declare and include the expected `frameworkFiles` set.
 - optional bundle validation through `otoe build --validate`, which runs the
   generated runner in `--verify`, `--check`, and `--layout-check` modes after
   writing artifacts so the copied bundle must be intact, load the manifest

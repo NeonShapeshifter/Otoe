@@ -874,6 +874,14 @@ def test_cli_build_writes_minimal_bundle_manifest(tmp_path, monkeypatch, capsys)
         ).hexdigest(),
     } in framework_files
     assert {
+        "source": "otoe/_native_backend.py",
+        "bundlePath": "framework/otoe/_native_backend.py",
+        "size": (output / "framework" / "otoe" / "_native_backend.py").stat().st_size,
+        "sha256": hashlib.sha256(
+            (output / "framework" / "otoe" / "_native_backend.py").read_bytes()
+        ).hexdigest(),
+    } in framework_files
+    assert {
         "source": "otoe/__init__.py",
         "bundlePath": "framework/otoe/__init__.py",
         "size": (output / "framework" / "otoe" / "__init__.py").stat().st_size,
@@ -1125,6 +1133,130 @@ def test_cli_build_runner_rejects_style_artifact_schema_version(
         "otoe-styles.json: unsupported schemaVersion 2; expected 1"
         in captured.err
     )
+
+
+def test_cli_build_runner_rejects_missing_framework_manifest_entry(
+    tmp_path,
+    monkeypatch,
+):
+    app = tmp_path / "missing_framework_entry_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Missing framework entry')\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "missing-framework-entry"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "missing_framework_entry_app:app",
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+    manifest_path = output / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["frameworkFiles"] = [
+        entry
+        for entry in manifest["frameworkFiles"]
+        if entry["bundlePath"] != "framework/otoe/native.py"
+    ]
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    verify = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--verify"],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+
+    assert result == 0
+    assert verify.returncode == 1
+    assert (
+        "manifest.json: frameworkFiles missing required file "
+        "'framework/otoe/native.py' for backend 'native'"
+    ) in verify.stderr
+
+
+def test_cli_build_runner_rejects_missing_framework_file_on_disk(
+    tmp_path,
+    monkeypatch,
+):
+    app = tmp_path / "missing_framework_file_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Missing framework file')\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "missing-framework-file"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "missing_framework_file_app:app",
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+    (output / "framework" / "otoe" / "native.py").unlink()
+
+    verify = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--verify"],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+
+    assert result == 0
+    assert verify.returncode == 1
+    assert "bundle file 'framework/otoe/native.py' does not exist" in verify.stderr
+
+
+def test_cli_build_runner_rejects_unsupported_manifest_backend(
+    tmp_path,
+    monkeypatch,
+):
+    app = tmp_path / "unsupported_manifest_backend_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Unsupported backend')\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "unsupported-manifest-backend"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "unsupported_manifest_backend_app:app",
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+    manifest_path = output / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["backend"] = "skia"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    verify = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--verify"],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+
+    assert result == 0
+    assert verify.returncode == 1
+    assert "manifest.json: unsupported backend 'skia'; supported: native" in verify.stderr
 
 
 def test_cli_build_runner_png_uses_compiled_styles(tmp_path, monkeypatch):
@@ -1514,6 +1646,225 @@ def test_cli_pack_rejects_missing_manifest(tmp_path, capsys):
     captured = capsys.readouterr()
     assert result == 1
     assert "pack: bundle is missing manifest.json" in captured.err
+
+
+def test_cli_compare_contract_accepts_matching_json(tmp_path, capsys):
+    expected = tmp_path / "expected.json"
+    actual = tmp_path / "actual.json"
+    payload = {
+        "schemaVersion": 1,
+        "format": "renderer-contract-compact",
+        "runs": {
+            "minimal": {
+                "after": {
+                    "hashes": {
+                        "layout": "sha256:aaa",
+                        "paint": "sha256:bbb",
+                    }
+                }
+            }
+        },
+    }
+    expected.write_text(json.dumps(payload), encoding="utf-8")
+    actual.write_text(json.dumps(payload), encoding="utf-8")
+
+    result = main(["compare-contract", str(expected), str(actual)])
+
+    captured = capsys.readouterr()
+    assert result == 0
+    assert f"contracts match: {expected} == {actual}" in captured.out
+    assert captured.err == ""
+
+
+def test_cli_compare_contract_reports_human_differences(tmp_path, capsys):
+    expected = tmp_path / "expected.json"
+    actual = tmp_path / "actual.json"
+    expected.write_text(
+        json.dumps(
+            {
+                "schemaVersion": 1,
+                "runs": {
+                    "minimal": {
+                        "after": {
+                            "hashes": {"layout": "sha256:expected"},
+                            "visibleText": ["One", "Two"],
+                        }
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    actual.write_text(
+        json.dumps(
+            {
+                "schemaVersion": 1,
+                "runs": {
+                    "minimal": {
+                        "after": {
+                            "hashes": {"layout": "sha256:actual"},
+                            "visibleText": ["One"],
+                        }
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = main(["compare-contract", str(expected), str(actual)])
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "contracts differ: 2 difference(s)" in captured.out
+    assert "/runs/minimal/after/hashes/layout" in captured.out
+    assert '"sha256:expected"' in captured.out
+    assert '"sha256:actual"' in captured.out
+    assert "/runs/minimal/after/visibleText: length 2 != 1" in captured.out
+
+
+def test_cli_compare_contract_ignores_json_pointer_paths(tmp_path, capsys):
+    expected = tmp_path / "expected.json"
+    actual = tmp_path / "actual.json"
+    expected.write_text(
+        json.dumps(
+            {
+                "pngSmoke": {
+                    "path": "expected.png",
+                    "frame": {"hashes": {"layout": "sha256:same"}},
+                },
+                "calls": [{"subject": "expected"}, {"subject": "stable"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    actual.write_text(
+        json.dumps(
+            {
+                "pngSmoke": {
+                    "path": "actual.png",
+                    "frame": {"hashes": {"layout": "sha256:same"}},
+                },
+                "calls": [{"subject": "actual"}, {"subject": "stable"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = main(
+        [
+            "compare-contract",
+            str(expected),
+            str(actual),
+            "--ignore-path",
+            "/pngSmoke/path",
+            "--ignore-path",
+            "/calls/0/subject",
+            "--json",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["matched"] is True
+    assert payload["differenceCount"] == 0
+    assert payload["ignoredPaths"] == ["/pngSmoke/path", "/calls/0/subject"]
+
+
+def test_cli_compare_contract_outputs_json_report(tmp_path, capsys):
+    expected = tmp_path / "expected.json"
+    actual = tmp_path / "actual.json"
+    expected.write_text(json.dumps({"a": {"b": 1}}), encoding="utf-8")
+    actual.write_text(json.dumps({"a": {"b": 2}, "extra": True}), encoding="utf-8")
+
+    result = main(["compare-contract", str(expected), str(actual), "--json"])
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 1
+    assert payload["schemaVersion"] == 1
+    assert payload["matched"] is False
+    assert payload["differenceCount"] == 2
+    assert payload["differences"] == [
+        {
+            "actual": True,
+            "expected": None,
+            "kind": "extra",
+            "path": "/extra",
+        },
+        {
+            "actual": 2,
+            "expected": 1,
+            "kind": "value",
+            "path": "/a/b",
+        },
+    ]
+
+
+def test_cli_compare_contract_limits_reported_differences(tmp_path, capsys):
+    expected = tmp_path / "expected.json"
+    actual = tmp_path / "actual.json"
+    expected.write_text(json.dumps({"a": 1, "b": 2, "c": 3}), encoding="utf-8")
+    actual.write_text(json.dumps({"a": 4, "b": 5, "c": 6}), encoding="utf-8")
+
+    result = main(
+        [
+            "compare-contract",
+            str(expected),
+            str(actual),
+            "--max-diffs",
+            "1",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "contracts differ: 3 difference(s)" in captured.out
+    assert "- /a:" in captured.out
+    assert "- /b:" not in captured.out
+    assert "... 2 more difference(s)" in captured.out
+
+
+def test_cli_compare_contract_rejects_invalid_ignore_path(tmp_path, capsys):
+    expected = tmp_path / "expected.json"
+    actual = tmp_path / "actual.json"
+    expected.write_text("{}", encoding="utf-8")
+    actual.write_text("{}", encoding="utf-8")
+
+    result = main(
+        [
+            "compare-contract",
+            str(expected),
+            str(actual),
+            "--ignore-path",
+            "pngSmoke/path",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "compare-contract: ignore path must be a JSON pointer" in captured.err
+
+
+def test_cli_compare_contract_rejects_missing_or_invalid_json(tmp_path, capsys):
+    invalid = tmp_path / "invalid.json"
+    valid = tmp_path / "valid.json"
+    invalid.write_text("{ nope", encoding="utf-8")
+    valid.write_text("{}", encoding="utf-8")
+
+    missing_result = main(
+        ["compare-contract", str(tmp_path / "missing.json"), str(valid)]
+    )
+    invalid_result = main(["compare-contract", str(invalid), str(valid)])
+
+    captured = capsys.readouterr()
+    assert missing_result == 1
+    assert invalid_result == 1
+    assert "compare-contract: expected file" in captured.err
+    assert "does not exist" in captured.err
+    assert "compare-contract: expected file" in captured.err
+    assert "is not valid JSON" in captured.err
 
 
 def _png_contains_rgba(data: bytes, rgba: tuple[int, int, int, int]) -> bool:

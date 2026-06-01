@@ -1,5 +1,14 @@
 from __future__ import annotations
 
+from ._native_backend import (
+    ComposedNativeRendererBackend,
+    NativeLayoutBackend,
+    NativePaintBackend,
+    NativeRasterBackend,
+    NativeRendererBackend,
+    PYTHON_NATIVE_RENDERER_BACKEND,
+    PythonNativeRendererBackend,
+)
 from ._native_contracts import (
     LayoutBox,
     NativeLayout,
@@ -15,13 +24,20 @@ from ._native_png import render_native_png, write_native_png
 from ._native_surface import NativeSurface
 
 __all__ = [
+    "ComposedNativeRendererBackend",
     "LayoutBox",
+    "NativeLayoutBackend",
     "NativeLayout",
     "NativeLayoutError",
+    "NativePaintBackend",
     "NativePaint",
     "NativePaintError",
+    "NativeRasterBackend",
+    "NativeRendererBackend",
     "NativeSurface",
+    "PYTHON_NATIVE_RENDERER_BACKEND",
     "PaintCommand",
+    "PythonNativeRendererBackend",
     "dispatch_native_click",
     "hit_test_native",
     "layout_native",

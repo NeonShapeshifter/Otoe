@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- No unreleased changes.
+
+## v0.1.5 - Native Renderer SPI and Contract Tooling
+
 - Added utility-first styling helpers and modern `otoe.ui` presets for
   no-custom-CSS app surfaces.
 - Added the first offline hardware/cage workflow: `otoe plan`, `otoe deps`, and
@@ -27,11 +31,52 @@
 - Added generated runner schema-version checks for `manifest.json`,
   `otoe-plan.json`, `otoe-deps.json`, and `otoe-styles.json` before verification,
   layout checks, PNG rendering, or packing.
+- Hardened generated runner backend framework validation so native bundles must
+  declare and include the required `frameworkFiles` before running or packing.
 - Reconciled `NATIVE_RENDERER_SPIKE.md` and `NATIVE_WORKFLOWS.md` with the
   executable native support matrix and backend-candidate replay surfaces.
 - Added the first native backend-candidate skeleton with a recording adapter,
   no-window `HeadlessCandidateBackend`, minimal driver replay, task board replay,
   layout/paint acceptance reports, and text/JSON demo output.
+- Added the experimental `NativeRendererBackend` SPI, with the current Python
+  renderer exported as `PYTHON_NATIVE_RENDERER_BACKEND` and injectable through
+  `NativeSurface`, `NativeWindowDriver.from_target(...)`,
+  `render_native_png(...)`, and `run_native(...)`.
+- Added a no-dependency `RecordingRendererCandidate` and renderer-candidate
+  acceptance helper that replay the minimal and task-board surfaces through the
+  injected renderer SPI while recording `layout`, `paint`, and `write_png`
+  calls.
+- Added a schema-versioned renderer contract snapshot and
+  `--renderer-contract-json` output so future renderer backends can be checked
+  against stable layout, paint, call-sequence, focus, and clipping structure.
+- Split the native renderer SPI into layout, paint, and raster capability
+  protocols, added `ComposedNativeRendererBackend`, and added a
+  `RasterOnlyRendererCandidate` that replaces only PNG writing while preserving
+  Python layout and paint.
+- Added `PaintOnlyRendererCandidate`, which keeps Python layout/raster while
+  replacing paint command generation and still passing the renderer acceptance
+  replays.
+- Added `LayoutOnlyRendererCandidate`, which replaces layout for the focused
+  minimal replay, static native task board first frame, and interactive native
+  task board replay while preserving Python paint and raster output.
+- Added composed renderer-candidate acceptance that combines layout-only,
+  paint-only, and raster-only candidates through `ComposedNativeRendererBackend`
+  and renders a PNG to exercise all three split capabilities together.
+- Added `--composed-renderer-contract-json` and `--composed-renderer-png` for
+  serializing the composed renderer-candidate contract from the CLI.
+- Added `--compact-contract` for renderer contract JSON commands, producing
+  structural signatures and stable `sha256:` hashes instead of full layout/paint
+  snapshots.
+- Added `otoe compare-contract` for deterministic JSON contract comparisons,
+  including human-readable JSON-pointer diffs and machine-readable reports.
+- Added a compact composed-renderer expected contract fixture under
+  `examples/native/contracts/` and an end-to-end compare test for generated
+  candidate contracts.
+- Added `--contract-out` to the backend-candidate skeleton contract CLI so
+  expected renderer contract fixtures can be refreshed without shell
+  redirection.
+- Added `otoe compare-contract --ignore-path` for intentionally ignoring
+  environment-specific JSON-pointer fields during contract comparisons.
 
 ## v0.1.4 - Native Backend Acceptance Hardening
 

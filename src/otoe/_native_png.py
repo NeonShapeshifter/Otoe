@@ -3,6 +3,7 @@ from __future__ import annotations
 import struct
 import zlib
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from ._native_contracts import NativeLayout, NativePaint, NativePaintError, PaintCommand
 from ._native_layout import layout_native
@@ -10,6 +11,9 @@ from ._native_paint import paint_native
 from ._native_shared import parse_color
 from .mount import FakeWidget, MountedNode
 from .style import StyleSheet
+
+if TYPE_CHECKING:
+    from ._native_backend import NativeRendererBackend
 
 
 def write_native_png(paint: NativePaint, path: str | Path) -> None:
@@ -35,7 +39,26 @@ def render_native_png(
     strict_styles: bool = True,
     background: str = "#ffffff",
     focused_path: tuple[int, ...] | None = None,
+    renderer_backend: NativeRendererBackend | None = None,
 ) -> NativePaint:
+    if renderer_backend is not None:
+        layout = (
+            target
+            if isinstance(target, NativeLayout)
+            else renderer_backend.layout(
+                target,
+                stylesheet=stylesheet,
+                strict_styles=strict_styles,
+            )
+        )
+        paint = renderer_backend.paint(
+            layout,
+            background=background,
+            focused_path=focused_path,
+        )
+        renderer_backend.write_png(paint, path)
+        return paint
+
     layout = (
         target
         if isinstance(target, NativeLayout)

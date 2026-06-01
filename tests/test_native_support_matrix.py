@@ -246,13 +246,30 @@ def test_native_renderer_spike_documents_executable_acceptance_surfaces():
     assert "`tests/test_native_support_matrix.py`" in doc
     assert "`tests/test_native_layout.py`" in doc
     assert "`tests/test_native_backend_contract.py`" in doc
+    assert "`tests/test_native_renderer_backend.py`" in doc
     assert "`examples/native/backend_candidate_skeleton.py`" in doc
     assert "`HeadlessCandidateBackend`" in doc
+    assert "`RecordingRendererCandidate`" in doc
+    assert "`RasterOnlyRendererCandidate`" in doc
+    assert "`PaintOnlyRendererCandidate`" in doc
+    assert "`LayoutOnlyRendererCandidate`" in doc
+    assert "`ComposedNativeRendererBackend`" in doc
+    assert "`NativeLayoutBackend`" in doc
+    assert "`NativePaintBackend`" in doc
+    assert "`NativeRasterBackend`" in doc
+    assert "static task-board layout acceptance" in single_spaced
+    assert "interactive task-board replay" in single_spaced
+    assert "`run_composed_renderer_candidate_acceptance(...)`" in doc
+    assert "`--composed-renderer-contract-json`" in doc
+    assert "`--compact-contract`" in doc
+    assert "stable `sha256:` hashes" in doc
     assert "`tests/test_native_window.py`" in doc
     assert "`tests/test_native_phase3_closeout.py`" in doc
     assert "minimal backend harness" in doc
     assert "app-shaped native task board replay" in single_spaced
     assert "fake adapter replay through `run_native(...)`" in doc
+    assert "records `layout`, `paint`, and `write_png` calls" in single_spaced
+    assert "schema-versioned JSON contract snapshot" in doc
     assert "A backend candidate must reproduce" in doc
     assert "Tk is optional, local, and non-production" in single_spaced
 
@@ -267,9 +284,38 @@ def test_native_workflows_documents_backend_candidate_replay_bar():
     assert "the fake adapter replay through `run_native(...)`" in doc
     assert "`examples/native/backend_candidate_skeleton.py`" in doc
     assert "`HeadlessCandidateBackend`" in doc
+    assert "`RecordingRendererCandidate`" in doc
+    assert "`RasterOnlyRendererCandidate`" in doc
+    assert "`PaintOnlyRendererCandidate`" in doc
+    assert "`LayoutOnlyRendererCandidate`" in doc
+    assert "`ComposedNativeRendererBackend`" in doc
+    assert "`run_renderer_candidate_acceptance()`" in doc
+    assert "`renderer_contract_snapshot_to_dict(...)`" in doc
+    assert "`--renderer-contract-json`" in doc
+    assert "static task-board layout acceptance" in doc
+    assert "interactive task-board replay" in single_spaced
+    assert "`run_composed_renderer_candidate_acceptance(...)`" in doc
+    assert "`--composed-renderer-contract-json`" in doc
+    assert "`--composed-renderer-png`" in doc
+    assert "`--compact-contract`" in doc
+    assert "`--contract-out`" in doc
+    assert "otoe compare-contract" in doc
+    assert "`--ignore-path`" in doc
+    assert "examples/native/contracts/composed_renderer_compact_expected.json" in doc
+    assert "JSON-pointer paths" in doc
+    assert "signature-and-hash contract" in doc
+    assert "PNG smoke" in doc
     assert "small acceptance report" in doc
-    assert "layout, paint, focus, frame, and visible-text summaries" in single_spaced
+    assert (
+        "layout, paint, focus, frame, renderer-backend, and visible-text summaries"
+        in single_spaced
+    )
     assert "python -m examples.native.backend_candidate_skeleton" in doc
     assert "python -m examples.native.backend_candidate_skeleton --json" in doc
+    assert (
+        "python -m examples.native.backend_candidate_skeleton --renderer-contract-json"
+        in doc
+    )
+    assert "renderer-candidate replay" in doc
     assert "`tests/test_native_support_matrix.py` keeps `NATIVE_RENDERER_SPIKE.md`" in doc
     assert "supported style, widget, input, fallback, ignored, and deferred" in doc

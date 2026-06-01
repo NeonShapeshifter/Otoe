@@ -8,6 +8,7 @@ from otoe import (
     For,
     HStack,
     Input,
+    NativeRendererBackend,
     NativeSurface,
     Panel,
     ScrollView,
@@ -158,14 +159,22 @@ TASK_BOARD_STYLES = css(
 
 
 class NativeTaskBoardDemo:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        renderer_backend: NativeRendererBackend | None = None,
+    ) -> None:
         self.query = signal("")
         self.list_scroll_y = signal(0)
         self.selected_task_id = signal(None)
         self.shortcut_count = signal(0)
         self.visible_tasks = computed(self._visible_tasks)
         self.selected_task = computed(self._selected_task)
-        self.surface = NativeSurface(self._view(), stylesheet=TASK_BOARD_STYLES)
+        self.surface = NativeSurface(
+            self._view(),
+            stylesheet=TASK_BOARD_STYLES,
+            renderer_backend=renderer_backend,
+        )
 
     def render(self, path: str | Path):
         return self.surface.render_png(path)

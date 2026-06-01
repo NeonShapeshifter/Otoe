@@ -31,11 +31,22 @@ see `STYLE_GUIDE.md`.
 The supported path is:
 
 ```text
-Node tree -> mount(...) -> layout_native(...) -> paint_native(...) -> write_native_png(...)
-                                    |
-                                    v
-                         hit_test_native(...) / dispatch_native_click(...)
+Node tree -> mount(...) -> NativeRendererBackend.layout(...) -> NativeRendererBackend.paint(...) -> write_png(...)
+                                        |
+                                        v
+                             hit_test_native(...) / dispatch_native_click(...)
 ```
+
+The default renderer backend is `PythonNativeRendererBackend`, exposed as
+`PYTHON_NATIVE_RENDERER_BACKEND`. It wraps the current Python
+`layout_native(...)`, `paint_native(...)`, and stdlib PNG writer so the existing
+behavior stays unchanged while future layout, paint, or raster candidates attach
+behind the same `NativeRendererBackend` protocol.
+The renderer SPI is split into capability protocols:
+`NativeLayoutBackend`, `NativePaintBackend`, and `NativeRasterBackend`.
+`ComposedNativeRendererBackend` can route those capabilities to different
+objects, which lets Otoe evaluate one replacement at a time instead of forcing a
+backend candidate to replace layout, paint, and raster together.
 
 The framework-facing helper for that path is `NativeSurface`. It owns the
 headless frame loop for one mounted tree:
@@ -51,7 +62,11 @@ surface.render_png("next-frame.png")
 `box(path)` for deterministic tests, tracks a focused path, refreshes
 layout/paint after click or keyboard dispatch, and lazily refreshes when
 reactive prop or control-flow updates mutate the mounted fake-widget tree. It
-is still headless; it does not create windows or run an OS event loop.
+is still headless; it does not create windows or run an OS event loop. Tests or
+backend candidates can pass `renderer_backend=...` to `NativeSurface`,
+`NativeWindowDriver.from_target(...)`, `render_native_png(...)`, or
+`run_native(...)` when the target has not already been wrapped in a surface or
+driver.
 
 `NativeWindowDriver` is the testable window-facing wrapper over `NativeSurface`.
 It accepts high-level click, key-down, and controlled text-input events, then
@@ -96,11 +111,35 @@ window backend:
 - `tests/test_native_backend_contract.py` is the backend-candidate acceptance
   bar. It contains the minimal backend harness, the app-shaped native task board
   replay, and the fake adapter replay through `run_native(...)`.
+- `tests/test_native_renderer_backend.py` proves the current Python renderer
+  backend matches the old direct pipeline and that `NativeSurface`,
+  `NativeWindowDriver`, `render_native_png(...)`, and `run_native(...)` all
+  honor an injected `NativeRendererBackend`.
 - `examples/native/backend_candidate_skeleton.py` is the first backend-candidate
   skeleton. It provides a recording adapter, a no-window
-  `HeadlessCandidateBackend`, and acceptance reports that run a minimal driver
-  replay plus the task board replay through `run_native(...)` without opening a
-  window or depending on Skia, Taffy, or Tk.
+  `HeadlessCandidateBackend`, a `RecordingRendererCandidate`, and acceptance
+  reports that run a minimal driver replay plus the task board replay through
+  `run_native(...)` without opening a window or depending on Skia, Taffy, or
+  Tk. The renderer-candidate helper runs the same acceptance surfaces through an
+  injected `NativeRendererBackend` and records `layout`, `paint`, and `write_png`
+  calls. It also exports a schema-versioned JSON contract snapshot with the
+  replay results, SPI call sequence, layout boxes, and paint commands.
+  `RasterOnlyRendererCandidate` is the first partial replacement: it keeps the
+  Python layout and paint capabilities while replacing only PNG raster output
+  with a separate no-dependency writer. `PaintOnlyRendererCandidate` is the
+  matching paint replacement: it keeps Python layout and raster output while
+  generating its own compatible `NativePaint` command stream.
+  `LayoutOnlyRendererCandidate` is the first layout replacement: it covers the
+  minimal replay, static task-board layout acceptance, and the interactive
+  task-board replay while preserving Python paint and raster output.
+  `run_composed_renderer_candidate_acceptance(...)` combines those three
+  partial candidates through `ComposedNativeRendererBackend`, runs the
+  interactive replays, and renders a PNG so layout, paint, and raster can be
+  checked as separate swappable capabilities in one composed candidate. The
+  `--composed-renderer-contract-json` CLI output serializes that composed
+  contract, including the per-capability call streams and PNG smoke frame.
+  `--compact-contract` emits the same contract as structural signatures plus
+  stable `sha256:` hashes instead of full layout and paint snapshots.
 - `tests/test_native_window.py` and `tests/test_native_phase3_closeout.py` keep
   `NativeWindowDriver`, backend adapter routing, optional Tk Canvas
   presentation, and Phase 3 closeout behavior testable without opening a real
@@ -109,6 +148,17 @@ window backend:
 A backend candidate must reproduce the minimal backend harness, app-shaped
 native task board replay, and fake adapter replay before expanding
 backend-specific layout, paint, text, GPU, packaging, or OS-window behavior.
+Renderer candidates must additionally prove that the injected
+`NativeRendererBackend` receives layout, paint, and PNG calls from the same
+surface/driver/adapter path. The renderer contract snapshot is intentionally
+structural rather than pixel-perfect: it locks down widget paths, bounds, event
+names, visible text, paint command kinds, focus rings, and clipping boundaries.
+Partial candidates should start with `ComposedNativeRendererBackend` or an
+equivalent wrapper and replace only one capability until the golden contract
+stays green. Layout candidates should graduate from the minimal replay to the
+static task-board layout acceptance before attempting the interactive task-board
+replay; the current layout-only candidate now covers search, scroll movement,
+modal state, shortcut reset, focus, and hit-tested clicks through that replay.
 Passing the Tk wrapper tests is not enough for a production backend claim: Tk is
 optional, local, and non-production.
 
@@ -128,9 +178,10 @@ width to `create_text(...)`. This is still a simple bounds discipline, not full
 font measurement or native clipping.
 
 `run_native(...)` is the experimental framework-facing entry point for launching
-a native tree. Today it creates the same `NativeWindowDriver` and uses the
-optional Tk backend. The public entry point is intentionally backend-neutral so
-the implementation can move to another windowing layer later.
+a native tree. Today it creates the same `NativeWindowDriver`, can receive an
+optional `renderer_backend`, and uses the optional Tk window backend by default.
+The public entry point is intentionally backend-neutral so the implementation
+can move to another windowing layer later.
 
 Backend selection is now routed through `NativeBackendAdapter`. Registered
 backend names can be inspected with `native_backend_names()` and resolved with
@@ -463,8 +514,9 @@ focusable.
 Once the headless contract is stable, the next backend layers can be evaluated
 without changing the component API:
 
-- Taffy or another layout solver behind `layout_native(...)`.
-- Skia or another raster backend behind the paint command contract.
+- Taffy or another layout solver behind `NativeRendererBackend.layout(...)`.
+- Skia or another raster backend behind `NativeRendererBackend.paint(...)` and
+  `NativeRendererBackend.write_png(...)`.
 - Production windowing and OS event loop adapters.
 - Production-quality implementations of the `NativeBackendAdapter` protocol.
 - Accessibility tree generation from `LayoutBox` metadata.

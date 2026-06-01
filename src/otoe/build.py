@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
+from pprint import pformat
 from typing import Any
 
 from pathlib import Path
@@ -52,6 +53,7 @@ CORE_RUNTIME_FILES = (
 BACKEND_RUNTIME_FILES = {
     "native": (
         "native.py",
+        "_native_backend.py",
         "_native_contracts.py",
         "_native_hit_test.py",
         "_native_layout.py",
@@ -206,7 +208,7 @@ def _unique_paths(paths: tuple[str, ...]) -> tuple[str, ...]:
 
 
 def _runner_source() -> str:
-    return '''from __future__ import annotations
+    source = '''from __future__ import annotations
 
 import argparse
 import hashlib
@@ -220,6 +222,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent
 MANIFEST_PATH = ROOT / "manifest.json"
 EXPECTED_SCHEMA_VERSION = 1
+EXPECTED_FRAMEWORK_FILES = __EXPECTED_FRAMEWORK_FILES__
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -238,6 +241,7 @@ def main(argv: list[str] | None = None) -> int:
 
     manifest = _load_manifest()
     _verify_artifact_schemas(manifest)
+    _verify_framework_policy(manifest)
     if args.verify:
         _verify_bundle(manifest)
         print("verified: manifest.json")
@@ -296,6 +300,7 @@ def _load_stylesheet(manifest: dict[str, Any]):
 
 def _verify_bundle(manifest: dict[str, Any]) -> None:
     _verify_artifact_schemas(manifest)
+    _verify_framework_policy(manifest)
     for key in ("plan", "deps", "styles"):
         if key in manifest:
             _require_bundle_file(manifest[key])
@@ -307,6 +312,34 @@ def _verify_bundle(manifest: dict[str, Any]) -> None:
     for group in ("assets", "frameworkFiles", "runtimeFiles"):
         for entry in manifest.get(group, []):
             _verify_manifest_file(entry, path_key="bundlePath")
+
+
+def _verify_framework_policy(manifest: dict[str, Any]) -> None:
+    backend = manifest.get("backend")
+    if not backend:
+        raise ValueError("manifest.json: missing backend")
+    expected_files = EXPECTED_FRAMEWORK_FILES.get(backend)
+    if expected_files is None:
+        supported = ", ".join(sorted(EXPECTED_FRAMEWORK_FILES))
+        raise ValueError(
+            f"manifest.json: unsupported backend {backend!r}; supported: {supported}"
+        )
+
+    framework_files = manifest.get("frameworkFiles")
+    if not isinstance(framework_files, list):
+        raise ValueError("manifest.json: frameworkFiles must be a list")
+    listed_files = {
+        entry.get("bundlePath")
+        for entry in framework_files
+        if isinstance(entry, dict)
+    }
+    for expected in expected_files:
+        if expected not in listed_files:
+            raise ValueError(
+                "manifest.json: frameworkFiles missing required file "
+                f"{expected!r} for backend {backend!r}"
+            )
+        _require_bundle_file(expected)
 
 
 def _verify_artifact_schemas(manifest: dict[str, Any]) -> None:
@@ -398,6 +431,20 @@ if __name__ == "__main__":
         print(f"otoe-run: {exc}", file=sys.stderr)
         raise SystemExit(1)
 '''
+    return source.replace(
+        "__EXPECTED_FRAMEWORK_FILES__",
+        pformat(_runner_expected_framework_files(), width=88),
+    )
+
+
+def _runner_expected_framework_files() -> dict[str, tuple[str, ...]]:
+    return {
+        backend: tuple(
+            (Path(FRAMEWORK_OUTPUT_DIR) / "otoe" / path).as_posix()
+            for path in _unique_paths(CORE_RUNTIME_FILES + files)
+        )
+        for backend, files in BACKEND_RUNTIME_FILES.items()
+    }
 
 
 def _combined_status(plan_status: str, deps_status: str) -> str:
