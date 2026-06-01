@@ -156,10 +156,64 @@ extras = ["dev"]
 
 Profile CSS, asset, and runtime file paths are relative to the TOML file. Asset
 and runtime file paths must be relative files and must not contain `.` or `..`.
-`[styles].safelist` declares extra class names that should be compiled even
-when they do not appear in the first mounted render. Each safelist entry must be
-one class name, not a space-separated class list. Explicit CLI flags override
-the profile file. `allow_runtime_installs = true` is invalid for `cage`.
+For simple local targets such as `app:app`, `otoe plan` and `otoe build`
+statically extract literal class tokens from `className` expressions in the
+target file and same-directory imports. This covers static literals and
+conditional literal branches, including common `class_names(...)` state classes
+inside `computed(...)`. `[styles].safelist` declares extra class names that
+should be compiled when they cannot be extracted or do not appear in the first
+mounted render. Each safelist entry must be one class name, not a
+space-separated class list. Explicit CLI flags override the profile file.
+`allow_runtime_installs = true` is invalid for `cage`.
+
+### Dynamic Class Extraction Examples
+
+This form is build-time enumerable because every possible class is a literal
+token in the local `className` expression:
+
+```python
+from otoe import Text, class_names, computed, signal
+
+ready = signal(False)
+
+state_class = computed(
+    lambda: class_names(
+        "status",
+        "is-ready" if ready.value else "is-idle",
+    )
+)
+
+app = Text("State", className=state_class)
+```
+
+`otoe plan` sees `status`, `is-ready`, and `is-idle`, then records the class
+that did not appear in the first render under `classes.static` so `otoe build`
+can compile it into `otoe-styles.json` and `styleOps`.
+
+This form is not build-time enumerable because one class is assembled from a
+runtime value:
+
+```python
+from otoe import Text, computed, signal
+
+tone = signal("idle")
+
+app = Text(
+    "State",
+    className=computed(lambda: f"status is-{tone.value}"),
+)
+```
+
+For hardware/cage builds, list the possible outputs explicitly:
+
+```toml
+[styles]
+safelist = ["is-idle", "is-ready", "is-danger"]
+```
+
+The mounted first render may still include `status` and `is-idle`, but the
+build cannot infer future values such as `is-ready` or `is-danger` from the
+f-string. `otoe plan` warns on that expression with the source file and line.
 
 `otoe deps` audits `[deps]` against the current build environment without
 installing packages, touching the network, importing the app, or writing
@@ -194,14 +248,24 @@ running with ambiguous artifacts.
 The runner also enforces the backend framework policy: a `native` bundle must
 declare and include the expected `frameworkFiles` set before `--check`,
 `--layout-check`, `--png`, `--verify`, or `otoe pack` can succeed.
-`otoe-styles.json` records used classes, safelisted classes, resolved portable
-declarations, omitted html-only/deferred declarations, diagnostics, and tokens.
+`otoe-styles.json` records used classes, statically extracted classes,
+safelisted classes, resolved portable declarations, omitted html-only/deferred
+declarations, diagnostics, tokens, and low-level `styleOps`. The `styleOps`
+section is the hardware-facing view: each planned class becomes deterministic
+`setStyle` operations for portable declarations plus `omitStyle` records for
+html-only, deferred, or invalid declarations, so backend candidates can consume
+a resolved artifact instead of parsing CSS on device.
 For hardware/cage profiles, arbitrary runtime class construction is not a
-portable contract: a dynamic class must either appear in the initial mounted
-tree or be listed in `[styles].safelist` so the build can resolve it before
-deployment. `otoe build --validate` runs that copied runner in `--verify`,
-`--check`, and `--layout-check` modes after writing the bundle, so missing,
-modified, unbundled, or renderer-invalid files are caught before deployment.
+portable contract: a dynamic class must appear in the initial mounted tree, be
+statically extracted from local `className` expressions, or be listed in
+`[styles].safelist` so the build can resolve it before deployment. F-strings or
+string interpolation with unknown runtime fragments still require safelisting
+the possible output classes. `otoe plan` emits a warning with the source file
+and line when it sees a dynamic `className` f-string or string interpolation,
+so the missing safelist edge is visible before `otoe build`. `otoe build
+--validate` runs that copied runner in `--verify`, `--check`, and
+`--layout-check` modes after writing the bundle, so missing, modified,
+unbundled, or renderer-invalid files are caught before deployment.
 
 `otoe pack` is the first deployment archive step. It runs the copied runner in
 `--verify` mode, writes a `.tar.gz` with the bundle contents at archive root,

@@ -20,7 +20,8 @@ stable public framework or a production desktop renderer.
 - Experimental portable `css(...)` / `StyleSheet` API plus low-level
   `utility_css()` / `utility_stylesheet()` helpers for app styling.
 - `otoe plan` diagnostics for checking an app against the first offline
-  hardware/cage profile before any deployment bundle exists.
+  hardware/cage profile before any deployment bundle exists, including static
+  extraction of literal `className` state classes for simple local targets.
 - First `otoe.ui` primitives: cards, badges, action buttons, tabs, toolbars,
   stat cards, data tables, dialogs, toasts, command palettes, app shells,
   sidebar navigation, route views, command registries, shortcut scopes, menus,
@@ -244,7 +245,8 @@ files. The manifest
 references `otoe-deps.json`, records copied framework files in `frameworkFiles`,
 and records copied app files in `runtimeFiles`. The style artifact records used
 classes, resolved portable declarations, omitted html-only/deferred
-declarations, diagnostics, and tokens.
+declarations, diagnostics, tokens, and low-level `styleOps` that backend
+candidates can apply without re-parsing CSS on the target.
 
 The bundle also includes `otoe-run.py`, a minimal generated runner. It adds the
 copied `app/` and `framework/` directories to `sys.path`, loads the manifest
@@ -483,7 +485,7 @@ perform security operations.
 
 ## Status
 
-Current status: v0.1.5 public sync prepared; Phase 5 renderer contract tooling and offline build planning. See
+Current status: v0.1.6 public sync prepared; low-level styleOps contracts and static class extraction. See
 `ROADMAP.md` for the active plan.
 
 ## License

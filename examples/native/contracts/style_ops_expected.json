@@ -1,0 +1,246 @@
+{
+  "classes": [
+    {
+      "appliedDeclarations": {},
+      "className": "ui-shortcut-scope",
+      "errors": [],
+      "expectedDeclarations": {},
+      "expectedMissing": false,
+      "expectedOmittedOps": [],
+      "missing": false,
+      "omittedOps": [],
+      "passed": true,
+      "selector": ".ui-shortcut-scope"
+    },
+    {
+      "appliedDeclarations": {
+        "background": {
+          "type": "literal",
+          "value": "#f8fafc"
+        },
+        "gap": {
+          "type": "size",
+          "unit": "px",
+          "value": 6
+        },
+        "padding": {
+          "type": "size",
+          "unit": "px",
+          "value": 8
+        },
+        "width": {
+          "type": "size",
+          "unit": "px",
+          "value": 220
+        }
+      },
+      "className": "candidate-shell",
+      "errors": [],
+      "expectedDeclarations": {
+        "background": {
+          "type": "literal",
+          "value": "#f8fafc"
+        },
+        "gap": {
+          "type": "size",
+          "unit": "px",
+          "value": 6
+        },
+        "padding": {
+          "type": "size",
+          "unit": "px",
+          "value": 8
+        },
+        "width": {
+          "type": "size",
+          "unit": "px",
+          "value": 220
+        }
+      },
+      "expectedMissing": false,
+      "expectedOmittedOps": [
+        {
+          "message": "property 'borderStyle' is accepted but ignored by native",
+          "op": "omitStyle",
+          "property": "borderStyle",
+          "status": "html-only",
+          "support": "ignored",
+          "value": {
+            "type": "literal",
+            "value": "solid"
+          }
+        }
+      ],
+      "missing": false,
+      "omittedOps": [
+        {
+          "message": "property 'borderStyle' is accepted but ignored by native",
+          "op": "omitStyle",
+          "property": "borderStyle",
+          "status": "html-only",
+          "support": "ignored",
+          "value": {
+            "type": "literal",
+            "value": "solid"
+          }
+        }
+      ],
+      "passed": true,
+      "selector": ".candidate-shell"
+    },
+    {
+      "appliedDeclarations": {
+        "width": {
+          "type": "size",
+          "unit": "px",
+          "value": 120
+        }
+      },
+      "className": "candidate-input",
+      "errors": [],
+      "expectedDeclarations": {
+        "width": {
+          "type": "size",
+          "unit": "px",
+          "value": 120
+        }
+      },
+      "expectedMissing": false,
+      "expectedOmittedOps": [],
+      "missing": false,
+      "omittedOps": [],
+      "passed": true,
+      "selector": ".candidate-input"
+    },
+    {
+      "appliedDeclarations": {
+        "alignItems": {
+          "type": "literal",
+          "value": "center"
+        },
+        "gap": {
+          "type": "size",
+          "unit": "px",
+          "value": 4
+        },
+        "height": {
+          "type": "size",
+          "unit": "px",
+          "value": 44
+        },
+        "justifyContent": {
+          "type": "literal",
+          "value": "space-between"
+        },
+        "width": {
+          "type": "size",
+          "unit": "px",
+          "value": 200
+        }
+      },
+      "className": "candidate-toolbar",
+      "errors": [],
+      "expectedDeclarations": {
+        "alignItems": {
+          "type": "literal",
+          "value": "center"
+        },
+        "gap": {
+          "type": "size",
+          "unit": "px",
+          "value": 4
+        },
+        "height": {
+          "type": "size",
+          "unit": "px",
+          "value": 44
+        },
+        "justifyContent": {
+          "type": "literal",
+          "value": "space-between"
+        },
+        "width": {
+          "type": "size",
+          "unit": "px",
+          "value": 200
+        }
+      },
+      "expectedMissing": false,
+      "expectedOmittedOps": [],
+      "missing": false,
+      "omittedOps": [],
+      "passed": true,
+      "selector": ".candidate-toolbar"
+    },
+    {
+      "appliedDeclarations": {
+        "background": {
+          "type": "literal",
+          "value": "#ffffff"
+        },
+        "gap": {
+          "type": "size",
+          "unit": "px",
+          "value": 4
+        },
+        "height": {
+          "type": "size",
+          "unit": "px",
+          "value": 44
+        },
+        "padding": {
+          "type": "size",
+          "unit": "px",
+          "value": 4
+        },
+        "width": {
+          "type": "size",
+          "unit": "px",
+          "value": 200
+        }
+      },
+      "className": "candidate-list",
+      "errors": [],
+      "expectedDeclarations": {
+        "background": {
+          "type": "literal",
+          "value": "#ffffff"
+        },
+        "gap": {
+          "type": "size",
+          "unit": "px",
+          "value": 4
+        },
+        "height": {
+          "type": "size",
+          "unit": "px",
+          "value": 44
+        },
+        "padding": {
+          "type": "size",
+          "unit": "px",
+          "value": 4
+        },
+        "width": {
+          "type": "size",
+          "unit": "px",
+          "value": 200
+        }
+      },
+      "expectedMissing": false,
+      "expectedOmittedOps": [],
+      "missing": false,
+      "omittedOps": [],
+      "passed": true,
+      "selector": ".candidate-list"
+    }
+  ],
+  "errors": [],
+  "format": "style-ops-contract",
+  "passed": true,
+  "schemaVersion": 1,
+  "styleOps": {
+    "format": "otoe-style-ops",
+    "schemaVersion": 1
+  }
+}

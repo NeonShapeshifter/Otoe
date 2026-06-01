@@ -46,6 +46,9 @@ def test_offline_bundle_example_builds_and_packs(tmp_path, monkeypatch):
     assert {"bg-danger", "text-danger"}.issubset(
         {rule["className"] for rule in styles["rules"]}
     )
+    assert {"bg-danger", "text-danger"}.issubset(
+        {entry["className"] for entry in styles["styleOps"]["classes"]}
+    )
     assert (output / "otoe-styles.json").is_file()
     assert archive.is_file()
 

@@ -1,3 +1,4 @@
+from copy import deepcopy
 import json
 from pathlib import Path
 
@@ -17,8 +18,11 @@ from examples.native.backend_candidate_skeleton import (
     RecordingBackendCandidate,
     RecordingRendererCandidate,
     RendererCandidateAcceptanceReport,
+    StyleOpsCandidateAcceptanceReport,
+    StyleOpsCandidateClassReport,
     TaskBoardBackendCandidateReplay,
     acceptance_report_to_dict,
+    backend_candidate_style_artifact,
     backend_candidate_app,
     compact_composed_renderer_contract_snapshot_to_dict,
     compact_renderer_contract_snapshot_to_dict,
@@ -35,6 +39,8 @@ from examples.native.backend_candidate_skeleton import (
     run_paint_only_renderer_candidate_acceptance,
     run_raster_only_renderer_candidate_acceptance,
     run_renderer_candidate_acceptance,
+    run_style_ops_candidate_acceptance,
+    style_ops_candidate_report_to_dict,
 )
 from examples.native.window_demo import NativeWindowDemo
 from otoe import (
@@ -50,6 +56,7 @@ from otoe.cli import main as otoe_cli_main
 COMPOSED_RENDERER_COMPACT_CONTRACT_FIXTURE = Path(
     "examples/native/contracts/composed_renderer_compact_expected.json"
 )
+STYLE_OPS_CONTRACT_FIXTURE = Path("examples/native/contracts/style_ops_expected.json")
 
 
 def test_backend_candidate_acceptance_skeleton_runs_replays():
@@ -763,6 +770,150 @@ def test_compact_renderer_contract_snapshot_uses_signatures_and_hashes():
     assert minimal_after["anchors"]["clipRects"] == [[8, 98, 200, 44]]
     assert minimal_after["hashes"]["layout"].startswith("sha256:")
     assert minimal_after["hashes"]["paint"].startswith("sha256:")
+
+
+def test_style_ops_candidate_acceptance_replays_default_artifact():
+    report = run_style_ops_candidate_acceptance()
+    payload = style_ops_candidate_report_to_dict(report)
+    classes = {class_report.class_name: class_report for class_report in report.classes}
+    shell = classes["candidate-shell"]
+
+    assert isinstance(report, StyleOpsCandidateAcceptanceReport)
+    assert isinstance(shell, StyleOpsCandidateClassReport)
+    assert report.passed is True
+    assert payload["schemaVersion"] == 1
+    assert payload["format"] == "style-ops-contract"
+    assert payload["passed"] is True
+    assert payload["styleOps"] == {
+        "schemaVersion": 1,
+        "format": "otoe-style-ops",
+    }
+    assert shell.passed is True
+    assert shell.applied_declarations["width"] == {
+        "type": "size",
+        "value": 220,
+        "unit": "px",
+    }
+    assert shell.applied_declarations["padding"] == {
+        "type": "size",
+        "value": 8,
+        "unit": "px",
+    }
+    assert shell.applied_declarations["gap"] == {
+        "type": "size",
+        "value": 6,
+        "unit": "px",
+    }
+    assert shell.applied_declarations["background"] == {
+        "type": "literal",
+        "value": "#f8fafc",
+    }
+    assert shell.omitted_ops == (
+        {
+            "op": "omitStyle",
+            "property": "borderStyle",
+            "support": "ignored",
+            "status": "html-only",
+            "value": {"type": "literal", "value": "solid"},
+            "message": "property 'borderStyle' is accepted but ignored by native",
+        },
+    )
+
+
+def test_style_ops_candidate_acceptance_detects_mismatch():
+    artifact = deepcopy(backend_candidate_style_artifact())
+    shell_ops = next(
+        class_payload
+        for class_payload in artifact["styleOps"]["classes"]
+        if class_payload["className"] == "candidate-shell"
+    )
+    width_op = next(op for op in shell_ops["ops"] if op["property"] == "width")
+    width_op["value"] = {"type": "size", "value": 999, "unit": "px"}
+
+    report = run_style_ops_candidate_acceptance(artifact)
+    classes = {class_report.class_name: class_report for class_report in report.classes}
+    payload = style_ops_candidate_report_to_dict(report)
+
+    assert report.passed is False
+    assert payload["passed"] is False
+    assert classes["candidate-shell"].passed is False
+    assert (
+        "styleOps class 'candidate-shell' applied declarations do not match compiled rules"
+        in classes["candidate-shell"].errors
+    )
+
+
+def test_style_ops_contract_fixture_matches_generated_contract(tmp_path, capsys):
+    actual = tmp_path / "actual-style-ops-contract.json"
+    report = run_style_ops_candidate_acceptance()
+    payload = style_ops_candidate_report_to_dict(report)
+    actual.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+
+    result = otoe_cli_main(
+        [
+            "compare-contract",
+            str(STYLE_OPS_CONTRACT_FIXTURE),
+            str(actual),
+            "--json",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    comparison = json.loads(captured.out)
+    assert result == 0
+    assert comparison["matched"] is True
+    assert comparison["differenceCount"] == 0
+    assert comparison["differences"] == []
+
+
+def test_backend_candidate_skeleton_main_outputs_style_ops_contract_json(capsys):
+    result = main(["--style-ops-contract-json"])
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    shell = next(
+        class_payload
+        for class_payload in payload["classes"]
+        if class_payload["className"] == "candidate-shell"
+    )
+    assert result == 0
+    assert payload["schemaVersion"] == 1
+    assert payload["format"] == "style-ops-contract"
+    assert payload["passed"] is True
+    assert payload["styleOps"]["schemaVersion"] == 1
+    assert shell["appliedDeclarations"]["background"] == {
+        "type": "literal",
+        "value": "#f8fafc",
+    }
+
+
+def test_backend_candidate_skeleton_main_outputs_style_ops_contract_from_artifact(
+    tmp_path,
+    capsys,
+):
+    artifact = tmp_path / "otoe-styles.json"
+    contract = tmp_path / "style-ops-contract.json"
+    artifact.write_text(
+        json.dumps(backend_candidate_style_artifact(), indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+
+    result = main(
+        [
+            "--style-ops-contract-json",
+            "--style-artifact",
+            str(artifact),
+            "--contract-out",
+            str(contract),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(contract.read_text(encoding="utf-8"))
+    assert result == 0
+    assert captured.out == f"contract artifact: {contract}\n"
+    assert payload["passed"] is True
+    assert payload["format"] == "style-ops-contract"
 
 
 def test_headless_candidate_acceptance_formats_human_report():

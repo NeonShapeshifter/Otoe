@@ -48,6 +48,7 @@ class OtoePlan:
     profile: str
     widget_count: int
     used_classes: tuple[str, ...]
+    static_classes: tuple[str, ...]
     safelisted_classes: tuple[str, ...]
     planned_classes: tuple[str, ...]
     html_only_classes: tuple[str, ...]
@@ -80,7 +81,9 @@ def plan_mounted(
     *,
     profile: str = "cage",
     stylesheet: StyleSheet | None = None,
+    static_classes: tuple[str, ...] = (),
     safelist: tuple[str, ...] = (),
+    diagnostics: tuple[PlanDiagnostic, ...] = (),
     strict_styles: bool = True,
 ) -> OtoePlan:
     if profile not in SUPPORTED_PLAN_PROFILES:
@@ -90,11 +93,22 @@ def plan_mounted(
     widgets = walk_widgets(widget)
     used_classes = _used_classes(widgets)
     safelisted_classes = tuple(_dedupe(safelist))
-    classes_to_plan = tuple(_dedupe((*used_classes, *safelisted_classes)))
+    static_classes = tuple(
+        _dedupe(
+            class_name
+            for class_name in static_classes
+            if class_name not in used_classes and class_name not in safelisted_classes
+        )
+    )
+    classes_to_plan = _planned_class_names(
+        used_classes=used_classes,
+        static_classes=static_classes,
+        safelisted_classes=safelisted_classes,
+    )
     planned_classes: list[str] = []
     html_only_classes: list[str] = []
     invalid_classes: list[str] = []
-    diagnostics: list[PlanDiagnostic] = []
+    diagnostics = list(diagnostics)
     style_counts = _empty_counts()
     direct_style_counts = _empty_counts()
 
@@ -159,6 +173,7 @@ def plan_mounted(
         profile=profile,
         widget_count=len(widgets),
         used_classes=used_classes,
+        static_classes=static_classes,
         safelisted_classes=safelisted_classes,
         planned_classes=tuple(planned_classes),
         html_only_classes=tuple(_dedupe(html_only_classes)),
@@ -186,6 +201,8 @@ def format_plan(plan: OtoePlan, *, target: str) -> str:
     ]
     if plan.used_classes:
         lines.append(f"used classes: {', '.join(plan.used_classes)}")
+    if plan.static_classes:
+        lines.append(f"static classes: {', '.join(plan.static_classes)}")
     if plan.safelisted_classes:
         lines.append(f"safelisted classes: {', '.join(plan.safelisted_classes)}")
     for diagnostic in plan.diagnostics:
@@ -204,6 +221,7 @@ def plan_to_dict(plan: OtoePlan, *, target: str) -> dict[str, Any]:
         "widgetCount": plan.widget_count,
         "classes": {
             "used": list(plan.used_classes),
+            "static": list(plan.static_classes),
             "safelisted": list(plan.safelisted_classes),
             "planned": list(plan.planned_classes),
             "htmlOnly": list(plan.html_only_classes),
@@ -231,6 +249,7 @@ def compiled_styles_to_dict(
         "status": plan.status,
         "classes": {
             "used": list(plan.used_classes),
+            "static": list(plan.static_classes),
             "safelisted": list(plan.safelisted_classes),
             "planned": list(plan.planned_classes),
             "htmlOnly": list(plan.html_only_classes),
@@ -240,6 +259,7 @@ def compiled_styles_to_dict(
         "directStyleCounts": dict(plan.direct_style_counts),
         "tokens": _compiled_tokens(stylesheet),
         "rules": _compiled_rules(plan, stylesheet),
+        "styleOps": _compiled_style_ops(plan, stylesheet),
         "diagnostics": [
             {"level": diagnostic.level, "message": diagnostic.message}
             for diagnostic in plan.diagnostics
@@ -261,7 +281,7 @@ def _compiled_rules(
     stylesheet: StyleSheet | None,
 ) -> list[dict[str, Any]]:
     rules: list[dict[str, Any]] = []
-    for class_name in _dedupe((*plan.used_classes, *plan.safelisted_classes)):
+    for class_name in _compiled_class_names(plan):
         selector = f".{class_name}"
         rule = stylesheet.rules.get(selector) if stylesheet is not None else None
         if rule is None:
@@ -302,6 +322,71 @@ def _compiled_rules(
             }
         )
     return rules
+
+
+def _compiled_style_ops(
+    plan: OtoePlan,
+    stylesheet: StyleSheet | None,
+) -> dict[str, Any]:
+    return {
+        "schemaVersion": 1,
+        "format": "otoe-style-ops",
+        "classes": [
+            _compiled_class_style_ops(class_name, stylesheet)
+            for class_name in _compiled_class_names(plan)
+        ],
+    }
+
+
+def _compiled_class_style_ops(
+    class_name: str,
+    stylesheet: StyleSheet | None,
+) -> dict[str, Any]:
+    selector = f".{class_name}"
+    rule = stylesheet.rules.get(selector) if stylesheet is not None else None
+    if rule is None:
+        return {
+            "className": class_name,
+            "selector": selector,
+            "missing": True,
+            "ops": [],
+            "omittedOps": [],
+        }
+
+    ops: list[dict[str, Any]] = []
+    omitted_ops: list[dict[str, Any]] = []
+    for prop, value in rule.declarations.items():
+        status, message = _classify_style_value(prop, value, stylesheet)
+        support = NATIVE_STYLE_SUPPORT.get(prop, "unsupported")
+        resolved = resolve_token(value, stylesheet.tokens)
+        if status == "portable":
+            ops.append(
+                {
+                    "op": "setStyle",
+                    "property": prop,
+                    "support": support,
+                    "value": style_value_to_dict(resolved),
+                }
+            )
+            continue
+        omitted_ops.append(
+            {
+                "op": "omitStyle",
+                "property": prop,
+                "support": support,
+                "status": status,
+                "value": style_value_to_dict(value),
+                "message": message,
+            }
+        )
+
+    return {
+        "className": class_name,
+        "selector": selector,
+        "missing": False,
+        "ops": ops,
+        "omittedOps": omitted_ops,
+    }
 
 
 def _classify_style_value(
@@ -360,6 +445,23 @@ def _used_classes(widgets) -> tuple[str, ...]:
             continue
         class_names.extend(name for name in str(raw).split() if name)
     return tuple(_dedupe(class_names))
+
+
+def _compiled_class_names(plan: OtoePlan) -> tuple[str, ...]:
+    return _planned_class_names(
+        used_classes=plan.used_classes,
+        static_classes=plan.static_classes,
+        safelisted_classes=plan.safelisted_classes,
+    )
+
+
+def _planned_class_names(
+    *,
+    used_classes: tuple[str, ...],
+    static_classes: tuple[str, ...],
+    safelisted_classes: tuple[str, ...],
+) -> tuple[str, ...]:
+    return _dedupe((*used_classes, *static_classes, *safelisted_classes))
 
 
 def _dedupe(values) -> tuple[str, ...]:

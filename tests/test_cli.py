@@ -361,6 +361,7 @@ def test_cli_plan_can_emit_json_report(tmp_path, monkeypatch, capsys):
     assert payload["hasErrors"] is False
     assert payload["classes"] == {
         "used": ["shell", "title"],
+        "static": [],
         "safelisted": [],
         "planned": ["shell", "title"],
         "htmlOnly": [],
@@ -445,6 +446,112 @@ def test_cli_plan_compiles_profile_style_safelist(
     assert payload["classes"]["safelisted"] == ["is-danger"]
     assert payload["classes"]["planned"] == ["base", "is-danger"]
     assert payload["styleCounts"]["portable"] == 2
+
+
+def test_cli_plan_extracts_static_class_names_from_class_name_expressions(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "static_class_plan_surface.py"
+    module.write_text(
+        "from otoe import Text, VStack, class_names, computed, signal\n"
+        "ready = signal(False)\n"
+        "def app():\n"
+        "    state_class = computed(\n"
+        "        lambda: class_names(\n"
+        "            'status',\n"
+        "            'is-ready' if ready.value else 'is-idle',\n"
+        "        )\n"
+        "    )\n"
+        "    return VStack(Text('State', className=state_class), className='shell')\n",
+        encoding="utf-8",
+    )
+    styles = tmp_path / "styles.css"
+    styles.write_text(
+        ".shell { padding: 8; }\n"
+        ".status { color: #111827; }\n"
+        ".is-idle { background: #ffffff; }\n"
+        ".is-ready { background: #dcfce7; }\n",
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "plan",
+            "static_class_plan_surface:app",
+            "--css",
+            str(styles),
+            "--json",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["classes"]["used"] == ["shell", "status", "is-idle"]
+    assert payload["classes"]["static"] == ["is-ready"]
+    assert payload["classes"]["safelisted"] == []
+    assert payload["classes"]["planned"] == [
+        "shell",
+        "status",
+        "is-idle",
+        "is-ready",
+    ]
+    assert payload["styleCounts"]["portable"] == 4
+
+
+def test_cli_plan_does_not_extract_dynamic_f_string_class_fragments(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "dynamic_fstring_plan_surface.py"
+    module.write_text(
+        "from otoe import Text, computed, signal\n"
+        "tone = signal('idle')\n"
+        "app = Text(\n"
+        "    'State',\n"
+        "    className=computed(lambda: f'status is-{tone.value}'),\n"
+        ")\n",
+        encoding="utf-8",
+    )
+    styles = tmp_path / "styles.css"
+    styles.write_text(
+        ".status { color: #111827; }\n"
+        ".is-idle { background: #ffffff; }\n",
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "plan",
+            "dynamic_fstring_plan_surface:app",
+            "--css",
+            str(styles),
+            "--json",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["status"] == "warnings"
+    assert payload["classes"]["used"] == ["status", "is-idle"]
+    assert payload["classes"]["static"] == []
+    assert payload["classes"]["planned"] == ["status", "is-idle"]
+    assert payload["diagnostics"] == [
+        {
+            "level": "warning",
+            "message": (
+                "dynamic className expression in "
+                "dynamic_fstring_plan_surface.py:5 uses f-string interpolation; "
+                "safelist possible output classes for hardware/cage builds"
+            ),
+        }
+    ]
 
 
 def test_cli_plan_rejects_invalid_profile_style_safelist_item(
@@ -1135,6 +1242,62 @@ def test_cli_build_runner_rejects_style_artifact_schema_version(
     )
 
 
+def test_cli_build_runner_rejects_style_ops_schema_version(
+    tmp_path,
+    monkeypatch,
+):
+    app = tmp_path / "style_ops_schema_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Style ops schema', className='text-danger')\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "style-ops-schema"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "style_ops_schema_app:app",
+            "--out",
+            str(output),
+            "--utilities",
+            "--validate",
+        ]
+    )
+    styles_path = output / "otoe-styles.json"
+    styles = json.loads(styles_path.read_text(encoding="utf-8"))
+    styles["styleOps"]["schemaVersion"] = 2
+    styles_path.write_text(json.dumps(styles), encoding="utf-8")
+
+    verify = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--verify"],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+    layout_check = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--layout-check"],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+
+    assert result == 0
+    assert verify.returncode == 1
+    assert (
+        "otoe-styles.json styleOps: unsupported schemaVersion 2; expected 1"
+        in verify.stderr
+    )
+    assert layout_check.returncode == 1
+    assert (
+        "otoe-styles.json styleOps: unsupported schemaVersion 2; expected 1"
+        in layout_check.stderr
+    )
+
+
 def test_cli_build_runner_rejects_missing_framework_manifest_entry(
     tmp_path,
     monkeypatch,
@@ -1318,8 +1481,107 @@ def test_cli_build_runner_png_uses_compiled_styles(tmp_path, monkeypatch):
         "value": 18,
         "unit": "px",
     }
+    style_ops = {
+        entry["className"]: entry
+        for entry in styles_payload["styleOps"]["classes"]
+    }
+    assert styles_payload["styleOps"]["schemaVersion"] == 1
+    assert styles_payload["styleOps"]["format"] == "otoe-style-ops"
+    assert style_ops["danger"]["ops"] == [
+        {
+            "op": "setStyle",
+            "property": "color",
+            "support": "paint",
+            "value": {"type": "literal", "value": "#ff0000"},
+        },
+        {
+            "op": "setStyle",
+            "property": "fontSize",
+            "support": "layout+paint",
+            "value": {"type": "size", "value": 18, "unit": "px"},
+        },
+    ]
+    assert style_ops["danger"]["omittedOps"] == []
     assert png.returncode == 0, png.stderr
     assert _png_contains_rgba(frame.read_bytes(), (255, 0, 0, 255))
+
+
+def test_cli_build_compiles_low_level_style_ops_for_omitted_declarations(
+    tmp_path,
+    monkeypatch,
+):
+    app = tmp_path / "style_ops_bundle_app.py"
+    app.write_text(
+        "from otoe import Text, VStack\n"
+        "app = VStack(Text('Ops'), className='shell')\n",
+        encoding="utf-8",
+    )
+    styles = tmp_path / "styles.css"
+    styles.write_text(
+        ".shell { padding: 8px; width: 50%; border-style: solid; color: #111827; }\n",
+        encoding="utf-8",
+    )
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        'css = ["styles.css"]\n'
+        "\n"
+        "[runtime]\n"
+        'files = ["style_ops_bundle_app.py"]\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "style-ops"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "style_ops_bundle_app:app",
+            "--profile-file",
+            str(profile_file),
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+
+    styles_payload = json.loads((output / "otoe-styles.json").read_text("utf-8"))
+    shell_ops = styles_payload["styleOps"]["classes"][0]
+    assert result == 0
+    assert styles_payload["status"] == "warnings"
+    assert shell_ops["className"] == "shell"
+    assert shell_ops["ops"] == [
+        {
+            "op": "setStyle",
+            "property": "padding",
+            "support": "layout",
+            "value": {"type": "size", "value": 8, "unit": "px"},
+        },
+        {
+            "op": "setStyle",
+            "property": "color",
+            "support": "paint",
+            "value": {"type": "literal", "value": "#111827"},
+        },
+    ]
+    assert shell_ops["omittedOps"] == [
+        {
+            "op": "omitStyle",
+            "property": "width",
+            "support": "layout",
+            "status": "deferred",
+            "value": {"type": "size", "value": 50, "unit": "%"},
+            "message": "property 'width' uses non-px dimension '%'",
+        },
+        {
+            "op": "omitStyle",
+            "property": "borderStyle",
+            "support": "ignored",
+            "status": "html-only",
+            "value": {"type": "literal", "value": "solid"},
+            "message": "property 'borderStyle' is accepted but ignored by native",
+        },
+    ]
 
 
 def test_cli_build_compiles_profile_style_safelist(tmp_path, monkeypatch):
@@ -1372,6 +1634,86 @@ def test_cli_build_compiles_profile_style_safelist(tmp_path, monkeypatch):
         "type": "literal",
         "value": "#dc2626",
     }
+
+
+def test_cli_build_compiles_static_class_names_from_local_target(
+    tmp_path,
+    monkeypatch,
+):
+    app = tmp_path / "static_class_bundle_app.py"
+    app.write_text(
+        "from otoe import Text, VStack, class_names, computed, signal\n"
+        "ready = signal(False)\n"
+        "def app():\n"
+        "    state_class = computed(\n"
+        "        lambda: class_names(\n"
+        "            'status',\n"
+        "            'is-ready' if ready.value else 'is-idle',\n"
+        "        )\n"
+        "    )\n"
+        "    return VStack(Text('State', className=state_class), className='shell')\n",
+        encoding="utf-8",
+    )
+    styles = tmp_path / "styles.css"
+    styles.write_text(
+        ".shell { padding: 8; }\n"
+        ".status { color: #111827; }\n"
+        ".is-idle { background: #ffffff; }\n"
+        ".is-ready { background: #dcfce7; }\n",
+        encoding="utf-8",
+    )
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        'css = ["styles.css"]\n'
+        "\n"
+        "[runtime]\n"
+        'files = ["static_class_bundle_app.py"]\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "static-class-runner"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "static_class_bundle_app:app",
+            "--profile-file",
+            str(profile_file),
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+
+    styles_payload = json.loads((output / "otoe-styles.json").read_text("utf-8"))
+    rules = {rule["className"]: rule for rule in styles_payload["rules"]}
+    style_ops = {
+        entry["className"]: entry
+        for entry in styles_payload["styleOps"]["classes"]
+    }
+    assert result == 0
+    assert styles_payload["classes"]["used"] == ["shell", "status", "is-idle"]
+    assert styles_payload["classes"]["static"] == ["is-ready"]
+    assert styles_payload["classes"]["safelisted"] == []
+    assert styles_payload["classes"]["planned"] == [
+        "shell",
+        "status",
+        "is-idle",
+        "is-ready",
+    ]
+    assert rules["is-ready"]["declarations"]["background"] == {
+        "type": "literal",
+        "value": "#dcfce7",
+    }
+    assert style_ops["is-ready"]["ops"] == [
+        {
+            "op": "setStyle",
+            "property": "background",
+            "support": "paint",
+            "value": {"type": "literal", "value": "#dcfce7"},
+        }
+    ]
 
 
 def test_cli_build_runner_png_accepts_html_only_missing_class(

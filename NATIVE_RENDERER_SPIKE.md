@@ -140,6 +140,14 @@ window backend:
   contract, including the per-capability call streams and PNG smoke frame.
   `--compact-contract` emits the same contract as structural signatures plus
   stable `sha256:` hashes instead of full layout and paint snapshots.
+  `run_style_ops_candidate_acceptance(...)` and `--style-ops-contract-json`
+  replay the generated `otoe-styles.json` `styleOps` artifact into low-level
+  declarations, then compare declarations, omitted operations, support
+  categories, and missing-class flags against compiled `rules`. A candidate can
+  pass `--style-artifact` to validate an existing build artifact without
+  re-parsing CSS at runtime. The checked-in
+  `examples/native/contracts/style_ops_expected.json` fixture is the current
+  expected style-ops contract for drift checks.
 - `tests/test_native_window.py` and `tests/test_native_phase3_closeout.py` keep
   `NativeWindowDriver`, backend adapter routing, optional Tk Canvas
   presentation, and Phase 3 closeout behavior testable without opening a real
@@ -153,6 +161,10 @@ Renderer candidates must additionally prove that the injected
 surface/driver/adapter path. The renderer contract snapshot is intentionally
 structural rather than pixel-perfect: it locks down widget paths, bounds, event
 names, visible text, paint command kinds, focus rings, and clipping boundaries.
+Backend candidates that consume styles must replay the build-time `styleOps`
+contract and compare it to compiled rules before claiming CSS or primitive
+style support; the CSS parser belongs in build/planning, not in hardware
+runtime.
 Partial candidates should start with `ComposedNativeRendererBackend` or an
 equivalent wrapper and replace only one capability until the golden contract
 stays green. Layout candidates should graduate from the minimal replay to the

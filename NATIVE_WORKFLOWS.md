@@ -146,17 +146,27 @@ the interactive replays plus a PNG smoke so every capability is exercised.
 `--composed-renderer-png` chooses the PNG smoke path. Add
 `--compact-contract` to either renderer contract command when the desired
 artifact is a smaller signature-and-hash contract instead of the full
-layout/paint snapshot.
+layout/paint snapshot. `run_style_ops_candidate_acceptance(...)` and
+`--style-ops-contract-json` replay the generated `otoe-styles.json`
+`styleOps` artifact into low-level declarations and compare those declarations,
+omitted operations, support categories, and missing-class flags against the
+compiled `rules` section. Use `--style-artifact` to point the candidate at an
+existing `otoe-styles.json`; otherwise it builds the skeleton app artifact
+directly.
 
 ```bash
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --renderer-contract-json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --renderer-contract-json --compact-contract
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --style-ops-contract-json
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --style-ops-contract-json --style-artifact dist/cage/otoe-styles.json
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --style-ops-contract-json --contract-out examples/native/contracts/style_ops_expected.json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --composed-renderer-contract-json --composed-renderer-png preview/native/composed_renderer_candidate.png
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --composed-renderer-contract-json --compact-contract --composed-renderer-png preview/native/composed_renderer_candidate.png
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --composed-renderer-contract-json --compact-contract --composed-renderer-png /tmp/composed_renderer_candidate.png --contract-out examples/native/contracts/composed_renderer_compact_expected.json
 PYTHONPATH=src:. python -m otoe compare-contract examples/native/contracts/composed_renderer_compact_expected.json actual-contract.json
+PYTHONPATH=src:. python -m otoe compare-contract examples/native/contracts/style_ops_expected.json actual-style-ops-contract.json
 PYTHONPATH=src:. python -m otoe compare-contract examples/native/contracts/composed_renderer_compact_expected.json actual-contract.json --ignore-path /pngSmoke/path --ignore-path /calls/raster/signature/0/subject --ignore-path /calls/raster/hash
 ```
 
@@ -167,9 +177,11 @@ intentional environment-specific fields with `--ignore-path`. If the composed
 renderer PNG smoke filename differs from the fixture, ignore `/pngSmoke/path`,
 `/calls/raster/signature/0/subject`, and `/calls/raster/hash` together. The
 checked-in `examples/native/contracts/composed_renderer_compact_expected.json`
-fixture is the current expected compact composed-renderer contract. Refresh it
-only when an intentional contract change lands, using `--contract-out` so the
-update command does not depend on shell redirection.
+fixture is the current expected compact composed-renderer contract, and
+`examples/native/contracts/style_ops_expected.json` is the current expected
+low-level style operations contract. Refresh either only when an intentional
+contract change lands, using `--contract-out` so the update command does not
+depend on shell redirection.
 
 The native support matrix and renderer spike documentation are also executable
 drift checks: `tests/test_native_support_matrix.py` keeps `NATIVE_RENDERER_SPIKE.md`

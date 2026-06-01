@@ -4,6 +4,24 @@
 
 - No unreleased changes.
 
+## v0.1.6 - Low-Level StyleOps Contracts
+
+- Added low-level `styleOps` to `otoe-styles.json` so hardware and backend
+  candidates can consume deterministic portable style operations without
+  re-parsing CSS.
+- Added a backend-candidate `styleOps` replay contract and
+  `--style-ops-contract-json` output that compare low-level operations,
+  omissions, support categories, and missing-class flags against compiled rules.
+- Added a checked-in `styleOps` expected contract fixture for `otoe
+  compare-contract` drift checks.
+- Added static extraction of literal `className` tokens from simple local
+  target modules so dynamic state classes with explicit literal branches can be
+  compiled into `otoe-styles.json` without manual safelists.
+- Added plan warnings for dynamic `className` f-strings or string
+  interpolation that require explicit safelist entries before hardware builds.
+- Documented the dynamic class extraction boundary with side-by-side
+  `class_names(...)` and f-string examples for hardware/cage profiles.
+
 ## v0.1.5 - Native Renderer SPI and Contract Tooling
 
 - Added utility-first styling helpers and modern `otoe.ui` presets for

@@ -352,7 +352,24 @@ def _verify_artifact_schemas(manifest: dict[str, Any]) -> None:
 def _load_json_bundle_file(relative: str) -> dict[str, Any]:
     payload = json.loads(_require_bundle_file(relative).read_text(encoding="utf-8"))
     _verify_schema_version(payload, relative)
+    if relative == "otoe-styles.json":
+        _verify_style_ops_schema(payload, relative)
     return payload
+
+
+def _verify_style_ops_schema(payload: dict[str, Any], label: str) -> None:
+    style_ops = payload.get("styleOps")
+    if style_ops is None:
+        return
+    if not isinstance(style_ops, dict):
+        raise ValueError(f"{label}: styleOps must be an object")
+    _verify_schema_version(style_ops, f"{label} styleOps")
+    if style_ops.get("format") != "otoe-style-ops":
+        raise ValueError(
+            f"{label}: styleOps format must be 'otoe-style-ops'"
+        )
+    if not isinstance(style_ops.get("classes"), list):
+        raise ValueError(f"{label}: styleOps classes must be a list")
 
 
 def _verify_schema_version(payload: Any, label: str) -> None:

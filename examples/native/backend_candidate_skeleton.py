@@ -31,9 +31,13 @@ from otoe import (
     component,
     computed,
     css,
+    mount,
     run_native,
     signal,
+    unmount,
 )
+from otoe._native_shared import native_style_support
+from otoe.plan import compiled_styles_to_dict, plan_mounted
 
 from .window_demo import NativeWindowDemo
 
@@ -273,6 +277,46 @@ class ComposedRendererCandidateAcceptanceReport:
                 call.phase == "write_png" and call.paint_commands > 0
                 for call in self.raster_calls
             )
+        )
+
+
+@dataclass(frozen=True)
+class StyleOpsCandidateClassReport:
+    class_name: str
+    selector: str
+    missing: bool
+    expected_missing: bool
+    applied_declarations: dict[str, Any]
+    expected_declarations: dict[str, Any]
+    omitted_ops: tuple[dict[str, Any], ...]
+    expected_omitted_ops: tuple[dict[str, Any], ...]
+    errors: tuple[str, ...]
+
+    @property
+    def passed(self) -> bool:
+        return (
+            not self.errors
+            and self.missing is self.expected_missing
+            and self.applied_declarations == self.expected_declarations
+            and self.omitted_ops == self.expected_omitted_ops
+        )
+
+
+@dataclass(frozen=True)
+class StyleOpsCandidateAcceptanceReport:
+    style_ops_schema_version: Any
+    style_ops_format: Any
+    classes: tuple[StyleOpsCandidateClassReport, ...]
+    errors: tuple[str, ...]
+
+    @property
+    def passed(self) -> bool:
+        return (
+            not self.errors
+            and self.style_ops_schema_version == 1
+            and self.style_ops_format == "otoe-style-ops"
+            and bool(self.classes)
+            and all(class_report.passed for class_report in self.classes)
         )
 
 
@@ -605,6 +649,103 @@ def run_composed_renderer_candidate_acceptance(
     )
 
 
+def run_style_ops_candidate_acceptance(
+    style_artifact: dict[str, Any] | None = None,
+) -> StyleOpsCandidateAcceptanceReport:
+    artifact = (
+        backend_candidate_style_artifact()
+        if style_artifact is None
+        else style_artifact
+    )
+    if not isinstance(artifact, dict):
+        return StyleOpsCandidateAcceptanceReport(
+            style_ops_schema_version=None,
+            style_ops_format=None,
+            classes=(),
+            errors=("style artifact must be a JSON object",),
+        )
+
+    style_ops = artifact.get("styleOps")
+    if not isinstance(style_ops, dict):
+        return StyleOpsCandidateAcceptanceReport(
+            style_ops_schema_version=None,
+            style_ops_format=None,
+            classes=(),
+            errors=("style artifact is missing object styleOps",),
+        )
+
+    rules_payload = artifact.get("rules", [])
+    if not isinstance(rules_payload, list):
+        return StyleOpsCandidateAcceptanceReport(
+            style_ops_schema_version=style_ops.get("schemaVersion"),
+            style_ops_format=style_ops.get("format"),
+            classes=(),
+            errors=("style artifact rules must be a list",),
+        )
+
+    class_payloads = style_ops.get("classes", [])
+    errors: list[str] = []
+    if style_ops.get("schemaVersion") != 1:
+        errors.append(
+            f"unsupported styleOps schemaVersion {style_ops.get('schemaVersion')!r}; expected 1"
+        )
+    if style_ops.get("format") != "otoe-style-ops":
+        errors.append(
+            f"unsupported styleOps format {style_ops.get('format')!r}; expected 'otoe-style-ops'"
+        )
+    if not isinstance(class_payloads, list):
+        return StyleOpsCandidateAcceptanceReport(
+            style_ops_schema_version=style_ops.get("schemaVersion"),
+            style_ops_format=style_ops.get("format"),
+            classes=(),
+            errors=(*errors, "styleOps classes must be a list"),
+        )
+
+    rules_by_class = {
+        rule["className"]: rule
+        for rule in rules_payload
+        if isinstance(rule, dict) and isinstance(rule.get("className"), str)
+    }
+    class_reports = tuple(
+        _replay_style_ops_class(class_payload, rules_by_class)
+        for class_payload in class_payloads
+    )
+    classes_with_ops = {
+        class_report.class_name
+        for class_report in class_reports
+        if class_report.class_name != "<invalid>"
+    }
+    missing_ops = sorted(set(rules_by_class) - classes_with_ops)
+    if missing_ops:
+        errors.append(
+            "styleOps missing classes from compiled rules: "
+            + ", ".join(missing_ops)
+        )
+
+    return StyleOpsCandidateAcceptanceReport(
+        style_ops_schema_version=style_ops.get("schemaVersion"),
+        style_ops_format=style_ops.get("format"),
+        classes=class_reports,
+        errors=tuple(errors),
+    )
+
+
+def backend_candidate_style_artifact() -> dict[str, Any]:
+    mounted = mount(backend_candidate_app())
+    try:
+        plan = plan_mounted(
+            mounted,
+            stylesheet=BACKEND_CANDIDATE_STYLES,
+        )
+        return compiled_styles_to_dict(
+            plan,
+            target="examples.native.backend_candidate_skeleton:backend_candidate_app",
+            stylesheet=BACKEND_CANDIDATE_STYLES,
+        )
+    finally:
+        unmount(mounted)
+
+
 def run_renderer_candidate_acceptance_with(
     renderer_backend: RecordingRendererCandidate,
 ) -> RendererCandidateAcceptanceReport:
@@ -724,6 +865,25 @@ def compact_composed_renderer_contract_snapshot_to_dict(
     }
 
 
+def style_ops_candidate_report_to_dict(
+    report: StyleOpsCandidateAcceptanceReport,
+) -> dict[str, Any]:
+    return {
+        "schemaVersion": 1,
+        "format": "style-ops-contract",
+        "passed": report.passed,
+        "styleOps": {
+            "schemaVersion": report.style_ops_schema_version,
+            "format": report.style_ops_format,
+        },
+        "classes": [
+            _style_ops_class_report_to_dict(class_report)
+            for class_report in report.classes
+        ],
+        "errors": list(report.errors),
+    }
+
+
 def format_acceptance_report(report: HeadlessCandidateAcceptanceReport) -> str:
     lines = [
         "backend candidate acceptance",
@@ -752,6 +912,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--composed-renderer-contract-json",
         action="store_true",
         help="print the composed renderer SPI contract snapshot as JSON",
+    )
+    parser.add_argument(
+        "--style-ops-contract-json",
+        action="store_true",
+        help="print the low-level styleOps replay contract as JSON",
+    )
+    parser.add_argument(
+        "--style-artifact",
+        help="optional otoe-styles.json path used by --style-ops-contract-json",
     )
     parser.add_argument(
         "--compact-contract",
@@ -790,6 +959,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         _emit_contract_payload(payload, output_path=args.contract_out)
         return 0 if composed_report.passed else 1
 
+    if args.style_ops_contract_json:
+        style_artifact = (
+            _load_style_artifact(args.style_artifact)
+            if args.style_artifact is not None
+            else None
+        )
+        style_ops_report = run_style_ops_candidate_acceptance(style_artifact)
+        payload = style_ops_candidate_report_to_dict(style_ops_report)
+        _emit_contract_payload(payload, output_path=args.contract_out)
+        return 0 if style_ops_report.passed else 1
+
     report = run_headless_candidate_acceptance()
 
     if args.json:
@@ -812,6 +992,13 @@ def _emit_contract_payload(
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(encoded, encoding="utf-8")
     print(f"contract artifact: {path}")
+
+
+def _load_style_artifact(path: str) -> dict[str, Any]:
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"Expected {path!r} to contain a JSON object.")
+    return payload
 
 
 def backend_candidate_app():
@@ -862,6 +1049,7 @@ BACKEND_CANDIDATE_STYLES = css(
       padding: 8;
       gap: 6;
       background: #f8fafc;
+      border-style: solid;
     }
     .candidate-input {
       width: 120;
@@ -1174,6 +1362,197 @@ def _compact_call_stream(
         "signature": signature,
         "hash": _contract_hash(signature),
     }
+
+
+def _style_ops_class_report_to_dict(
+    report: StyleOpsCandidateClassReport,
+) -> dict[str, Any]:
+    return {
+        "className": report.class_name,
+        "selector": report.selector,
+        "missing": report.missing,
+        "expectedMissing": report.expected_missing,
+        "passed": report.passed,
+        "appliedDeclarations": report.applied_declarations,
+        "expectedDeclarations": report.expected_declarations,
+        "omittedOps": list(report.omitted_ops),
+        "expectedOmittedOps": list(report.expected_omitted_ops),
+        "errors": list(report.errors),
+    }
+
+
+def _replay_style_ops_class(
+    class_payload: Any,
+    rules_by_class: dict[str, dict[str, Any]],
+) -> StyleOpsCandidateClassReport:
+    if not isinstance(class_payload, dict):
+        return StyleOpsCandidateClassReport(
+            class_name="<invalid>",
+            selector="",
+            missing=False,
+            expected_missing=False,
+            applied_declarations={},
+            expected_declarations={},
+            omitted_ops=(),
+            expected_omitted_ops=(),
+            errors=("styleOps class entry must be an object",),
+        )
+
+    errors: list[str] = []
+    class_name = class_payload.get("className")
+    if not isinstance(class_name, str):
+        class_name = "<invalid>"
+        errors.append("styleOps className must be a string")
+    selector = class_payload.get("selector")
+    if not isinstance(selector, str):
+        selector = ""
+        errors.append("styleOps selector must be a string")
+    missing = class_payload.get("missing")
+    if not isinstance(missing, bool):
+        missing = False
+        errors.append("styleOps missing must be a boolean")
+
+    rule_payload = rules_by_class.get(class_name)
+    expected_missing = (
+        bool(rule_payload.get("missing")) if isinstance(rule_payload, dict) else True
+    )
+    expected_declarations = (
+        rule_payload.get("declarations", {})
+        if isinstance(rule_payload, dict)
+        else {}
+    )
+    if not isinstance(expected_declarations, dict):
+        expected_declarations = {}
+        errors.append(f"compiled rule {class_name!r} declarations must be an object")
+    expected_omitted_ops = _expected_style_omitted_ops(rule_payload)
+
+    ops_payload = class_payload.get("ops", [])
+    if not isinstance(ops_payload, list):
+        ops_payload = []
+        errors.append(f"styleOps class {class_name!r} ops must be a list")
+    omitted_ops_payload = class_payload.get("omittedOps", [])
+    if not isinstance(omitted_ops_payload, list):
+        omitted_ops_payload = []
+        errors.append(f"styleOps class {class_name!r} omittedOps must be a list")
+
+    applied_declarations: dict[str, Any] = {}
+    for index, op_payload in enumerate(ops_payload):
+        if not isinstance(op_payload, dict):
+            errors.append(f"styleOps class {class_name!r} op {index} must be an object")
+            continue
+        if op_payload.get("op") != "setStyle":
+            errors.append(
+                f"styleOps class {class_name!r} op {index} must use op='setStyle'"
+            )
+            continue
+        property_name = op_payload.get("property")
+        if not isinstance(property_name, str):
+            errors.append(
+                f"styleOps class {class_name!r} op {index} property must be a string"
+            )
+            continue
+        expected_support = _style_support(property_name)
+        if op_payload.get("support") != expected_support:
+            errors.append(
+                f"styleOps class {class_name!r} op {index} support "
+                f"{op_payload.get('support')!r} does not match {expected_support!r}"
+            )
+        applied_declarations[property_name] = op_payload.get("value")
+
+    omitted_ops = tuple(
+        _normalize_style_omitted_op(class_name, index, op_payload, errors)
+        for index, op_payload in enumerate(omitted_ops_payload)
+        if isinstance(op_payload, dict)
+    )
+    for index, op_payload in enumerate(omitted_ops_payload):
+        if not isinstance(op_payload, dict):
+            errors.append(
+                f"styleOps class {class_name!r} omitted op {index} must be an object"
+            )
+
+    if missing is not expected_missing:
+        errors.append(
+            f"styleOps class {class_name!r} missing flag does not match compiled rule"
+        )
+    if applied_declarations != expected_declarations:
+        errors.append(
+            f"styleOps class {class_name!r} applied declarations do not match compiled rules"
+        )
+    if omitted_ops != expected_omitted_ops:
+        errors.append(
+            f"styleOps class {class_name!r} omitted ops do not match compiled rules"
+        )
+
+    return StyleOpsCandidateClassReport(
+        class_name=class_name,
+        selector=selector,
+        missing=missing,
+        expected_missing=expected_missing,
+        applied_declarations=applied_declarations,
+        expected_declarations=expected_declarations,
+        omitted_ops=omitted_ops,
+        expected_omitted_ops=expected_omitted_ops,
+        errors=tuple(errors),
+    )
+
+
+def _expected_style_omitted_ops(
+    rule_payload: dict[str, Any] | None,
+) -> tuple[dict[str, Any], ...]:
+    if not isinstance(rule_payload, dict):
+        return ()
+    omitted = rule_payload.get("omittedDeclarations", [])
+    if not isinstance(omitted, list):
+        return ()
+    return tuple(
+        {
+            "op": "omitStyle",
+            "property": declaration.get("property"),
+            "support": _style_support(declaration.get("property")),
+            "status": declaration.get("status"),
+            "value": declaration.get("value"),
+            "message": declaration.get("message"),
+        }
+        for declaration in omitted
+        if isinstance(declaration, dict)
+    )
+
+
+def _normalize_style_omitted_op(
+    class_name: str,
+    index: int,
+    op_payload: dict[str, Any],
+    errors: list[str],
+) -> dict[str, Any]:
+    if op_payload.get("op") != "omitStyle":
+        errors.append(
+            f"styleOps class {class_name!r} omitted op {index} must use op='omitStyle'"
+        )
+    property_name = op_payload.get("property")
+    if not isinstance(property_name, str):
+        errors.append(
+            f"styleOps class {class_name!r} omitted op {index} property must be a string"
+        )
+    expected_support = _style_support(property_name)
+    if op_payload.get("support") != expected_support:
+        errors.append(
+            f"styleOps class {class_name!r} omitted op {index} support "
+            f"{op_payload.get('support')!r} does not match {expected_support!r}"
+        )
+    return {
+        "op": op_payload.get("op"),
+        "property": property_name,
+        "support": op_payload.get("support"),
+        "status": op_payload.get("status"),
+        "value": op_payload.get("value"),
+        "message": op_payload.get("message"),
+    }
+
+
+def _style_support(property_name: Any) -> str:
+    if not isinstance(property_name, str):
+        return "unsupported"
+    return native_style_support(property_name) or "unsupported"
 
 
 def _compact_box_signature(box: RendererContractBoxSnapshot) -> dict[str, Any]:

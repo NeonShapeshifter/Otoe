@@ -114,7 +114,9 @@ deployment artifact is built.
 - a compiled portable style plan, initially shaped by the `otoe plan --out`
   JSON artifact and persisted as `otoe-styles.json` with used classes,
   safelisted classes, resolved portable declarations, omitted
-  html-only/deferred declarations, diagnostics, and tokens
+  html-only/deferred declarations, diagnostics, tokens, and deterministic
+  low-level `styleOps` that backend candidates can consume without re-parsing
+  CSS on the target device
 - a dependency audit artifact, currently `otoe-deps.json`, proving that
   profile-declared dependencies passed on the build machine
 - diagnostics for portable, html-only, deferred, and invalid styling
@@ -132,6 +134,11 @@ The style path should compile before deployment:
 
 - Parse Otoe's constrained CSS subset and utility classes into `StyleSheet`.
 - Resolve tokens and class combinations ahead of runtime when possible.
+- Emit low-level `styleOps` for portable declarations so native and hardware
+  backends can apply resolved operations instead of interpreting CSS text.
+- Statically extract literal class tokens from simple local target modules and
+  same-directory imports, including conditional literal branches inside
+  `className` expressions.
 - Compile profile safelist classes ahead of runtime so dynamic state classes can
   be selected on-device without parsing arbitrary CSS.
 - Classify declarations by renderer support: portable, html-only, deferred, or
@@ -145,9 +152,13 @@ runtime. The device receives a resolved plan; it does not own the full CSS
 language.
 
 Dynamic class names for hardware/cage profiles must be statically knowable:
-they either appear in the initial mounted tree or are listed in
+they appear in the initial mounted tree, are literal class tokens in local
+`className` expressions that `otoe plan` can extract, or are listed in
 `[styles].safelist`. Arbitrary string-built classes such as `bg-${color}` remain
 outside the portable contract unless the possible outputs are safelisted.
+When `otoe plan` sees a dynamic `className` f-string or string interpolation it
+emits a warning with the source file and line so the author can safelist the
+possible output classes before building for hardware.
 
 ## Consequences
 

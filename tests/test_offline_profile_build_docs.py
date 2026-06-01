@@ -27,6 +27,7 @@ def test_offline_profile_build_adr_captures_hardware_direction():
     assert "manifest.json" in text
     assert "otoe-deps.json" in text
     assert "otoe-styles.json" in text
+    assert "styleOps" in text
     assert "otoe-run.py" in text
     assert "frameworkFiles" in text
     assert "runtimeFiles" in text
@@ -37,6 +38,9 @@ def test_offline_profile_build_adr_captures_hardware_direction():
     assert "[styles]" in text
     assert 'safelist = ["is-danger", "bg-alert"]' in text
     assert "safelisted classes" in text
+    assert "Statically extract literal class tokens" in text
+    assert "local `className` expressions" in single_spaced
+    assert "emits a warning with the source file and line" in single_spaced
     assert "Dynamic class" in text
     assert 'packages = ["pytest"]' in text
     assert 'extras = ["dev"]' in text
@@ -89,6 +93,17 @@ def test_style_guide_points_css_at_offline_profiles():
     assert "[styles]" in text
     assert 'safelist = ["is-danger", "bg-alert"]' in text
     assert "safelisted classes" in text
+    assert "statically extract literal class tokens" in text
+    assert "conditional literal branches" in text
+    assert "Dynamic Class Extraction Examples" in text
+    assert "build-time enumerable" in text
+    assert '"is-ready" if ready.value else "is-idle"' in text
+    assert "classes.static" in text
+    assert 'className=computed(lambda: f"status is-{tone.value}")' in text
+    assert 'safelist = ["is-idle", "is-ready", "is-danger"]' in text
+    assert "F-strings or string interpolation" in single_spaced
+    assert "source file and line" in single_spaced
+    assert "missing safelist edge" in text
     assert "dynamic class" in text
     assert "allow_runtime_installs = true" in text
     assert "without installing packages" in single_spaced
@@ -96,6 +111,7 @@ def test_style_guide_points_css_at_offline_profiles():
     assert "bundled compiled styles" in text
     assert "schemaVersion = 1" in text
     assert "backend framework policy" in text
+    assert "low-level `styleOps`" in text
     assert "--layout-check" in text
     assert "--profile cage" in text
 
@@ -113,7 +129,11 @@ def test_roadmap_keeps_low_level_build_work_in_scope():
     assert "otoe.profile.toml" in text
     assert "manifest-first" in text
     assert "otoe-styles.json" in text
+    assert "styleOps" in text
     assert "[styles].safelist" in text
+    assert "statically extract literal class tokens" in text
+    assert "class_names(...)" in text
+    assert "Dynamic `className` f-strings" in text
     assert "schema versions" in text
     assert "required `frameworkFiles` policy" in text
     assert "audit-only" in text

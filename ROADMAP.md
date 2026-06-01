@@ -55,11 +55,19 @@ framework/runtime file copy policy is recorded in `frameworkFiles`.
 The bundle now includes a generated `otoe-run.py` integrity verify, load/check,
 layout/paint dry-run, and headless PNG entry, plus optional `otoe build
 --validate` runner checks.
-`otoe-styles.json` now records compiled class styles so runner PNG output can
-use bundled portable declarations instead of workspace CSS.
+`otoe-styles.json` now records compiled class styles and low-level `styleOps`
+so runner PNG output and backend candidates can use bundled portable
+declarations instead of workspace CSS.
 Profile `[styles].safelist` now lets the build compile dynamic state classes
 that do not appear in the first mounted render, while arbitrary runtime-built
 class names remain outside the hardware/cage contract.
+`otoe plan` and `otoe build` now also statically extract literal class tokens
+from local `className` expressions, including conditional literal branches used
+by `class_names(...)`, before falling back to explicit safelists for arbitrary
+string interpolation.
+Dynamic `className` f-strings and string interpolation now produce plan
+warnings with source file and line numbers so missing safelist edges are visible
+before deployment.
 The generated runner now rejects unsupported artifact schema versions before
 verification, layout checks, PNG rendering, or packing.
 Native bundle verification now enforces the required `frameworkFiles` policy so

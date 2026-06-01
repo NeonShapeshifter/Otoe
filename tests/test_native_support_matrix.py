@@ -263,6 +263,13 @@ def test_native_renderer_spike_documents_executable_acceptance_surfaces():
     assert "`--composed-renderer-contract-json`" in doc
     assert "`--compact-contract`" in doc
     assert "stable `sha256:` hashes" in doc
+    assert "`run_style_ops_candidate_acceptance(...)`" in doc
+    assert "`--style-ops-contract-json`" in doc
+    assert "`--style-artifact`" in doc
+    assert "`styleOps` artifact" in doc
+    assert "support categories" in doc
+    assert "examples/native/contracts/style_ops_expected.json" in doc
+    assert "not in hardware runtime" in single_spaced
     assert "`tests/test_native_window.py`" in doc
     assert "`tests/test_native_phase3_closeout.py`" in doc
     assert "minimal backend harness" in doc
@@ -298,6 +305,13 @@ def test_native_workflows_documents_backend_candidate_replay_bar():
     assert "`--composed-renderer-contract-json`" in doc
     assert "`--composed-renderer-png`" in doc
     assert "`--compact-contract`" in doc
+    assert "`run_style_ops_candidate_acceptance(...)`" in doc
+    assert "`--style-ops-contract-json`" in doc
+    assert "`--style-artifact`" in doc
+    assert "`styleOps` artifact" in doc
+    assert "omitted operations" in doc
+    assert "support categories" in doc
+    assert "examples/native/contracts/style_ops_expected.json" in doc
     assert "`--contract-out`" in doc
     assert "otoe compare-contract" in doc
     assert "`--ignore-path`" in doc
@@ -314,6 +328,14 @@ def test_native_workflows_documents_backend_candidate_replay_bar():
     assert "python -m examples.native.backend_candidate_skeleton --json" in doc
     assert (
         "python -m examples.native.backend_candidate_skeleton --renderer-contract-json"
+        in doc
+    )
+    assert (
+        "python -m examples.native.backend_candidate_skeleton --style-ops-contract-json"
+        in doc
+    )
+    assert (
+        "python -m otoe compare-contract examples/native/contracts/style_ops_expected.json"
         in doc
     )
     assert "renderer-candidate replay" in doc
