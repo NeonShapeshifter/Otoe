@@ -3,6 +3,7 @@ from __future__ import annotations
 import gzip
 import hashlib
 import io
+import json
 import os
 import subprocess
 import sys
@@ -12,6 +13,7 @@ from pathlib import Path
 
 from .build import (
     ASSET_OUTPUT_DIR,
+    BACKEND_COVERAGE_ARTIFACT_FILENAME,
     BUILD_MANIFEST_FILENAME,
     DEPS_ARTIFACT_FILENAME,
     FRAMEWORK_OUTPUT_DIR,
@@ -20,6 +22,7 @@ from .build import (
     RUNNER_FILENAME,
     STYLE_ARTIFACT_FILENAME,
 )
+from .style_ops import StyleIRError, load_style_ir, validate_style_ops
 
 
 CACHE_DIR_NAMES = frozenset({"__pycache__", ".pytest_cache"})
@@ -27,6 +30,7 @@ CACHE_SUFFIXES = (".pyc", ".pyo")
 PACK_TOP_LEVEL_FILES = frozenset(
     {
         BUILD_MANIFEST_FILENAME,
+        BACKEND_COVERAGE_ARTIFACT_FILENAME,
         PLAN_ARTIFACT_FILENAME,
         DEPS_ARTIFACT_FILENAME,
         STYLE_ARTIFACT_FILENAME,
@@ -53,6 +57,7 @@ def pack_bundle(bundle_dir: Path, output_path: Path) -> PackResult:
     output_path = output_path.resolve()
     _verify_bundle_input(bundle_dir)
     _run_bundle_verify(bundle_dir)
+    _run_style_ir_strict_verify(bundle_dir)
 
     entries = tuple(_bundle_entries(bundle_dir, output_path=output_path))
     if not entries:
@@ -102,6 +107,44 @@ def _run_bundle_verify(bundle_dir: Path) -> None:
     if not details:
         details = f"runner exited with status {result.returncode}"
     raise PackError(f"runner verification failed: {details}")
+
+
+def _run_style_ir_strict_verify(bundle_dir: Path) -> None:
+    manifest_path = bundle_dir / BUILD_MANIFEST_FILENAME
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise PackError(f"{BUILD_MANIFEST_FILENAME} is not valid JSON: {exc}") from exc
+    if not isinstance(manifest, dict):
+        raise PackError(f"{BUILD_MANIFEST_FILENAME} must contain a JSON object")
+
+    styles_relative = manifest.get("styles", STYLE_ARTIFACT_FILENAME)
+    if not isinstance(styles_relative, str):
+        raise PackError(f"{BUILD_MANIFEST_FILENAME}: styles must be a string")
+    styles_path = _safe_bundle_path(bundle_dir, styles_relative)
+    if not styles_path.is_file():
+        raise PackError(f"bundle is missing {styles_relative}")
+
+    try:
+        payload = json.loads(styles_path.read_text(encoding="utf-8"))
+        validation = validate_style_ops(load_style_ir(payload))
+    except json.JSONDecodeError as exc:
+        raise PackError(f"{styles_relative} is not valid JSON: {exc}") from exc
+    except StyleIRError as exc:
+        raise PackError(f"style-ir strict verification failed: {exc}") from exc
+    if validation.passed:
+        return
+    details = "; ".join(validation.errors) or "styleOps drift detected"
+    raise PackError(f"style-ir strict verification failed: {details}")
+
+
+def _safe_bundle_path(bundle_dir: Path, relative: str) -> Path:
+    if relative in {"", "."}:
+        raise PackError(f"bundle path {relative!r} is not safe")
+    path = Path(relative)
+    if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+        raise PackError(f"bundle path {relative!r} is not safe")
+    return bundle_dir / path
 
 
 def _bundle_entries(bundle_dir: Path, *, output_path: Path) -> list[Path]:

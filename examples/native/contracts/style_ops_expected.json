@@ -1,4 +1,142 @@
 {
+  "backend": "native-python",
+  "capabilityAudit": {
+    "applied": [
+      {
+        "count": 14,
+        "properties": [
+          {
+            "count": 1,
+            "property": "alignItems"
+          },
+          {
+            "count": 3,
+            "property": "gap"
+          },
+          {
+            "count": 2,
+            "property": "height"
+          },
+          {
+            "count": 1,
+            "property": "justifyContent"
+          },
+          {
+            "count": 2,
+            "property": "padding"
+          },
+          {
+            "count": 1,
+            "property": "scrollY"
+          },
+          {
+            "count": 4,
+            "property": "width"
+          }
+        ],
+        "support": "layout"
+      },
+      {
+        "count": 2,
+        "properties": [
+          {
+            "count": 2,
+            "property": "background"
+          }
+        ],
+        "support": "paint"
+      }
+    ],
+    "backend": "native-python",
+    "declaredOmissions": [
+      {
+        "kind": "omit",
+        "properties": [
+          {
+            "count": 1,
+            "property": "borderStyle"
+          }
+        ],
+        "status": "html-only"
+      }
+    ],
+    "omittedByStatus": [
+      {
+        "count": 1,
+        "properties": [
+          {
+            "count": 1,
+            "property": "borderStyle"
+          }
+        ],
+        "status": "html-only"
+      }
+    ],
+    "omittedBySupport": [
+      {
+        "count": 1,
+        "properties": [
+          {
+            "count": 1,
+            "property": "borderStyle"
+          }
+        ],
+        "support": "ignored"
+      }
+    ],
+    "requiredForReplay": [
+      {
+        "kind": "apply",
+        "properties": [
+          {
+            "count": 1,
+            "property": "alignItems"
+          },
+          {
+            "count": 3,
+            "property": "gap"
+          },
+          {
+            "count": 2,
+            "property": "height"
+          },
+          {
+            "count": 1,
+            "property": "justifyContent"
+          },
+          {
+            "count": 2,
+            "property": "padding"
+          },
+          {
+            "count": 1,
+            "property": "scrollY"
+          },
+          {
+            "count": 4,
+            "property": "width"
+          }
+        ],
+        "support": "layout"
+      },
+      {
+        "kind": "apply",
+        "properties": [
+          {
+            "count": 2,
+            "property": "background"
+          }
+        ],
+        "support": "paint"
+      }
+    ],
+    "summary": {
+      "applied": 16,
+      "omitted": 1,
+      "unsupported": 0
+    },
+    "unsupportedProperties": []
+  },
   "classes": [
     {
       "appliedDeclarations": {},
@@ -233,6 +371,34 @@
       "omittedOps": [],
       "passed": true,
       "selector": ".candidate-list"
+    }
+  ],
+  "directStyles": [
+    {
+      "appliedDeclarations": {
+        "scrollY": {
+          "type": "size",
+          "unit": "px",
+          "value": 0
+        }
+      },
+      "errors": [],
+      "expectedDeclarations": {
+        "scrollY": {
+          "type": "size",
+          "unit": "px",
+          "value": 0
+        }
+      },
+      "expectedOmittedOps": [],
+      "expectedWidget": "ScrollView",
+      "omittedOps": [],
+      "passed": true,
+      "path": [
+        0,
+        2
+      ],
+      "widget": "ScrollView"
     }
   ],
   "errors": [],

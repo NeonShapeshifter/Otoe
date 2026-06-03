@@ -1,6 +1,7 @@
 import pytest
 
 from otoe import (
+    ActionButton,
     Button,
     HStack,
     NativeLayoutError,
@@ -61,6 +62,16 @@ def test_native_layout_computes_stack_boxes_deterministically():
         34,
     )
     assert button.events == ("onClick",)
+
+
+def test_native_layout_preserves_button_children():
+    mounted = mount(ActionButton("Save", leading="*", trailing="Enter"))
+
+    layout = layout_native(mounted)
+
+    assert layout.root.name == "Button"
+    assert layout.root.text is None
+    assert [box.text for box in layout.boxes if box.text] == ["*", "Save", "Enter"]
 
 
 def test_native_layout_computes_horizontal_stack_boxes():

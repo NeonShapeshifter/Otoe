@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import tomllib
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .capabilities import CapabilityProfileError, backend_capability_profile
 from .plan import SUPPORTED_PLAN_PROFILES
+from .profile_types import PlanProfileConfig, ProfileAsset, ProfileRuntimeFile
 
 
 DEFAULT_PROFILE_FILENAME = "otoe.profile.toml"
@@ -13,32 +14,6 @@ DEFAULT_PROFILE_FILENAME = "otoe.profile.toml"
 
 class ProfileError(ValueError):
     pass
-
-
-@dataclass(frozen=True)
-class ProfileAsset:
-    source: Path
-    relative_path: Path
-
-
-@dataclass(frozen=True)
-class ProfileRuntimeFile:
-    source: Path
-    relative_path: Path
-
-
-@dataclass(frozen=True)
-class PlanProfileConfig:
-    profile: str = "cage"
-    utilities: bool = False
-    css_paths: tuple[Path, ...] = ()
-    style_safelist: tuple[str, ...] = ()
-    assets: tuple[ProfileAsset, ...] = ()
-    runtime_files: tuple[ProfileRuntimeFile, ...] = ()
-    allow_runtime_installs: bool = False
-    backend_name: str | None = None
-    dependency_packages: tuple[str, ...] = ()
-    dependency_extras: tuple[str, ...] = ()
 
 
 def load_plan_profile(path: str | Path) -> PlanProfileConfig:
@@ -96,8 +71,30 @@ def load_plan_profile(path: str | Path) -> PlanProfileConfig:
     runtime_files = _runtime_files(runtime.get("files"), base=profile_path.parent)
 
     backend = _table_value(data, "backend", context="profile file")
-    _reject_unknown(backend, "[backend]", {"name"})
+    _reject_unknown(
+        backend,
+        "[backend]",
+        {"name", "capability", "capability_profile", "coverage_requirements"},
+    )
     backend_name = _optional_string(backend, "name", context="[backend]")
+    backend_capability = _optional_string(backend, "capability", context="[backend]")
+    backend_capability_profile_path = _optional_backend_profile_path(
+        backend,
+        base=profile_path.parent,
+    )
+    backend_coverage_requirements_path = _optional_backend_coverage_requirements_path(
+        backend,
+        base=profile_path.parent,
+    )
+    if backend_capability is not None and backend_capability_profile_path is not None:
+        raise ProfileError(
+            "[backend] capability and capability_profile are mutually exclusive"
+        )
+    if backend_capability is not None:
+        try:
+            backend_capability = backend_capability_profile(backend_capability).name
+        except CapabilityProfileError as exc:
+            raise ProfileError(str(exc)) from exc
 
     deps = _table_value(data, "deps", context="profile file")
     _reject_unknown(deps, "[deps]", {"packages", "extras"})
@@ -121,6 +118,9 @@ def load_plan_profile(path: str | Path) -> PlanProfileConfig:
         runtime_files=runtime_files,
         allow_runtime_installs=allow_runtime_installs,
         backend_name=backend_name,
+        backend_capability=backend_capability,
+        backend_capability_profile=backend_capability_profile_path,
+        backend_coverage_requirements=backend_coverage_requirements_path,
         dependency_packages=dependency_packages,
         dependency_extras=dependency_extras,
     )
@@ -177,6 +177,32 @@ def _runtime_files(value: Any, *, base: Path) -> tuple[ProfileRuntimeFile, ...]:
         _validate_relative_file_path(relative, key=f"runtime.files[{index}]")
         files.append(ProfileRuntimeFile(source=base / relative, relative_path=relative))
     return tuple(files)
+
+
+def _optional_backend_profile_path(
+    backend: dict[str, Any],
+    *,
+    base: Path,
+) -> Path | None:
+    value = _optional_string(backend, "capability_profile", context="[backend]")
+    if value is None:
+        return None
+    relative = Path(value)
+    _validate_relative_file_path(relative, key="backend.capability_profile")
+    return base / relative
+
+
+def _optional_backend_coverage_requirements_path(
+    backend: dict[str, Any],
+    *,
+    base: Path,
+) -> Path | None:
+    value = _optional_string(backend, "coverage_requirements", context="[backend]")
+    if value is None:
+        return None
+    relative = Path(value)
+    _validate_relative_file_path(relative, key="backend.coverage_requirements")
+    return base / relative
 
 
 def _validate_relative_file_path(path: Path, *, key: str) -> None:

@@ -581,6 +581,36 @@ def test_command_palette_enter_selects_first_visible_command():
     assert selected.value == "customers"
 
 
+def test_command_palette_accepts_literal_query():
+    selected = signal(None)
+
+    palette = root_widget(
+        mount(
+            CommandPalette(
+                query="mission",
+                commands=[
+                    {
+                        "id": "mission",
+                        "label": "Open Mission Exec",
+                    },
+                    {
+                        "id": "customers",
+                        "label": "Review Customers",
+                    },
+                ],
+                on_query=lambda value: None,
+                on_select=lambda command_id: selected.set(command_id),
+            )
+        )
+    )
+
+    command_list = palette.children[0].children[2]
+
+    assert len(command_list.children) == 1
+    command_list.children[0].trigger("onClick")
+    assert selected.value == "mission"
+
+
 def test_command_palette_can_mark_input_for_autofocus():
     query = signal("")
     palette = root_widget(

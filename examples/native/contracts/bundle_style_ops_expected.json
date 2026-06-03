@@ -1,0 +1,150 @@
+{
+  "backend": "native-python",
+  "capabilityAudit": {
+    "applied": [
+      {
+        "count": 2,
+        "properties": [
+          {
+            "count": 1,
+            "property": "padding"
+          },
+          {
+            "count": 1,
+            "property": "width"
+          }
+        ],
+        "support": "layout"
+      },
+      {
+        "count": 2,
+        "properties": [
+          {
+            "count": 1,
+            "property": "background"
+          },
+          {
+            "count": 1,
+            "property": "color"
+          }
+        ],
+        "support": "paint"
+      }
+    ],
+    "backend": "native-python",
+    "declaredOmissions": [],
+    "omittedByStatus": [],
+    "omittedBySupport": [],
+    "requiredForReplay": [
+      {
+        "kind": "apply",
+        "properties": [
+          {
+            "count": 1,
+            "property": "padding"
+          },
+          {
+            "count": 1,
+            "property": "width"
+          }
+        ],
+        "support": "layout"
+      },
+      {
+        "kind": "apply",
+        "properties": [
+          {
+            "count": 1,
+            "property": "background"
+          },
+          {
+            "count": 1,
+            "property": "color"
+          }
+        ],
+        "support": "paint"
+      }
+    ],
+    "summary": {
+      "applied": 4,
+      "omitted": 0,
+      "unsupported": 0
+    },
+    "unsupportedProperties": []
+  },
+  "classes": [
+    {
+      "appliedDeclarations": {
+        "background": {
+          "type": "literal",
+          "value": "#ffffff"
+        },
+        "color": {
+          "type": "literal",
+          "value": "#111827"
+        },
+        "width": {
+          "type": "size",
+          "unit": "px",
+          "value": 180
+        }
+      },
+      "className": "bundle-shell",
+      "errors": [],
+      "expectedDeclarations": {
+        "background": {
+          "type": "literal",
+          "value": "#ffffff"
+        },
+        "color": {
+          "type": "literal",
+          "value": "#111827"
+        },
+        "width": {
+          "type": "size",
+          "unit": "px",
+          "value": 180
+        }
+      },
+      "expectedMissing": false,
+      "expectedOmittedOps": [],
+      "missing": false,
+      "omittedOps": [],
+      "passed": true,
+      "selector": ".bundle-shell"
+    }
+  ],
+  "directStyles": [
+    {
+      "appliedDeclarations": {
+        "padding": {
+          "type": "size",
+          "unit": "px",
+          "value": 8
+        }
+      },
+      "errors": [],
+      "expectedDeclarations": {
+        "padding": {
+          "type": "size",
+          "unit": "px",
+          "value": 8
+        }
+      },
+      "expectedOmittedOps": [],
+      "expectedWidget": "VStack",
+      "omittedOps": [],
+      "passed": true,
+      "path": [],
+      "widget": "VStack"
+    }
+  ],
+  "errors": [],
+  "format": "style-ops-contract",
+  "passed": true,
+  "schemaVersion": 1,
+  "styleOps": {
+    "format": "otoe-style-ops",
+    "schemaVersion": 1
+  }
+}

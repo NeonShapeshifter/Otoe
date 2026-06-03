@@ -24,6 +24,7 @@ The first diagnostic slice exists as `otoe plan`. The broader command shape is:
 
 ```bash
 otoe plan app:app --profile cage
+otoe plan app:app --profile cage --backend native-python
 otoe deps app:app --profile cage
 otoe build app:app --profile cage --out dist/cage
 otoe build app:app --profile cage --out dist/cage --validate
@@ -41,8 +42,10 @@ install packages, touch the network, or write artifacts when run directly.
 The first framework copy policy supports the built-in `native` backend only;
 future backend candidates must add explicit file sets instead of relying on
 import discovery.
-`otoe pack` is implemented as a verify-before-archive step that creates a
-portable `.tar.gz` from the generated bundle without local cache directories.
+`otoe-run.py --verify` checks bundle integrity plus strict Style IR drift
+detection through copied runtime code. `otoe pack` is implemented as a
+verify-before-archive step that repeats strict Style IR validation, then creates
+a portable `.tar.gz` from the generated bundle without local cache directories.
 
 The initial profile file shape is:
 
@@ -61,6 +64,7 @@ files = ["app.py"]
 
 [backend]
 name = "native"
+capability = "native-python"
 
 [deps]
 packages = ["pytest"]
@@ -102,23 +106,33 @@ deployment artifact is built.
   `otoe-plan.json`, `otoe-deps.json`, and `otoe-styles.json` before loading the
   target or rendering a frame. It also enforces the backend framework policy so
   a `native` bundle must declare and include the expected `frameworkFiles` set.
+  Core top-level artifacts must be listed in `manifest.json` `artifacts` with
+  size/hash metadata, invalid plan/dependency/style artifact status is rejected
+  even after hash updates, and `runtimeInstallsAllowed = false` remains a
+  runner/pack invariant for hardware bundles.
 - optional bundle validation through `otoe build --validate`, which runs the
   generated runner in `--verify`, `--check`, and `--layout-check` modes after
   writing artifacts so the copied bundle must be intact, load the manifest
   target, and drive native layout/paint with bundled styles
 - a deployment archive step, currently `otoe pack`, that runs the generated
-  runner in `--verify` mode, writes a top-level bundle `.tar.gz`, and excludes
-  local cache directories such as `__pycache__/` and `.pytest_cache/`
+  runner in `--verify` mode, repeats strict Style IR validation, preserves
+  declared backend coverage artifacts, writes a top-level bundle `.tar.gz`, and
+  excludes local cache directories such as `__pycache__/` and `.pytest_cache/`
 - assets copied for the profile with manifest entries containing source path,
   bundle path, byte size, and SHA-256
 - a compiled portable style plan, initially shaped by the `otoe plan --out`
   JSON artifact and persisted as `otoe-styles.json` with used classes,
   safelisted classes, resolved portable declarations, omitted
   html-only/deferred declarations, diagnostics, tokens, and deterministic
-  low-level `styleOps` that backend candidates can consume without re-parsing
-  CSS on the target device
+  low-level `styleOps` tied to the selected backend capability profile that
+  backend candidates can consume without re-parsing CSS on the target device
 - a dependency audit artifact, currently `otoe-deps.json`, proving that
   profile-declared dependencies passed on the build machine
+- an optional backend coverage gate, currently declared with
+  `[backend].coverage_requirements` or `--backend-coverage-requirements`, that
+  compares the selected backend capability profile against a
+  readiness/requirements JSON artifact and writes `otoe-backend-coverage.json`
+  before the bundle manifest is allowed
 - diagnostics for portable, html-only, deferred, and invalid styling
 - lock/manifest metadata for reproducibility
 
@@ -143,6 +157,12 @@ The style path should compile before deployment:
   be selected on-device without parsing arbitrary CSS.
 - Classify declarations by renderer support: portable, html-only, deferred, or
   invalid for the chosen profile.
+- Record the backend capability profile in `otoe-plan.json` and
+  `otoe-styles.json` so style, widget, and input support are explicit artifacts
+  instead of implicit global runtime assumptions.
+- When backend coverage requirements are declared, record the comparison in
+  `otoe-plan.json`, persist it as `otoe-backend-coverage.json` during build,
+  and reject the bundle manifest when coverage blockers remain.
 - Cache repeated class combinations so the runtime can apply compact style ops.
 - Keep custom browser CSS available for HTML previews, but do not pretend that
   every browser CSS feature is native behavior.

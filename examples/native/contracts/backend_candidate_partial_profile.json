@@ -1,0 +1,32 @@
+{
+  "format": "backend-capability-profile",
+  "inputs": {
+    "click": "supported",
+    "input_text": "supported",
+    "shortcut": "supported",
+    "wheel": "supported"
+  },
+  "label": "Partial backend candidate",
+  "name": "partial-backend-candidate",
+  "schemaVersion": 1,
+  "styles": {
+    "alignItems": "layout",
+    "borderStyle": "ignored",
+    "gap": "layout",
+    "height": "layout",
+    "justifyContent": "layout",
+    "padding": "layout",
+    "scrollY": "layout",
+    "width": "layout"
+  },
+  "widgets": {
+    "For": "container",
+    "HStack": "container",
+    "Input": "control",
+    "ScrollView": "container",
+    "ShortcutScope": "container",
+    "Show": "container",
+    "Text": "text",
+    "VStack": "container"
+  }
+}

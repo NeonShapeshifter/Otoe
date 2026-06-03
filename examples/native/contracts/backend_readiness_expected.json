@@ -1,0 +1,649 @@
+{
+  "blockers": [],
+  "format": "backend-readiness-report",
+  "gates": {
+    "rendererReplay": true,
+    "styleCapabilityAudit": true,
+    "styleOpsReplay": true,
+    "widgetInputAudit": true
+  },
+  "passed": true,
+  "readiness": "ready-for-candidate-comparison",
+  "renderer": {
+    "backend": "recording-renderer-candidate",
+    "calls": {
+      "count": 28,
+      "hash": "sha256:fd5dcc906fe84f63c5c37328b732f25e3e92d0849c5a6c45ffb5b07861f29a87",
+      "signature": [
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 16,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 17,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 17,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 17,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 17,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 17,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 12,
+          "paintCommands": 17,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 31,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 31,
+          "paintCommands": 32,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 31,
+          "paintCommands": 33,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 21,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 21,
+          "paintCommands": 21,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 21,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 21,
+          "paintCommands": 21,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 25,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 25,
+          "paintCommands": 26,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 21,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 21,
+          "paintCommands": 21,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 31,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 31,
+          "paintCommands": 33,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 31,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 31,
+          "paintCommands": 33,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        }
+      ]
+    },
+    "capabilityAudit": {
+      "inputs": [
+        {
+          "capabilities": [
+            {
+              "capability": "click",
+              "count": 9
+            },
+            {
+              "capability": "input_text",
+              "count": 2
+            },
+            {
+              "capability": "shortcut",
+              "count": 2
+            },
+            {
+              "capability": "wheel",
+              "count": 2
+            }
+          ],
+          "count": 15,
+          "support": "supported"
+        }
+      ],
+      "requiredForReplay": {
+        "inputs": [
+          {
+            "capabilities": [
+              {
+                "capability": "click",
+                "count": 9
+              },
+              {
+                "capability": "input_text",
+                "count": 2
+              },
+              {
+                "capability": "shortcut",
+                "count": 2
+              },
+              {
+                "capability": "wheel",
+                "count": 2
+              }
+            ],
+            "kind": "input",
+            "support": "supported"
+          }
+        ],
+        "widgets": [
+          {
+            "kind": "widget",
+            "support": "container",
+            "widgets": [
+              {
+                "count": 1,
+                "name": "For"
+              },
+              {
+                "count": 7,
+                "name": "HStack"
+              },
+              {
+                "count": 2,
+                "name": "ScrollView"
+              },
+              {
+                "count": 2,
+                "name": "ShortcutScope"
+              },
+              {
+                "count": 1,
+                "name": "Show"
+              },
+              {
+                "count": 3,
+                "name": "VStack"
+              }
+            ]
+          },
+          {
+            "kind": "widget",
+            "support": "control",
+            "widgets": [
+              {
+                "count": 9,
+                "name": "Button"
+              },
+              {
+                "count": 2,
+                "name": "Input"
+              }
+            ]
+          },
+          {
+            "kind": "widget",
+            "support": "text",
+            "widgets": [
+              {
+                "count": 16,
+                "name": "Text"
+              }
+            ]
+          }
+        ]
+      },
+      "summary": {
+        "inputBindings": 15,
+        "inputCapabilities": 4,
+        "unsupportedInputs": 0,
+        "unsupportedWidgets": 0,
+        "widgetInstances": 43,
+        "widgetTypes": 9
+      },
+      "unsupportedInputs": [],
+      "unsupportedWidgets": [],
+      "widgets": [
+        {
+          "count": 16,
+          "support": "container",
+          "widgets": [
+            {
+              "count": 1,
+              "name": "For"
+            },
+            {
+              "count": 7,
+              "name": "HStack"
+            },
+            {
+              "count": 2,
+              "name": "ScrollView"
+            },
+            {
+              "count": 2,
+              "name": "ShortcutScope"
+            },
+            {
+              "count": 1,
+              "name": "Show"
+            },
+            {
+              "count": 3,
+              "name": "VStack"
+            }
+          ]
+        },
+        {
+          "count": 11,
+          "support": "control",
+          "widgets": [
+            {
+              "count": 9,
+              "name": "Button"
+            },
+            {
+              "count": 2,
+              "name": "Input"
+            }
+          ]
+        },
+        {
+          "count": 16,
+          "support": "text",
+          "widgets": [
+            {
+              "count": 16,
+              "name": "Text"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "requirements": {
+    "declaredStyleOmissions": [
+      {
+        "kind": "omit",
+        "properties": [
+          {
+            "count": 1,
+            "property": "borderStyle"
+          }
+        ],
+        "status": "html-only"
+      }
+    ],
+    "inputs": [
+      {
+        "capabilities": [
+          {
+            "capability": "click",
+            "count": 9
+          },
+          {
+            "capability": "input_text",
+            "count": 2
+          },
+          {
+            "capability": "shortcut",
+            "count": 2
+          },
+          {
+            "capability": "wheel",
+            "count": 2
+          }
+        ],
+        "kind": "input",
+        "support": "supported"
+      }
+    ],
+    "styles": [
+      {
+        "kind": "apply",
+        "properties": [
+          {
+            "count": 1,
+            "property": "alignItems"
+          },
+          {
+            "count": 3,
+            "property": "gap"
+          },
+          {
+            "count": 2,
+            "property": "height"
+          },
+          {
+            "count": 1,
+            "property": "justifyContent"
+          },
+          {
+            "count": 2,
+            "property": "padding"
+          },
+          {
+            "count": 1,
+            "property": "scrollY"
+          },
+          {
+            "count": 4,
+            "property": "width"
+          }
+        ],
+        "support": "layout"
+      },
+      {
+        "kind": "apply",
+        "properties": [
+          {
+            "count": 2,
+            "property": "background"
+          }
+        ],
+        "support": "paint"
+      }
+    ],
+    "widgets": [
+      {
+        "kind": "widget",
+        "support": "container",
+        "widgets": [
+          {
+            "count": 1,
+            "name": "For"
+          },
+          {
+            "count": 7,
+            "name": "HStack"
+          },
+          {
+            "count": 2,
+            "name": "ScrollView"
+          },
+          {
+            "count": 2,
+            "name": "ShortcutScope"
+          },
+          {
+            "count": 1,
+            "name": "Show"
+          },
+          {
+            "count": 3,
+            "name": "VStack"
+          }
+        ]
+      },
+      {
+        "kind": "widget",
+        "support": "control",
+        "widgets": [
+          {
+            "count": 9,
+            "name": "Button"
+          },
+          {
+            "count": 2,
+            "name": "Input"
+          }
+        ]
+      },
+      {
+        "kind": "widget",
+        "support": "text",
+        "widgets": [
+          {
+            "count": 16,
+            "name": "Text"
+          }
+        ]
+      }
+    ]
+  },
+  "schemaVersion": 1,
+  "styleOps": {
+    "backend": "native-python",
+    "capabilityAudit": {
+      "applied": [
+        {
+          "count": 14,
+          "properties": [
+            {
+              "count": 1,
+              "property": "alignItems"
+            },
+            {
+              "count": 3,
+              "property": "gap"
+            },
+            {
+              "count": 2,
+              "property": "height"
+            },
+            {
+              "count": 1,
+              "property": "justifyContent"
+            },
+            {
+              "count": 2,
+              "property": "padding"
+            },
+            {
+              "count": 1,
+              "property": "scrollY"
+            },
+            {
+              "count": 4,
+              "property": "width"
+            }
+          ],
+          "support": "layout"
+        },
+        {
+          "count": 2,
+          "properties": [
+            {
+              "count": 2,
+              "property": "background"
+            }
+          ],
+          "support": "paint"
+        }
+      ],
+      "backend": "native-python",
+      "declaredOmissions": [
+        {
+          "kind": "omit",
+          "properties": [
+            {
+              "count": 1,
+              "property": "borderStyle"
+            }
+          ],
+          "status": "html-only"
+        }
+      ],
+      "omittedByStatus": [
+        {
+          "count": 1,
+          "properties": [
+            {
+              "count": 1,
+              "property": "borderStyle"
+            }
+          ],
+          "status": "html-only"
+        }
+      ],
+      "omittedBySupport": [
+        {
+          "count": 1,
+          "properties": [
+            {
+              "count": 1,
+              "property": "borderStyle"
+            }
+          ],
+          "support": "ignored"
+        }
+      ],
+      "requiredForReplay": [
+        {
+          "kind": "apply",
+          "properties": [
+            {
+              "count": 1,
+              "property": "alignItems"
+            },
+            {
+              "count": 3,
+              "property": "gap"
+            },
+            {
+              "count": 2,
+              "property": "height"
+            },
+            {
+              "count": 1,
+              "property": "justifyContent"
+            },
+            {
+              "count": 2,
+              "property": "padding"
+            },
+            {
+              "count": 1,
+              "property": "scrollY"
+            },
+            {
+              "count": 4,
+              "property": "width"
+            }
+          ],
+          "support": "layout"
+        },
+        {
+          "kind": "apply",
+          "properties": [
+            {
+              "count": 2,
+              "property": "background"
+            }
+          ],
+          "support": "paint"
+        }
+      ],
+      "summary": {
+        "applied": 16,
+        "omitted": 1,
+        "unsupported": 0
+      },
+      "unsupportedProperties": []
+    },
+    "classCount": 5,
+    "directStyleCount": 1,
+    "errors": [],
+    "format": "otoe-style-ops",
+    "schemaVersion": 1
+  }
+}

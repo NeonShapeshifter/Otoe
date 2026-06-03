@@ -155,7 +155,11 @@ Every reference app should have focused tests for three layers:
 - provider: happy path, blocked path, and state invariants
 - live preview: event ID lookup, dispatch, and rerendered content
 
-Full-suite baseline after the utility-first styling pass: `356 passed`.
+Full-suite baseline after the live preview, static class hardening, Style IR
+pack gate, bundle replay, backend readiness fixture, backend readiness report,
+backend coverage declaration, renderer capability audit, StyleOps capability
+audit, and primitive value validation pass:
+`544 passed, 1 skipped`.
 
 ## Current Decision
 

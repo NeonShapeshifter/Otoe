@@ -80,6 +80,19 @@ def _layout_widget(
             text=str(widget.props.get("content", "")),
         )
     if name == "Button":
+        if widget.children:
+            return _container_box(
+                widget,
+                path=path,
+                x=x,
+                y=y,
+                style=style,
+                context=context,
+                direction="column",
+                stylesheet=stylesheet,
+                strict_styles=strict_styles,
+                default_padding=8,
+            )
         return _leaf_box(
             widget,
             path=path,
@@ -139,8 +152,9 @@ def _container_box(
     direction: str,
     stylesheet: StyleSheet | None,
     strict_styles: bool,
+    default_padding: int = 0,
 ) -> LayoutBox:
-    padding = dimension(style, "padding", default=0, context=context)
+    padding = dimension(style, "padding", default=default_padding, context=context)
     gap = dimension(style, "gap", default=0, context=context)
     scroll_y = (
         dimension(style, "scrollY", default=0, context=context, allow_negative=True)

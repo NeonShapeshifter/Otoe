@@ -3,15 +3,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from .capabilities import (
+    BackendCapabilityProfile,
+    CapabilityProfileError,
+    backend_capability_profile,
+)
 from ._native_shared import (
-    NATIVE_STYLE_SUPPORT,
     parse_color,
     resolve_token,
-    walk_widgets,
 )
 from ._native_contracts import NativePaintError
 from .mount import MountedNode, root_widget
-from .style import DIMENSION_PROPERTIES, Size, StyleSheet, Token, style_value_to_dict
+from .style import DIMENSION_PROPERTIES, Size, StyleSheet, Token
 
 
 PLAN_STATUSES = ("portable", "html-only", "deferred", "invalid")
@@ -44,9 +47,34 @@ class PlanDiagnostic:
 
 
 @dataclass(frozen=True)
+class DirectStyleDeclaration:
+    property: str
+    value: Any
+
+
+@dataclass(frozen=True)
+class DirectStyleOmission:
+    property: str
+    status: str
+    value: Any
+    message: str | None
+
+
+@dataclass(frozen=True)
+class DirectStyleEntry:
+    path: tuple[int, ...]
+    widget: str
+    declarations: tuple[DirectStyleDeclaration, ...]
+    omitted_declarations: tuple[DirectStyleOmission, ...]
+
+
+@dataclass(frozen=True)
 class OtoePlan:
     profile: str
+    backend: str
+    backend_capabilities: BackendCapabilityProfile
     widget_count: int
+    widget_support_counts: dict[str, int]
     used_classes: tuple[str, ...]
     static_classes: tuple[str, ...]
     safelisted_classes: tuple[str, ...]
@@ -55,6 +83,7 @@ class OtoePlan:
     invalid_classes: tuple[str, ...]
     style_counts: dict[str, int]
     direct_style_counts: dict[str, int]
+    direct_styles: tuple[DirectStyleEntry, ...]
     diagnostics: tuple[PlanDiagnostic, ...]
 
     @property
@@ -80,6 +109,7 @@ def plan_mounted(
     target: MountedNode,
     *,
     profile: str = "cage",
+    backend: str | BackendCapabilityProfile | None = None,
     stylesheet: StyleSheet | None = None,
     static_classes: tuple[str, ...] = (),
     safelist: tuple[str, ...] = (),
@@ -88,9 +118,18 @@ def plan_mounted(
 ) -> OtoePlan:
     if profile not in SUPPORTED_PLAN_PROFILES:
         raise PlanError(f"unsupported plan profile {profile!r}; supported: cage")
+    if isinstance(backend, BackendCapabilityProfile):
+        capabilities = backend
+    else:
+        try:
+            capabilities = backend_capability_profile(backend)
+        except CapabilityProfileError as exc:
+            raise PlanError(str(exc)) from exc
 
     widget = root_widget(target)
-    widgets = walk_widgets(widget)
+    widgets_with_paths = tuple(_walk_widgets_with_paths(widget))
+    widgets = [entry[1] for entry in widgets_with_paths]
+    widget_support_counts = _widget_support_counts(widgets, capabilities)
     used_classes = _used_classes(widgets)
     safelisted_classes = tuple(_dedupe(safelist))
     static_classes = tuple(
@@ -111,6 +150,7 @@ def plan_mounted(
     diagnostics = list(diagnostics)
     style_counts = _empty_counts()
     direct_style_counts = _empty_counts()
+    direct_styles: list[DirectStyleEntry] = []
 
     for class_name in classes_to_plan:
         rule = stylesheet.rules.get(f".{class_name}") if stylesheet is not None else None
@@ -141,7 +181,7 @@ def plan_mounted(
             continue
 
         for prop, value in rule.declarations.items():
-            status, message = _classify_style_value(prop, value, stylesheet)
+            status, message = _classify_style_value(prop, value, stylesheet, capabilities)
             style_counts[status] += 1
             if message is not None:
                 diagnostics.append(
@@ -151,7 +191,9 @@ def plan_mounted(
                     )
                 )
 
-    for widget in widgets:
+    for path, widget in widgets_with_paths:
+        direct_declarations: list[DirectStyleDeclaration] = []
+        omitted_direct_declarations: list[DirectStyleOmission] = []
         for prop in DIRECT_STYLE_PROPS:
             if prop not in widget.props:
                 continue
@@ -159,8 +201,22 @@ def plan_mounted(
                 prop,
                 widget.props[prop],
                 stylesheet,
+                capabilities,
             )
             direct_style_counts[status] += 1
+            if status == "portable":
+                direct_declarations.append(
+                    DirectStyleDeclaration(prop, widget.props[prop])
+                )
+            else:
+                omitted_direct_declarations.append(
+                    DirectStyleOmission(
+                        property=prop,
+                        status=status,
+                        value=widget.props[prop],
+                        message=message,
+                    )
+                )
             if message is not None:
                 diagnostics.append(
                     PlanDiagnostic(
@@ -168,10 +224,22 @@ def plan_mounted(
                         f"{widget.name} direct style {prop!r}: {message}",
                     )
                 )
+        if direct_declarations or omitted_direct_declarations:
+            direct_styles.append(
+                DirectStyleEntry(
+                    path=path,
+                    widget=widget.name,
+                    declarations=tuple(direct_declarations),
+                    omitted_declarations=tuple(omitted_direct_declarations),
+                )
+            )
 
     return OtoePlan(
         profile=profile,
+        backend=capabilities.name,
+        backend_capabilities=capabilities,
         widget_count=len(widgets),
+        widget_support_counts=widget_support_counts,
         used_classes=used_classes,
         static_classes=static_classes,
         safelisted_classes=safelisted_classes,
@@ -180,60 +248,21 @@ def plan_mounted(
         invalid_classes=tuple(_dedupe(invalid_classes)),
         style_counts=style_counts,
         direct_style_counts=direct_style_counts,
+        direct_styles=tuple(direct_styles),
         diagnostics=tuple(diagnostics),
     )
 
 
 def format_plan(plan: OtoePlan, *, target: str) -> str:
-    lines = [
-        f"plan {target}: profile {plan.profile}",
-        f"widgets: {plan.widget_count}",
-        (
-            "classes: "
-            f"{len(plan.used_classes)} used, "
-            f"{len(plan.planned_classes)} planned, "
-            f"{len(plan.html_only_classes)} html-only, "
-            f"{len(plan.invalid_classes)} invalid"
-        ),
-        f"style declarations: {_format_counts(plan.style_counts)}",
-        f"direct style props: {_format_counts(plan.direct_style_counts)}",
-        f"status: {plan.status}",
-    ]
-    if plan.used_classes:
-        lines.append(f"used classes: {', '.join(plan.used_classes)}")
-    if plan.static_classes:
-        lines.append(f"static classes: {', '.join(plan.static_classes)}")
-    if plan.safelisted_classes:
-        lines.append(f"safelisted classes: {', '.join(plan.safelisted_classes)}")
-    for diagnostic in plan.diagnostics:
-        lines.append(f"{diagnostic.level}: {diagnostic.message}")
-    return "\n".join(lines)
+    from .plan_artifacts import format_plan as _format_plan
+
+    return _format_plan(plan, target=target)
 
 
 def plan_to_dict(plan: OtoePlan, *, target: str) -> dict[str, Any]:
-    return {
-        "schemaVersion": 1,
-        "target": target,
-        "profile": plan.profile,
-        "status": plan.status,
-        "hasErrors": plan.has_errors,
-        "hasWarnings": plan.has_warnings,
-        "widgetCount": plan.widget_count,
-        "classes": {
-            "used": list(plan.used_classes),
-            "static": list(plan.static_classes),
-            "safelisted": list(plan.safelisted_classes),
-            "planned": list(plan.planned_classes),
-            "htmlOnly": list(plan.html_only_classes),
-            "invalid": list(plan.invalid_classes),
-        },
-        "styleCounts": dict(plan.style_counts),
-        "directStyleCounts": dict(plan.direct_style_counts),
-        "diagnostics": [
-            {"level": diagnostic.level, "message": diagnostic.message}
-            for diagnostic in plan.diagnostics
-        ],
-    }
+    from .plan_artifacts import plan_to_dict as _plan_to_dict
+
+    return _plan_to_dict(plan, target=target)
 
 
 def compiled_styles_to_dict(
@@ -242,159 +271,18 @@ def compiled_styles_to_dict(
     target: str,
     stylesheet: StyleSheet | None,
 ) -> dict[str, Any]:
-    return {
-        "schemaVersion": 1,
-        "target": target,
-        "profile": plan.profile,
-        "status": plan.status,
-        "classes": {
-            "used": list(plan.used_classes),
-            "static": list(plan.static_classes),
-            "safelisted": list(plan.safelisted_classes),
-            "planned": list(plan.planned_classes),
-            "htmlOnly": list(plan.html_only_classes),
-            "invalid": list(plan.invalid_classes),
-        },
-        "styleCounts": dict(plan.style_counts),
-        "directStyleCounts": dict(plan.direct_style_counts),
-        "tokens": _compiled_tokens(stylesheet),
-        "rules": _compiled_rules(plan, stylesheet),
-        "styleOps": _compiled_style_ops(plan, stylesheet),
-        "diagnostics": [
-            {"level": diagnostic.level, "message": diagnostic.message}
-            for diagnostic in plan.diagnostics
-        ],
-    }
+    from .plan_artifacts import compiled_styles_to_dict as _compiled_styles_to_dict
 
-
-def _compiled_tokens(stylesheet: StyleSheet | None) -> dict[str, dict[str, Any]]:
-    if stylesheet is None:
-        return {}
-    return {
-        name: style_value_to_dict(value)
-        for name, value in sorted(stylesheet.tokens.items())
-    }
-
-
-def _compiled_rules(
-    plan: OtoePlan,
-    stylesheet: StyleSheet | None,
-) -> list[dict[str, Any]]:
-    rules: list[dict[str, Any]] = []
-    for class_name in _compiled_class_names(plan):
-        selector = f".{class_name}"
-        rule = stylesheet.rules.get(selector) if stylesheet is not None else None
-        if rule is None:
-            rules.append(
-                {
-                    "className": class_name,
-                    "selector": selector,
-                    "declarations": {},
-                    "omittedDeclarations": [],
-                    "missing": True,
-                }
-            )
-            continue
-
-        declarations: dict[str, dict[str, Any]] = {}
-        omitted: list[dict[str, Any]] = []
-        for prop, value in rule.declarations.items():
-            status, message = _classify_style_value(prop, value, stylesheet)
-            resolved = resolve_token(value, stylesheet.tokens)
-            if status == "portable":
-                declarations[prop] = style_value_to_dict(resolved)
-            else:
-                omitted.append(
-                    {
-                        "property": prop,
-                        "status": status,
-                        "value": style_value_to_dict(value),
-                        "message": message,
-                    }
-                )
-        rules.append(
-            {
-                "className": class_name,
-                "selector": selector,
-                "declarations": declarations,
-                "omittedDeclarations": omitted,
-                "missing": False,
-            }
-        )
-    return rules
-
-
-def _compiled_style_ops(
-    plan: OtoePlan,
-    stylesheet: StyleSheet | None,
-) -> dict[str, Any]:
-    return {
-        "schemaVersion": 1,
-        "format": "otoe-style-ops",
-        "classes": [
-            _compiled_class_style_ops(class_name, stylesheet)
-            for class_name in _compiled_class_names(plan)
-        ],
-    }
-
-
-def _compiled_class_style_ops(
-    class_name: str,
-    stylesheet: StyleSheet | None,
-) -> dict[str, Any]:
-    selector = f".{class_name}"
-    rule = stylesheet.rules.get(selector) if stylesheet is not None else None
-    if rule is None:
-        return {
-            "className": class_name,
-            "selector": selector,
-            "missing": True,
-            "ops": [],
-            "omittedOps": [],
-        }
-
-    ops: list[dict[str, Any]] = []
-    omitted_ops: list[dict[str, Any]] = []
-    for prop, value in rule.declarations.items():
-        status, message = _classify_style_value(prop, value, stylesheet)
-        support = NATIVE_STYLE_SUPPORT.get(prop, "unsupported")
-        resolved = resolve_token(value, stylesheet.tokens)
-        if status == "portable":
-            ops.append(
-                {
-                    "op": "setStyle",
-                    "property": prop,
-                    "support": support,
-                    "value": style_value_to_dict(resolved),
-                }
-            )
-            continue
-        omitted_ops.append(
-            {
-                "op": "omitStyle",
-                "property": prop,
-                "support": support,
-                "status": status,
-                "value": style_value_to_dict(value),
-                "message": message,
-            }
-        )
-
-    return {
-        "className": class_name,
-        "selector": selector,
-        "missing": False,
-        "ops": ops,
-        "omittedOps": omitted_ops,
-    }
+    return _compiled_styles_to_dict(plan, target=target, stylesheet=stylesheet)
 
 
 def _classify_style_value(
     prop: str,
     value: Any,
     stylesheet: StyleSheet | None,
+    capabilities: BackendCapabilityProfile,
 ) -> tuple[str, str | None]:
-    native_support = NATIVE_STYLE_SUPPORT.get(prop)
+    native_support = capabilities.style(prop)
     if native_support is None:
         return "invalid", f"unsupported native style property {prop!r}"
     if native_support == "ignored":
@@ -423,6 +311,23 @@ def _classify_style_value(
     return "portable", None
 
 
+def _widget_support_counts(
+    widgets,
+    capabilities: BackendCapabilityProfile,
+) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for widget in widgets:
+        support = capabilities.widget(widget.name)
+        counts[support] = counts.get(support, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def _walk_widgets_with_paths(widget, path: tuple[int, ...] = ()):
+    yield path, widget
+    for index, child in enumerate(widget.children):
+        yield from _walk_widgets_with_paths(child, (*path, index))
+
+
 def _classify_dimension(prop: str, value: Any) -> tuple[str, str] | None:
     if isinstance(value, Size):
         if value.unit != "px":
@@ -447,14 +352,6 @@ def _used_classes(widgets) -> tuple[str, ...]:
     return tuple(_dedupe(class_names))
 
 
-def _compiled_class_names(plan: OtoePlan) -> tuple[str, ...]:
-    return _planned_class_names(
-        used_classes=plan.used_classes,
-        static_classes=plan.static_classes,
-        safelisted_classes=plan.safelisted_classes,
-    )
-
-
 def _planned_class_names(
     *,
     used_classes: tuple[str, ...],
@@ -477,7 +374,3 @@ def _dedupe(values) -> tuple[str, ...]:
 
 def _empty_counts() -> dict[str, int]:
     return {status: 0 for status in PLAN_STATUSES}
-
-
-def _format_counts(counts: dict[str, int]) -> str:
-    return ", ".join(f"{status}={counts[status]}" for status in PLAN_STATUSES)

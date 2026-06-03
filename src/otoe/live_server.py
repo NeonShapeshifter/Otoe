@@ -2,274 +2,17 @@ from __future__ import annotations
 
 import argparse
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from html import escape
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
-from typing import Any, Callable, Protocol
+from threading import RLock
+from typing import Any, Callable
 from urllib.parse import urlsplit
 
-
-class LivePreviewApp(Protocol):
-    def render_fragment(self) -> str:
-        raise NotImplementedError
-
-    def dispatch_event(self, event_id: str, *args: Any) -> str:
-        raise NotImplementedError
-
-
-@dataclass(frozen=True)
-class LivePreviewStylesheet:
-    route: str
-    path: Path | None
-
-
-@dataclass(frozen=True)
-class LivePreviewConfig:
-    title: str
-    css_route: str
-    css_path: Path | None
-    root_class: str = ""
-    extra_css: tuple[LivePreviewStylesheet, ...] = ()
-
-    def stylesheets(self) -> tuple[LivePreviewStylesheet, ...]:
-        return (
-            *self.extra_css,
-            LivePreviewStylesheet(route=self.css_route, path=self.css_path),
-        )
-
-    def stylesheet_for(self, route: str) -> LivePreviewStylesheet | None:
-        for stylesheet in self.stylesheets():
-            if stylesheet.route == route:
-                return stylesheet
-        return None
-
-
-LIVE_SCRIPT = r"""
-(() => {
-  const root = document.getElementById("otoe-root");
-  let lastFocusOutsideScope = null;
-  let latestEventRequest = 0;
-
-  const escapeSelector = (value) => {
-    if (window.CSS && CSS.escape) {
-      return CSS.escape(value);
-    }
-    return value.replace(/["\\]/g, "\\$&");
-  };
-
-  const focusSelectorFor = (target) => {
-    if (!target?.dataset) {
-      return null;
-    }
-    if (target.dataset.otoeChange) {
-      return `[data-otoe-change="${escapeSelector(target.dataset.otoeChange)}"]`;
-    }
-    if (target.dataset.otoeKeydown) {
-      return `[data-otoe-keydown="${escapeSelector(target.dataset.otoeKeydown)}"]`;
-    }
-    if (target.dataset.otoeClick) {
-      return `[data-otoe-click="${escapeSelector(target.dataset.otoeClick)}"]`;
-    }
-    return null;
-  };
-
-  const focusAutoTarget = () => {
-    const target = root.querySelector("[data-otoe-autofocus]");
-    if (!target || typeof target.focus !== "function") {
-      return;
-    }
-    target.focus();
-    if (typeof target.select === "function") {
-      target.select();
-    }
-  };
-
-  const restoreFocusTarget = (selector) => {
-    if (!selector) {
-      return false;
-    }
-    const target = root.querySelector(selector);
-    if (!target || typeof target.focus !== "function") {
-      return false;
-    }
-    target.focus();
-    return true;
-  };
-
-  const replaceRoot = (html, activeTarget = null, selectionStart, selectionEnd, restoreSelector = null) => {
-    root.innerHTML = html;
-    const focusSelector = focusSelectorFor(activeTarget);
-    if (!focusSelector) {
-      focusAutoTarget();
-      return;
-    }
-    const nextTarget = root.querySelector(focusSelector);
-    if (!nextTarget) {
-      if (restoreFocusTarget(restoreSelector)) {
-        return;
-      }
-      focusAutoTarget();
-      return;
-    }
-    nextTarget.focus();
-    if (
-      typeof nextTarget.setSelectionRange === "function"
-      && typeof selectionStart === "number"
-      && typeof selectionEnd === "number"
-    ) {
-      nextTarget.setSelectionRange(selectionStart, selectionEnd);
-    }
-  };
-
-  const focusableSelector = [
-    "button:not([disabled])",
-    "input:not([disabled])",
-    "select:not([disabled])",
-    "textarea:not([disabled])",
-    "a[href]",
-    "[tabindex]:not([tabindex='-1'])",
-  ].join(",");
-
-  const visibleFocusable = (scope) => {
-    return Array.from(scope.querySelectorAll(focusableSelector)).filter((node) => {
-      return node.offsetParent !== null || node === document.activeElement;
-    });
-  };
-
-  const trapFocus = (event) => {
-    if (event.key !== "Tab") {
-      return false;
-    }
-    const scope = event.target.closest("[data-otoe-focus-scope='trap']");
-    if (!scope) {
-      return false;
-    }
-    const focusable = visibleFocusable(scope);
-    if (!focusable.length) {
-      event.preventDefault();
-      return true;
-    }
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-      return true;
-    }
-    if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-      return true;
-    }
-    return false;
-  };
-
-  const isInsideRestoringScope = (target) => {
-    if (!target) {
-      return false;
-    }
-    return Boolean(target.closest("[data-otoe-focus-scope='trap'][data-otoe-restore-focus='true']"));
-  };
-
-  const sendEvent = async (id, args, activeInput = null) => {
-    const requestId = ++latestEventRequest;
-    const restoreSelector = activeInput && isInsideRestoringScope(activeInput)
-      ? lastFocusOutsideScope
-      : null;
-    if (activeInput && !isInsideRestoringScope(activeInput)) {
-      lastFocusOutsideScope = focusSelectorFor(activeInput) || lastFocusOutsideScope;
-    }
-    try {
-      const response = await fetch("/event", {
-        method: "POST",
-        headers: {"content-type": "application/json"},
-        body: JSON.stringify({id, args}),
-      });
-      const payload = await response.json();
-      if (requestId !== latestEventRequest) {
-        return;
-      }
-      if (!payload.ok) {
-        throw new Error(payload.error || "Otoe event failed");
-      }
-      replaceRoot(
-        payload.html,
-        activeInput,
-        activeInput?.selectionStart,
-        activeInput?.selectionEnd,
-        restoreSelector,
-      );
-    } catch (error) {
-      if (requestId === latestEventRequest) {
-        throw error;
-      }
-    }
-  };
-
-  const keyPayload = (event) => ({
-    key: event.key,
-    ctrlKey: event.ctrlKey,
-    metaKey: event.metaKey,
-    altKey: event.altKey,
-    shiftKey: event.shiftKey,
-  });
-
-  const isEditableTarget = (target) => {
-    if (!target) {
-      return false;
-    }
-    return target.matches("input, textarea, [contenteditable='true']");
-  };
-
-  const shouldSendGlobalKey = (event) => {
-    if (event.ctrlKey || event.metaKey || event.key === "Escape") {
-      return true;
-    }
-    return event.key.length === 1 && !isEditableTarget(event.target);
-  };
-
-  document.addEventListener("click", (event) => {
-    const target = event.target.closest("[data-otoe-click]");
-    if (!target) {
-      return;
-    }
-    event.preventDefault();
-    sendEvent(target.dataset.otoeClick, [], target);
-  });
-
-  document.addEventListener("focusin", (event) => {
-    if (!isInsideRestoringScope(event.target)) {
-      lastFocusOutsideScope = focusSelectorFor(event.target);
-    }
-  });
-
-  document.addEventListener("input", (event) => {
-    const target = event.target.closest("[data-otoe-change]");
-    if (!target) {
-      return;
-    }
-    sendEvent(target.dataset.otoeChange, [target.value], target);
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (trapFocus(event)) {
-      return;
-    }
-    const target = event.target.closest("[data-otoe-keydown]");
-    if (target) {
-      sendEvent(target.dataset.otoeKeydown, [event.key], target);
-    }
-    const globalTarget = root.querySelector("[data-otoe-global-keydown]");
-    if (!globalTarget || !shouldSendGlobalKey(event)) {
-      return;
-    }
-    event.preventDefault();
-    sendEvent(globalTarget.dataset.otoeGlobalKeydown, [keyPayload(event)]);
-  });
-})();
-"""
+from .live_config import LivePreviewApp, LivePreviewConfig, LivePreviewStylesheet
+from .live_events import LiveEventSequenceTracker, live_event_from_payload
+from .live_script import LIVE_SCRIPT
 
 
 def render_live_page(app: LivePreviewApp, config: LivePreviewConfig) -> str:
@@ -302,6 +45,33 @@ def render_live_page(app: LivePreviewApp, config: LivePreviewConfig) -> str:
 """
 
 
+@dataclass
+class _LivePreviewState:
+    app: LivePreviewApp
+    config: LivePreviewConfig
+    lock: RLock = field(default_factory=RLock)
+    event_sequences: LiveEventSequenceTracker = field(
+        default_factory=LiveEventSequenceTracker
+    )
+
+    def render_page(self) -> str:
+        with self.lock:
+            return render_live_page(self.app, self.config)
+
+    def dispatch_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
+        event = live_event_from_payload(payload)
+
+        with self.lock:
+            if not self.event_sequences.accept(event):
+                return {
+                    "ok": True,
+                    "html": self.app.render_fragment(),
+                    "stale": True,
+                }
+            html = self.app.dispatch_event(event.event_id, *event.args)
+        return {"ok": True, "html": html, "stale": False}
+
+
 def run_live_preview(
     *,
     app_factory: Callable[[], LivePreviewApp],
@@ -310,13 +80,12 @@ def run_live_preview(
     port: int,
     label: str,
 ) -> None:
-    app = app_factory()
+    state = _LivePreviewState(app_factory(), config)
 
     class Handler(_LivePreviewHandler):
         pass
 
-    Handler.app = app
-    Handler.config = config
+    Handler.state = state
     server = ThreadingHTTPServer((host, port), Handler)
     print(f"{label}: http://{host}:{port}")
     try:
@@ -339,18 +108,17 @@ def parse_host_port(
 
 
 class _LivePreviewHandler(BaseHTTPRequestHandler):
-    app: LivePreviewApp
-    config: LivePreviewConfig
+    state: _LivePreviewState
 
     def do_GET(self) -> None:
         path = urlsplit(self.path).path
         if path in {"/", "/index.html"}:
             self._send_text(
-                render_live_page(self.app, self.config),
+                self.state.render_page(),
                 "text/html; charset=utf-8",
             )
             return
-        stylesheet = self.config.stylesheet_for(path)
+        stylesheet = self.state.config.stylesheet_for(path)
         if stylesheet is not None:
             if stylesheet.path is None:
                 self._send_text("", "text/css; charset=utf-8")
@@ -373,15 +141,11 @@ class _LivePreviewHandler(BaseHTTPRequestHandler):
         try:
             length = int(self.headers.get("content-length", "0"))
             payload = json.loads(self.rfile.read(length) or b"{}")
-            event_id = payload["id"]
-            args = payload.get("args", [])
-            if not isinstance(args, list):
-                raise TypeError("event args must be a list")
-            html = self.app.dispatch_event(event_id, *args)
+            result = self.state.dispatch_payload(payload)
         except Exception as exc:
             self._send_json({"ok": False, "error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
-        self._send_json({"ok": True, "html": html})
+        self._send_json(result)
 
     def log_message(self, fmt: str, *args: Any) -> None:
         return

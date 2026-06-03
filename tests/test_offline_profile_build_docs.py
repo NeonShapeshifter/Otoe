@@ -23,6 +23,7 @@ def test_offline_profile_build_adr_captures_hardware_direction():
     assert "audit-only" in text
     assert "--json" in text
     assert "--out" in text
+    assert "--backend native-python" in text
     assert "otoe.profile.toml" in text
     assert "manifest.json" in text
     assert "otoe-deps.json" in text
@@ -46,6 +47,8 @@ def test_offline_profile_build_adr_captures_hardware_direction():
     assert 'extras = ["dev"]' in text
     assert "SHA-256" in text
     assert "built-in `native`" in text
+    assert 'capability = "native-python"' in text
+    assert "backend capability profile" in text
     assert "--verify" in text
     assert "--check" in text
     assert "--layout-check" in text
@@ -82,10 +85,12 @@ def test_style_guide_points_css_at_offline_profiles():
     assert "otoe-run.py" in text
     assert "frameworkFiles" in text
     assert "otoe.profile.toml" in text
+    assert "--backend native-python" in text
     assert 'assets = ["static/logo.png"]' in text
     assert 'files = ["app.py"]' in text
     assert 'packages = ["pytest"]' in text
     assert 'extras = ["dev"]' in text
+    assert 'capability = "native-python"' in text
     assert "asset, and runtime file paths" in text
     assert "simple local target module" in text
     assert "same-directory imports" in text
@@ -111,6 +116,7 @@ def test_style_guide_points_css_at_offline_profiles():
     assert "bundled compiled styles" in text
     assert "schemaVersion = 1" in text
     assert "backend framework policy" in text
+    assert "backend capability profile" in text
     assert "low-level `styleOps`" in text
     assert "--layout-check" in text
     assert "--profile cage" in text
@@ -130,6 +136,8 @@ def test_roadmap_keeps_low_level_build_work_in_scope():
     assert "manifest-first" in text
     assert "otoe-styles.json" in text
     assert "styleOps" in text
+    assert "backend capability profile" in text
+    assert "native-python" in text
     assert "[styles].safelist" in text
     assert "statically extract literal class tokens" in text
     assert "class_names(...)" in text

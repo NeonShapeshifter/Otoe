@@ -1,8 +1,8 @@
 # Otoe Roadmap
 
-**Status:** v0.1.5 public sync prepared; Phase 5 renderer contract tooling and offline build planning
-**Updated:** May 31, 2026
-**Current baseline:** 453 tests passing, 1 skipped when `mypy` is unavailable
+**Status:** v0.1.7 public sync prepared; backend capability profile coverage gates and hardware bundle verification
+**Updated:** June 2, 2026
+**Current baseline:** 544 tests passing, 1 skipped when `mypy` is unavailable
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, utility ops console, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
@@ -55,9 +55,21 @@ framework/runtime file copy policy is recorded in `frameworkFiles`.
 The bundle now includes a generated `otoe-run.py` integrity verify, load/check,
 layout/paint dry-run, and headless PNG entry, plus optional `otoe build
 --validate` runner checks.
+`otoe plan`, `otoe build`, and `otoe-styles.json` now record a backend
+capability profile. The current default is `native-python` (`native` remains an
+alias for existing profile files), and the plan artifact records style, widget,
+and input capability maps so future hardware/backend candidates can declare
+their own support surface instead of inheriting one global native matrix.
+Profiles and CLI flags can also attach backend readiness/requirements JSON as a
+coverage gate; `otoe plan` reports `backendCoverage`, and `otoe build` writes
+`otoe-backend-coverage.json` before refusing manifests for incomplete backend
+coverage.
 `otoe-styles.json` now records compiled class styles and low-level `styleOps`
-so runner PNG output and backend candidates can use bundled portable
-declarations instead of workspace CSS.
+with the selected capability profile so runner PNG output and backend
+candidates can use bundled portable declarations instead of workspace CSS.
+The backend-candidate styleOps replay now also covers the real bundle path:
+`otoe build --validate`, `--bundle dist/...` runner verification, manifest style
+artifact discovery, and styleOps replay from the generated bundle.
 Profile `[styles].safelist` now lets the build compile dynamic state classes
 that do not appear in the first mounted render, while arbitrary runtime-built
 class names remain outside the hardware/cage contract.
@@ -119,11 +131,45 @@ against it in tests.
 The backend-candidate skeleton can refresh contract fixtures with
 `--contract-out`, keeping intentional fixture updates explicit and
 redirection-free.
+The first bundle-backed styleOps expected contract fixture now covers
+`otoe build --validate` plus backend-candidate `--bundle` replay as the
+hardware-style contract gate.
+The backend-candidate styleOps contract now includes a capability audit that
+summarizes applied layout/paint properties, declared omissions, unsupported
+properties, and the replay requirements a backend must satisfy.
+Renderer contract snapshots now include a widget/input capability audit that
+summarizes widget types, input bindings, unsupported entries, and replay
+requirements from the minimal and task-board frames.
+The backend-candidate skeleton now emits `--backend-readiness-json`, combining
+renderer replay, widget/input audit, StyleOps replay, style capability audit,
+blockers, and replay requirements into one readiness report.
+The checked-in backend readiness fixture now locks that aggregate report as a
+candidate-comparison gate alongside the renderer and StyleOps contract fixtures.
+Backend candidates can now derive a coverage declaration from a backend
+capability profile and emit `--backend-coverage-json`, so claimed widget,
+input, style, and declared omission support is compared against the aggregate
+readiness requirements without duplicating the support matrix by hand.
+Candidate-specific JSON capability profiles can run through the same gate
+before they graduate into built-in profiles, and `otoe plan/build` now consume
+those profiles so bundle artifacts use the same support source as coverage.
+`otoe backend-profile` now exposes profile inspection and coverage declaration
+generation in the core CLI.
+`otoe backend-coverage` now compares backend profiles or declarations against
+readiness requirements from core CLI, leaving renderer replay generation in the
+native skeleton.
+The native skeleton coverage flags are compatibility-only; new backend profile
+and coverage artifacts are written through the core CLI.
+Style IR validation now rejects malformed serialized value payloads across
+compiled rules, direct widget styles, omitted declarations, and low-level
+styleOps before backend candidates replay them.
 `otoe compare-contract --ignore-path` can now ignore intentional
 environment-specific JSON-pointer fields, such as a local PNG smoke filename,
 without weakening the rest of the contract comparison.
-`otoe pack` verifies those bundle files and creates a cache-free `.tar.gz`
-deployment archive.
+`otoe pack` verifies those bundle files, rejects failing declared backend
+coverage reports, requires top-level artifacts to be hash-covered, rejects
+invalid core artifact status or runtime-install drift, preserves
+`otoe-backend-coverage.json`, and creates a cache-free `.tar.gz` deployment
+archive.
 Runtime installs on the target device are a non-goal; no runtime dependency
 installs should happen on hardware targets.
 

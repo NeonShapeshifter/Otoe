@@ -99,7 +99,7 @@ above.
 | `AppShell` | `sidebar`, `content`, optional `header`, `className` | none |
 | `Card` | children, `title`, `tone="default"`, `className` | none |
 | `Badge` | `label`, `tone="neutral"`, `className` | none |
-| `ActionButton` | `label`, `variant="primary"`, `size="md"`, `disabled=False`, `className` | `onClick()` |
+| `ActionButton` | `label`, `variant="primary"`, `size="md"`, `disabled=False`, `leading`, `trailing`, `full_width=False`, `className` | `onClick()` |
 | `Toolbar` | children, `gap=8`, `className` | none |
 | `Tabs` | children, `gap=6`, `orientation="horizontal"`, `className` | none |
 | `TabButton` | `label`, `active=False`, `className` | `onClick()` |
@@ -120,6 +120,7 @@ above.
 UI components may accept reactive values for display/state props when the
 underlying implementation reads them with `computed(...)` or passes them to a
 core widget prop.
+`CommandPalette.query` accepts either a literal value or a reactive value.
 
 ## UI Data Models
 

@@ -1,0 +1,60 @@
+{
+  "backend": "native-python",
+  "covers": {
+    "declaredStyleOmissions": [
+      "borderStyle",
+      "display",
+      "fontWeight",
+      "margin",
+      "opacity"
+    ],
+    "inputs": [
+      "click",
+      "focus",
+      "input_text",
+      "key_down",
+      "key_input",
+      "shortcut",
+      "tab_focus",
+      "wheel"
+    ],
+    "styles": [
+      "alignItems",
+      "background",
+      "borderColor",
+      "borderRadius",
+      "borderWidth",
+      "color",
+      "fontSize",
+      "gap",
+      "height",
+      "justifyContent",
+      "maxHeight",
+      "maxWidth",
+      "minHeight",
+      "minWidth",
+      "padding",
+      "scrollY",
+      "width"
+    ],
+    "widgets": [
+      "Button",
+      "FocusScope",
+      "For",
+      "HStack",
+      "Input",
+      "Panel",
+      "ScrollView",
+      "ShortcutScope",
+      "Show",
+      "Text",
+      "VStack"
+    ]
+  },
+  "format": "backend-coverage-declaration",
+  "schemaVersion": 1,
+  "source": {
+    "kind": "backendCapabilityProfile",
+    "name": "native-python"
+  }
+}

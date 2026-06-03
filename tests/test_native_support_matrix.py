@@ -16,6 +16,13 @@ from otoe import (
     layout_native,
     mount,
 )
+from otoe.capabilities import (
+    CapabilityProfileError,
+    backend_capability_profile_from_dict,
+    backend_capability_profile,
+    load_backend_capability_profile,
+    supported_backend_capability_names,
+)
 from otoe._native_shared import (
     NATIVE_CONTAINER_WIDGETS,
     NATIVE_CONTROL_WIDGETS,
@@ -127,6 +134,91 @@ def test_native_style_support_matrix_is_complete_and_categorized():
     assert native_style_support("lineHeight") is None
 
 
+def test_native_python_capability_profile_matches_support_matrices():
+    profile = backend_capability_profile("native")
+
+    assert profile.name == "native-python"
+    assert profile.style_support == NATIVE_STYLE_SUPPORT
+    assert profile.widget_support == NATIVE_WIDGET_SUPPORT
+    assert profile.input_support == NATIVE_INPUT_SUPPORT
+    assert profile.style("padding") == "layout"
+    assert profile.widget("Hero") == "fallback-container"
+    assert profile.input("wheel") == "supported"
+    assert "native-python" in supported_backend_capability_names()
+
+
+def test_backend_capability_profile_rejects_unknown_name():
+    with pytest.raises(CapabilityProfileError, match="unsupported backend capability"):
+        backend_capability_profile("gpu-magic")
+
+
+def test_backend_capability_profile_from_dict_derives_coverage_declaration():
+    profile = backend_capability_profile_from_dict(
+        {
+            "schemaVersion": 1,
+            "format": "backend-capability-profile",
+            "name": "candidate-mini",
+            "label": "Candidate Mini",
+            "styles": {
+                "background": "paint",
+                "borderStyle": "ignored",
+                "padding": "layout",
+            },
+            "widgets": {
+                "Button": "control",
+                "Text": "text",
+                "VStack": "container",
+            },
+            "inputs": {
+                "click": "supported",
+                "gesture": "deferred",
+            },
+        }
+    )
+
+    assert profile.name == "candidate-mini"
+    assert profile.style("padding") == "layout"
+    assert profile.widget("Hero") == "fallback-container"
+    assert profile.input("gesture") == "deferred"
+    assert profile.coverage_declaration() == {
+        "schemaVersion": 1,
+        "format": "backend-coverage-declaration",
+        "backend": "candidate-mini",
+        "source": {
+            "kind": "backendCapabilityProfile",
+            "name": "candidate-mini",
+        },
+        "covers": {
+            "widgets": ["Button", "Text", "VStack"],
+            "inputs": ["click"],
+            "styles": ["background", "padding"],
+            "declaredStyleOmissions": ["borderStyle"],
+        },
+    }
+
+
+def test_load_backend_capability_profile_rejects_invalid_support_value(tmp_path):
+    profile_path = tmp_path / "backend-profile.json"
+    profile_path.write_text(
+        '{'
+        '"schemaVersion": 1,'
+        '"format": "backend-capability-profile",'
+        '"name": "bad",'
+        '"label": "Bad",'
+        '"styles": {"padding": "magic"},'
+        '"widgets": {},'
+        '"inputs": {}'
+        '}',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        CapabilityProfileError,
+        match="styles.padding must be one of",
+    ):
+        load_backend_capability_profile(profile_path)
+
+
 def test_native_style_matrix_matches_layout_acceptance_behavior():
     sheet = css(
         """
@@ -236,6 +328,8 @@ def test_native_support_matrix_is_reflected_in_renderer_spike_doc():
         assert f"`{name}`" in doc
     assert "`Hero`" in doc
     assert "`lineHeight`" in doc
+    assert "`native-python`" in doc
+    assert "`otoe plan --backend native-python`" in doc
 
 
 def test_native_renderer_spike_documents_executable_acceptance_surfaces():

@@ -1,20 +1,31 @@
 from __future__ import annotations
 
 import argparse
-import ast
 import compileall
 import importlib
 import json
 import os
 import subprocess
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from copy import deepcopy
-from dataclasses import dataclass, replace
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
+from .capabilities import (
+    BackendCapabilityProfile,
+    CapabilityProfileError,
+    backend_capability_profile,
+    load_backend_capability_profile,
+    supported_backend_capability_names,
+)
+from .backend_coverage import (
+    backend_coverage_report_to_dict,
+    requirements_from_backend_coverage_payload,
+)
 from .build import (
+    BACKEND_COVERAGE_ARTIFACT_FILENAME,
     BUILD_MANIFEST_FILENAME,
     DEPS_ARTIFACT_FILENAME,
     PLAN_ARTIFACT_FILENAME,
@@ -28,6 +39,12 @@ from .build import (
     copy_runtime_files,
     write_runner,
 )
+from .contract_compare import (
+    ContractCompareError,
+    compare_json_contracts,
+    delete_json_pointer,
+    format_contract_difference,
+)
 from .deps import audit_deps, deps_to_dict, format_deps
 from .html import render_html
 from .live_server import LivePreviewApp, LivePreviewConfig, run_live_preview
@@ -36,30 +53,28 @@ from .native import render_native_png
 from .node import Node
 from .pack import PackError, pack_bundle
 from .plan import (
-    PlanDiagnostic,
+    OtoePlan,
     PlanError,
+    plan_mounted,
+)
+from .plan_artifacts import (
     compiled_styles_to_dict,
     format_plan,
-    plan_mounted,
     plan_to_dict,
 )
 from .profile import (
     DEFAULT_PROFILE_FILENAME,
-    PlanProfileConfig,
     ProfileError,
-    ProfileRuntimeFile,
     load_plan_profile,
 )
+from .profile_types import PlanProfileConfig
+from .runtime_files import RuntimeFileError, build_runtime_files
+from .static_classes import static_class_scan_for_target
 from .style import StyleError, StyleSheet, css
+from .style_ops import StyleIRError, apply_style_ops, load_style_ir, validate_style_ops
 from .utilities import utility_stylesheet
 
 DEFAULT_CHECK_PATHS = ("src", "examples", "tests")
-
-
-@dataclass(frozen=True)
-class StaticClassScan:
-    class_names: tuple[str, ...]
-    diagnostics: tuple[PlanDiagnostic, ...]
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -141,6 +156,19 @@ def _build_parser() -> argparse.ArgumentParser:
         help="optional TOML profile file; defaults to otoe.profile.toml when present",
     )
     plan.add_argument(
+        "--backend",
+        default=None,
+        help="backend capability profile used for plan diagnostics",
+    )
+    plan.add_argument(
+        "--backend-capability-profile",
+        help="backend capability profile JSON used for plan diagnostics",
+    )
+    plan.add_argument(
+        "--backend-coverage-requirements",
+        help="backend readiness/requirements JSON used as a plan gate",
+    )
+    plan.add_argument(
         "--css",
         action="append",
         help="optional Otoe CSS file to include in the style plan",
@@ -197,6 +225,19 @@ def _build_parser() -> argparse.ArgumentParser:
         help="optional TOML profile file; defaults to otoe.profile.toml when present",
     )
     build.add_argument(
+        "--backend",
+        default=None,
+        help="backend capability profile used for build-time plan diagnostics",
+    )
+    build.add_argument(
+        "--backend-capability-profile",
+        help="backend capability profile JSON used for build-time plan diagnostics",
+    )
+    build.add_argument(
+        "--backend-coverage-requirements",
+        help="backend readiness/requirements JSON used as a build gate",
+    )
+    build.add_argument(
         "--css",
         action="append",
         help="optional Otoe CSS file to include in the style plan",
@@ -227,6 +268,68 @@ def _build_parser() -> argparse.ArgumentParser:
         help="run the generated bundle runner after writing artifacts",
     )
     build.set_defaults(func=_build)
+
+    backend_profile = subcommands.add_parser(
+        "backend-profile",
+        help="inspect a backend capability profile",
+    )
+    backend_profile.add_argument(
+        "profile",
+        nargs="?",
+        help="built-in backend capability profile; defaults to native-python",
+    )
+    backend_profile.add_argument(
+        "--backend-capability-profile",
+        help="backend capability profile JSON to inspect",
+    )
+    backend_profile.add_argument(
+        "--coverage-declaration",
+        action="store_true",
+        help="write the profile's backend coverage declaration as JSON",
+    )
+    backend_profile.add_argument(
+        "--json",
+        action="store_true",
+        help="write the backend profile report as JSON",
+    )
+    backend_profile.add_argument(
+        "--out",
+        help="optional path to write the JSON output",
+    )
+    backend_profile.set_defaults(func=_backend_profile)
+
+    backend_coverage = subcommands.add_parser(
+        "backend-coverage",
+        help="compare backend coverage against readiness requirements",
+    )
+    backend_coverage.add_argument(
+        "--requirements",
+        required=True,
+        help="backend readiness report or requirements JSON to compare against",
+    )
+    backend_coverage.add_argument(
+        "--backend",
+        default=None,
+        help="built-in backend capability profile; defaults to native-python",
+    )
+    backend_coverage.add_argument(
+        "--backend-capability-profile",
+        help="backend capability profile JSON used to derive coverage",
+    )
+    backend_coverage.add_argument(
+        "--coverage-declaration",
+        help="explicit backend coverage declaration JSON to compare",
+    )
+    backend_coverage.add_argument(
+        "--json",
+        action="store_true",
+        help="write the backend coverage report as JSON",
+    )
+    backend_coverage.add_argument(
+        "--out",
+        help="optional path to write the JSON coverage report",
+    )
+    backend_coverage.set_defaults(func=_backend_coverage)
 
     pack = subcommands.add_parser(
         "pack",
@@ -264,6 +367,29 @@ def _build_parser() -> argparse.ArgumentParser:
         help="JSON pointer path to ignore; may be passed more than once",
     )
     compare_contract.set_defaults(func=_compare_contract)
+
+    style_ir = subcommands.add_parser(
+        "style-ir",
+        help="inspect a compiled otoe-styles.json Style IR artifact",
+    )
+    style_ir.add_argument("artifact", help="compiled otoe-styles.json path")
+    style_ir.add_argument(
+        "--strict",
+        action="store_true",
+        help="fail if styleOps drift from compiled rules or directStyles",
+    )
+    style_ir_output = style_ir.add_mutually_exclusive_group()
+    style_ir_output.add_argument(
+        "--summary",
+        action="store_true",
+        help="write a human summary; this is the default",
+    )
+    style_ir_output.add_argument(
+        "--json",
+        action="store_true",
+        help="write the Style IR inspection report as JSON",
+    )
+    style_ir.set_defaults(func=_style_ir)
 
     deps = subcommands.add_parser(
         "deps",
@@ -400,10 +526,10 @@ def _render(args: argparse.Namespace) -> int:
 
 def _plan(args: argparse.Namespace) -> int:
     try:
-        _, plan, plan_dict, _ = _resolve_plan_request(args)
+        _, plan, plan_dict, _, backend_coverage = _resolve_plan_request(args)
         if args.out:
             _write_json_artifact(Path(args.out), plan_dict)
-    except (CliError, PlanError) as exc:
+    except (CliError, PlanError, RuntimeFileError) as exc:
         print(f"plan: {exc}", file=sys.stderr)
         return 1
 
@@ -411,20 +537,36 @@ def _plan(args: argparse.Namespace) -> int:
         print(json.dumps(plan_dict, indent=2, sort_keys=True))
     else:
         print(format_plan(plan, target=args.target))
+        if backend_coverage is not None:
+            print(_format_plan_backend_coverage(backend_coverage))
         if args.out:
             print(f"plan artifact: {Path(args.out)}")
-    return 1 if plan.has_errors else 0
+    return 1 if plan.has_errors or _backend_coverage_failed(plan_dict) else 0
 
 
 def _build(args: argparse.Namespace) -> int:
     try:
-        profile_config, plan, plan_dict, stylesheet = _resolve_plan_request(args)
+        (
+            profile_config,
+            plan,
+            plan_dict,
+            stylesheet,
+            backend_coverage,
+        ) = _resolve_plan_request(args)
         output = Path(args.out)
         output.mkdir(parents=True, exist_ok=True)
         plan_path = output / PLAN_ARTIFACT_FILENAME
         _write_json_artifact(plan_path, plan_dict)
         if plan.has_errors:
             raise BuildError("plan invalid; refusing to write build manifest")
+        backend_coverage_path = None
+        if backend_coverage is not None:
+            backend_coverage_path = output / BACKEND_COVERAGE_ARTIFACT_FILENAME
+            _write_json_artifact(backend_coverage_path, backend_coverage)
+            if backend_coverage.get("passed") is not True:
+                raise BuildError(
+                    "backend coverage invalid; refusing to write build manifest"
+                )
         deps_audit = audit_deps(target=args.target, profile_config=profile_config)
         deps_dict = deps_to_dict(deps_audit)
         deps_path = output / DEPS_ARTIFACT_FILENAME
@@ -447,13 +589,17 @@ def _build(args: argparse.Namespace) -> int:
             bundle_artifact(deps_path, output_dir=output),
             bundle_artifact(style_path, output_dir=output),
         ]
+        if backend_coverage_path is not None:
+            artifact_manifest.append(
+                bundle_artifact(backend_coverage_path, output_dir=output)
+            )
         framework_file_manifest = copy_framework_files(
             profile_config,
             output_dir=output,
         )
         asset_manifest = copy_assets(profile_config.assets, output_dir=output)
         runtime_file_manifest = copy_runtime_files(
-            _build_runtime_files(args.target, profile_config),
+            build_runtime_files(args.target, profile_config.runtime_files),
             output_dir=output,
         )
         runner_manifest = write_runner(output_dir=output)
@@ -464,6 +610,7 @@ def _build(args: argparse.Namespace) -> int:
             profile_config=profile_config,
             assets=asset_manifest,
             artifacts=artifact_manifest,
+            backend_coverage=backend_coverage,
             framework_files=framework_file_manifest,
             runner=runner_manifest,
             runtime_files=runtime_file_manifest,
@@ -472,18 +619,89 @@ def _build(args: argparse.Namespace) -> int:
         _write_json_artifact(manifest_path, manifest)
         if args.validate:
             _validate_build_runner(output)
-    except (BuildError, CliError, PlanError) as exc:
+    except (BuildError, CliError, PlanError, RuntimeFileError) as exc:
         print(f"build: {exc}", file=sys.stderr)
         return 1
 
     print(f"build {args.target}: {output}")
     print(f"plan artifact: {plan_path}")
+    if backend_coverage_path is not None:
+        print(f"backend coverage artifact: {backend_coverage_path}")
     print(f"deps artifact: {deps_path}")
     print(f"styles artifact: {style_path}")
     print(f"manifest: {manifest_path}")
     if args.validate:
         print("validation: ok")
     return 0
+
+
+def _backend_profile(args: argparse.Namespace) -> int:
+    try:
+        profile = _backend_profile_from_args(args)
+    except (CliError, OSError, CapabilityProfileError) as exc:
+        print(f"backend-profile: {exc}", file=sys.stderr)
+        return 1
+
+    if args.coverage_declaration:
+        _emit_json_payload(
+            profile.coverage_declaration(),
+            print_json=args.json or args.out is None,
+            output_path=args.out,
+            artifact_label="backend profile artifact",
+        )
+        return 0
+
+    report = _backend_profile_report(profile)
+    if args.json or args.out:
+        _emit_json_payload(
+            report,
+            print_json=args.json,
+            output_path=args.out,
+            artifact_label="backend profile artifact",
+        )
+    else:
+        print(_format_backend_profile_report(report))
+    return 0
+
+
+def _backend_coverage(args: argparse.Namespace) -> int:
+    try:
+        declaration = _backend_coverage_declaration_from_args(args)
+        requirements_payload = _load_json_artifact(
+            Path(args.requirements),
+            label="requirements",
+        )
+        if not isinstance(requirements_payload, dict):
+            raise CliError("requirements JSON must be an object")
+        requirements, readiness_report = requirements_from_backend_coverage_payload(
+            requirements_payload
+        )
+    except (CliError, OSError, CapabilityProfileError) as exc:
+        print(f"backend-coverage: {exc}", file=sys.stderr)
+        return 1
+
+    report = backend_coverage_report_to_dict(
+        declaration,
+        requirements=requirements,
+        readiness_report=readiness_report,
+    )
+    if args.json:
+        _emit_json_payload(
+            report,
+            print_json=True,
+            output_path=args.out,
+            artifact_label="backend coverage artifact",
+        )
+    elif args.out:
+        _emit_json_payload(
+            report,
+            print_json=False,
+            output_path=args.out,
+            artifact_label="backend coverage artifact",
+        )
+    else:
+        print(_format_backend_coverage_report(report))
+    return 0 if report["passed"] else 1
 
 
 def _pack(args: argparse.Namespace) -> int:
@@ -509,13 +727,13 @@ def _compare_contract(args: argparse.Namespace) -> int:
             expected = deepcopy(expected)
             actual = deepcopy(actual)
             for pointer in ignored_paths:
-                _delete_json_pointer(expected, pointer)
-                _delete_json_pointer(actual, pointer)
-    except CliError as exc:
+                delete_json_pointer(expected, pointer)
+                delete_json_pointer(actual, pointer)
+    except (CliError, ContractCompareError) as exc:
         print(f"compare-contract: {exc}", file=sys.stderr)
         return 1
 
-    differences = _compare_json_contracts(expected, actual)
+    differences = compare_json_contracts(expected, actual)
     max_diffs = max(args.max_diffs, 0)
     shown_differences = differences[:max_diffs]
     report = {
@@ -539,11 +757,319 @@ def _compare_contract(args: argparse.Namespace) -> int:
             f"{Path(args.expected)} and {Path(args.actual)}"
         )
         for difference in shown_differences:
-            print(_format_contract_difference(difference))
+            print(format_contract_difference(difference))
         if report["truncated"]:
             print(f"... {len(differences) - len(shown_differences)} more difference(s)")
 
     return 0 if not differences else 1
+
+
+def _style_ir(args: argparse.Namespace) -> int:
+    artifact_path = Path(args.artifact)
+    try:
+        payload = _load_json_artifact(artifact_path, label="style artifact")
+        artifact = load_style_ir(payload)
+        applied = apply_style_ops(artifact)
+        validation = validate_style_ops(artifact) if args.strict else None
+    except (CliError, StyleIRError) as exc:
+        print(f"style-ir: {exc}", file=sys.stderr)
+        return 1
+
+    report = _style_ir_report(
+        artifact_path,
+        artifact,
+        applied,
+        strict=args.strict,
+        validation=validation,
+    )
+    if args.json:
+        print(json.dumps(report, indent=2, sort_keys=True))
+    else:
+        print(_format_style_ir_report(report))
+    return 0 if report["passed"] else 1
+
+
+def _style_ir_report(
+    artifact_path: Path,
+    artifact,
+    applied,
+    *,
+    strict: bool,
+    validation,
+) -> dict[str, Any]:
+    class_reports = [
+        {
+            "className": replay.class_name,
+            "selector": replay.selector,
+            "missing": replay.missing,
+            "appliedDeclarations": replay.applied_declarations,
+            "omittedOps": list(replay.omitted_ops),
+            "errors": list(replay.errors),
+        }
+        for replay in applied.classes
+    ]
+    direct_style_reports = [
+        {
+            "path": list(replay.path),
+            "widget": replay.widget,
+            "appliedDeclarations": replay.applied_declarations,
+            "omittedOps": list(replay.omitted_ops),
+            "errors": list(replay.errors),
+        }
+        for replay in applied.direct_styles
+    ]
+    style_ops_errors = [
+        *applied.errors,
+        *(
+            error
+            for replay in applied.classes
+            for error in replay.errors
+        ),
+        *(
+            error
+            for replay in applied.direct_styles
+            for error in replay.errors
+        ),
+    ]
+    strict_errors = list(validation.errors) if validation is not None else []
+    errors = strict_errors if strict else style_ops_errors
+    return {
+        "schemaVersion": 1,
+        "artifact": str(artifact_path),
+        "target": artifact.payload.get("target"),
+        "profile": artifact.payload.get("profile"),
+        "backend": artifact.backend,
+        "status": artifact.payload.get("status"),
+        "styleIr": {
+            "schemaVersion": artifact.schema_version,
+        },
+        "styleOps": {
+            "schemaVersion": artifact.style_ops_schema_version,
+            "format": artifact.style_ops_format,
+            "passed": applied.passed,
+        },
+        "strict": {
+            "enabled": strict,
+            "passed": not strict_errors,
+            "errors": strict_errors,
+        },
+        "counts": {
+            "rules": len(artifact.rules),
+            "classOps": len(applied.classes),
+            "directStyles": len(artifact.direct_styles),
+            "directStyleOps": len(applied.direct_styles),
+            "errors": len(errors),
+        },
+        "classes": class_reports,
+        "directStyles": direct_style_reports,
+        "errors": errors,
+        "passed": not errors,
+    }
+
+
+def _format_style_ir_report(report: dict[str, Any]) -> str:
+    counts = report["counts"]
+    style_ops = report["styleOps"]
+    status = "passed" if report["passed"] else "failed"
+    lines = [
+        f"style-ir {report['artifact']}",
+        f"target: {report.get('target') or '<unknown>'}",
+        f"profile: {report.get('profile') or '<unknown>'}",
+        f"backend: {report.get('backend') or '<unknown>'}",
+        f"status: {report.get('status') or '<unknown>'}",
+        (
+            "styleOps: "
+            f"schema={style_ops['schemaVersion']} "
+            f"format={style_ops['format']} "
+            f"{status}"
+        ),
+        f"classes: {counts['rules']} rules, {counts['classOps']} primitive entries",
+        (
+            "direct styles: "
+            f"{counts['directStyles']} entries, "
+            f"{counts['directStyleOps']} primitive entries"
+        ),
+    ]
+    if report["errors"]:
+        lines.append(f"errors: {len(report['errors'])}")
+        lines.extend(f"error: {error}" for error in report["errors"])
+    else:
+        lines.append("errors: none")
+    if report["strict"]["enabled"]:
+        strict_status = "passed" if report["strict"]["passed"] else "failed"
+        lines.append(f"strict: {strict_status}")
+    return "\n".join(lines)
+
+
+def _emit_json_payload(
+    payload: dict[str, Any],
+    *,
+    print_json: bool,
+    output_path: str | None,
+    artifact_label: str,
+) -> None:
+    encoded = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    if output_path is not None:
+        path = Path(output_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(encoded, encoding="utf-8")
+        if not print_json:
+            print(f"{artifact_label}: {path}")
+    if print_json:
+        print(encoded, end="")
+
+
+def _backend_profile_from_args(args: argparse.Namespace) -> BackendCapabilityProfile:
+    if args.profile is not None and args.backend_capability_profile is not None:
+        raise CliError(
+            "profile name and --backend-capability-profile are mutually exclusive"
+        )
+    if args.backend_capability_profile is not None:
+        return load_backend_capability_profile(args.backend_capability_profile)
+    return backend_capability_profile(args.profile)
+
+
+def _backend_coverage_declaration_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    coverage_sources = sum(
+        source is not None
+        for source in (
+            args.coverage_declaration,
+            args.backend,
+            args.backend_capability_profile,
+        )
+    )
+    if coverage_sources > 1:
+        raise CliError(
+            "--coverage-declaration, --backend, and "
+            "--backend-capability-profile are mutually exclusive"
+        )
+    if args.coverage_declaration is not None:
+        payload = _load_json_artifact(
+            Path(args.coverage_declaration),
+            label="coverage declaration",
+        )
+        if not isinstance(payload, dict):
+            raise CliError("coverage declaration JSON must be an object")
+        return payload
+    profile = _backend_profile_from_name_or_path(
+        profile_name=args.backend,
+        profile_path=args.backend_capability_profile,
+    )
+    return profile.coverage_declaration()
+
+
+def _backend_profile_from_name_or_path(
+    *,
+    profile_name: str | None,
+    profile_path: str | None,
+) -> BackendCapabilityProfile:
+    if profile_name is not None and profile_path is not None:
+        raise CliError(
+            "profile name and --backend-capability-profile are mutually exclusive"
+        )
+    if profile_path is not None:
+        return load_backend_capability_profile(profile_path)
+    return backend_capability_profile(profile_name)
+
+
+def _backend_profile_report(profile: BackendCapabilityProfile) -> dict[str, Any]:
+    coverage_declaration = profile.coverage_declaration()
+    covers = coverage_declaration["covers"]
+    return {
+        "schemaVersion": 1,
+        "format": "backend-profile-report",
+        "profile": profile.to_dict(),
+        "summary": {
+            "styles": _support_counts(profile.style_support),
+            "widgets": _support_counts(profile.widget_support),
+            "inputs": _support_counts(profile.input_support),
+            "coverage": {
+                "widgets": len(covers["widgets"]),
+                "inputs": len(covers["inputs"]),
+                "styles": len(covers["styles"]),
+                "declaredStyleOmissions": len(covers["declaredStyleOmissions"]),
+            },
+        },
+        "coverageDeclaration": coverage_declaration,
+    }
+
+
+def _format_backend_profile_report(report: dict[str, Any]) -> str:
+    profile = report["profile"]
+    summary = report["summary"]
+    coverage = summary["coverage"]
+    return "\n".join(
+        [
+            f"backend-profile {profile['name']}",
+            f"label: {profile['label']}",
+            f"styles: {_format_support_counts(summary['styles'])}",
+            f"widgets: {_format_support_counts(summary['widgets'])}",
+            f"inputs: {_format_support_counts(summary['inputs'])}",
+            (
+                "coverage: "
+                f"widgets={coverage['widgets']}, "
+                f"inputs={coverage['inputs']}, "
+                f"styles={coverage['styles']}, "
+                f"declaredStyleOmissions={coverage['declaredStyleOmissions']}"
+            ),
+        ]
+    )
+
+
+def _format_backend_coverage_report(report: dict[str, Any]) -> str:
+    status = "passed" if report["passed"] else "failed"
+    readiness_status = "passed" if report["readiness"]["passed"] else "failed"
+    lines = [
+        f"backend-coverage {report.get('backend') or '<unknown>'}",
+        f"status: {status}",
+        f"readiness: {readiness_status}",
+    ]
+    for section in ("widgets", "inputs", "styles", "declaredStyleOmissions"):
+        summary = report["coverage"][section]["summary"]
+        lines.append(
+            f"{section}: "
+            f"covered={summary['covered']}/{summary['required']}, "
+            f"missing={summary['missing']}, "
+            f"extra={summary['extra']}"
+        )
+        missing = report["coverage"][section]["missing"]
+        if missing:
+            lines.append(f"{section} missing: {', '.join(missing)}")
+    if report["declarationErrors"]:
+        lines.append(f"declaration errors: {len(report['declarationErrors'])}")
+        lines.extend(f"error: {error}" for error in report["declarationErrors"])
+    if report["blockers"]:
+        lines.append(f"blockers: {', '.join(report['blockers'])}")
+    else:
+        lines.append("blockers: none")
+    return "\n".join(lines)
+
+
+def _format_plan_backend_coverage(report: dict[str, Any]) -> str:
+    status = "passed" if report.get("passed") is True else "failed"
+    lines = [f"backend coverage: {status}"]
+    blockers = report.get("blockers", [])
+    if isinstance(blockers, list) and blockers:
+        lines.extend(f"backend coverage blocker: {blocker}" for blocker in blockers)
+    return "\n".join(lines)
+
+
+def _backend_coverage_failed(plan_dict: dict[str, Any]) -> bool:
+    report = plan_dict.get("backendCoverage")
+    return isinstance(report, dict) and report.get("passed") is not True
+
+
+def _support_counts(values: Mapping[str, str]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for support in values.values():
+        counts[support] = counts.get(support, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def _format_support_counts(counts: Mapping[str, int]) -> str:
+    if not counts:
+        return "none"
+    return ", ".join(f"{name}={count}" for name, count in sorted(counts.items()))
 
 
 def _validate_build_runner(output: Path) -> None:
@@ -567,81 +1093,6 @@ def _run_build_runner(output: Path, mode: str, *, label: str) -> None:
     if not details:
         details = f"runner exited with status {result.returncode}"
     raise BuildError(f"runner {label} failed: {details}")
-
-
-def _build_runtime_files(
-    target: str,
-    profile_config: PlanProfileConfig,
-) -> tuple[ProfileRuntimeFile, ...]:
-    files = [*_auto_target_runtime_files(target), *profile_config.runtime_files]
-    deduped: list[ProfileRuntimeFile] = []
-    seen = set()
-    for file in files:
-        key = file.relative_path.as_posix()
-        if key in seen:
-            continue
-        seen.add(key)
-        deduped.append(file)
-    return tuple(deduped)
-
-
-def _auto_target_runtime_files(target: str) -> tuple[ProfileRuntimeFile, ...]:
-    module_name, _ = _parse_target_spec(target)
-    if "." in module_name:
-        return ()
-    module = sys.modules.get(module_name)
-    source = getattr(module, "__file__", None)
-    if source is None:
-        return ()
-    path = Path(source)
-    if path.suffix != ".py" or path.name != f"{module_name}.py":
-        return ()
-    if not path.is_file():
-        return ()
-    return tuple(_local_runtime_files(path, seen=set()))
-
-
-def _local_runtime_files(
-    path: Path,
-    *,
-    seen: set[Path],
-) -> list[ProfileRuntimeFile]:
-    resolved = path.resolve()
-    if resolved in seen:
-        return []
-    seen.add(resolved)
-
-    files = [ProfileRuntimeFile(source=path, relative_path=Path(path.name))]
-    for candidate in _local_import_files(path):
-        files.extend(_local_runtime_files(candidate, seen=seen))
-    return files
-
-
-def _local_import_files(path: Path) -> list[Path]:
-    try:
-        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-    except SyntaxError as exc:
-        raise BuildError(f"could not parse runtime module {str(path)!r}: {exc}") from exc
-
-    imports: list[Path] = []
-    for name in _local_import_module_names(tree):
-        candidate = path.parent / f"{name}.py"
-        if candidate.is_file():
-            imports.append(candidate)
-    return imports
-
-
-def _local_import_module_names(tree: ast.AST) -> tuple[str, ...]:
-    names: list[str] = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                if "." not in alias.name:
-                    names.append(alias.name)
-        elif isinstance(node, ast.ImportFrom):
-            if node.level == 0 and node.module and "." not in node.module:
-                names.append(node.module)
-    return tuple(dict.fromkeys(names))
 
 
 def _deps(args: argparse.Namespace) -> int:
@@ -721,6 +1172,7 @@ def _new(args: argparse.Namespace) -> int:
 
 def _load_target(spec: str) -> Any:
     module_name, object_path = _parse_target_spec(spec)
+    _ensure_cwd_on_syspath()
     try:
         value = importlib.import_module(module_name)
     except Exception as exc:
@@ -731,6 +1183,13 @@ def _load_target(spec: str) -> Any:
         except AttributeError as exc:
             raise CliError(f"{spec!r} could not resolve attribute {part!r}") from exc
     return value
+
+
+def _ensure_cwd_on_syspath() -> None:
+    cwd = str(Path.cwd())
+    if "" in sys.path or cwd in sys.path:
+        return
+    sys.path.insert(0, cwd)
 
 
 def _parse_target_spec(spec: str) -> tuple[str, str]:
@@ -766,29 +1225,102 @@ def _load_plan_profile_config(path: str | None) -> PlanProfileConfig:
 
 def _resolve_plan_request(
     args: argparse.Namespace,
-) -> tuple[PlanProfileConfig, Any, dict[str, Any], StyleSheet | None]:
+) -> tuple[
+    PlanProfileConfig,
+    Any,
+    dict[str, Any],
+    StyleSheet | None,
+    dict[str, Any] | None,
+]:
     target = _load_target(args.target)
     mounted = _coerce_render_target(target)
     profile_config = _load_plan_profile_config(args.profile_file)
     if args.profile is not None:
         profile_config = replace(profile_config, profile=args.profile)
+    if (
+        getattr(args, "backend", None) is not None
+        and getattr(args, "backend_capability_profile", None) is not None
+    ):
+        raise CliError(
+            "--backend and --backend-capability-profile are mutually exclusive"
+        )
+    if getattr(args, "backend", None) is not None:
+        profile_config = replace(
+            profile_config,
+            backend_capability=args.backend,
+            backend_capability_profile=None,
+        )
+    if getattr(args, "backend_capability_profile", None) is not None:
+        profile_config = replace(
+            profile_config,
+            backend_capability=None,
+            backend_capability_profile=Path(args.backend_capability_profile),
+        )
+    if getattr(args, "backend_coverage_requirements", None) is not None:
+        profile_config = replace(
+            profile_config,
+            backend_coverage_requirements=Path(args.backend_coverage_requirements),
+        )
     include_utilities = profile_config.utilities if args.utilities is None else args.utilities
     css_paths = tuple(args.css or profile_config.css_paths)
     stylesheet = _load_plan_stylesheet(
         css_paths,
         include_utilities=include_utilities,
     )
-    static_class_scan = _static_class_scan_for_target(args.target)
+    static_class_scan = static_class_scan_for_target(args.target)
     plan = plan_mounted(
         mounted,
         profile=profile_config.profile,
+        backend=_plan_backend_capability(profile_config),
         stylesheet=stylesheet,
         static_classes=static_class_scan.class_names,
         safelist=profile_config.style_safelist,
         diagnostics=static_class_scan.diagnostics,
         strict_styles=args.strict_styles,
     )
-    return profile_config, plan, plan_to_dict(plan, target=args.target), stylesheet
+    plan_dict = plan_to_dict(plan, target=args.target)
+    backend_coverage = _plan_backend_coverage_report(profile_config, plan)
+    if backend_coverage is not None:
+        plan_dict["backendCoverage"] = backend_coverage
+    return profile_config, plan, plan_dict, stylesheet, backend_coverage
+
+
+def _plan_backend_capability(
+    profile_config: PlanProfileConfig,
+) -> str | BackendCapabilityProfile | None:
+    if profile_config.backend_capability_profile is not None:
+        try:
+            return load_backend_capability_profile(
+                profile_config.backend_capability_profile
+            )
+        except (OSError, CapabilityProfileError) as exc:
+            raise CliError(str(exc)) from exc
+    if profile_config.backend_capability is not None:
+        return profile_config.backend_capability
+    if profile_config.backend_name in supported_backend_capability_names():
+        return profile_config.backend_name
+    return None
+
+
+def _plan_backend_coverage_report(
+    profile_config: PlanProfileConfig,
+    plan: OtoePlan,
+) -> dict[str, Any] | None:
+    requirements_path = profile_config.backend_coverage_requirements
+    if requirements_path is None:
+        return None
+    payload = _load_json_artifact(
+        requirements_path,
+        label="backend coverage requirements",
+    )
+    if not isinstance(payload, dict):
+        raise CliError("backend coverage requirements JSON must be an object")
+    requirements, readiness_report = requirements_from_backend_coverage_payload(payload)
+    return backend_coverage_report_to_dict(
+        plan.backend_capabilities.coverage_declaration(),
+        requirements=requirements,
+        readiness_report=readiness_report,
+    )
 
 
 def _load_plan_stylesheet(
@@ -817,172 +1349,6 @@ def _merge_stylesheets(stylesheets: list[StyleSheet]) -> StyleSheet:
     return StyleSheet(rules=rules, tokens=tokens)
 
 
-def _static_class_scan_for_target(target: str) -> StaticClassScan:
-    try:
-        runtime_files = _auto_target_runtime_files(target)
-    except BuildError as exc:
-        raise CliError(str(exc)) from exc
-
-    class_names: list[str] = []
-    diagnostics: list[PlanDiagnostic] = []
-    for runtime_file in runtime_files:
-        scan = _static_class_scan_from_file(runtime_file.source)
-        class_names.extend(scan.class_names)
-        diagnostics.extend(scan.diagnostics)
-    return StaticClassScan(
-        class_names=tuple(dict.fromkeys(class_names)),
-        diagnostics=tuple(dict.fromkeys(diagnostics)),
-    )
-
-
-def _static_class_scan_from_file(path: Path) -> StaticClassScan:
-    try:
-        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-    except SyntaxError as exc:
-        raise CliError(f"could not parse runtime module {str(path)!r}: {exc}") from exc
-    assignments = _static_class_expr_assignments(tree)
-    class_names: list[str] = []
-    diagnostics: list[PlanDiagnostic] = []
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Call):
-            continue
-        for keyword in node.keywords:
-            if keyword.arg == "className":
-                scan = _static_class_scan_from_expr(
-                    keyword.value,
-                    assignments=assignments,
-                    path=path,
-                    line=getattr(keyword.value, "lineno", None),
-                )
-                class_names.extend(scan.class_names)
-                diagnostics.extend(scan.diagnostics)
-    return StaticClassScan(
-        class_names=tuple(dict.fromkeys(class_names)),
-        diagnostics=tuple(dict.fromkeys(diagnostics)),
-    )
-
-
-def _static_class_expr_assignments(tree: ast.AST) -> dict[str, tuple[ast.AST, ...]]:
-    assignments: dict[str, list[ast.AST]] = {}
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Assign):
-            for target in node.targets:
-                if isinstance(target, ast.Name):
-                    assignments.setdefault(target.id, []).append(node.value)
-        elif (
-            isinstance(node, ast.AnnAssign)
-            and isinstance(node.target, ast.Name)
-            and node.value is not None
-        ):
-            assignments.setdefault(node.target.id, []).append(node.value)
-    return {name: tuple(values) for name, values in assignments.items()}
-
-
-def _static_class_scan_from_expr(
-    node: ast.AST,
-    *,
-    assignments: dict[str, tuple[ast.AST, ...]],
-    path: Path,
-    line: int | None,
-) -> StaticClassScan:
-    class_names: list[str] = []
-    diagnostics: list[PlanDiagnostic] = []
-    visiting_names: set[str] = set()
-
-    def visit(current: ast.AST) -> None:
-        if isinstance(current, ast.Constant) and isinstance(current.value, str):
-            class_names.extend(_split_static_class_literal(current.value))
-            return
-        if isinstance(current, ast.Name) and current.id in assignments:
-            if current.id in visiting_names:
-                return
-            visiting_names.add(current.id)
-            try:
-                for assigned in assignments[current.id]:
-                    visit(assigned)
-            finally:
-                visiting_names.remove(current.id)
-            return
-        if isinstance(current, ast.JoinedStr):
-            if all(
-                isinstance(value, ast.Constant) and isinstance(value.value, str)
-                for value in current.values
-            ):
-                class_names.extend(
-                    _split_static_class_literal(
-                        "".join(str(value.value) for value in current.values)
-                    )
-                )
-            else:
-                diagnostics.append(
-                    _dynamic_class_name_diagnostic(
-                        path,
-                        line=line,
-                        reason="f-string interpolation",
-                    )
-                )
-            return
-        if _is_dynamic_string_operation(current):
-            diagnostics.append(
-                _dynamic_class_name_diagnostic(
-                    path,
-                    line=line,
-                    reason="string interpolation or concatenation",
-                )
-            )
-            return
-        for child in ast.iter_child_nodes(current):
-            visit(child)
-
-    visit(node)
-    return StaticClassScan(
-        class_names=tuple(dict.fromkeys(class_names)),
-        diagnostics=tuple(dict.fromkeys(diagnostics)),
-    )
-
-
-def _is_dynamic_string_operation(node: ast.AST) -> bool:
-    if isinstance(node, ast.BinOp) and isinstance(node.op, (ast.Add, ast.Mod)):
-        return _contains_string_literal(node)
-    if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
-        return (
-            node.func.attr == "format"
-            and isinstance(node.func.value, ast.Constant)
-            and isinstance(node.func.value.value, str)
-        )
-    return False
-
-
-def _contains_string_literal(node: ast.AST) -> bool:
-    return any(
-        isinstance(child, ast.Constant) and isinstance(child.value, str)
-        for child in ast.walk(node)
-    )
-
-
-def _dynamic_class_name_diagnostic(
-    path: Path,
-    *,
-    line: int | None,
-    reason: str,
-) -> PlanDiagnostic:
-    location = path.name if line is None else f"{path.name}:{line}"
-    return PlanDiagnostic(
-        "warning",
-        "dynamic className expression "
-        f"in {location} uses {reason}; safelist possible output classes "
-        "for hardware/cage builds",
-    )
-
-
-def _split_static_class_literal(value: str) -> tuple[str, ...]:
-    return tuple(name for name in value.split() if _is_static_class_token(name))
-
-
-def _is_static_class_token(value: str) -> bool:
-    return bool(value) and "{" not in value and "}" not in value
-
-
 def _write_json_artifact(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -1000,215 +1366,6 @@ def _load_json_artifact(path: Path, *, label: str) -> Any:
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise CliError(f"{label} file {str(path)!r} is not valid JSON: {exc}") from exc
-
-
-def _compare_json_contracts(expected: Any, actual: Any) -> list[dict[str, Any]]:
-    differences: list[dict[str, Any]] = []
-    _collect_json_contract_differences(
-        expected,
-        actual,
-        pointer="",
-        differences=differences,
-    )
-    return differences
-
-
-def _collect_json_contract_differences(
-    expected: Any,
-    actual: Any,
-    *,
-    pointer: str,
-    differences: list[dict[str, Any]],
-) -> None:
-    expected_type = _json_type_name(expected)
-    actual_type = _json_type_name(actual)
-    if expected_type != actual_type:
-        differences.append(
-            {
-                "path": pointer,
-                "kind": "type",
-                "expectedType": expected_type,
-                "actualType": actual_type,
-                "expected": _summarize_contract_value(expected),
-                "actual": _summarize_contract_value(actual),
-            }
-        )
-        return
-
-    if isinstance(expected, dict):
-        expected_keys = set(expected)
-        actual_keys = set(actual)
-        for key in sorted(expected_keys - actual_keys):
-            differences.append(
-                {
-                    "path": _json_pointer_child(pointer, key),
-                    "kind": "missing",
-                    "expected": _summarize_contract_value(expected[key]),
-                    "actual": None,
-                }
-            )
-        for key in sorted(actual_keys - expected_keys):
-            differences.append(
-                {
-                    "path": _json_pointer_child(pointer, key),
-                    "kind": "extra",
-                    "expected": None,
-                    "actual": _summarize_contract_value(actual[key]),
-                }
-            )
-        for key in sorted(expected_keys & actual_keys):
-            _collect_json_contract_differences(
-                expected[key],
-                actual[key],
-                pointer=_json_pointer_child(pointer, key),
-                differences=differences,
-            )
-        return
-
-    if isinstance(expected, list):
-        if len(expected) != len(actual):
-            differences.append(
-                {
-                    "path": pointer,
-                    "kind": "length",
-                    "expected": len(expected),
-                    "actual": len(actual),
-                }
-            )
-        for index, (expected_item, actual_item) in enumerate(zip(expected, actual)):
-            _collect_json_contract_differences(
-                expected_item,
-                actual_item,
-                pointer=_json_pointer_child(pointer, str(index)),
-                differences=differences,
-            )
-        return
-
-    if expected != actual:
-        differences.append(
-            {
-                "path": pointer,
-                "kind": "value",
-                "expected": expected,
-                "actual": actual,
-            }
-        )
-
-
-def _json_type_name(value: Any) -> str:
-    if value is None:
-        return "null"
-    if isinstance(value, bool):
-        return "boolean"
-    if isinstance(value, dict):
-        return "object"
-    if isinstance(value, list):
-        return "array"
-    if isinstance(value, int | float):
-        return "number"
-    if isinstance(value, str):
-        return "string"
-    return type(value).__name__
-
-
-def _json_pointer_child(pointer: str, key: str) -> str:
-    escaped = key.replace("~", "~0").replace("/", "~1")
-    return f"{pointer}/{escaped}"
-
-
-def _delete_json_pointer(payload: Any, pointer: str) -> None:
-    parts = _parse_json_pointer(pointer)
-    current = payload
-    for part in parts[:-1]:
-        if isinstance(current, dict):
-            if part not in current:
-                return
-            current = current[part]
-        elif isinstance(current, list):
-            index = _json_pointer_list_index(part)
-            if index is None or index >= len(current):
-                return
-            current = current[index]
-        else:
-            return
-
-    key = parts[-1]
-    if isinstance(current, dict):
-        current.pop(key, None)
-    elif isinstance(current, list):
-        index = _json_pointer_list_index(key)
-        if index is not None and index < len(current):
-            del current[index]
-
-
-def _parse_json_pointer(pointer: str) -> tuple[str, ...]:
-    if not pointer.startswith("/"):
-        raise CliError(f"ignore path must be a JSON pointer starting with '/': {pointer!r}")
-    return tuple(_unescape_json_pointer_part(part) for part in pointer.split("/")[1:])
-
-
-def _unescape_json_pointer_part(part: str) -> str:
-    chars: list[str] = []
-    index = 0
-    while index < len(part):
-        char = part[index]
-        if char != "~":
-            chars.append(char)
-            index += 1
-            continue
-        if index + 1 >= len(part) or part[index + 1] not in {"0", "1"}:
-            raise CliError(f"invalid JSON pointer escape in ignore path: {part!r}")
-        chars.append("~" if part[index + 1] == "0" else "/")
-        index += 2
-    return "".join(chars)
-
-
-def _json_pointer_list_index(part: str) -> int | None:
-    if not part.isdigit():
-        return None
-    return int(part)
-
-
-def _display_json_pointer(pointer: str) -> str:
-    return "$" if not pointer else pointer
-
-
-def _summarize_contract_value(value: Any) -> Any:
-    if isinstance(value, dict):
-        return {
-            "type": "object",
-            "keys": sorted(str(key) for key in value),
-        }
-    if isinstance(value, list):
-        return {
-            "type": "array",
-            "length": len(value),
-        }
-    return value
-
-
-def _format_contract_difference(difference: dict[str, Any]) -> str:
-    path = _display_json_pointer(str(difference["path"]))
-    kind = difference["kind"]
-    if kind == "missing":
-        return f"- {path}: missing in actual; expected {_format_contract_value(difference['expected'])}"
-    if kind == "extra":
-        return f"- {path}: extra in actual; actual {_format_contract_value(difference['actual'])}"
-    if kind == "type":
-        return (
-            f"- {path}: type {difference['expectedType']} != "
-            f"{difference['actualType']}"
-        )
-    if kind == "length":
-        return f"- {path}: length {difference['expected']} != {difference['actual']}"
-    return (
-        f"- {path}: expected {_format_contract_value(difference['expected'])}, "
-        f"actual {_format_contract_value(difference['actual'])}"
-    )
-
-
-def _format_contract_value(value: Any) -> str:
-    return json.dumps(value, sort_keys=True)
 
 
 def _coerce_render_target(target: Any) -> MountedNode:

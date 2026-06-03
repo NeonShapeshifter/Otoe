@@ -139,13 +139,25 @@ window backend:
   `--composed-renderer-contract-json` CLI output serializes that composed
   contract, including the per-capability call streams and PNG smoke frame.
   `--compact-contract` emits the same contract as structural signatures plus
-  stable `sha256:` hashes instead of full layout and paint snapshots.
+  stable `sha256:` hashes instead of full layout and paint snapshots. Renderer
+  contracts also include a `capabilityAudit` for widget types, input bindings,
+  unsupported entries, and replay requirements observed in the minimal and
+  task-board frames. `--backend-readiness-json` combines that renderer audit
+  with the StyleOps replay/audit into one blocker-oriented readiness report;
+  `examples/native/contracts/backend_readiness_expected.json` is the checked-in
+  aggregate gate for that report. `--backend-coverage-declaration-json` derives
+  coverage claims from a backend capability profile, and
+  `--backend-coverage-json` compares those claims against that readiness report.
+  Candidate-specific JSON profiles can be passed with
+  `--backend-capability-profile` before they graduate into a built-in profile.
   `run_style_ops_candidate_acceptance(...)` and `--style-ops-contract-json`
   replay the generated `otoe-styles.json` `styleOps` artifact into low-level
   declarations, then compare declarations, omitted operations, support
   categories, and missing-class flags against compiled `rules`. A candidate can
   pass `--style-artifact` to validate an existing build artifact without
-  re-parsing CSS at runtime. The checked-in
+  re-parsing CSS at runtime. The contract also includes a `capabilityAudit`
+  summary of applied layout/paint properties, declared omissions, unsupported
+  properties, and replay requirements. The checked-in
   `examples/native/contracts/style_ops_expected.json` fixture is the current
   expected style-ops contract for drift checks.
 - `tests/test_native_window.py` and `tests/test_native_phase3_closeout.py` keep
@@ -160,11 +172,17 @@ Renderer candidates must additionally prove that the injected
 `NativeRendererBackend` receives layout, paint, and PNG calls from the same
 surface/driver/adapter path. The renderer contract snapshot is intentionally
 structural rather than pixel-perfect: it locks down widget paths, bounds, event
-names, visible text, paint command kinds, focus rings, and clipping boundaries.
+names, visible text, paint command kinds, focus rings, clipping boundaries, and
+the widget/input capability audit.
 Backend candidates that consume styles must replay the build-time `styleOps`
 contract and compare it to compiled rules before claiming CSS or primitive
 style support; the CSS parser belongs in build/planning, not in hardware
-runtime.
+runtime. They should also inspect the `capabilityAudit` output before claiming
+coverage, because it names the support categories and omitted properties the
+candidate is actually exercising. A backend can turn that claim into a checked
+JSON artifact with `--backend-coverage-json --backend-capability ...`, or use
+`--backend-capability-profile` / `--coverage-declaration` while the candidate
+is narrower than its target profile.
 Partial candidates should start with `ComposedNativeRendererBackend` or an
 equivalent wrapper and replace only one capability until the golden contract
 stays green. Layout candidates should graduate from the minimal replay to the
@@ -228,8 +246,9 @@ The current layout adapter has explicit behavior for:
 - `VStack`: vertical child layout.
 - `HStack`: horizontal child layout.
 - `Text`: text-sized leaf box.
-- `Button`: text-sized leaf box with default padding, fill, border, and click
-  event support.
+- `Button`: text-sized control with default padding, fill, border, and click
+  event support; when children are present, native layout preserves those
+  children inside the button instead of collapsing to the label only.
 - `Input`: text-sized leaf box with default width, padding, fill, and border.
 - `Panel`, `FocusScope`, and `ShortcutScope`: container boxes.
 - `ScrollView`: bounded container box with `scrollY`, clipped descendant paint,
@@ -320,6 +339,21 @@ expose public role, label, or OS accessibility APIs yet.
 
 The native backend has an executable style matrix in `otoe._native_shared`.
 Styles parsed by `css(...)` are not automatically native behavior.
+The build/planning layer also exposes this matrix as the `native-python`
+backend capability profile. `otoe plan --backend native-python` and
+`[backend].capability = "native-python"` write explicit style, widget, and input
+capabilities into plan/style artifacts, and `styleOps` support categories are
+derived from that selected profile rather than from an implicit global backend.
+Experimental backend candidates can provide the same shape through
+`otoe plan/build --backend-capability-profile backend-profile.json` or
+`[backend].capability_profile = "backend-profile.json"` before becoming
+built-in profiles. `otoe backend-profile --backend-capability-profile
+backend-profile.json --json` inspects that profile without running a replay.
+`otoe backend-coverage --requirements backend-readiness.json
+--backend-capability-profile backend-profile.json` compares the same profile
+against replay-derived requirements from core CLI. The skeleton still accepts
+coverage flags for compatibility, but new flows should generate readiness in
+the skeleton and run coverage comparison through `otoe backend-coverage`.
 
 Native layout-only style keys currently are:
 

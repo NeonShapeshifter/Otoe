@@ -4,6 +4,96 @@
 
 - No unreleased changes.
 
+## v0.1.7 - Backend Coverage and Hardware Bundle Gates
+
+- Added `directStyles` to `otoe-plan.json`, `otoe-styles.json`, and
+  `styleOps.directStyles` so direct widget style props are auditable and
+  available as low-level primitive operations by widget path.
+- Added `load_style_ir(...)` and `apply_style_ops(...)` helpers for backend
+  candidates and tooling that need to consume compiled Style IR artifacts
+  without hand-parsing the JSON shape.
+- Added `otoe style-ir` to inspect compiled `otoe-styles.json` artifacts as a
+  human summary or JSON report, with `--strict` drift detection for `styleOps`
+  versus compiled `rules` and `directStyles`.
+- Added copied-runtime Style IR drift detection to `otoe-run.py --verify` via
+  `otoe.style_ops`, so offline bundles validate the primitive style stream
+  before deployment or layout checks.
+- Hardened `stylesheet_from_artifact(...)` so runtime style rehydration rejects
+  Style IR drift by default, with `strict=False` available for manual artifact
+  inspection.
+- Added strict Style IR drift detection to `otoe pack` so deployment archives
+  cannot be created from bundles whose `styleOps` no longer match compiled
+  `rules` or `directStyles`.
+- Split the `otoe-styles.json` compiler into `otoe.style_ir` and the runtime
+  replay/validation helpers into `otoe.style_ops`, defining the Style IR v1
+  contract for resolved rules, omitted declarations, backend capabilities, and
+  low-level style operations.
+- Added a `capabilityAudit` section to the backend-candidate `styleOps`
+  contract so candidates can see applied properties by support category,
+  declared omissions, unsupported properties, and replay requirements.
+- Added renderer-contract widget/input capability audits so backend candidates
+  can see the widget types, input bindings, unsupported entries, and replay
+  requirements exercised by the minimal and task-board replays.
+- Added `--backend-readiness-json` to combine renderer replay, widget/input
+  audit, StyleOps replay, style capability audit, blockers, and replay
+  requirements into one backend-candidate readiness report.
+- Added `examples/native/contracts/backend_readiness_expected.json` as the
+  checked-in expected readiness report for backend-candidate comparison.
+- Added `--backend-coverage-json`,
+  `--backend-coverage-declaration-json`, and a checked-in full coverage
+  declaration derived from the `native-python` capability profile so backend
+  candidates can compare claimed widget, input, style, and omitted style
+  support against the readiness requirements before claiming support.
+- Added JSON backend capability profile loading for backend-candidate tooling,
+  plus a partial candidate fixture that proves missing widget/style coverage is
+  reported as blockers before a candidate graduates to the full profile.
+- Added `--backend-capability-profile` to `otoe plan` and `otoe build`, and
+  `[backend].capability_profile` in `otoe.profile.toml`, so candidate backend
+  profiles drive plan diagnostics, styleOps support categories, bundle
+  manifests, and coverage gates from the same JSON artifact.
+- Added `otoe backend-profile` to inspect built-in or JSON backend capability
+  profiles from the core CLI, including JSON reports and coverage declaration
+  output without routing through the native backend skeleton.
+- Added `otoe backend-coverage` to compare a built-in profile, JSON candidate
+  profile, or explicit coverage declaration against backend readiness
+  requirements from the core CLI.
+- Added `--out` artifact writing for `otoe backend-profile` and
+  `otoe backend-coverage`, and marked backend coverage flags in the native
+  skeleton as compatibility-only.
+- Added `[backend].coverage_requirements` plus
+  `--backend-coverage-requirements` for `otoe plan` and `otoe build`; plan
+  reports `backendCoverage`, and build writes `otoe-backend-coverage.json`
+  before refusing to write `manifest.json` when the selected backend capability
+  profile misses required widget, input, style, or omission coverage.
+- Hardened `otoe-run.py --verify` and `otoe pack` so bundles that declare
+  `backendCoverage` must keep a passing `backend-coverage-report` artifact in
+  the manifest artifact list, and deployment archives include
+  `otoe-backend-coverage.json`.
+- Hardened the bundle verification contract so `plan`, `deps`, `styles`, and
+  `backendCoverage` artifacts must be listed in `manifest.json` `artifacts`
+  with hashes, core plan/dependency/style artifacts cannot report invalid
+  status after hash updates, and hardware bundles still reject runtime installs
+  at runner/pack time.
+- Added a backend-candidate regression for the real bundle path: `otoe build
+  --validate`, then `--bundle dist/...` runner verification, manifest style
+  artifact discovery, and styleOps replay.
+- Added `examples/native/contracts/bundle_style_ops_expected.json` as the
+  checked-in expected contract for the bundle-backed StyleOps replay.
+- Hardened Style IR validation so `rules`, `directStyles`, and low-level
+  `styleOps` reject malformed serialized value payloads before backend replay.
+- Fixed live preview event handling so stale browser event requests are ignored
+  server-side before they can mutate shared preview state.
+- Fixed static `className` extraction so condition/comparator string literals
+  are not mistaken for CSS classes.
+- Fixed native layout for `Button` children so `ActionButton` leading/trailing
+  content remains visible outside the HTML renderer.
+- Fixed `CommandPalette.query` so literal values and reactive values follow the
+  documented contract.
+- Added backend capability profiles for plan/build diagnostics. The current
+  `native-python` profile records style, widget, and input support in
+  `otoe-plan.json`, `manifest.json`, `otoe-styles.json`, and `styleOps`, while
+  keeping `native` as a compatibility alias for existing profile files.
+
 ## v0.1.6 - Low-Level StyleOps Contracts
 
 - Added low-level `styleOps` to `otoe-styles.json` so hardware and backend

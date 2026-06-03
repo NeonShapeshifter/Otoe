@@ -2,6 +2,8 @@ from copy import deepcopy
 import json
 from pathlib import Path
 
+import pytest
+
 from examples.native.backend_candidate_skeleton import (
     BACKEND_CANDIDATE_STYLES,
     BackendCandidateAcceptanceReport,
@@ -20,10 +22,13 @@ from examples.native.backend_candidate_skeleton import (
     RendererCandidateAcceptanceReport,
     StyleOpsCandidateAcceptanceReport,
     StyleOpsCandidateClassReport,
+    StyleOpsCandidateDirectStyleReport,
     TaskBoardBackendCandidateReplay,
     acceptance_report_to_dict,
     backend_candidate_style_artifact,
     backend_candidate_app,
+    backend_coverage_report_to_dict,
+    backend_readiness_report_to_dict,
     compact_composed_renderer_contract_snapshot_to_dict,
     compact_renderer_contract_snapshot_to_dict,
     composed_renderer_contract_snapshot_to_dict,
@@ -50,6 +55,7 @@ from otoe import (
     PYTHON_NATIVE_RENDERER_BACKEND,
     run_native,
 )
+from otoe.capabilities import backend_capability_profile
 from otoe.cli import main as otoe_cli_main
 
 
@@ -57,6 +63,18 @@ COMPOSED_RENDERER_COMPACT_CONTRACT_FIXTURE = Path(
     "examples/native/contracts/composed_renderer_compact_expected.json"
 )
 STYLE_OPS_CONTRACT_FIXTURE = Path("examples/native/contracts/style_ops_expected.json")
+BUNDLE_STYLE_OPS_CONTRACT_FIXTURE = Path(
+    "examples/native/contracts/bundle_style_ops_expected.json"
+)
+BACKEND_READINESS_CONTRACT_FIXTURE = Path(
+    "examples/native/contracts/backend_readiness_expected.json"
+)
+BACKEND_COVERAGE_DECLARATION_FIXTURE = Path(
+    "examples/native/contracts/backend_coverage_full_declaration.json"
+)
+BACKEND_CANDIDATE_PARTIAL_PROFILE_FIXTURE = Path(
+    "examples/native/contracts/backend_candidate_partial_profile.json"
+)
 
 
 def test_backend_candidate_acceptance_skeleton_runs_replays():
@@ -754,11 +772,61 @@ def test_compact_renderer_contract_snapshot_uses_signatures_and_hashes():
     encoded_compact = json.dumps(compact, sort_keys=True)
     encoded_full = json.dumps(full, sort_keys=True)
     minimal_after = compact["runs"]["minimal"]["after"]
+    audit = compact["capabilityAudit"]
 
     assert compact["schemaVersion"] == 1
     assert compact["format"] == "renderer-contract-compact"
     assert compact["rendererBackend"] == "recording-renderer-candidate"
     assert compact["passed"] is True
+    assert audit["summary"] == {
+        "widgetInstances": 43,
+        "widgetTypes": 9,
+        "inputBindings": 15,
+        "inputCapabilities": 4,
+        "unsupportedWidgets": 0,
+        "unsupportedInputs": 0,
+    }
+    assert audit["widgets"] == [
+        {
+            "support": "container",
+            "count": 16,
+            "widgets": [
+                {"name": "For", "count": 1},
+                {"name": "HStack", "count": 7},
+                {"name": "ScrollView", "count": 2},
+                {"name": "ShortcutScope", "count": 2},
+                {"name": "Show", "count": 1},
+                {"name": "VStack", "count": 3},
+            ],
+        },
+        {
+            "support": "control",
+            "count": 11,
+            "widgets": [
+                {"name": "Button", "count": 9},
+                {"name": "Input", "count": 2},
+            ],
+        },
+        {
+            "support": "text",
+            "count": 16,
+            "widgets": [{"name": "Text", "count": 16}],
+        },
+    ]
+    assert audit["inputs"] == [
+        {
+            "support": "supported",
+            "count": 15,
+            "capabilities": [
+                {"capability": "click", "count": 9},
+                {"capability": "input_text", "count": 2},
+                {"capability": "shortcut", "count": 2},
+                {"capability": "wheel", "count": 2},
+            ],
+        }
+    ]
+    assert audit["unsupportedWidgets"] == []
+    assert audit["unsupportedInputs"] == []
     assert len(encoded_compact) < len(encoded_full)
     assert compact["calls"]["count"] == len(report.calls)
     assert compact["calls"]["hash"].startswith("sha256:")
@@ -776,18 +844,59 @@ def test_style_ops_candidate_acceptance_replays_default_artifact():
     report = run_style_ops_candidate_acceptance()
     payload = style_ops_candidate_report_to_dict(report)
     classes = {class_report.class_name: class_report for class_report in report.classes}
+    direct_styles = {
+        direct_style.path: direct_style
+        for direct_style in report.direct_styles
+    }
     shell = classes["candidate-shell"]
+    scroll = direct_styles[(0, 2)]
 
     assert isinstance(report, StyleOpsCandidateAcceptanceReport)
     assert isinstance(shell, StyleOpsCandidateClassReport)
+    assert isinstance(scroll, StyleOpsCandidateDirectStyleReport)
     assert report.passed is True
     assert payload["schemaVersion"] == 1
     assert payload["format"] == "style-ops-contract"
     assert payload["passed"] is True
+    assert payload["backend"] == "native-python"
     assert payload["styleOps"] == {
         "schemaVersion": 1,
         "format": "otoe-style-ops",
     }
+    assert payload["capabilityAudit"]["backend"] == "native-python"
+    assert payload["capabilityAudit"]["summary"] == {
+        "applied": 16,
+        "omitted": 1,
+        "unsupported": 0,
+    }
+    assert payload["capabilityAudit"]["applied"] == [
+        {
+            "support": "layout",
+            "count": 14,
+            "properties": [
+                {"property": "alignItems", "count": 1},
+                {"property": "gap", "count": 3},
+                {"property": "height", "count": 2},
+                {"property": "justifyContent", "count": 1},
+                {"property": "padding", "count": 2},
+                {"property": "scrollY", "count": 1},
+                {"property": "width", "count": 4},
+            ],
+        },
+        {
+            "support": "paint",
+            "count": 2,
+            "properties": [{"property": "background", "count": 2}],
+        },
+    ]
+    assert payload["capabilityAudit"]["declaredOmissions"] == [
+        {
+            "kind": "omit",
+            "status": "html-only",
+            "properties": [{"property": "borderStyle", "count": 1}],
+        }
+    ]
+    assert payload["capabilityAudit"]["unsupportedProperties"] == []
     assert shell.passed is True
     assert shell.applied_declarations["width"] == {
         "type": "size",
@@ -818,6 +927,52 @@ def test_style_ops_candidate_acceptance_replays_default_artifact():
             "message": "property 'borderStyle' is accepted but ignored by native",
         },
     )
+    assert scroll.passed is True
+    assert scroll.widget == "ScrollView"
+    assert scroll.applied_declarations == {
+        "scrollY": {"type": "size", "value": 0, "unit": "px"}
+    }
+    assert scroll.omitted_ops == ()
+
+
+def test_style_ops_candidate_capability_audit_reports_unsupported_properties():
+    artifact = deepcopy(backend_candidate_style_artifact())
+    shell_rule = next(
+        rule
+        for rule in artifact["rules"]
+        if rule["className"] == "candidate-shell"
+    )
+    shell_ops = next(
+        class_payload
+        for class_payload in artifact["styleOps"]["classes"]
+        if class_payload["className"] == "candidate-shell"
+    )
+    shell_rule["declarations"]["customGlow"] = {
+        "type": "literal",
+        "value": "enabled",
+    }
+    shell_ops["ops"].append(
+        {
+            "op": "setStyle",
+            "property": "customGlow",
+            "support": "unsupported",
+            "value": {"type": "literal", "value": "enabled"},
+        }
+    )
+
+    report = run_style_ops_candidate_acceptance(artifact)
+    payload = style_ops_candidate_report_to_dict(report)
+
+    assert report.passed is True
+    assert payload["capabilityAudit"]["summary"]["unsupported"] == 1
+    assert payload["capabilityAudit"]["unsupportedProperties"] == [
+        {"property": "customGlow", "count": 1}
+    ]
+    assert {
+        "support": "unsupported",
+        "count": 1,
+        "properties": [{"property": "customGlow", "count": 1}],
+    } in payload["capabilityAudit"]["applied"]
 
 
 def test_style_ops_candidate_acceptance_detects_mismatch():
@@ -840,6 +995,37 @@ def test_style_ops_candidate_acceptance_detects_mismatch():
     assert (
         "styleOps class 'candidate-shell' applied declarations do not match compiled rules"
         in classes["candidate-shell"].errors
+    )
+
+
+def test_style_ops_candidate_acceptance_uses_artifact_capabilities():
+    artifact = deepcopy(backend_candidate_style_artifact())
+    artifact["styleOps"]["capabilities"]["styles"]["width"] = "paint"
+
+    report = run_style_ops_candidate_acceptance(artifact)
+    classes = {class_report.class_name: class_report for class_report in report.classes}
+
+    assert report.passed is False
+    assert (
+        "styleOps class 'candidate-shell' op 0 support 'layout' does not match 'paint'"
+        in classes["candidate-shell"].errors
+    )
+
+
+def test_style_ops_candidate_acceptance_detects_direct_style_mismatch():
+    artifact = deepcopy(backend_candidate_style_artifact())
+    artifact["styleOps"]["directStyles"][0]["widget"] = "Panel"
+
+    report = run_style_ops_candidate_acceptance(artifact)
+    direct_styles = {
+        direct_style.path: direct_style
+        for direct_style in report.direct_styles
+    }
+
+    assert report.passed is False
+    assert (
+        "styleOps directStyles [0, 2] widget does not match compiled artifact"
+        in direct_styles[(0, 2)].errors
     )
 
 
@@ -881,10 +1067,276 @@ def test_backend_candidate_skeleton_main_outputs_style_ops_contract_json(capsys)
     assert payload["format"] == "style-ops-contract"
     assert payload["passed"] is True
     assert payload["styleOps"]["schemaVersion"] == 1
+    assert payload["capabilityAudit"]["summary"] == {
+        "applied": 16,
+        "omitted": 1,
+        "unsupported": 0,
+    }
     assert shell["appliedDeclarations"]["background"] == {
         "type": "literal",
         "value": "#f8fafc",
     }
+
+
+def test_backend_readiness_report_combines_renderer_and_style_audits():
+    payload = backend_readiness_report_to_dict()
+
+    assert payload["schemaVersion"] == 1
+    assert payload["format"] == "backend-readiness-report"
+    assert payload["passed"] is True
+    assert payload["readiness"] == "ready-for-candidate-comparison"
+    assert payload["gates"] == {
+        "rendererReplay": True,
+        "styleOpsReplay": True,
+        "widgetInputAudit": True,
+        "styleCapabilityAudit": True,
+    }
+    assert payload["blockers"] == []
+    assert payload["renderer"]["backend"] == "recording-renderer-candidate"
+    assert payload["renderer"]["capabilityAudit"]["summary"] == {
+        "widgetInstances": 43,
+        "widgetTypes": 9,
+        "inputBindings": 15,
+        "inputCapabilities": 4,
+        "unsupportedWidgets": 0,
+        "unsupportedInputs": 0,
+    }
+    assert payload["styleOps"]["backend"] == "native-python"
+    assert payload["styleOps"]["capabilityAudit"]["summary"] == {
+        "applied": 16,
+        "omitted": 1,
+        "unsupported": 0,
+    }
+    assert payload["requirements"]["widgets"][0]["support"] == "container"
+    assert payload["requirements"]["inputs"][0]["support"] == "supported"
+    assert payload["requirements"]["styles"][0]["support"] == "layout"
+    assert payload["requirements"]["declaredStyleOmissions"] == [
+        {
+            "kind": "omit",
+            "status": "html-only",
+            "properties": [{"property": "borderStyle", "count": 1}],
+        }
+    ]
+
+
+def test_backend_readiness_report_blocks_on_style_ops_mismatch():
+    artifact = deepcopy(backend_candidate_style_artifact())
+    shell_ops = next(
+        class_payload
+        for class_payload in artifact["styleOps"]["classes"]
+        if class_payload["className"] == "candidate-shell"
+    )
+    width_op = next(op for op in shell_ops["ops"] if op["property"] == "width")
+    width_op["value"] = {"type": "size", "value": 999, "unit": "px"}
+    style_ops_report = run_style_ops_candidate_acceptance(artifact)
+
+    payload = backend_readiness_report_to_dict(style_ops_report=style_ops_report)
+
+    assert payload["passed"] is False
+    assert payload["readiness"] == "blocked"
+    assert payload["gates"]["rendererReplay"] is True
+    assert payload["gates"]["styleOpsReplay"] is False
+    assert payload["blockers"] == ["styleOpsReplay"]
+    assert (
+        "class 'candidate-shell': styleOps class 'candidate-shell' applied declarations do not match compiled rules"
+        in payload["styleOps"]["errors"]
+    )
+
+
+def test_backend_candidate_skeleton_main_outputs_backend_readiness_json(capsys):
+    result = main(["--backend-readiness-json"])
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["schemaVersion"] == 1
+    assert payload["format"] == "backend-readiness-report"
+    assert payload["passed"] is True
+    assert payload["requirements"]["widgets"]
+    assert payload["requirements"]["styles"]
+
+
+def test_backend_coverage_report_accepts_full_declaration_fixture():
+    declaration = json.loads(
+        BACKEND_COVERAGE_DECLARATION_FIXTURE.read_text(encoding="utf-8")
+    )
+
+    payload = backend_coverage_report_to_dict(declaration)
+
+    assert payload["schemaVersion"] == 1
+    assert payload["format"] == "backend-coverage-report"
+    assert payload["backend"] == "native-python"
+    assert payload["passed"] is True
+    assert payload["readiness"]["passed"] is True
+    assert payload["blockers"] == []
+    assert payload["declarationErrors"] == []
+    assert payload["coverage"]["widgets"]["summary"] == {
+        "required": 9,
+        "declared": 11,
+        "covered": 9,
+        "missing": 0,
+        "extra": 2,
+    }
+    assert payload["coverage"]["inputs"]["missing"] == []
+    assert payload["coverage"]["styles"]["missing"] == []
+    assert payload["coverage"]["declaredStyleOmissions"]["missing"] == []
+
+
+def test_backend_coverage_declaration_fixture_matches_capability_profile():
+    declaration = json.loads(
+        BACKEND_COVERAGE_DECLARATION_FIXTURE.read_text(encoding="utf-8")
+    )
+
+    assert declaration == backend_capability_profile(
+        "native-python"
+    ).coverage_declaration()
+
+
+def test_backend_coverage_report_blocks_missing_declared_items():
+    declaration = json.loads(
+        BACKEND_COVERAGE_DECLARATION_FIXTURE.read_text(encoding="utf-8")
+    )
+    declaration["covers"]["widgets"].remove("Button")
+    declaration["covers"]["styles"].remove("background")
+
+    payload = backend_coverage_report_to_dict(declaration)
+
+    assert payload["passed"] is False
+    assert payload["declarationErrors"] == []
+    assert payload["blockers"] == ["widgetsCoverage", "stylesCoverage"]
+    assert payload["coverage"]["widgets"]["missing"] == ["Button"]
+    assert payload["coverage"]["styles"]["missing"] == ["background"]
+
+
+def test_backend_candidate_skeleton_main_outputs_backend_coverage_json(capsys):
+    result = main(
+        [
+            "--backend-coverage-json",
+            "--coverage-declaration",
+            str(BACKEND_COVERAGE_DECLARATION_FIXTURE),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["schemaVersion"] == 1
+    assert payload["format"] == "backend-coverage-report"
+    assert payload["passed"] is True
+    assert payload["coverage"]["widgets"]["covered"]
+    assert (
+        "--backend-coverage-json is compatibility-only"
+        in captured.err
+    )
+
+
+def test_backend_candidate_skeleton_main_outputs_profile_backend_coverage_json(capsys):
+    result = main(
+        [
+            "--backend-coverage-json",
+            "--backend-capability",
+            "native-python",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["backend"] == "native-python"
+    assert payload["coverage"]["widgets"]["extra"] == ["FocusScope", "Panel"]
+    assert payload["coverage"]["inputs"]["extra"] == [
+        "focus",
+        "key_down",
+        "key_input",
+        "tab_focus",
+    ]
+    assert (
+        "--backend-coverage-json is compatibility-only"
+        in captured.err
+    )
+
+
+def test_backend_candidate_skeleton_main_outputs_coverage_declaration_json(capsys):
+    result = main(
+        [
+            "--backend-coverage-declaration-json",
+            "--backend-capability",
+            "native-python",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload == backend_capability_profile(
+        "native-python"
+    ).coverage_declaration()
+    assert (
+        "--backend-coverage-declaration-json is compatibility-only"
+        in captured.err
+    )
+
+
+def test_backend_candidate_skeleton_main_outputs_custom_profile_declaration(capsys):
+    result = main(
+        [
+            "--backend-coverage-declaration-json",
+            "--backend-capability-profile",
+            str(BACKEND_CANDIDATE_PARTIAL_PROFILE_FIXTURE),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["backend"] == "partial-backend-candidate"
+    assert payload["source"] == {
+        "kind": "backendCapabilityProfile",
+        "name": "partial-backend-candidate",
+    }
+    assert "Button" not in payload["covers"]["widgets"]
+    assert "background" not in payload["covers"]["styles"]
+
+
+def test_backend_candidate_skeleton_main_reports_custom_profile_gaps(capsys):
+    result = main(
+        [
+            "--backend-coverage-json",
+            "--backend-capability-profile",
+            str(BACKEND_CANDIDATE_PARTIAL_PROFILE_FIXTURE),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 1
+    assert payload["backend"] == "partial-backend-candidate"
+    assert payload["passed"] is False
+    assert payload["blockers"] == ["widgetsCoverage", "stylesCoverage"]
+    assert payload["coverage"]["widgets"]["missing"] == ["Button"]
+    assert payload["coverage"]["styles"]["missing"] == ["background"]
+
+
+def test_backend_readiness_contract_fixture_matches_generated_report(tmp_path, capsys):
+    actual = tmp_path / "actual-backend-readiness.json"
+    payload = backend_readiness_report_to_dict()
+    actual.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+
+    result = otoe_cli_main(
+        [
+            "compare-contract",
+            str(BACKEND_READINESS_CONTRACT_FIXTURE),
+            str(actual),
+            "--json",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    comparison = json.loads(captured.out)
+    assert result == 0
+    assert comparison["matched"] is True
+    assert comparison["differenceCount"] == 0
+    assert comparison["differences"] == []
 
 
 def test_backend_candidate_skeleton_main_outputs_style_ops_contract_from_artifact(
@@ -914,6 +1366,162 @@ def test_backend_candidate_skeleton_main_outputs_style_ops_contract_from_artifac
     assert captured.out == f"contract artifact: {contract}\n"
     assert payload["passed"] is True
     assert payload["format"] == "style-ops-contract"
+
+
+def _build_style_ops_bundle(tmp_path, monkeypatch, capsys):
+    app = tmp_path / "bundle_style_ops_app.py"
+    app.write_text(
+        "from otoe import Text, VStack\n"
+        "app = VStack(Text('Bundled StyleOps'), className='bundle-shell', padding=8)\n",
+        encoding="utf-8",
+    )
+    styles = tmp_path / "styles.css"
+    styles.write_text(
+        ".bundle-shell { width: 180; color: #111827; background: #ffffff; }\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "bundle-style-ops"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = otoe_cli_main(
+        [
+            "build",
+            "bundle_style_ops_app:app",
+            "--css",
+            str(styles),
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+
+    capsys.readouterr()
+    assert result == 0
+    return output
+
+
+def test_backend_candidate_skeleton_replays_style_ops_from_built_bundle(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    output = _build_style_ops_bundle(tmp_path, monkeypatch, capsys)
+    contract = tmp_path / "dist" / "bundle-style-ops-contract.json"
+    contract_result = main(
+        [
+            "--style-ops-contract-json",
+            "--bundle",
+            str(output),
+            "--contract-out",
+            str(contract),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(contract.read_text(encoding="utf-8"))
+    classes = {entry["className"]: entry for entry in payload["classes"]}
+    direct_styles = {tuple(entry["path"]): entry for entry in payload["directStyles"]}
+    assert contract_result == 0
+    assert captured.out == f"contract artifact: {contract}\n"
+    assert payload["passed"] is True
+    assert classes["bundle-shell"]["appliedDeclarations"]["width"] == {
+        "type": "size",
+        "value": 180,
+        "unit": "px",
+    }
+    assert classes["bundle-shell"]["appliedDeclarations"]["color"] == {
+        "type": "literal",
+        "value": "#111827",
+    }
+    assert direct_styles[()]["appliedDeclarations"]["padding"] == {
+        "type": "size",
+        "value": 8,
+        "unit": "px",
+    }
+
+
+def test_bundle_style_ops_contract_fixture_matches_generated_bundle_contract(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    output = _build_style_ops_bundle(tmp_path, monkeypatch, capsys)
+    actual = tmp_path / "actual-bundle-style-ops-contract.json"
+
+    contract_result = main(
+        [
+            "--style-ops-contract-json",
+            "--bundle",
+            str(output),
+            "--contract-out",
+            str(actual),
+        ]
+    )
+    capsys.readouterr()
+    compare_result = otoe_cli_main(
+        [
+            "compare-contract",
+            str(BUNDLE_STYLE_OPS_CONTRACT_FIXTURE),
+            str(actual),
+            "--json",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    comparison = json.loads(captured.out)
+    assert contract_result == 0
+    assert compare_result == 0
+    assert comparison["matched"] is True
+    assert comparison["differenceCount"] == 0
+    assert comparison["differences"] == []
+
+
+def test_backend_candidate_skeleton_bundle_replay_rejects_tampered_bundle(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    output = _build_style_ops_bundle(tmp_path, monkeypatch, capsys)
+    copied_app = output / "app" / "bundle_style_ops_app.py"
+    copied_app.write_text(
+        copied_app.read_text(encoding="utf-8").replace(
+            "Bundled StyleOps",
+            "Mangled StyleOps",
+        ),
+        encoding="utf-8",
+    )
+
+    result = main(["--style-ops-contract-json", "--bundle", str(output)])
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "style-ops-contract: Bundle verification failed:" in captured.err
+    assert "sha256 mismatch" in captured.err
+
+
+def test_backend_candidate_skeleton_rejects_ambiguous_style_sources(
+    tmp_path,
+    capsys,
+):
+    artifact = tmp_path / "otoe-styles.json"
+    bundle = tmp_path / "bundle"
+    artifact.write_text("{}", encoding="utf-8")
+    bundle.mkdir()
+
+    with pytest.raises(SystemExit) as exc:
+        main(
+            [
+                "--style-ops-contract-json",
+                "--style-artifact",
+                str(artifact),
+                "--bundle",
+                str(bundle),
+            ]
+        )
+
+    captured = capsys.readouterr()
+    assert exc.value.code == 2
+    assert "--style-artifact and --bundle are mutually exclusive" in captured.err
 
 
 def test_headless_candidate_acceptance_formats_human_report():

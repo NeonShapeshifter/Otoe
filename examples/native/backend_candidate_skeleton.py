@@ -3,7 +3,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
+import subprocess
 import struct
+import sys
 import zlib
 from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass
@@ -36,13 +39,39 @@ from otoe import (
     signal,
     unmount,
 )
-from otoe._native_shared import native_style_support
-from otoe.plan import compiled_styles_to_dict, plan_mounted
+from otoe.capabilities import (
+    CapabilityProfileError,
+    backend_capability_profile,
+    load_backend_capability_profile,
+)
+from otoe.backend_coverage import (
+    backend_coverage_report_to_dict as _backend_coverage_report_to_dict,
+)
+from otoe.plan import plan_mounted
+from otoe.style_ir import compiled_styles_to_dict
+from otoe.style_ops import (
+    StyleIRError,
+    StyleOpsClassReplay,
+    StyleOpsDirectReplay,
+    apply_style_ops,
+    expected_omitted_style_ops,
+    load_style_ir,
+)
+from otoe._native_shared import native_input_support, native_widget_support
 
 from .window_demo import NativeWindowDemo
 
 
 TASK_BOARD_TITLES = ("Runtime bridge", "Input polish", "Docs pass")
+INPUT_EVENT_CAPABILITIES = {
+    "onBlur": "focus",
+    "onChange": "input_text",
+    "onClick": "click",
+    "onFocus": "focus",
+    "onGlobalKeyDown": "shortcut",
+    "onKeyDown": "key_down",
+    "onScroll": "wheel",
+}
 
 
 @dataclass(frozen=True)
@@ -303,11 +332,35 @@ class StyleOpsCandidateClassReport:
 
 
 @dataclass(frozen=True)
+class StyleOpsCandidateDirectStyleReport:
+    path: tuple[int, ...]
+    widget: str
+    expected_widget: str | None
+    applied_declarations: dict[str, Any]
+    expected_declarations: dict[str, Any]
+    omitted_ops: tuple[dict[str, Any], ...]
+    expected_omitted_ops: tuple[dict[str, Any], ...]
+    errors: tuple[str, ...]
+
+    @property
+    def passed(self) -> bool:
+        return (
+            not self.errors
+            and self.expected_widget == self.widget
+            and self.applied_declarations == self.expected_declarations
+            and self.omitted_ops == self.expected_omitted_ops
+        )
+
+
+@dataclass(frozen=True)
 class StyleOpsCandidateAcceptanceReport:
+    backend: Any
     style_ops_schema_version: Any
     style_ops_format: Any
+    style_support: dict[str, str]
     classes: tuple[StyleOpsCandidateClassReport, ...]
     errors: tuple[str, ...]
+    direct_styles: tuple[StyleOpsCandidateDirectStyleReport, ...] = ()
 
     @property
     def passed(self) -> bool:
@@ -317,6 +370,10 @@ class StyleOpsCandidateAcceptanceReport:
             and self.style_ops_format == "otoe-style-ops"
             and bool(self.classes)
             and all(class_report.passed for class_report in self.classes)
+            and all(
+                direct_style_report.passed
+                for direct_style_report in self.direct_styles
+            )
         )
 
 
@@ -659,74 +716,76 @@ def run_style_ops_candidate_acceptance(
     )
     if not isinstance(artifact, dict):
         return StyleOpsCandidateAcceptanceReport(
+            backend=None,
             style_ops_schema_version=None,
             style_ops_format=None,
+            style_support={},
             classes=(),
             errors=("style artifact must be a JSON object",),
         )
 
-    style_ops = artifact.get("styleOps")
-    if not isinstance(style_ops, dict):
+    try:
+        style_ir = load_style_ir(artifact)
+    except StyleIRError as exc:
+        style_ops = artifact.get("styleOps") if isinstance(artifact, dict) else None
+        style_ops_schema_version = (
+            style_ops.get("schemaVersion") if isinstance(style_ops, dict) else None
+        )
+        style_ops_format = (
+            style_ops.get("format") if isinstance(style_ops, dict) else None
+        )
         return StyleOpsCandidateAcceptanceReport(
-            style_ops_schema_version=None,
-            style_ops_format=None,
+            backend=artifact.get("backend") if isinstance(artifact, dict) else None,
+            style_ops_schema_version=style_ops_schema_version,
+            style_ops_format=style_ops_format,
+            style_support={},
             classes=(),
-            errors=("style artifact is missing object styleOps",),
+            errors=(str(exc),),
         )
 
-    rules_payload = artifact.get("rules", [])
-    if not isinstance(rules_payload, list):
-        return StyleOpsCandidateAcceptanceReport(
-            style_ops_schema_version=style_ops.get("schemaVersion"),
-            style_ops_format=style_ops.get("format"),
-            classes=(),
-            errors=("style artifact rules must be a list",),
-        )
-
-    class_payloads = style_ops.get("classes", [])
-    errors: list[str] = []
-    if style_ops.get("schemaVersion") != 1:
-        errors.append(
-            f"unsupported styleOps schemaVersion {style_ops.get('schemaVersion')!r}; expected 1"
-        )
-    if style_ops.get("format") != "otoe-style-ops":
-        errors.append(
-            f"unsupported styleOps format {style_ops.get('format')!r}; expected 'otoe-style-ops'"
-        )
-    if not isinstance(class_payloads, list):
-        return StyleOpsCandidateAcceptanceReport(
-            style_ops_schema_version=style_ops.get("schemaVersion"),
-            style_ops_format=style_ops.get("format"),
-            classes=(),
-            errors=(*errors, "styleOps classes must be a list"),
-        )
-
-    rules_by_class = {
-        rule["className"]: rule
-        for rule in rules_payload
-        if isinstance(rule, dict) and isinstance(rule.get("className"), str)
-    }
+    application = apply_style_ops(style_ir)
+    errors: list[str] = list(application.errors)
     class_reports = tuple(
-        _replay_style_ops_class(class_payload, rules_by_class)
-        for class_payload in class_payloads
+        _replay_style_ops_class(replay, style_ir.rules_by_class, style_ir.style_support)
+        for replay in application.classes
+    )
+    direct_style_reports = tuple(
+        _replay_style_ops_direct_style(
+            replay,
+            style_ir.direct_styles_by_path,
+            style_ir.style_support,
+        )
+        for replay in application.direct_styles
     )
     classes_with_ops = {
         class_report.class_name
         for class_report in class_reports
         if class_report.class_name != "<invalid>"
     }
-    missing_ops = sorted(set(rules_by_class) - classes_with_ops)
+    missing_ops = sorted(set(style_ir.rules_by_class) - classes_with_ops)
     if missing_ops:
         errors.append(
             "styleOps missing classes from compiled rules: "
             + ", ".join(missing_ops)
         )
+    direct_paths_with_ops = {report.path for report in direct_style_reports}
+    missing_direct_ops = sorted(
+        set(style_ir.direct_styles_by_path) - direct_paths_with_ops
+    )
+    if missing_direct_ops:
+        errors.append(
+            "styleOps missing directStyles from compiled artifact: "
+            + ", ".join(str(list(path)) for path in missing_direct_ops)
+        )
 
     return StyleOpsCandidateAcceptanceReport(
-        style_ops_schema_version=style_ops.get("schemaVersion"),
-        style_ops_format=style_ops.get("format"),
+        backend=style_ir.backend,
+        style_ops_schema_version=style_ir.style_ops_schema_version,
+        style_ops_format=style_ir.style_ops_format,
+        style_support=dict(style_ir.style_support),
         classes=class_reports,
         errors=tuple(errors),
+        direct_styles=direct_style_reports,
     )
 
 
@@ -780,6 +839,7 @@ def renderer_contract_snapshot_to_dict(
         "schemaVersion": 1,
         "rendererBackend": report.renderer_backend,
         "passed": report.passed,
+        "capabilityAudit": _renderer_capability_audit_to_dict(report.headless),
         "calls": [_renderer_call_to_dict(call) for call in report.calls],
         "runs": {
             "minimal": _run_contract_snapshot_to_dict(report.headless.minimal),
@@ -796,6 +856,7 @@ def compact_renderer_contract_snapshot_to_dict(
         "format": "renderer-contract-compact",
         "rendererBackend": report.renderer_backend,
         "passed": report.passed,
+        "capabilityAudit": _renderer_capability_audit_to_dict(report.headless),
         "calls": _compact_call_stream(report.calls),
         "runs": {
             "minimal": _compact_run_contract_snapshot_to_dict(report.headless.minimal),
@@ -813,6 +874,7 @@ def composed_renderer_contract_snapshot_to_dict(
         "schemaVersion": 1,
         "rendererBackend": report.renderer_backend,
         "passed": report.passed,
+        "capabilityAudit": _renderer_capability_audit_to_dict(report.headless),
         "capabilities": {
             "layout": report.layout_backend,
             "paint": report.paint_backend,
@@ -842,6 +904,7 @@ def compact_composed_renderer_contract_snapshot_to_dict(
         "format": "composed-renderer-contract-compact",
         "rendererBackend": report.renderer_backend,
         "passed": report.passed,
+        "capabilityAudit": _renderer_capability_audit_to_dict(report.headless),
         "capabilities": {
             "layout": report.layout_backend,
             "paint": report.paint_backend,
@@ -872,16 +935,88 @@ def style_ops_candidate_report_to_dict(
         "schemaVersion": 1,
         "format": "style-ops-contract",
         "passed": report.passed,
+        "backend": report.backend,
         "styleOps": {
             "schemaVersion": report.style_ops_schema_version,
             "format": report.style_ops_format,
         },
+        "capabilityAudit": _style_ops_capability_audit_to_dict(report),
         "classes": [
             _style_ops_class_report_to_dict(class_report)
             for class_report in report.classes
         ],
+        "directStyles": [
+            _style_ops_direct_style_report_to_dict(direct_style_report)
+            for direct_style_report in report.direct_styles
+        ],
         "errors": list(report.errors),
     }
+
+
+def backend_readiness_report_to_dict(
+    *,
+    renderer_report: RendererCandidateAcceptanceReport | None = None,
+    style_ops_report: StyleOpsCandidateAcceptanceReport | None = None,
+) -> dict[str, Any]:
+    renderer_report = renderer_report or run_renderer_candidate_acceptance()
+    style_ops_report = style_ops_report or run_style_ops_candidate_acceptance()
+    renderer_contract = compact_renderer_contract_snapshot_to_dict(renderer_report)
+    style_ops_contract = style_ops_candidate_report_to_dict(style_ops_report)
+    gates = {
+        "rendererReplay": renderer_report.passed,
+        "styleOpsReplay": style_ops_report.passed,
+        "widgetInputAudit": _audit_has_no_unsupported(
+            renderer_contract["capabilityAudit"],
+            unsupported_keys=("unsupportedWidgets", "unsupportedInputs"),
+        ),
+        "styleCapabilityAudit": _audit_has_no_unsupported(
+            style_ops_contract["capabilityAudit"],
+            unsupported_keys=("unsupportedProperties",),
+        ),
+    }
+    blockers = [
+        name
+        for name, passed in gates.items()
+        if not passed
+    ]
+    return {
+        "schemaVersion": 1,
+        "format": "backend-readiness-report",
+        "passed": not blockers,
+        "readiness": "ready-for-candidate-comparison" if not blockers else "blocked",
+        "gates": gates,
+        "blockers": blockers,
+        "renderer": {
+            "backend": renderer_report.renderer_backend,
+            "calls": renderer_contract["calls"],
+            "capabilityAudit": renderer_contract["capabilityAudit"],
+        },
+        "styleOps": {
+            "backend": style_ops_report.backend,
+            "schemaVersion": style_ops_report.style_ops_schema_version,
+            "format": style_ops_report.style_ops_format,
+            "capabilityAudit": style_ops_contract["capabilityAudit"],
+            "classCount": len(style_ops_report.classes),
+            "directStyleCount": len(style_ops_report.direct_styles),
+            "errors": _style_ops_report_errors(style_ops_report),
+        },
+        "requirements": _backend_readiness_requirements(
+            renderer_contract["capabilityAudit"],
+            style_ops_contract["capabilityAudit"],
+        ),
+    }
+
+
+def backend_coverage_report_to_dict(
+    declaration: dict[str, Any],
+    *,
+    readiness_report: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    readiness_report = readiness_report or backend_readiness_report_to_dict()
+    return _backend_coverage_report_to_dict(
+        declaration,
+        readiness_report=readiness_report,
+    )
 
 
 def format_acceptance_report(report: HeadlessCandidateAcceptanceReport) -> str:
@@ -919,8 +1054,45 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="print the low-level styleOps replay contract as JSON",
     )
     parser.add_argument(
+        "--backend-readiness-json",
+        action="store_true",
+        help="print a combined renderer and styleOps backend readiness report",
+    )
+    parser.add_argument(
+        "--backend-coverage-declaration-json",
+        action="store_true",
+        help=(
+            "compat: print a coverage declaration; prefer "
+            "`python -m otoe backend-profile --coverage-declaration`"
+        ),
+    )
+    parser.add_argument(
+        "--backend-coverage-json",
+        action="store_true",
+        help=(
+            "compat: print a backend coverage report; prefer "
+            "`python -m otoe backend-coverage`"
+        ),
+    )
+    parser.add_argument(
+        "--backend-capability",
+        help="backend capability profile used to derive coverage declarations",
+    )
+    parser.add_argument(
+        "--backend-capability-profile",
+        help="backend capability profile JSON used to derive coverage declarations",
+    )
+    parser.add_argument(
+        "--coverage-declaration",
+        help="backend coverage declaration JSON used by --backend-coverage-json",
+    )
+    parser.add_argument(
         "--style-artifact",
-        help="optional otoe-styles.json path used by --style-ops-contract-json",
+        help="optional otoe-styles.json path used by styleOps/readiness reports",
+    )
+    parser.add_argument(
+        "--bundle",
+        help="optional offline bundle directory used by styleOps/readiness reports",
     )
     parser.add_argument(
         "--compact-contract",
@@ -960,15 +1132,100 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0 if composed_report.passed else 1
 
     if args.style_ops_contract_json:
-        style_artifact = (
-            _load_style_artifact(args.style_artifact)
-            if args.style_artifact is not None
-            else None
-        )
+        if args.style_artifact is not None and args.bundle is not None:
+            parser.error("--style-artifact and --bundle are mutually exclusive")
+        try:
+            style_artifact = _style_artifact_from_args(args)
+        except (OSError, json.JSONDecodeError, ValueError) as exc:
+            print(f"style-ops-contract: {exc}", file=sys.stderr)
+            return 1
         style_ops_report = run_style_ops_candidate_acceptance(style_artifact)
         payload = style_ops_candidate_report_to_dict(style_ops_report)
         _emit_contract_payload(payload, output_path=args.contract_out)
         return 0 if style_ops_report.passed else 1
+
+    if args.backend_readiness_json:
+        if args.style_artifact is not None and args.bundle is not None:
+            parser.error("--style-artifact and --bundle are mutually exclusive")
+        try:
+            style_artifact = _style_artifact_from_args(args)
+        except (OSError, json.JSONDecodeError, ValueError) as exc:
+            print(f"backend-readiness: {exc}", file=sys.stderr)
+            return 1
+        payload = backend_readiness_report_to_dict(
+            style_ops_report=run_style_ops_candidate_acceptance(style_artifact)
+        )
+        _emit_contract_payload(payload, output_path=args.contract_out)
+        return 0 if payload["passed"] else 1
+
+    if args.backend_coverage_declaration_json:
+        _warn_backend_coverage_compat("--backend-coverage-declaration-json")
+        if args.coverage_declaration is not None:
+            parser.error(
+                "--coverage-declaration cannot be used with "
+                "--backend-coverage-declaration-json"
+            )
+        if (
+            args.backend_capability is not None
+            and args.backend_capability_profile is not None
+        ):
+            parser.error(
+                "--backend-capability and --backend-capability-profile are "
+                "mutually exclusive"
+            )
+        try:
+            payload = _coverage_declaration_from_backend_args(args)
+        except (OSError, CapabilityProfileError) as exc:
+            print(f"backend-coverage-declaration: {exc}", file=sys.stderr)
+            return 1
+        _emit_contract_payload(payload, output_path=args.contract_out)
+        return 0
+
+    if args.backend_coverage_json:
+        _warn_backend_coverage_compat("--backend-coverage-json")
+        if args.coverage_declaration is None and args.backend_capability is None:
+            if args.backend_capability_profile is None:
+                parser.error(
+                    "--coverage-declaration, --backend-capability, or "
+                    "--backend-capability-profile is required with "
+                    "--backend-coverage-json"
+                )
+        coverage_sources = sum(
+            source is not None
+            for source in (
+                args.coverage_declaration,
+                args.backend_capability,
+                args.backend_capability_profile,
+            )
+        )
+        if coverage_sources > 1:
+            parser.error(
+                "--coverage-declaration, --backend-capability, and "
+                "--backend-capability-profile are mutually exclusive with "
+                "--backend-coverage-json"
+            )
+        if args.style_artifact is not None and args.bundle is not None:
+            parser.error("--style-artifact and --bundle are mutually exclusive")
+        try:
+            declaration = _coverage_declaration_from_args(args)
+            style_artifact = _style_artifact_from_args(args)
+        except (
+            OSError,
+            json.JSONDecodeError,
+            ValueError,
+            CapabilityProfileError,
+        ) as exc:
+            print(f"backend-coverage: {exc}", file=sys.stderr)
+            return 1
+        readiness_report = backend_readiness_report_to_dict(
+            style_ops_report=run_style_ops_candidate_acceptance(style_artifact)
+        )
+        payload = backend_coverage_report_to_dict(
+            declaration,
+            readiness_report=readiness_report,
+        )
+        _emit_contract_payload(payload, output_path=args.contract_out)
+        return 0 if payload["passed"] else 1
 
     report = run_headless_candidate_acceptance()
 
@@ -977,6 +1234,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     else:
         print(format_acceptance_report(report))
     return 0 if report.passed else 1
+
+
+def _warn_backend_coverage_compat(flag: str) -> None:
+    print(
+        "backend-candidate-skeleton: "
+        f"{flag} is compatibility-only; prefer python -m otoe "
+        "backend-profile/backend-coverage for coverage workflows.",
+        file=sys.stderr,
+    )
 
 
 def _emit_contract_payload(
@@ -995,10 +1261,84 @@ def _emit_contract_payload(
 
 
 def _load_style_artifact(path: str) -> dict[str, Any]:
+    return _load_json_object(path, label="style artifact")
+
+
+def _load_json_object(path: str, *, label: str) -> dict[str, Any]:
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
-        raise ValueError(f"Expected {path!r} to contain a JSON object.")
+        raise ValueError(f"Expected {label} {path!r} to contain a JSON object.")
     return payload
+
+
+def _style_artifact_from_args(args: argparse.Namespace) -> dict[str, Any] | None:
+    if args.bundle is not None:
+        return _load_style_artifact_from_bundle(args.bundle)
+    if args.style_artifact is not None:
+        return _load_style_artifact(args.style_artifact)
+    return None
+
+
+def _coverage_declaration_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    if args.coverage_declaration is not None:
+        return _load_json_object(
+            args.coverage_declaration,
+            label="coverage declaration",
+        )
+    return _coverage_declaration_from_backend_args(args)
+
+
+def _coverage_declaration_from_backend_args(args: argparse.Namespace) -> dict[str, Any]:
+    if args.backend_capability_profile is not None:
+        profile = load_backend_capability_profile(args.backend_capability_profile)
+    else:
+        profile = backend_capability_profile(args.backend_capability)
+    return profile.coverage_declaration()
+
+
+def _load_style_artifact_from_bundle(bundle: str) -> dict[str, Any]:
+    bundle_dir = Path(bundle).resolve()
+    if not bundle_dir.is_dir():
+        raise ValueError(f"Bundle {str(bundle_dir)!r} is not a directory.")
+    manifest_path = bundle_dir / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if not isinstance(manifest, dict):
+        raise ValueError(f"Expected {str(manifest_path)!r} to contain a JSON object.")
+
+    _verify_bundle_runner(bundle_dir)
+    styles_relative = manifest.get("styles", "otoe-styles.json")
+    if not isinstance(styles_relative, str):
+        raise ValueError("Bundle manifest field 'styles' must be a string.")
+    styles_path = _bundle_relative_path(bundle_dir, styles_relative)
+    return _load_style_artifact(str(styles_path))
+
+
+def _verify_bundle_runner(bundle_dir: Path) -> None:
+    runner = bundle_dir / "otoe-run.py"
+    if not runner.is_file():
+        raise ValueError(f"Bundle is missing {runner.name}.")
+    result = subprocess.run(
+        [sys.executable, str(runner), "--verify"],
+        capture_output=True,
+        cwd=bundle_dir,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+    if result.returncode == 0:
+        return
+    details = result.stderr.strip() or result.stdout.strip()
+    if not details:
+        details = f"runner exited with status {result.returncode}"
+    raise ValueError(f"Bundle verification failed: {details}")
+
+
+def _bundle_relative_path(bundle_dir: Path, relative: str) -> Path:
+    if relative in {"", "."}:
+        raise ValueError(f"Bundle path {relative!r} is not safe.")
+    path = Path(relative)
+    if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+        raise ValueError(f"Bundle path {relative!r} is not safe.")
+    return bundle_dir / path
 
 
 def backend_candidate_app():
@@ -1364,6 +1704,322 @@ def _compact_call_stream(
     }
 
 
+def _audit_has_no_unsupported(
+    audit: dict[str, Any],
+    *,
+    unsupported_keys: tuple[str, ...],
+) -> bool:
+    return all(not audit.get(key) for key in unsupported_keys)
+
+
+def _style_ops_report_errors(
+    report: StyleOpsCandidateAcceptanceReport,
+) -> list[str]:
+    return [
+        *report.errors,
+        *(
+            f"class {class_report.class_name!r}: {error}"
+            for class_report in report.classes
+            for error in class_report.errors
+        ),
+        *(
+            f"directStyles {list(direct_style_report.path)!r}: {error}"
+            for direct_style_report in report.direct_styles
+            for error in direct_style_report.errors
+        ),
+    ]
+
+
+def _backend_readiness_requirements(
+    renderer_audit: dict[str, Any],
+    style_ops_audit: dict[str, Any],
+) -> dict[str, Any]:
+    renderer_requirements = renderer_audit.get("requiredForReplay", {})
+    if not isinstance(renderer_requirements, dict):
+        renderer_requirements = {}
+    return {
+        "widgets": list(renderer_requirements.get("widgets", [])),
+        "inputs": list(renderer_requirements.get("inputs", [])),
+        "styles": list(style_ops_audit.get("requiredForReplay", [])),
+        "declaredStyleOmissions": list(style_ops_audit.get("declaredOmissions", [])),
+    }
+
+
+def _renderer_capability_audit_to_dict(
+    report: HeadlessCandidateAcceptanceReport,
+) -> dict[str, Any]:
+    frames = (report.minimal.after, report.task_board.after)
+    widget_counts: dict[str, dict[str, int]] = {}
+    input_counts: dict[str, dict[str, int]] = {}
+    unsupported_widgets: dict[str, int] = {}
+    unsupported_inputs: dict[str, int] = {}
+
+    for frame in frames:
+        for box in frame.layout_snapshot:
+            widget_support = native_widget_support(box.name)
+            _increment_style_bucket(widget_counts, widget_support, box.name)
+            if widget_support == "fallback-container":
+                unsupported_widgets[box.name] = (
+                    unsupported_widgets.get(box.name, 0) + 1
+                )
+            for event_name in box.events:
+                capability = INPUT_EVENT_CAPABILITIES.get(event_name, event_name)
+                input_support = native_input_support(capability) or "unsupported"
+                _increment_style_bucket(input_counts, input_support, capability)
+                if input_support == "unsupported":
+                    unsupported_inputs[capability] = (
+                        unsupported_inputs.get(capability, 0) + 1
+                    )
+
+    widget_instances = sum(
+        count
+        for support_counts in widget_counts.values()
+        for count in support_counts.values()
+    )
+    input_bindings = sum(
+        count
+        for support_counts in input_counts.values()
+        for count in support_counts.values()
+    )
+    return {
+        "summary": {
+            "widgetInstances": widget_instances,
+            "widgetTypes": len(_combined_property_names(widget_counts)),
+            "inputBindings": input_bindings,
+            "inputCapabilities": len(_combined_property_names(input_counts)),
+            "unsupportedWidgets": sum(unsupported_widgets.values()),
+            "unsupportedInputs": sum(unsupported_inputs.values()),
+        },
+        "widgets": _style_support_buckets(
+            widget_counts,
+            key_name="support",
+            items_name="widgets",
+            item_key="name",
+        ),
+        "inputs": _style_support_buckets(
+            input_counts,
+            key_name="support",
+            items_name="capabilities",
+            item_key="capability",
+        ),
+        "unsupportedWidgets": _style_property_counts(
+            unsupported_widgets,
+            item_key="name",
+        ),
+        "unsupportedInputs": _style_property_counts(
+            unsupported_inputs,
+            item_key="capability",
+        ),
+        "requiredForReplay": {
+            "widgets": _renderer_replay_requirements(
+                widget_counts,
+                kind="widget",
+                items_name="widgets",
+                item_key="name",
+            ),
+            "inputs": _renderer_replay_requirements(
+                input_counts,
+                kind="input",
+                items_name="capabilities",
+                item_key="capability",
+            ),
+        },
+    }
+
+
+def _combined_property_names(
+    buckets: dict[str, dict[str, int]],
+) -> set[str]:
+    names: set[str] = set()
+    for properties in buckets.values():
+        names.update(properties)
+    return names
+
+
+def _renderer_replay_requirements(
+    buckets: dict[str, dict[str, int]],
+    *,
+    kind: str,
+    items_name: str,
+    item_key: str,
+) -> list[dict[str, Any]]:
+    return [
+        {
+            "kind": kind,
+            "support": support,
+            items_name: _style_property_counts(properties, item_key=item_key),
+        }
+        for support, properties in sorted(buckets.items())
+        if support != "unsupported"
+    ]
+
+
+def _style_ops_capability_audit_to_dict(
+    report: StyleOpsCandidateAcceptanceReport,
+) -> dict[str, Any]:
+    applied: dict[str, dict[str, int]] = {}
+    omitted_by_status: dict[str, dict[str, int]] = {}
+    omitted_by_support: dict[str, dict[str, int]] = {}
+    unsupported: dict[str, int] = {}
+
+    for class_report in report.classes:
+        _collect_applied_style_support(
+            class_report.applied_declarations,
+            report.style_support,
+            applied,
+            unsupported,
+        )
+        _collect_omitted_style_support(
+            class_report.omitted_ops,
+            omitted_by_status,
+            omitted_by_support,
+            unsupported,
+        )
+    for direct_style_report in report.direct_styles:
+        _collect_applied_style_support(
+            direct_style_report.applied_declarations,
+            report.style_support,
+            applied,
+            unsupported,
+        )
+        _collect_omitted_style_support(
+            direct_style_report.omitted_ops,
+            omitted_by_status,
+            omitted_by_support,
+            unsupported,
+        )
+
+    applied_total = sum(
+        count
+        for support_counts in applied.values()
+        for count in support_counts.values()
+    )
+    omitted_total = sum(
+        count
+        for status_counts in omitted_by_status.values()
+        for count in status_counts.values()
+    )
+    return {
+        "backend": report.backend,
+        "summary": {
+            "applied": applied_total,
+            "omitted": omitted_total,
+            "unsupported": sum(unsupported.values()),
+        },
+        "applied": _style_support_buckets(applied, key_name="support"),
+        "omittedByStatus": _style_support_buckets(
+            omitted_by_status,
+            key_name="status",
+        ),
+        "omittedBySupport": _style_support_buckets(
+            omitted_by_support,
+            key_name="support",
+        ),
+        "unsupportedProperties": _style_property_counts(unsupported),
+        "requiredForReplay": _style_replay_requirements(applied),
+        "declaredOmissions": _style_omission_requirements(omitted_by_status),
+    }
+
+
+def _collect_applied_style_support(
+    declarations: dict[str, Any],
+    style_support: dict[str, str],
+    applied: dict[str, dict[str, int]],
+    unsupported: dict[str, int],
+) -> None:
+    for property_name in declarations:
+        support = style_support.get(property_name, "unsupported")
+        _increment_style_bucket(applied, support, property_name)
+        if support == "unsupported":
+            unsupported[property_name] = unsupported.get(property_name, 0) + 1
+
+
+def _collect_omitted_style_support(
+    omitted_ops: tuple[dict[str, Any], ...],
+    omitted_by_status: dict[str, dict[str, int]],
+    omitted_by_support: dict[str, dict[str, int]],
+    unsupported: dict[str, int],
+) -> None:
+    for op in omitted_ops:
+        property_name = op.get("property")
+        if not isinstance(property_name, str):
+            continue
+        status = op.get("status") if isinstance(op.get("status"), str) else "unknown"
+        support = (
+            op.get("support")
+            if isinstance(op.get("support"), str)
+            else "unsupported"
+        )
+        _increment_style_bucket(omitted_by_status, status, property_name)
+        _increment_style_bucket(omitted_by_support, support, property_name)
+        if support == "unsupported" or status == "invalid":
+            unsupported[property_name] = unsupported.get(property_name, 0) + 1
+
+
+def _increment_style_bucket(
+    buckets: dict[str, dict[str, int]],
+    bucket: str,
+    property_name: str,
+) -> None:
+    properties = buckets.setdefault(bucket, {})
+    properties[property_name] = properties.get(property_name, 0) + 1
+
+
+def _style_support_buckets(
+    buckets: dict[str, dict[str, int]],
+    *,
+    key_name: str,
+    items_name: str = "properties",
+    item_key: str = "property",
+) -> list[dict[str, Any]]:
+    return [
+        {
+            key_name: bucket,
+            "count": sum(properties.values()),
+            items_name: _style_property_counts(properties, item_key=item_key),
+        }
+        for bucket, properties in sorted(buckets.items())
+    ]
+
+
+def _style_property_counts(
+    counts: dict[str, int],
+    *,
+    item_key: str = "property",
+) -> list[dict[str, Any]]:
+    return [
+        {item_key: property_name, "count": count}
+        for property_name, count in sorted(counts.items())
+    ]
+
+
+def _style_replay_requirements(
+    applied: dict[str, dict[str, int]],
+) -> list[dict[str, Any]]:
+    return [
+        {
+            "kind": "apply",
+            "support": support,
+            "properties": _style_property_counts(properties),
+        }
+        for support, properties in sorted(applied.items())
+        if support != "unsupported"
+    ]
+
+
+def _style_omission_requirements(
+    omitted_by_status: dict[str, dict[str, int]],
+) -> list[dict[str, Any]]:
+    return [
+        {
+            "kind": "omit",
+            "status": status,
+            "properties": _style_property_counts(properties),
+        }
+        for status, properties in sorted(omitted_by_status.items())
+    ]
+
+
 def _style_ops_class_report_to_dict(
     report: StyleOpsCandidateClassReport,
 ) -> dict[str, Any]:
@@ -1381,38 +2037,30 @@ def _style_ops_class_report_to_dict(
     }
 
 
+def _style_ops_direct_style_report_to_dict(
+    report: StyleOpsCandidateDirectStyleReport,
+) -> dict[str, Any]:
+    return {
+        "path": list(report.path),
+        "widget": report.widget,
+        "expectedWidget": report.expected_widget,
+        "passed": report.passed,
+        "appliedDeclarations": report.applied_declarations,
+        "expectedDeclarations": report.expected_declarations,
+        "omittedOps": list(report.omitted_ops),
+        "expectedOmittedOps": list(report.expected_omitted_ops),
+        "errors": list(report.errors),
+    }
+
+
 def _replay_style_ops_class(
-    class_payload: Any,
+    replay: StyleOpsClassReplay,
     rules_by_class: dict[str, dict[str, Any]],
+    style_support: dict[str, str],
 ) -> StyleOpsCandidateClassReport:
-    if not isinstance(class_payload, dict):
-        return StyleOpsCandidateClassReport(
-            class_name="<invalid>",
-            selector="",
-            missing=False,
-            expected_missing=False,
-            applied_declarations={},
-            expected_declarations={},
-            omitted_ops=(),
-            expected_omitted_ops=(),
-            errors=("styleOps class entry must be an object",),
-        )
+    errors = list(replay.errors)
 
-    errors: list[str] = []
-    class_name = class_payload.get("className")
-    if not isinstance(class_name, str):
-        class_name = "<invalid>"
-        errors.append("styleOps className must be a string")
-    selector = class_payload.get("selector")
-    if not isinstance(selector, str):
-        selector = ""
-        errors.append("styleOps selector must be a string")
-    missing = class_payload.get("missing")
-    if not isinstance(missing, bool):
-        missing = False
-        errors.append("styleOps missing must be a boolean")
-
-    rule_payload = rules_by_class.get(class_name)
+    rule_payload = rules_by_class.get(replay.class_name)
     expected_missing = (
         bool(rule_payload.get("missing")) if isinstance(rule_payload, dict) else True
     )
@@ -1423,137 +2071,86 @@ def _replay_style_ops_class(
     )
     if not isinstance(expected_declarations, dict):
         expected_declarations = {}
-        errors.append(f"compiled rule {class_name!r} declarations must be an object")
-    expected_omitted_ops = _expected_style_omitted_ops(rule_payload)
-
-    ops_payload = class_payload.get("ops", [])
-    if not isinstance(ops_payload, list):
-        ops_payload = []
-        errors.append(f"styleOps class {class_name!r} ops must be a list")
-    omitted_ops_payload = class_payload.get("omittedOps", [])
-    if not isinstance(omitted_ops_payload, list):
-        omitted_ops_payload = []
-        errors.append(f"styleOps class {class_name!r} omittedOps must be a list")
-
-    applied_declarations: dict[str, Any] = {}
-    for index, op_payload in enumerate(ops_payload):
-        if not isinstance(op_payload, dict):
-            errors.append(f"styleOps class {class_name!r} op {index} must be an object")
-            continue
-        if op_payload.get("op") != "setStyle":
-            errors.append(
-                f"styleOps class {class_name!r} op {index} must use op='setStyle'"
-            )
-            continue
-        property_name = op_payload.get("property")
-        if not isinstance(property_name, str):
-            errors.append(
-                f"styleOps class {class_name!r} op {index} property must be a string"
-            )
-            continue
-        expected_support = _style_support(property_name)
-        if op_payload.get("support") != expected_support:
-            errors.append(
-                f"styleOps class {class_name!r} op {index} support "
-                f"{op_payload.get('support')!r} does not match {expected_support!r}"
-            )
-        applied_declarations[property_name] = op_payload.get("value")
-
-    omitted_ops = tuple(
-        _normalize_style_omitted_op(class_name, index, op_payload, errors)
-        for index, op_payload in enumerate(omitted_ops_payload)
-        if isinstance(op_payload, dict)
-    )
-    for index, op_payload in enumerate(omitted_ops_payload):
-        if not isinstance(op_payload, dict):
-            errors.append(
-                f"styleOps class {class_name!r} omitted op {index} must be an object"
-            )
-
-    if missing is not expected_missing:
         errors.append(
-            f"styleOps class {class_name!r} missing flag does not match compiled rule"
+            f"compiled rule {replay.class_name!r} declarations must be an object"
         )
-    if applied_declarations != expected_declarations:
+    expected_omitted_ops = expected_omitted_style_ops(rule_payload, style_support)
+
+    if replay.missing is not expected_missing:
         errors.append(
-            f"styleOps class {class_name!r} applied declarations do not match compiled rules"
+            f"styleOps class {replay.class_name!r} missing flag does not match compiled rule"
         )
-    if omitted_ops != expected_omitted_ops:
+    if replay.applied_declarations != expected_declarations:
         errors.append(
-            f"styleOps class {class_name!r} omitted ops do not match compiled rules"
+            f"styleOps class {replay.class_name!r} applied declarations do not match compiled rules"
+        )
+    if replay.omitted_ops != expected_omitted_ops:
+        errors.append(
+            f"styleOps class {replay.class_name!r} omitted ops do not match compiled rules"
         )
 
     return StyleOpsCandidateClassReport(
-        class_name=class_name,
-        selector=selector,
-        missing=missing,
+        class_name=replay.class_name,
+        selector=replay.selector,
+        missing=replay.missing,
         expected_missing=expected_missing,
-        applied_declarations=applied_declarations,
+        applied_declarations=replay.applied_declarations,
         expected_declarations=expected_declarations,
-        omitted_ops=omitted_ops,
+        omitted_ops=replay.omitted_ops,
         expected_omitted_ops=expected_omitted_ops,
         errors=tuple(errors),
     )
 
 
-def _expected_style_omitted_ops(
-    rule_payload: dict[str, Any] | None,
-) -> tuple[dict[str, Any], ...]:
-    if not isinstance(rule_payload, dict):
-        return ()
-    omitted = rule_payload.get("omittedDeclarations", [])
-    if not isinstance(omitted, list):
-        return ()
-    return tuple(
-        {
-            "op": "omitStyle",
-            "property": declaration.get("property"),
-            "support": _style_support(declaration.get("property")),
-            "status": declaration.get("status"),
-            "value": declaration.get("value"),
-            "message": declaration.get("message"),
-        }
-        for declaration in omitted
-        if isinstance(declaration, dict)
+def _replay_style_ops_direct_style(
+    replay: StyleOpsDirectReplay,
+    direct_styles_by_path: dict[tuple[int, ...], dict[str, Any]],
+    style_support: dict[str, str],
+) -> StyleOpsCandidateDirectStyleReport:
+    errors = list(replay.errors)
+
+    expected_payload = direct_styles_by_path.get(replay.path)
+    expected_widget = (
+        expected_payload.get("widget")
+        if isinstance(expected_payload, dict)
+        and isinstance(expected_payload.get("widget"), str)
+        else None
     )
-
-
-def _normalize_style_omitted_op(
-    class_name: str,
-    index: int,
-    op_payload: dict[str, Any],
-    errors: list[str],
-) -> dict[str, Any]:
-    if op_payload.get("op") != "omitStyle":
+    expected_declarations = (
+        expected_payload.get("declarations", {})
+        if isinstance(expected_payload, dict)
+        else {}
+    )
+    if not isinstance(expected_declarations, dict):
+        expected_declarations = {}
         errors.append(
-            f"styleOps class {class_name!r} omitted op {index} must use op='omitStyle'"
+            f"compiled directStyles {list(replay.path)!r} declarations must be an object"
         )
-    property_name = op_payload.get("property")
-    if not isinstance(property_name, str):
+    expected_omitted_ops = expected_omitted_style_ops(expected_payload, style_support)
+
+    if replay.widget != expected_widget:
         errors.append(
-            f"styleOps class {class_name!r} omitted op {index} property must be a string"
+            f"styleOps directStyles {list(replay.path)!r} widget does not match compiled artifact"
         )
-    expected_support = _style_support(property_name)
-    if op_payload.get("support") != expected_support:
+    if replay.applied_declarations != expected_declarations:
         errors.append(
-            f"styleOps class {class_name!r} omitted op {index} support "
-            f"{op_payload.get('support')!r} does not match {expected_support!r}"
+            f"styleOps directStyles {list(replay.path)!r} applied declarations do not match compiled artifact"
         )
-    return {
-        "op": op_payload.get("op"),
-        "property": property_name,
-        "support": op_payload.get("support"),
-        "status": op_payload.get("status"),
-        "value": op_payload.get("value"),
-        "message": op_payload.get("message"),
-    }
+    if replay.omitted_ops != expected_omitted_ops:
+        errors.append(
+            f"styleOps directStyles {list(replay.path)!r} omitted ops do not match compiled artifact"
+        )
 
-
-def _style_support(property_name: Any) -> str:
-    if not isinstance(property_name, str):
-        return "unsupported"
-    return native_style_support(property_name) or "unsupported"
-
+    return StyleOpsCandidateDirectStyleReport(
+        path=replay.path,
+        widget=replay.widget,
+        expected_widget=expected_widget,
+        applied_declarations=replay.applied_declarations,
+        expected_declarations=expected_declarations,
+        omitted_ops=replay.omitted_ops,
+        expected_omitted_ops=expected_omitted_ops,
+        errors=tuple(errors),
+    )
 
 def _compact_box_signature(box: RendererContractBoxSnapshot) -> dict[str, Any]:
     return {

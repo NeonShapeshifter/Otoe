@@ -228,6 +228,180 @@
     "paint": "paint-only-renderer-candidate",
     "raster": "raster-only-renderer-candidate"
   },
+  "capabilityAudit": {
+    "inputs": [
+      {
+        "capabilities": [
+          {
+            "capability": "click",
+            "count": 9
+          },
+          {
+            "capability": "input_text",
+            "count": 2
+          },
+          {
+            "capability": "shortcut",
+            "count": 2
+          },
+          {
+            "capability": "wheel",
+            "count": 2
+          }
+        ],
+        "count": 15,
+        "support": "supported"
+      }
+    ],
+    "requiredForReplay": {
+      "inputs": [
+        {
+          "capabilities": [
+            {
+              "capability": "click",
+              "count": 9
+            },
+            {
+              "capability": "input_text",
+              "count": 2
+            },
+            {
+              "capability": "shortcut",
+              "count": 2
+            },
+            {
+              "capability": "wheel",
+              "count": 2
+            }
+          ],
+          "kind": "input",
+          "support": "supported"
+        }
+      ],
+      "widgets": [
+        {
+          "kind": "widget",
+          "support": "container",
+          "widgets": [
+            {
+              "count": 1,
+              "name": "For"
+            },
+            {
+              "count": 7,
+              "name": "HStack"
+            },
+            {
+              "count": 2,
+              "name": "ScrollView"
+            },
+            {
+              "count": 2,
+              "name": "ShortcutScope"
+            },
+            {
+              "count": 1,
+              "name": "Show"
+            },
+            {
+              "count": 3,
+              "name": "VStack"
+            }
+          ]
+        },
+        {
+          "kind": "widget",
+          "support": "control",
+          "widgets": [
+            {
+              "count": 9,
+              "name": "Button"
+            },
+            {
+              "count": 2,
+              "name": "Input"
+            }
+          ]
+        },
+        {
+          "kind": "widget",
+          "support": "text",
+          "widgets": [
+            {
+              "count": 16,
+              "name": "Text"
+            }
+          ]
+        }
+      ]
+    },
+    "summary": {
+      "inputBindings": 15,
+      "inputCapabilities": 4,
+      "unsupportedInputs": 0,
+      "unsupportedWidgets": 0,
+      "widgetInstances": 43,
+      "widgetTypes": 9
+    },
+    "unsupportedInputs": [],
+    "unsupportedWidgets": [],
+    "widgets": [
+      {
+        "count": 16,
+        "support": "container",
+        "widgets": [
+          {
+            "count": 1,
+            "name": "For"
+          },
+          {
+            "count": 7,
+            "name": "HStack"
+          },
+          {
+            "count": 2,
+            "name": "ScrollView"
+          },
+          {
+            "count": 2,
+            "name": "ShortcutScope"
+          },
+          {
+            "count": 1,
+            "name": "Show"
+          },
+          {
+            "count": 3,
+            "name": "VStack"
+          }
+        ]
+      },
+      {
+        "count": 11,
+        "support": "control",
+        "widgets": [
+          {
+            "count": 9,
+            "name": "Button"
+          },
+          {
+            "count": 2,
+            "name": "Input"
+          }
+        ]
+      },
+      {
+        "count": 16,
+        "support": "text",
+        "widgets": [
+          {
+            "count": 16,
+            "name": "Text"
+          }
+        ]
+      }
+    ]
+  },
   "format": "composed-renderer-contract-compact",
   "passed": true,
   "pngSmoke": {

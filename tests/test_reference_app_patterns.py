@@ -20,7 +20,15 @@ def test_reference_app_patterns_tracks_current_phase5_apps():
     assert "AppFrame" in text
     assert "MetricTile" in text
     assert "ListRow" in text
-    assert "Full-suite baseline after the utility-first styling pass: `356 passed`." in text
+    assert (
+        "Full-suite baseline after the live preview, static class hardening, "
+        "Style IR\npack gate, bundle replay, backend readiness fixture, "
+        "backend readiness report,\nbackend coverage declaration, renderer "
+        "capability audit, StyleOps capability\naudit, and primitive value "
+        "validation pass:"
+        in text
+    )
+    assert "`544 passed, 1 skipped`." in text
 
 
 def test_reference_theme_covers_extracted_ui_helpers():

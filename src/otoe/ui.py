@@ -726,7 +726,7 @@ def CommandPalette(
     autoFocus: bool = False,
 ):
     visible_commands = computed(
-        lambda: _filter_commands(commands, query.value)
+        lambda: _filter_commands(commands, _value(query))
     )
     fallback = empty if isinstance(empty, Node) else Text(empty, className="ui-command-empty")
 

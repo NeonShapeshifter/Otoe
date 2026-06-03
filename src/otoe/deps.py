@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from importlib import metadata
 from typing import Any, Literal
 
-from .profile import PlanProfileConfig
+from .profile_types import PlanProfileConfig
 
 
 DependencyStatus = Literal["installed", "missing"]

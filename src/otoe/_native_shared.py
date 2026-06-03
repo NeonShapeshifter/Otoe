@@ -3,93 +3,21 @@ from __future__ import annotations
 from math import ceil
 from typing import Any
 
+from .capabilities import (
+    NATIVE_CONTAINER_WIDGETS,
+    NATIVE_CONTROL_WIDGETS,
+    NATIVE_IGNORED_STYLE_PROPERTIES,
+    NATIVE_INPUT_SUPPORT,
+    NATIVE_LAYOUT_STYLE_PROPERTIES,
+    NATIVE_PAINT_STYLE_PROPERTIES,
+    NATIVE_STYLE_SUPPORT,
+    NATIVE_TEXT_WIDGETS,
+    NATIVE_WIDGET_SUPPORT,
+)
 from ._native_contracts import LayoutBox, NativeLayout, NativeLayoutError, NativePaintError
 from .mount import FakeWidget, MountedNode, root_widget
 from .node import Node
 from .style import Size, StyleSheet, Token, UnknownStyleClassError
-
-
-NATIVE_LAYOUT_STYLE_PROPERTIES = frozenset(
-    {
-        "borderWidth",
-        "fontSize",
-        "gap",
-        "height",
-        "alignItems",
-        "justifyContent",
-        "maxHeight",
-        "maxWidth",
-        "minHeight",
-        "minWidth",
-        "padding",
-        "scrollY",
-        "width",
-    }
-)
-NATIVE_PAINT_STYLE_PROPERTIES = frozenset(
-    {
-        "background",
-        "borderColor",
-        "borderRadius",
-        "borderWidth",
-        "color",
-        "fontSize",
-    }
-)
-NATIVE_IGNORED_STYLE_PROPERTIES = frozenset(
-    {
-        "borderStyle",
-        "display",
-        "fontWeight",
-        "margin",
-        "opacity",
-    }
-)
-NATIVE_STYLE_SUPPORT = {
-    **{name: "layout" for name in NATIVE_LAYOUT_STYLE_PROPERTIES},
-    **{name: "paint" for name in NATIVE_PAINT_STYLE_PROPERTIES},
-    **{name: "ignored" for name in NATIVE_IGNORED_STYLE_PROPERTIES},
-}
-for _name in NATIVE_LAYOUT_STYLE_PROPERTIES & NATIVE_PAINT_STYLE_PROPERTIES:
-    NATIVE_STYLE_SUPPORT[_name] = "layout+paint"
-
-NATIVE_TEXT_WIDGETS = frozenset({"Text"})
-NATIVE_CONTROL_WIDGETS = frozenset({"Button", "Input"})
-NATIVE_CONTAINER_WIDGETS = frozenset(
-    {
-        "FocusScope",
-        "For",
-        "HStack",
-        "Panel",
-        "ScrollView",
-        "ShortcutScope",
-        "Show",
-        "VStack",
-    }
-)
-NATIVE_WIDGET_SUPPORT = {
-    **{name: "text" for name in NATIVE_TEXT_WIDGETS},
-    **{name: "control" for name in NATIVE_CONTROL_WIDGETS},
-    **{name: "container" for name in NATIVE_CONTAINER_WIDGETS},
-}
-NATIVE_INPUT_SUPPORT = {
-    "click": "supported",
-    "focus": "supported",
-    "input_text": "supported",
-    "key_down": "supported",
-    "key_input": "supported",
-    "shortcut": "supported",
-    "tab_focus": "supported",
-    "wheel": "supported",
-    "caret_movement": "deferred",
-    "drag": "deferred",
-    "gesture": "deferred",
-    "ime": "deferred",
-    "inertial_scroll": "deferred",
-    "pointer_move": "deferred",
-    "text_selection": "deferred",
-    "uncontrolled_input": "deferred",
-}
 
 
 def native_surface_target(

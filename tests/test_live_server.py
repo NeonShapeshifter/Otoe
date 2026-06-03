@@ -1,6 +1,11 @@
 from pathlib import Path
 
-from otoe.live_server import LivePreviewConfig, LivePreviewStylesheet, render_live_page
+from otoe.live_server import (
+    LivePreviewConfig,
+    LivePreviewStylesheet,
+    _LivePreviewState,
+    render_live_page,
+)
 
 
 class DummyPreview:
@@ -107,4 +112,41 @@ def test_render_live_page_ignores_stale_event_responses():
     )
 
     assert "latestEventRequest" in html
+    assert "liveClientId" in html
+    assert "sequence: requestId" in html
+    assert "clientId: liveClientId" in html
     assert "requestId !== latestEventRequest" in html
+
+
+def test_live_preview_state_ignores_stale_event_sequences():
+    class StatefulPreview:
+        def __init__(self):
+            self.events = []
+
+        def render_fragment(self) -> str:
+            return f"<p>{','.join(self.events)}</p>"
+
+        def dispatch_event(self, event_id, *args):
+            self.events.append(event_id)
+            return self.render_fragment()
+
+    app = StatefulPreview()
+    state = _LivePreviewState(
+        app,
+        LivePreviewConfig(
+            title="Dummy",
+            css_route="/dummy.css",
+            css_path=Path("dummy.css"),
+        ),
+    )
+
+    latest = state.dispatch_payload(
+        {"id": "new", "args": [], "clientId": "client-a", "sequence": 2}
+    )
+    stale = state.dispatch_payload(
+        {"id": "old", "args": [], "clientId": "client-a", "sequence": 1}
+    )
+
+    assert latest == {"ok": True, "html": "<p>new</p>", "stale": False}
+    assert stale == {"ok": True, "html": "<p>new</p>", "stale": True}
+    assert app.events == ["new"]

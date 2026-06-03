@@ -175,18 +175,38 @@ Check an app against the first offline hardware/cage profile:
 
 ```bash
 python -m otoe plan app:app --profile cage --css styles.css
+python -m otoe plan app:app --profile cage --backend native-python --css styles.css
+python -m otoe plan app:app --profile cage --backend-capability-profile backend-profile.json --css styles.css
+python -m otoe plan app:app --profile cage --backend-coverage-requirements backend-readiness.json
 python -m otoe plan app:app --profile cage --utilities
 python -m otoe plan app:app --profile cage --utilities --out dist/otoe-plan.json
 python -m otoe plan app:app --profile cage --utilities --json
 python -m otoe plan app:app --profile-file otoe.profile.toml --out dist/otoe-plan.json
+python -m otoe build app:app --profile cage --backend-capability-profile backend-profile.json --css styles.css --out dist/cage
+python -m otoe build app:app --profile cage --backend-coverage-requirements backend-readiness.json --out dist/cage
+python -m otoe backend-profile native-python
+python -m otoe backend-profile --backend-capability-profile backend-profile.json --json
+python -m otoe backend-profile --backend-capability-profile backend-profile.json --coverage-declaration --out backend-coverage-declaration.json
+python -m otoe backend-coverage --requirements examples/native/contracts/backend_readiness_expected.json --backend native-python
+python -m otoe backend-coverage --requirements examples/native/contracts/backend_readiness_expected.json --backend-capability-profile backend-profile.json --out backend-coverage.json
 python -m otoe deps app:app --profile-file otoe.profile.toml --json
 ```
 
 `otoe plan` is diagnostic only. It imports and mounts the target, checks used
-classes against the selected style sources, and reports portable, html-only,
-deferred, and invalid style work before building or deploying a bundle.
+classes against the selected style sources and backend capability profile, then
+reports portable, html-only, deferred, and invalid style work before building
+or deploying a bundle.
 `--json` emits the same report as machine-readable JSON, and `--out` writes that
 JSON as the first plan artifact.
+`otoe backend-profile` inspects the built-in `native-python` profile or a
+candidate JSON profile and can emit the matching coverage declaration without
+running a renderer replay. `otoe backend-coverage` compares that profile or an
+explicit coverage declaration against a readiness/requirements JSON artifact.
+When a profile or CLI flag declares backend coverage requirements, `otoe plan`
+embeds a `backendCoverage` report and exits nonzero if the selected backend
+capability profile misses required coverage. `otoe build` writes the same gate
+as `otoe-backend-coverage.json` and refuses to write `manifest.json` when it
+fails.
 
 When `otoe.profile.toml` exists in the current directory, `otoe plan` uses it by
 default. CSS paths are relative to the profile file:
@@ -203,6 +223,11 @@ files = ["app.py"]
 
 [backend]
 name = "native"
+capability = "native-python"
+# Optional backend coverage gate:
+# coverage_requirements = "backend-readiness.json"
+# Or, for experimental backend candidates:
+# capability_profile = "backend-profile.json"
 
 [deps]
 packages = ["pytest"]
@@ -230,37 +255,56 @@ python -m otoe pack dist/cage --out dist/cage.tar.gz
 ```
 
 `otoe build` currently writes `dist/cage/otoe-plan.json`,
-`dist/cage/otoe-deps.json`, `dist/cage/otoe-styles.json`,
-`dist/cage/manifest.json`, copies declared assets under `dist/cage/assets/`,
-copies selected Otoe framework/runtime files under `dist/cage/framework/`,
-copies the simple local target module under `dist/cage/app/` when the target is
-shaped like `app:app`, follows simple same-directory imports such as
-`import helpers` and `from helpers import view`, and copies declared extra
-runtime files under `dist/cage/app/`.
-It fails when the plan, dependency audit, or backend selection is invalid,
-allows warning plans, and does not install dependencies, download anything, or
-auto-discover package modules or arbitrary dynamic imports yet. `[runtime]
-files` remains the explicit place for packages, dynamic imports, and extra app
-files. The manifest
+`dist/cage/otoe-deps.json`, `dist/cage/otoe-styles.json`, and, when backend
+coverage requirements are declared, `dist/cage/otoe-backend-coverage.json`.
+It then writes `dist/cage/manifest.json`, copies declared assets under
+`dist/cage/assets/`, copies selected Otoe framework/runtime files under
+`dist/cage/framework/`, copies the simple local target module under
+`dist/cage/app/` when the target is shaped like `app:app`, follows simple
+same-directory imports such as `import helpers` and
+`from helpers import view`, and copies declared extra runtime files under
+`dist/cage/app/`.
+It fails when the plan, dependency audit, backend coverage gate, or backend
+selection is invalid, allows warning plans, and does not install dependencies,
+download anything, or auto-discover package modules or arbitrary dynamic
+imports yet. `[runtime] files` remains the explicit place for packages, dynamic
+imports, and extra app files. The manifest
 references `otoe-deps.json`, records copied framework files in `frameworkFiles`,
 and records copied app files in `runtimeFiles`. The style artifact records used
-classes, resolved portable declarations, omitted html-only/deferred
-declarations, diagnostics, tokens, and low-level `styleOps` that backend
-candidates can apply without re-parsing CSS on the target.
+classes, resolved portable declarations, direct widget style props, omitted
+html-only/deferred declarations, diagnostics, tokens, backend capability
+metadata, and low-level `styleOps` that backend candidates can apply without
+re-parsing CSS on the target. Backend tooling can consume the artifact with
+`otoe.style_ops.load_style_ir(...)` and `otoe.style_ops.apply_style_ops(...)`
+instead of indexing the JSON shape directly. The same artifact can be inspected
+from the CLI with `otoe style-ir dist/cage/otoe-styles.json --summary` or
+`otoe style-ir dist/cage/otoe-styles.json --json`; add `--strict` to fail when
+`styleOps` drift from compiled `rules` or `directStyles`.
 
 The bundle also includes `otoe-run.py`, a minimal generated runner. It adds the
 copied `app/` and `framework/` directories to `sys.path`, loads the manifest
 target, supports `--check` for import/load validation, and supports `--png
 frame.png` for a single headless native PNG frame using the bundled compiled
 styles. It also supports `--verify` to check referenced bundle files, sizes,
-SHA-256 hashes, and `--layout-check` to run native layout/paint validation
-without writing a PNG. Pass `otoe build --validate` to run the generated
+SHA-256 hashes, schema versions, declared backend coverage reports, and strict
+Style IR drift through the copied `otoe.style_ops` runtime module.
+Core bundle artifacts declared through `plan`, `deps`, `styles`, and
+`backendCoverage` must also appear in `artifacts` with size/hash metadata, and
+the runner rejects invalid plan, dependency, or style artifacts even if the
+manifest hash entries were updated after tampering. Hardware bundles also keep
+`runtimeInstallsAllowed = false` as a runner/pack invariant.
+`--layout-check` runs native layout/paint validation without writing a PNG.
+Runtime style rehydration also validates the same contract by default when
+loading `otoe-styles.json`. Pass `otoe build --validate` to run the generated
 runner's `--verify`, `--check`, and `--layout-check` modes after writing the
 bundle; this confirms the copied files are intact, the target loads from the
-bundle instead of only from the workspace, and compiled styles can drive native
-rendering.
+bundle instead of only from the workspace, declared backend coverage still
+passes, dependency/style artifacts remain valid, and compiled styles can drive
+native rendering.
 
-`otoe pack` verifies the bundle with `otoe-run.py --verify` and writes a
+`otoe pack` verifies the bundle with `otoe-run.py --verify`, repeats strict
+Style IR drift detection against `otoe-styles.json`, preserves
+`otoe-backend-coverage.json` when the manifest declares it, and writes a
 portable `.tar.gz` archive for deployment. The pack step keeps the bundle rooted
 at the archive top level and excludes local cache directories such as
 `__pycache__/` and `.pytest_cache/`.
@@ -273,6 +317,10 @@ python -m otoe compare-contract expected.json actual.json --json
 python -m otoe compare-contract expected.json actual.json --max-diffs 5
 python -m otoe compare-contract expected.json actual.json --ignore-path /pngSmoke/path --ignore-path /calls/raster/signature/0/subject --ignore-path /calls/raster/hash
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --composed-renderer-contract-json --compact-contract --composed-renderer-png /tmp/composed_renderer_candidate.png --contract-out examples/native/contracts/composed_renderer_compact_expected.json
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --backend-readiness-json --contract-out examples/native/contracts/backend_readiness_expected.json
+PYTHONPATH=src:. python -m otoe backend-profile native-python --coverage-declaration --out examples/native/contracts/backend_coverage_full_declaration.json
+PYTHONPATH=src:. python -m otoe backend-coverage --requirements examples/native/contracts/backend_readiness_expected.json --backend-capability-profile examples/native/contracts/backend_candidate_partial_profile.json
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --style-ops-contract-json --bundle dist/cage --contract-out actual-style-ops-contract.json
 ```
 
 `otoe compare-contract` performs a deterministic deep JSON comparison, exits
@@ -281,9 +329,19 @@ differences. Use `--ignore-path` for intentionally environment-specific JSON
 pointer fields. If the composed renderer PNG smoke filename differs from the
 fixture, ignore `/pngSmoke/path`, `/calls/raster/signature/0/subject`, and
 `/calls/raster/hash` together. Use it with compact renderer contracts when
-checking backend candidates in CI. The native backend candidate fixture at
-`examples/native/contracts/composed_renderer_compact_expected.json` is the
-current expected compact composed-renderer contract. Refresh that fixture only
+checking backend candidates in CI. The native backend candidate fixtures at
+`examples/native/contracts/composed_renderer_compact_expected.json` and
+`examples/native/contracts/backend_readiness_expected.json` are the current
+expected compact composed-renderer contract and aggregate readiness report. The
+`examples/native/contracts/backend_coverage_full_declaration.json` fixture is
+generated from the `native-python` capability profile and records widgets,
+inputs, styles, and declared style omissions that profile claims to cover
+against the readiness report. Candidate-specific declarations can still be
+passed with `--coverage-declaration`, and candidate-specific JSON capability
+profiles can be passed with `--backend-capability-profile`. The
+bundle-backed StyleOps fixture at
+`examples/native/contracts/bundle_style_ops_expected.json` is the expected
+contract for the hardware-style `--bundle` path. Refresh these fixtures only
 for intentional contract changes, using `--contract-out` instead of shell
 redirection.
 
@@ -485,7 +543,9 @@ perform security operations.
 
 ## Status
 
-Current status: v0.1.6 public sync prepared; low-level styleOps contracts and static class extraction. See
+Current status: v0.1.7 public sync prepared; backend coverage gates, hardware
+bundle verification, and Style IR packaging hardening are staged for the next
+public release. See
 `ROADMAP.md` for the active plan.
 
 ## License

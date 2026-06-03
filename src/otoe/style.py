@@ -138,7 +138,13 @@ def style_value_from_dict(payload: dict[str, Any]) -> Any:
     raise StyleSyntaxError(f"Unknown serialized style value type {kind!r}.")
 
 
-def stylesheet_from_artifact(payload: dict[str, Any]) -> StyleSheet:
+def stylesheet_from_artifact(
+    payload: dict[str, Any],
+    *,
+    strict: bool = True,
+) -> StyleSheet:
+    if strict:
+        _validate_stylesheet_artifact(payload)
     rules: dict[str, StyleRule] = {}
     for entry in payload.get("rules", []):
         selector = entry.get("selector") or f".{entry['className']}"
@@ -152,6 +158,19 @@ def stylesheet_from_artifact(payload: dict[str, Any]) -> StyleSheet:
         for name, value in payload.get("tokens", {}).items()
     }
     return StyleSheet(rules=rules, tokens=tokens)
+
+
+def _validate_stylesheet_artifact(payload: dict[str, Any]) -> None:
+    from .style_ops import StyleIRError, load_style_ir, validate_style_ops
+
+    try:
+        validation = validate_style_ops(load_style_ir(payload))
+    except StyleIRError as exc:
+        raise StyleSyntaxError(f"Invalid style artifact: {exc}") from exc
+    if validation.passed:
+        return
+    details = "; ".join(validation.errors) or "styleOps drift detected"
+    raise StyleSyntaxError(f"Invalid style artifact: {details}")
 
 
 def css(source: str, *, tokens: dict[str, Any] | None = None) -> StyleSheet:

@@ -146,27 +146,59 @@ the interactive replays plus a PNG smoke so every capability is exercised.
 `--composed-renderer-png` chooses the PNG smoke path. Add
 `--compact-contract` to either renderer contract command when the desired
 artifact is a smaller signature-and-hash contract instead of the full
-layout/paint snapshot. `run_style_ops_candidate_acceptance(...)` and
+layout/paint snapshot. Renderer contracts also include a `capabilityAudit`
+section that summarizes widget instances/types, input bindings/capabilities,
+unsupported entries, and replay requirements from the minimal and task-board
+frames. `--backend-readiness-json` combines that renderer audit with the
+StyleOps replay/audit into one blocker-oriented report for backend candidates.
+`--backend-coverage-declaration-json` derives a coverage declaration from a
+backend capability profile. `--backend-coverage-json` compares that profile
+declaration, a candidate JSON profile passed with `--backend-capability-profile`,
+or an explicit `--coverage-declaration`, against the readiness requirements.
+Use the profile path when the candidate owns a capability profile; use the
+explicit declaration path while a candidate is still narrower than the profile
+it is working toward.
+`run_style_ops_candidate_acceptance(...)` and
 `--style-ops-contract-json` replay the generated `otoe-styles.json`
 `styleOps` artifact into low-level declarations and compare those declarations,
-omitted operations, support categories, and missing-class flags against the
-compiled `rules` section. Use `--style-artifact` to point the candidate at an
-existing `otoe-styles.json`; otherwise it builds the skeleton app artifact
-directly.
+direct widget style operations, omitted operations, support categories, and
+missing-class flags against the compiled `rules` and `directStyles` sections.
+The same JSON includes `capabilityAudit`, which summarizes applied style
+properties by layout/paint support, declared omissions by status/support,
+unsupported properties, and the support categories a backend must replay.
+Use `--bundle` to point the candidate at an offline build directory; it runs
+`otoe-run.py --verify`, reads `manifest.json`, and replays the generated style
+artifact. Use `--style-artifact` only when you want to bypass bundle
+verification and point directly at an existing `otoe-styles.json`; otherwise it
+builds the skeleton app artifact directly.
+
+Backend tooling should load that artifact through `otoe.style_ops.load_style_ir`
+and apply the primitive stream with `otoe.style_ops.apply_style_ops`; this keeps
+backend candidates from depending on raw CSS or duplicating the Style IR JSON
+shape by hand. Use `otoe style-ir dist/cage/otoe-styles.json --summary`,
+`--json`, or `--strict` for a quick local inspection before running a backend
+replay.
 
 ```bash
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --renderer-contract-json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --renderer-contract-json --compact-contract
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --backend-readiness-json
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --backend-readiness-json --contract-out examples/native/contracts/backend_readiness_expected.json
+PYTHONPATH=src:. python -m otoe backend-profile native-python --coverage-declaration --out examples/native/contracts/backend_coverage_full_declaration.json
+PYTHONPATH=src:. python -m otoe backend-coverage --requirements examples/native/contracts/backend_readiness_expected.json --backend-capability-profile examples/native/contracts/backend_candidate_partial_profile.json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --style-ops-contract-json
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --style-ops-contract-json --bundle dist/cage
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --style-ops-contract-json --style-artifact dist/cage/otoe-styles.json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --style-ops-contract-json --contract-out examples/native/contracts/style_ops_expected.json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --composed-renderer-contract-json --composed-renderer-png preview/native/composed_renderer_candidate.png
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --composed-renderer-contract-json --compact-contract --composed-renderer-png preview/native/composed_renderer_candidate.png
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --composed-renderer-contract-json --compact-contract --composed-renderer-png /tmp/composed_renderer_candidate.png --contract-out examples/native/contracts/composed_renderer_compact_expected.json
 PYTHONPATH=src:. python -m otoe compare-contract examples/native/contracts/composed_renderer_compact_expected.json actual-contract.json
+PYTHONPATH=src:. python -m otoe compare-contract examples/native/contracts/backend_readiness_expected.json actual-backend-readiness.json
 PYTHONPATH=src:. python -m otoe compare-contract examples/native/contracts/style_ops_expected.json actual-style-ops-contract.json
+PYTHONPATH=src:. python -m otoe compare-contract examples/native/contracts/bundle_style_ops_expected.json actual-bundle-style-ops-contract.json
 PYTHONPATH=src:. python -m otoe compare-contract examples/native/contracts/composed_renderer_compact_expected.json actual-contract.json --ignore-path /pngSmoke/path --ignore-path /calls/raster/signature/0/subject --ignore-path /calls/raster/hash
 ```
 
@@ -177,9 +209,17 @@ intentional environment-specific fields with `--ignore-path`. If the composed
 renderer PNG smoke filename differs from the fixture, ignore `/pngSmoke/path`,
 `/calls/raster/signature/0/subject`, and `/calls/raster/hash` together. The
 checked-in `examples/native/contracts/composed_renderer_compact_expected.json`
-fixture is the current expected compact composed-renderer contract, and
+fixture is the current expected compact composed-renderer contract,
+`examples/native/contracts/backend_readiness_expected.json` is the aggregate
+backend-readiness gate, `examples/native/contracts/backend_coverage_full_declaration.json`
+is the full coverage declaration fixture generated from the `native-python`
+capability profile,
+`examples/native/contracts/backend_candidate_partial_profile.json` is a partial
+candidate profile fixture that intentionally reports coverage blockers, and
 `examples/native/contracts/style_ops_expected.json` is the current expected
-low-level style operations contract. Refresh either only when an intentional
+in-memory low-level style operations contract. The
+`examples/native/contracts/bundle_style_ops_expected.json` fixture is the
+bundle-backed hardware workflow gate. Refresh these only when an intentional
 contract change lands, using `--contract-out` so the update command does not
 depend on shell redirection.
 
@@ -187,6 +227,41 @@ The native support matrix and renderer spike documentation are also executable
 drift checks: `tests/test_native_support_matrix.py` keeps `NATIVE_RENDERER_SPIKE.md`
 aligned with supported style, widget, input, fallback, ignored, and deferred
 entries.
+
+Backend capability profiles are the build/planning view of that same support
+surface. `native-python` is the current default profile, and `native` remains a
+profile-file alias. `otoe plan --backend native-python` records style, widget,
+and input capabilities in `otoe-plan.json`; `otoe plan/build
+--backend-capability-profile path/to/profile.json` does the same for
+experimental JSON candidate profiles. `otoe build` carries the selected
+capability profile into `manifest.json` and `otoe-styles.json`; and `styleOps`
+records support categories from that profile so hardware candidates do not need
+to infer support from Python internals.
+`otoe backend-profile native-python` or `otoe backend-profile
+--backend-capability-profile path/to/profile.json --json` inspects that support
+surface from the core CLI; add `--coverage-declaration` when the output should
+feed a backend coverage comparison.
+`otoe backend-coverage --requirements backend-readiness.json --backend-capability-profile
+path/to/profile.json` runs that comparison from core CLI, leaving the skeleton
+focused on generating readiness/replay artifacts.
+Profiles can make that comparison a normal plan/build gate with
+`[backend].coverage_requirements = "backend-readiness.json"`, or the same path
+can be passed with `--backend-coverage-requirements`. `otoe plan` embeds the
+result as `backendCoverage`; `otoe build` persists it as
+`otoe-backend-coverage.json` and refuses to write `manifest.json` when the
+selected capability profile misses required coverage.
+The skeleton's `--backend-coverage-json` and
+`--backend-coverage-declaration-json` flags remain compatibility-only; use the
+core `otoe backend-profile` / `otoe backend-coverage` commands for new flows.
+That keeps the support matrix, planner, bundle, and candidate contract aligned.
+
+`otoe pack` is the final bundle gate before deployment archives: it runs the
+bundle runner verification, including copied-runtime Style IR drift detection,
+checks declared backend coverage reports, repeats strict Style IR validation,
+requires top-level artifacts to be covered by manifest hash entries, rejects
+invalid plan/dependency/style artifacts or runtime-install drift, and includes
+`otoe-backend-coverage.json` when the manifest declares it before writing the
+`.tar.gz`.
 
 ## run_native
 
