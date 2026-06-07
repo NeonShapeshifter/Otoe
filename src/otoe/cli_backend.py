@@ -6,6 +6,12 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from .backend_package import (
+    BackendPackageError,
+    backend_package_to_dict,
+    copy_backend_package,
+    load_backend_package_manifest,
+)
 from .backend_coverage import (
     backend_coverage_report_to_dict,
     requirements_from_backend_coverage_payload,
@@ -93,6 +99,28 @@ def run_backend_coverage(args: argparse.Namespace) -> int:
     return 0 if report["passed"] else 1
 
 
+def run_backend_package(args: argparse.Namespace) -> int:
+    try:
+        manifest = load_backend_package_manifest(args.manifest)
+        report = backend_package_to_dict(manifest)
+        if args.package_out:
+            report = copy_backend_package(manifest, output_dir=args.package_out)
+    except (BackendPackageError, OSError) as exc:
+        print(f"backend-package: {exc}", file=sys.stderr)
+        return 1
+
+    if args.json or args.out or args.package_out:
+        emit_json_payload(
+            report,
+            print_json=args.json,
+            output_path=args.out,
+            artifact_label="backend package artifact",
+        )
+    else:
+        print(format_backend_package_report(report))
+    return 0
+
+
 def backend_profile_from_args(args: argparse.Namespace) -> BackendCapabilityProfile:
     if args.profile is not None and args.backend_capability_profile is not None:
         raise CliError(
@@ -101,6 +129,24 @@ def backend_profile_from_args(args: argparse.Namespace) -> BackendCapabilityProf
     if args.backend_capability_profile is not None:
         return load_backend_capability_profile(args.backend_capability_profile)
     return backend_capability_profile(args.profile)
+
+
+def format_backend_package_report(report: dict[str, Any]) -> str:
+    files = report.get("files")
+    file_count = len(files) if isinstance(files, list) else 0
+    runtime = report.get("runtime")
+    language = runtime.get("language") if isinstance(runtime, Mapping) else None
+    return "\n".join(
+        [
+            f"backend-package {report.get('name') or '<unknown>'}",
+            f"label: {report.get('label') or '<unknown>'}",
+            f"kind: {report.get('kind') or '<unknown>'}",
+            f"entrypoint: {report.get('entrypoint') or '<unknown>'}",
+            f"runtime: {language or '<unknown>'}",
+            f"files: {file_count}",
+            f"packageHash: {report.get('packageHash') or '<missing>'}",
+        ]
+    )
 
 
 def backend_coverage_declaration_from_args(args: argparse.Namespace) -> dict[str, Any]:

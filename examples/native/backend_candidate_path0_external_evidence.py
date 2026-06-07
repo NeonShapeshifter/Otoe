@@ -8,11 +8,18 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from otoe.backend_package import (
+    backend_package_to_dict,
+    load_backend_package_manifest,
+)
 from otoe.backend_evidence_path0_semantics import path0_output_semantic_validation
 from otoe.render_ir import RenderTree, render_tree_to_dict
 
 
 EXTERNAL_PATH0_BACKEND = "path0-external-json-backend"
+EXTERNAL_PATH0_PACKAGE_MANIFEST = Path(__file__).with_name(
+    "path0_external_backend.package.json"
+)
 
 
 def run_external_path0_backend_evidence(
@@ -23,9 +30,13 @@ def run_external_path0_backend_evidence(
 ) -> dict[str, Any]:
     errors: list[str] = []
     contract: dict[str, Any] = {}
+    package_manifest = load_backend_package_manifest(EXTERNAL_PATH0_PACKAGE_MANIFEST)
+    package = backend_package_to_dict(package_manifest)
     process = {
         "mode": "subprocess",
         "entrypoint": "examples/native/path0_external_backend.py",
+        "packageEntrypoint": package["entrypoint"],
+        "packageHash": package["packageHash"],
         "exitCode": None,
     }
     with tempfile.TemporaryDirectory(prefix="otoe-path0-external-") as temp_dir:
@@ -41,7 +52,7 @@ def run_external_path0_backend_evidence(
         )
         args = [
             sys.executable,
-            str(Path(__file__).with_name("path0_external_backend.py")),
+            str(package_manifest.entrypoint_source),
             "--render-tree",
             str(render_tree_path),
             "--layout-out",
@@ -95,6 +106,7 @@ def run_external_path0_backend_evidence(
             else EXTERNAL_PATH0_BACKEND
         ),
         "source": source,
+        "package": package,
         "process": process,
         "input": contract.get("input", {}),
         "output": output if isinstance(output, dict) else {},

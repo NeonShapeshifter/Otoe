@@ -2,6 +2,7 @@ from copy import deepcopy
 from dataclasses import replace
 import json
 from pathlib import Path
+import re
 
 import pytest
 
@@ -100,6 +101,7 @@ BACKEND_COVERAGE_DECLARATION_FIXTURE = Path(
 BACKEND_CANDIDATE_PARTIAL_PROFILE_FIXTURE = Path(
     "examples/native/contracts/backend_candidate_partial_profile.json"
 )
+STRICT_SHA256 = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 def test_backend_readiness_report_combines_renderer_and_style_audits():
     payload = backend_readiness_report_to_dict()
@@ -375,9 +377,15 @@ def test_backend_readiness_can_include_external_path0_backend_evidence():
     assert external["passed"] is True
     assert external["backend"] == "path0-external-json-backend"
     assert external["source"] == payload["path0"]["input"]["source"]
+    assert external["package"]["format"] == "backend-package"
+    assert external["package"]["name"] == "path0-external-json-backend"
+    assert external["package"]["entrypoint"] == "path0_external_backend.py"
+    assert STRICT_SHA256.fullmatch(external["package"]["packageHash"])
     assert external["process"] == {
         "mode": "subprocess",
         "entrypoint": "examples/native/path0_external_backend.py",
+        "packageEntrypoint": "path0_external_backend.py",
+        "packageHash": external["package"]["packageHash"],
         "exitCode": 0,
     }
     assert external["input"]["renderTreeHash"] == payload["path0"]["input"][
@@ -406,6 +414,7 @@ def test_backend_readiness_can_include_external_path0_backend_evidence():
     assert coverage["readiness"]["gates"]["path0ExternalJsonBackend"] is True
     assert coverage["trace"]["path0"]["externalBackend"] == {
         "backend": "path0-external-json-backend",
+        "packageHash": external["package"]["packageHash"],
         "renderTreeHash": external["input"]["renderTreeHash"],
         "layoutOutputHash": external["output"]["layout"]["outputHash"],
         "paintOutputHash": external["output"]["paint"]["outputHash"],
@@ -435,6 +444,33 @@ def test_backend_coverage_rejects_tampered_external_path0_output():
         "blocker": "path0ExternalJsonBackend",
         "message": (
             "path0.externalBackend.output.layout.outputHash must match payload"
+        ),
+    } in payload["readiness"]["evidenceErrors"]
+
+
+def test_backend_coverage_rejects_tampered_external_path0_package():
+    readiness_report = backend_readiness_report_to_dict(
+        include_external_path0_backend=True
+    )
+    declaration = json.loads(
+        BACKEND_COVERAGE_DECLARATION_FIXTURE.read_text(encoding="utf-8")
+    )
+    readiness_report["path0"]["externalBackend"]["package"]["packageHash"] = (
+        "sha256:" + "0" * 64
+    )
+
+    payload = backend_coverage_report_to_dict(
+        declaration,
+        readiness_report=readiness_report,
+    )
+
+    assert payload["passed"] is False
+    assert "path0ExternalJsonBackend" in payload["blockers"]
+    assert {
+        "blocker": "path0ExternalJsonBackend",
+        "message": (
+            "path0.externalBackend.package: "
+            "backend package packageHash must match payload"
         ),
     } in payload["readiness"]["evidenceErrors"]
 

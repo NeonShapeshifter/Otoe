@@ -81,6 +81,10 @@
   `path0.externalBackend`, traced in backend coverage, and rejected when its
   output hashes, semantic validation, process exit, or `renderTreeHash` binding
   drift.
+- Added a schema-versioned backend package manifest and `otoe backend-package`
+  command for the external Path0 JSON backend, including package file hashes,
+  runtime install policy, declared entrypoint, copy-to-directory packaging, and
+  readiness evidence validation of the package hash.
 - Added machine-readable backend readiness `candidateScope` metadata so Path0
   RenderTree IR fixture evidence is not confused with a stable external backend
   ABI.

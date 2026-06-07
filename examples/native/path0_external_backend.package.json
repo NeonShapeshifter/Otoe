@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "format": "backend-package-manifest",
+  "name": "path0-external-json-backend",
+  "label": "Path0 External JSON Backend",
+  "kind": "path0-external-json",
+  "entrypoint": "path0_external_backend.py",
+  "files": [
+    {
+      "path": "path0_external_backend.py",
+      "role": "runner"
+    }
+  ],
+  "contracts": {
+    "inputs": [
+      "otoe-render-tree"
+    ],
+    "optionalInputs": [
+      "otoe-styles"
+    ],
+    "outputs": [
+      "path0-layout-output",
+      "path0-paint-output"
+    ],
+    "readinessFlag": "--external-path0-backend"
+  },
+  "runtime": {
+    "language": "python",
+    "stdlibOnly": true,
+    "runtimeInstallsAllowed": false
+  }
+}

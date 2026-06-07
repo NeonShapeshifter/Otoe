@@ -63,6 +63,10 @@ A candidate should be able to produce or consume these artifacts:
   experimental external JSON runner. They carry schema versions, output hashes,
   layout boxes, paint commands, and semantic shape that can be audited without
   importing native Python layout/paint objects.
+- `backend-package.json`: the materialized backend package descriptor generated
+  from a `backend-package-manifest`. It records the backend entrypoint, package
+  kind, runtime install policy, declared contracts, copied files, file hashes,
+  and a package hash that readiness evidence can bind to a subprocess run.
 - `otoe-backend-coverage.json`: the plan/build gate proving the selected
   backend profile covers the readiness requirements.
 - `manifest.json` and `.tar.gz` bundle output: the final offline deployment
@@ -116,6 +120,7 @@ PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --style-op
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --render-tree-contract-json --contract-out render-tree-contract.json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --path0-render-tree-evidence-json --render-tree-artifact render-tree.json --contract-out path0-evidence.json
 PYTHONPATH=src:. python -m examples.native.path0_external_backend --render-tree render-tree.json --styles otoe-styles.json --layout-out path0-layout-output.json --paint-out path0-paint-output.json --contract-out path0-external-report.json
+PYTHONPATH=src:. python -m otoe backend-package examples/native/path0_external_backend.package.json --package-out dist/path0-external-backend --json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --backend-readiness-json --external-path0-backend --render-tree-artifact render-tree.json --contract-out backend-readiness.json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --backend-readiness-json --render-tree-artifact render-tree.json --contract-out backend-readiness.json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --render-tree-contract-json --bundle dist/cage --contract-out render-tree-contract.json
@@ -174,11 +179,15 @@ runner. It is deliberately a JSON-in/JSON-out subprocess surface: it reads
 `otoe-render-tree`, optionally records `otoe-styles.json` styleOps metadata,
 emits `path0-layout-output` and `path0-paint-output`, and does not import Otoe's
 mounted-tree renderer, native renderer SPI, or backend-candidate harness
-modules. It is still an experimental Path0 runner, not the final external ABI;
-use `--external-path0-backend` with readiness/coverage when that subprocess
-output should be recorded as optional candidate evidence. Backend coverage then
-adds `trace.path0.externalBackend` and rejects drift in the external output
-hashes, semantic validation, process exit, or `renderTreeHash` binding.
+modules. Its package manifest lives at
+`examples/native/path0_external_backend.package.json`; `otoe backend-package`
+validates and materializes it into a directory with `backend-package.json` plus
+the declared runner files. It is still an experimental Path0 runner, not the
+final external ABI; use `--external-path0-backend` with readiness/coverage when
+that subprocess output should be recorded as optional candidate evidence.
+Backend coverage then adds `trace.path0.externalBackend` and rejects drift in
+the package hash, external output hashes, semantic validation, process exit, or
+`renderTreeHash` binding.
 
 ## Capability Profile Contract
 

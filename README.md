@@ -101,8 +101,11 @@ mounted-tree renderer or native renderer SPI. Add
 `--external-path0-backend` to backend-readiness/coverage compatibility commands
 when that subprocess report should be included under `path0.externalBackend`
 and validated for process exit, output hashes, semantic shape, and
-`renderTreeHash` binding. It is a Path0 proof surface, not a stable external
-backend ABI yet.
+`renderTreeHash` binding. The same runner now has
+`examples/native/path0_external_backend.package.json`; inspect or materialize it
+with `otoe backend-package ... --package-out dist/path0-external-backend` to get
+a hashed `backend-package.json` descriptor plus declared runner files. It is a
+Path0 proof surface, not a stable external backend ABI yet.
 
 This is enough for renderer tests, visual fixtures, and early framework API
 validation. It is not yet a production desktop backend: there is no GPU

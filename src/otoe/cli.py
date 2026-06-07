@@ -4,7 +4,11 @@ import argparse
 from collections.abc import Sequence
 
 from . import cli_build as _cli_build
-from .cli_backend import run_backend_coverage, run_backend_profile
+from .cli_backend import (
+    run_backend_coverage,
+    run_backend_package,
+    run_backend_profile,
+)
 from .cli_check import DEFAULT_CHECK_PATHS, run_check
 from .cli_contract import run_compare_contract
 from .cli_deps import run_deps
@@ -189,6 +193,29 @@ def _build_parser() -> argparse.ArgumentParser:
         help="optional path to write the JSON coverage report",
     )
     backend_coverage.set_defaults(func=run_backend_coverage)
+
+    backend_package = subcommands.add_parser(
+        "backend-package",
+        help="inspect or materialize a backend package manifest",
+    )
+    backend_package.add_argument(
+        "manifest",
+        help="backend package manifest JSON to inspect",
+    )
+    backend_package.add_argument(
+        "--json",
+        action="store_true",
+        help="write the backend package descriptor as JSON",
+    )
+    backend_package.add_argument(
+        "--out",
+        help="optional path to write the JSON descriptor",
+    )
+    backend_package.add_argument(
+        "--package-out",
+        help="optional directory to copy package files and backend-package.json",
+    )
+    backend_package.set_defaults(func=run_backend_package)
 
     pack = subcommands.add_parser(
         "pack",

@@ -4,6 +4,7 @@ import hashlib
 import json
 from typing import Any
 
+from .backend_package import backend_package_payload_errors
 from .backend_evidence_common import (
     evidence_error,
     is_sha256_uri,
@@ -50,6 +51,20 @@ def external_path0_evidence_errors(
         errors.append(
             evidence_error(blocker, f"{prefix}.backend must be a non-empty string")
         )
+    package = external.get("package")
+    package_errors = backend_package_payload_errors(package)
+    errors.extend(
+        evidence_error(blocker, f"{prefix}.package: {message}")
+        for message in package_errors
+    )
+    if isinstance(package, dict) and isinstance(external.get("backend"), str):
+        if package.get("name") != external.get("backend"):
+            errors.append(
+                evidence_error(
+                    blocker,
+                    f"{prefix}.package.name must match {prefix}.backend",
+                )
+            )
     if external.get("source") != _path0_source(path0):
         errors.append(
             evidence_error(blocker, f"{prefix}.source must match path0.input.source")
@@ -60,6 +75,27 @@ def external_path0_evidence_errors(
         errors.append(evidence_error(blocker, f"{prefix}.process must be an object"))
     elif process.get("exitCode") != 0:
         errors.append(evidence_error(blocker, f"{prefix}.process.exitCode must be 0"))
+    elif isinstance(package, dict):
+        if process.get("packageEntrypoint") != package.get("entrypoint"):
+            errors.append(
+                evidence_error(
+                    blocker,
+                    (
+                        f"{prefix}.process.packageEntrypoint must match "
+                        f"{prefix}.package.entrypoint"
+                    ),
+                )
+            )
+        if process.get("packageHash") != package.get("packageHash"):
+            errors.append(
+                evidence_error(
+                    blocker,
+                    (
+                        f"{prefix}.process.packageHash must match "
+                        f"{prefix}.package.packageHash"
+                    ),
+                )
+            )
 
     external_input = external.get("input")
     if not isinstance(external_input, dict):

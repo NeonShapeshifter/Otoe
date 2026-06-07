@@ -317,11 +317,19 @@ def _external_path0_trace(readiness_report: dict[str, Any]) -> dict[str, Any] | 
         external_input = {}
     return {
         "backend": _string_or_none(external.get("backend")),
+        "packageHash": _external_path0_package_hash(external),
         "renderTreeHash": external_input.get("renderTreeHash"),
         "layoutOutputHash": _output_section_hash(output, "layout"),
         "paintOutputHash": _output_section_hash(output, "paint"),
         "semanticValidation": _external_path0_semantic_validation(external),
     }
+
+
+def _external_path0_package_hash(external: dict[str, Any]) -> Any:
+    package = external.get("package")
+    if not isinstance(package, dict):
+        return None
+    return package.get("packageHash")
 
 
 def _output_section_hash(output: dict[str, Any], section_name: str) -> Any:

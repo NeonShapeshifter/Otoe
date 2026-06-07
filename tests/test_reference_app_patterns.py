@@ -28,10 +28,11 @@ def test_reference_app_patterns_tracks_current_phase5_apps():
         "validation, bundle manifest hardening, namespace runtime\n"
         "discovery, dependency audit contract metadata, RenderTree validation, "
         "and\nbackend coverage trace plus Path0 output semantic contract and "
-        "external Path0\nJSON runner/readiness evidence pass:"
+        "external Path0\nJSON runner/readiness evidence plus backend package "
+        "manifest pass:"
         in text
     )
-    assert "`692 passed, 1 skipped`." in text
+    assert "`697 passed, 1 skipped`." in text
 
 
 def test_reference_theme_covers_extracted_ui_helpers():

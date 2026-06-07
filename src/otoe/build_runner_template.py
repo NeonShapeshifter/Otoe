@@ -559,6 +559,9 @@ def _verify_backend_coverage_external_path0_trace(
     backend = external.get("backend")
     if not isinstance(backend, str) or not backend:
         raise ValueError(f"{label}.backend must be a non-empty string")
+    package_hash = external.get("packageHash")
+    if not _is_sha256_uri(package_hash):
+        raise ValueError(f"{label}.packageHash must be a sha256 string")
     render_tree_hash = external.get("renderTreeHash")
     if not _is_sha256_uri(render_tree_hash):
         raise ValueError(f"{label}.renderTreeHash must be a sha256 string")
