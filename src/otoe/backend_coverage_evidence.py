@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from .backend_capability_proofs import capability_proof_matches_expectation
+from .backend_evidence_common import is_sha256_uri
 
 _STYLE_SUPPORT_PHASES = {
     "layout": ("layout",),
@@ -377,10 +378,10 @@ def _boundary_proof_ref(proof: Mapping[str, Any]) -> dict[str, Any]:
         if _positive_number(value):
             result[key] = value
     output_hash = proof.get("outputHash")
-    if isinstance(output_hash, str) and output_hash.startswith("sha256:"):
+    if is_sha256_uri(output_hash):
         result["outputHash"] = output_hash
     render_tree_hash = proof.get("renderTreeHash")
-    if isinstance(render_tree_hash, str) and render_tree_hash.startswith("sha256:"):
+    if is_sha256_uri(render_tree_hash):
         result["renderTreeHash"] = render_tree_hash
     return result
 
@@ -459,8 +460,7 @@ def _valid_capability_proof(proof: Any, *, observed_key: str) -> bool:
     observed = proof.get(observed_key)
     return (
         _required_non_empty_strings(proof, ("source",))
-        and isinstance(audit_hash, str)
-        and audit_hash.startswith("sha256:")
+        and is_sha256_uri(audit_hash)
         and _positive_number(proof.get("itemCount"))
         and isinstance(observed, list)
         and all(isinstance(item, str) and item for item in observed)
@@ -493,8 +493,7 @@ def _valid_phase_evidence(phase_evidence: Any) -> bool:
         return False
     return (
         _positive_number(phase_evidence.get("observationCount"))
-        and isinstance(observation_hash, str)
-        and observation_hash.startswith("sha256:")
+        and is_sha256_uri(observation_hash)
     )
 
 
@@ -533,4 +532,4 @@ def _positive_number(value: Any) -> bool:
 
 
 def _valid_sha256(value: Any) -> bool:
-    return isinstance(value, str) and value.startswith("sha256:")
+    return is_sha256_uri(value)

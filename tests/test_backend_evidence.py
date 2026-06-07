@@ -248,7 +248,9 @@ def test_readiness_evidence_rejects_untraced_path0_boundary_layout_boxes():
 
 def test_readiness_evidence_rejects_untraced_path0_boundary_output_hash():
     report = _valid_readiness_report()
-    report["evidence"]["path0"]["renderTreeBoundary"]["outputHash"] = "sha256:wrong"
+    report["evidence"]["path0"]["renderTreeBoundary"]["outputHash"] = _test_sha(
+        "wrong"
+    )
 
     errors = readiness_evidence_errors(report)
 
@@ -279,12 +281,41 @@ def test_readiness_evidence_requires_path0_input_render_tree_hash():
     assert readiness_evidence_blockers(errors) == ["path0RenderTreeEvidence"]
 
 
+def test_readiness_evidence_rejects_malformed_path0_input_render_tree_hash():
+    report = _valid_readiness_report()
+    report["path0"]["input"]["renderTreeHash"] = "sha256:" + "a" * 63
+
+    errors = readiness_evidence_errors(report)
+    messages = [error["message"] for error in errors]
+
+    assert "path0.input.renderTreeHash must be a sha256 string" in messages
+    assert readiness_evidence_blockers(errors) == [
+        "path0RenderTreeEvidence",
+        "rendererBoundariesEvidence",
+    ]
+
+
+def test_readiness_evidence_rejects_uppercase_runtime_observation_hash():
+    report = _valid_readiness_report()
+    report["evidence"]["path0"]["layoutEvidence"]["observationHash"] = (
+        "sha256:" + "A" * 64
+    )
+
+    errors = readiness_evidence_errors(report)
+
+    assert {
+        "blocker": "path0RenderTreeEvidence",
+        "message": "evidence.path0.layoutEvidence.observationHash must be a sha256 string",
+    } in errors
+    assert readiness_evidence_blockers(errors) == ["path0RenderTreeEvidence"]
+
+
 def test_readiness_evidence_rejects_path0_render_tree_hash_mismatch():
     report = _valid_readiness_report()
-    report["evidence"]["path0"]["renderTreeHash"] = "sha256:wrong"
+    report["evidence"]["path0"]["renderTreeHash"] = _test_sha("wrong")
     report["evidence"]["path0"]["renderTreeBoundary"][
         "renderTreeHash"
-    ] = "sha256:wrong"
+    ] = _test_sha("wrong")
 
     errors = readiness_evidence_errors(report)
 
@@ -304,7 +335,7 @@ def test_readiness_evidence_rejects_untraced_path0_boundary_render_tree_hash():
     report = _valid_readiness_report()
     report["evidence"]["path0"]["renderTreeBoundary"][
         "renderTreeHash"
-    ] = "sha256:wrong"
+    ] = _test_sha("wrong")
 
     errors = readiness_evidence_errors(report)
 
@@ -471,7 +502,7 @@ def test_readiness_evidence_rejects_stale_path0_semantic_validation():
 
 def test_readiness_evidence_requires_path0_output_hash_reference_to_match():
     report = _valid_readiness_report()
-    report["evidence"]["path0"]["layoutOutputHash"] = "sha256:wrong"
+    report["evidence"]["path0"]["layoutOutputHash"] = _test_sha("wrong")
 
     errors = readiness_evidence_errors(report)
 
@@ -570,7 +601,7 @@ def test_readiness_evidence_rejects_untraced_renderer_layout_boundary_hash():
     report = _valid_readiness_report()
     report["evidence"]["rendererBoundaries"][0]["boundaries"][1]["proof"][
         "outputHash"
-    ] = "sha256:wrong"
+    ] = _test_sha("wrong")
 
     errors = readiness_evidence_errors(report)
 
@@ -590,7 +621,7 @@ def test_readiness_evidence_rejects_untraced_renderer_layout_boundary_render_tre
     report = _valid_readiness_report()
     report["evidence"]["rendererBoundaries"][0]["boundaries"][1]["proof"][
         "renderTreeHash"
-    ] = "sha256:wrong"
+    ] = _test_sha("wrong")
 
     errors = readiness_evidence_errors(report)
 
@@ -610,7 +641,7 @@ def test_readiness_evidence_rejects_untraced_renderer_paint_boundary_hash():
     report = _valid_readiness_report()
     report["evidence"]["rendererBoundaries"][0]["boundaries"][0]["proof"][
         "outputHash"
-    ] = "sha256:wrong"
+    ] = _test_sha("wrong")
 
     errors = readiness_evidence_errors(report)
 
@@ -637,7 +668,7 @@ def _valid_readiness_report() -> dict:
             },
             "path0": {
                 "input": {
-                    "renderTreeHash": "sha256:render-tree",
+                    "renderTreeHash": _test_sha("render-tree"),
                 },
                 "output": _valid_path0_output(),
                 "semanticValidation": {
@@ -671,7 +702,7 @@ def _valid_readiness_report() -> dict:
                                     "phase": "layout",
                                     "boundary": "renderTree",
                                     "source": "contract:minimal",
-                                    "renderTreeHash": "sha256:render-tree",
+                                    "renderTreeHash": _test_sha("render-tree"),
                                     "layoutBoxes": 1,
                                     "outputHash": _valid_path0_output()["layout"][
                                         "outputHash"
@@ -687,12 +718,12 @@ def _valid_readiness_report() -> dict:
                     "rendererBackend": "path0-renderer-candidate",
                     "styleOpsPresent": True,
                     "styleOpsMatchesRenderTree": True,
-                    "renderTreeHash": "sha256:render-tree",
+                    "renderTreeHash": _test_sha("render-tree"),
                     "renderTreeBoundary": {
                         "phase": "layout",
                         "boundary": "renderTree",
                         "source": "contract:minimal",
-                        "renderTreeHash": "sha256:render-tree",
+                        "renderTreeHash": _test_sha("render-tree"),
                         "layoutBoxes": 1,
                         "outputHash": _valid_path0_output()["layout"][
                             "outputHash"
@@ -710,13 +741,13 @@ def _valid_readiness_report() -> dict:
                     "phases": ["layout", "paint"],
                     "layoutEvidence": {
                         "observationCount": 1,
-                        "observationHash": "sha256:layout",
+                        "observationHash": _test_sha("layout"),
                         "styleProperties": ["width", "borderWidth"],
                         "observedProperties": ["width", "borderWidth"],
                     },
                     "paintEvidence": {
                         "observationCount": 1,
-                        "observationHash": "sha256:paint",
+                        "observationHash": _test_sha("paint"),
                         "styleProperties": ["background", "borderWidth"],
                         "observedProperties": ["background", "borderWidth"],
                     },
@@ -727,7 +758,7 @@ def _valid_readiness_report() -> dict:
                         "gate": "rendererReplay",
                         "proof": {
                             "source": "rendererReplay",
-                            "auditHash": "sha256:widgets",
+                            "auditHash": _test_sha("widgets"),
                             "itemCount": 1,
                             "observedWidgets": ["Text"],
                         },
@@ -740,7 +771,7 @@ def _valid_readiness_report() -> dict:
                         "gate": "rendererReplay",
                         "proof": {
                             "source": "rendererReplay",
-                            "auditHash": "sha256:inputs",
+                            "auditHash": _test_sha("inputs"),
                             "itemCount": 1,
                             "observedCapabilities": ["click"],
                         },
@@ -791,17 +822,21 @@ def _valid_style_runtime() -> dict:
         "paintCommands": 1,
         "layoutEvidence": {
             "observationCount": 1,
-            "observationHash": "sha256:layout",
+            "observationHash": _test_sha("layout"),
             "styleProperties": ["width", "borderWidth"],
             "observedProperties": ["width", "borderWidth"],
         },
         "paintEvidence": {
             "observationCount": 1,
-            "observationHash": "sha256:paint",
+            "observationHash": _test_sha("paint"),
             "styleProperties": ["background", "borderWidth"],
             "observedProperties": ["background", "borderWidth"],
         },
     }
+
+
+def _test_sha(label: str) -> str:
+    return f"sha256:{hashlib.sha256(label.encode('utf-8')).hexdigest()}"
 
 
 def _valid_path0_output() -> dict:

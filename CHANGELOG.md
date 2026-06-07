@@ -68,6 +68,9 @@
   `readiness.candidate.backend`, and hardened generated runner verification so
   packaged coverage artifacts cannot drift to a different backend identity after
   manifest hashes are refreshed.
+- Hardened backend readiness, coverage evidence, and generated runner hash
+  checks so evidence hashes must be `sha256:` followed by 64 lowercase
+  hexadecimal characters instead of any string with a `sha256:` prefix.
 - Added machine-readable backend readiness `candidateScope` metadata so Path0
   RenderTree IR fixture evidence is not confused with a stable external backend
   ABI.

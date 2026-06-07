@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .backend_capability_proofs import renderer_capability_proof_expectations
-from .backend_evidence_common import evidence_error
+from .backend_evidence_common import evidence_error, is_sha256_uri
 from .backend_evidence_path0 import path0_evidence_errors
 from .backend_evidence_sections import section_evidence_errors
 
@@ -52,10 +52,7 @@ def readiness_evidence_errors(
     report_path0 = readiness_report.get("path0")
     output = report_path0.get("output") if isinstance(report_path0, dict) else None
     expected_render_tree_hash = _path0_render_tree_hash(report_path0)
-    if (
-        not isinstance(expected_render_tree_hash, str)
-        or not expected_render_tree_hash.startswith("sha256:")
-    ):
+    if not is_sha256_uri(expected_render_tree_hash):
         errors.append(
             evidence_error(
                 "path0RenderTreeEvidence",

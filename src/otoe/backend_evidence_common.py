@@ -10,6 +10,16 @@ def evidence_error(blocker: str, message: str) -> dict[str, str]:
     }
 
 
+def is_sha256_uri(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    prefix = "sha256:"
+    if len(value) != len(prefix) + 64 or not value.startswith(prefix):
+        return False
+    digest = value[len(prefix) :]
+    return all(char in "0123456789abcdef" for char in digest)
+
+
 def required_string_errors(
     payload: dict[str, Any],
     *,
@@ -105,9 +115,7 @@ def phase_evidence_errors(
             )
         )
     observation_hash = phase_evidence.get("observationHash")
-    if not isinstance(observation_hash, str) or not observation_hash.startswith(
-        "sha256:"
-    ):
+    if not is_sha256_uri(observation_hash):
         errors.append(
             evidence_error(
                 blocker,

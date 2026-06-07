@@ -238,6 +238,8 @@ from `styleOps` plus layout/paint observations for each property's declared
 support phase. Declared style omissions must stay omitted from runtime
 layout/paint style evidence. Invalid evidence groups do not count as exercised
 coverage, so malformed proof cannot inflate `covered` support counts.
+Evidence hashes must use the strict `sha256:<64 lowercase hex>` form; symbolic
+or uppercase hash strings are treated as malformed evidence.
 Each coverage section also carries an `evidenceMap` keyed by capability name so
 audits can trace a covered renderer boundary, widget, input, style, or omission
 back to its source/gate and, for renderer/style entries, boundary proof or

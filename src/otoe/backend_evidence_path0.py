@@ -8,6 +8,7 @@ from .backend_evidence_boundaries import render_tree_boundary_evidence_errors
 from .backend_evidence_common import (
     evidence_error,
     gate_reference_errors,
+    is_sha256_uri,
     phase_evidence_errors,
     positive_number,
     required_string_errors,
@@ -57,10 +58,7 @@ def path0_evidence_errors(
             )
         )
     render_tree_hash = path0.get("renderTreeHash")
-    if (
-        not isinstance(render_tree_hash, str)
-        or not render_tree_hash.startswith("sha256:")
-    ):
+    if not is_sha256_uri(render_tree_hash):
         errors.append(
             evidence_error(
                 blocker,
@@ -249,7 +247,7 @@ def _path0_output_hash_reference_errors(
         value = path0.get(key)
         if value is None:
             continue
-        if not isinstance(value, str) or not value.startswith("sha256:"):
+        if not is_sha256_uri(value):
             errors.append(evidence_error(blocker, f"{label} must be a sha256 string"))
             continue
         if isinstance(section, dict) and value != section.get("outputHash"):
@@ -307,7 +305,7 @@ def _path0_output_section_errors(
             )
         )
     output_hash = section.get("outputHash")
-    if not isinstance(output_hash, str) or not output_hash.startswith("sha256:"):
+    if not is_sha256_uri(output_hash):
         errors.append(
             evidence_error(blocker, f"{prefix}.outputHash must be a sha256 string")
         )

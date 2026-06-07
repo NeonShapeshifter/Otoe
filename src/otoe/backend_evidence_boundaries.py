@@ -4,6 +4,7 @@ from typing import Any
 
 from .backend_evidence_common import (
     evidence_error,
+    is_sha256_uri,
     positive_number,
     required_string_errors,
 )
@@ -65,7 +66,7 @@ def render_tree_boundary_evidence_errors(
             )
         )
     output_hash = boundary.get("outputHash")
-    if not isinstance(output_hash, str) or not output_hash.startswith("sha256:"):
+    if not is_sha256_uri(output_hash):
         errors.append(
             evidence_error(blocker, f"{prefix}.outputHash must be a sha256 string")
         )
@@ -81,10 +82,7 @@ def render_tree_boundary_evidence_errors(
             )
         )
     render_tree_hash = boundary.get("renderTreeHash")
-    if (
-        not isinstance(render_tree_hash, str)
-        or not render_tree_hash.startswith("sha256:")
-    ):
+    if not is_sha256_uri(render_tree_hash):
         errors.append(
             evidence_error(
                 blocker,
@@ -133,7 +131,7 @@ def paint_boundary_evidence_errors(
             )
         )
     output_hash = proof.get("outputHash")
-    if not isinstance(output_hash, str) or not output_hash.startswith("sha256:"):
+    if not is_sha256_uri(output_hash):
         errors.append(
             evidence_error(blocker, f"{prefix}.outputHash must be a sha256 string")
         )

@@ -780,7 +780,7 @@ def test_backend_coverage_rejects_widget_proof_audit_hash_mismatch():
     readiness_report = backend_readiness_report_to_dict()
     for group in readiness_report["evidence"]["widgets"]:
         if any(item["name"] == "Button" for item in group["widgets"]):
-            group["proof"]["auditHash"] = "sha256:wrong"
+            group["proof"]["auditHash"] = "sha256:" + "0" * 64
             break
 
     payload = backend_coverage_report_to_dict(

@@ -527,7 +527,7 @@ def _verify_backend_coverage_trace_contract(
     result = {"candidateScopeLevel": level}
     for key in ("renderTreeHash", "layoutOutputHash", "paintOutputHash"):
         value = path0.get(key)
-        if not isinstance(value, str) or not value.startswith("sha256:"):
+        if not _is_sha256_uri(value):
             raise ValueError(f"{label}: trace.path0.{key} must be a sha256 string")
         result[key] = value
     semantic_validation = path0.get("semanticValidation")
@@ -652,7 +652,7 @@ def _verify_boundary_proof(
     _require_non_empty_string(proof, "phase", label)
     _require_non_empty_string(proof, "source", label)
     value = proof.get("outputHash")
-    if not isinstance(value, str) or not value.startswith("sha256:"):
+    if not _is_sha256_uri(value):
         raise ValueError(f"{label}.outputHash must be a sha256 string")
     if boundary_name == "renderTreeLayout":
         if value != coverage_trace["layoutOutputHash"]:
@@ -660,7 +660,7 @@ def _verify_boundary_proof(
                 f"{label}.outputHash must match trace.path0.layoutOutputHash"
             )
         value = proof.get("renderTreeHash")
-        if not isinstance(value, str) or not value.startswith("sha256:"):
+        if not _is_sha256_uri(value):
             raise ValueError(f"{label}.renderTreeHash must be a sha256 string")
         if value != coverage_trace["renderTreeHash"]:
             raise ValueError(
@@ -699,7 +699,7 @@ def _verify_capability_proof(
     if isinstance(expected_source, str) and proof.get("source") != expected_source:
         raise ValueError(f"{label}.source must match source.source")
     value = proof.get("auditHash")
-    if not isinstance(value, str) or not value.startswith("sha256:"):
+    if not _is_sha256_uri(value):
         raise ValueError(f"{label}.auditHash must be a sha256 string")
     if not _positive_number(proof.get("itemCount")):
         raise ValueError(f"{label}.itemCount must be a positive number")
@@ -733,8 +733,18 @@ def _verify_runtime_proof(proof: Any, label: str) -> None:
         if not _positive_number(proof.get(count_key)):
             raise ValueError(f"{label}.{count_key} must be a positive number")
         value = proof.get(hash_key)
-        if not isinstance(value, str) or not value.startswith("sha256:"):
+        if not _is_sha256_uri(value):
             raise ValueError(f"{label}.{hash_key} must be a sha256 string")
+
+
+def _is_sha256_uri(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    prefix = "sha256:"
+    if len(value) != len(prefix) + 64 or not value.startswith(prefix):
+        return False
+    digest = value[len(prefix) :]
+    return all(char in "0123456789abcdef" for char in digest)
 
 
 def _require_non_empty_string(payload: dict[str, Any], key: str, label: str) -> None:

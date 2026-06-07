@@ -2297,7 +2297,7 @@ def test_cli_build_writes_backend_coverage_artifact_from_profile_file(
             "level": "path0-render-tree-ir-v0",
         },
         "path0": {
-            "renderTreeHash": "sha256:test-render-tree",
+            "renderTreeHash": _backend_coverage_test_hash("test-render-tree"),
             "layoutOutputHash": coverage["coverage"]["rendererBoundaries"][
                 "evidenceMap"
             ]["renderTreeLayout"]["sources"][0]["boundaryProof"]["outputHash"],
@@ -4331,21 +4331,28 @@ def test_cli_build_runner_rejects_backend_coverage_trace_tampering(
     verify_tamper(
         lambda coverage: coverage["trace"]["path0"].__setitem__(
             "renderTreeHash",
-            "sha256:wrong-render-tree",
+            _backend_coverage_test_hash("wrong-render-tree"),
         ),
         "boundaryProof.renderTreeHash must match trace.path0.renderTreeHash",
     )
     verify_tamper(
         lambda coverage: coverage["trace"]["path0"].__setitem__(
+            "renderTreeHash",
+            "sha256:" + "a" * 63,
+        ),
+        "trace.path0.renderTreeHash must be a sha256 string",
+    )
+    verify_tamper(
+        lambda coverage: coverage["trace"]["path0"].__setitem__(
             "layoutOutputHash",
-            "sha256:wrong-layout",
+            _backend_coverage_test_hash("wrong-layout"),
         ),
         "boundaryProof.outputHash must match trace.path0.layoutOutputHash",
     )
     verify_tamper(
         lambda coverage: coverage["trace"]["path0"].__setitem__(
             "paintOutputHash",
-            "sha256:wrong-paint",
+            _backend_coverage_test_hash("wrong-paint"),
         ),
         "boundaryProof.outputHash must match trace.path0.paintOutputHash",
     )
@@ -4359,6 +4366,16 @@ def test_cli_build_runner_rejects_backend_coverage_trace_tampering(
             "totally-fake-backend",
         ),
         "backend must match readiness.candidate.backend",
+    )
+    verify_tamper(
+        lambda coverage: coverage["coverage"]["widgets"]["evidenceMap"]["Text"][
+            "sources"
+        ][0]["capabilityProof"].__setitem__(
+            "auditHash",
+            "sha256:" + "A" * 64,
+        ),
+        "coverage.widgets.evidenceMap.Text.sources[0].capabilityProof.auditHash "
+        "must be a sha256 string",
     )
     verify_tamper(
         lambda coverage: coverage["trace"]["path0"]["semanticValidation"].__setitem__(
@@ -4809,7 +4826,7 @@ def _write_backend_coverage_requirements(
     evidenced_omissions = tuple(declared["declaredStyleOmissions"])
     evidenced_boundaries = tuple(declared["rendererBoundaries"])
     path0_output = _backend_coverage_path0_output()
-    path0_render_tree_hash = "sha256:test-render-tree"
+    path0_render_tree_hash = _backend_coverage_test_hash("test-render-tree")
     path0_runtime = {
         "source": "test:requirements",
         "rendererBackend": "test-renderer",
@@ -4820,13 +4837,13 @@ def _write_backend_coverage_requirements(
         "paintCommands": 1,
         "layoutEvidence": {
             "observationCount": 1,
-            "observationHash": "sha256:test-layout",
+            "observationHash": _backend_coverage_test_hash("test-layout"),
             "styleProperties": list(evidenced_styles),
             "observedProperties": list(evidenced_styles),
         },
         "paintEvidence": {
             "observationCount": 1,
-            "observationHash": "sha256:test-paint",
+            "observationHash": _backend_coverage_test_hash("test-paint"),
             "styleProperties": list(evidenced_styles),
             "observedProperties": list(evidenced_styles),
         },
@@ -4958,7 +4975,9 @@ def _write_backend_coverage_requirements(
                             "gate": "rendererReplay",
                             "proof": {
                                 "source": "test:requirements",
-                                "auditHash": "sha256:test-widgets",
+                                "auditHash": _backend_coverage_test_hash(
+                                    "test-widgets"
+                                ),
                                 "itemCount": len(evidenced_widgets),
                                 "observedWidgets": list(evidenced_widgets),
                             },
@@ -4973,7 +4992,9 @@ def _write_backend_coverage_requirements(
                             "gate": "rendererReplay",
                             "proof": {
                                 "source": "test:requirements",
-                                "auditHash": "sha256:test-inputs",
+                                "auditHash": _backend_coverage_test_hash(
+                                    "test-inputs"
+                                ),
                                 "itemCount": len(evidenced_inputs),
                                 "observedCapabilities": list(evidenced_inputs),
                             },
@@ -5075,6 +5096,10 @@ def _backend_coverage_output_hash(payload: dict) -> str:
         sort_keys=True,
     ).encode("utf-8")
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
+
+
+def _backend_coverage_test_hash(label: str) -> str:
+    return f"sha256:{hashlib.sha256(label.encode('utf-8')).hexdigest()}"
 
 
 def _refresh_manifest_artifact_hash(output, artifact_name: str) -> None:

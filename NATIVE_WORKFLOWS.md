@@ -288,6 +288,8 @@ the evidence.
 Add `--audit` when the candidate needs a human-readable trace of every covered,
 missing, or unproven renderer boundary/widget/input/style back to its source,
 gate, boundary proof, and runtime style proof.
+Those proof hashes are strict `sha256:<64 lowercase hex>` values; symbolic or
+uppercase hashes are reported as malformed evidence.
 The JSON coverage artifact also includes a top-level `trace` summary for
 `candidateScope.level`, Path0 render-tree/layout/paint hashes, and Path0
 `semanticValidation`; bundle runners verify covered renderer-boundary proofs

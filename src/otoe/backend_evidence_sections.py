@@ -11,6 +11,7 @@ from .backend_evidence_common import (
     evidence_error,
     evidence_item_errors,
     gate_reference_errors,
+    is_sha256_uri,
     phase_evidence_errors,
     positive_number,
     required_string_errors,
@@ -318,7 +319,7 @@ def _capability_group_evidence_errors(
             )
         )
     audit_hash = proof.get("auditHash")
-    if not isinstance(audit_hash, str) or not audit_hash.startswith("sha256:"):
+    if not is_sha256_uri(audit_hash):
         errors.append(
             evidence_error(
                 blocker,

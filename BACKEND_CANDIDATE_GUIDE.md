@@ -174,8 +174,10 @@ summaries, and declared style omissions must not appear as runtime-applied
 layout/paint evidence. Renderer-boundary evidence must carry `boundaryProof`
 for `renderTreeLayout` or `paint`, including the Path0 output hash for the
 layout or paint artifact it proved; `renderTreeLayout` proofs must also match
-the Path0 input `renderTreeHash`. Malformed or untraced evidence reports as an
-`*Evidence` blocker and does not count as
+the Path0 input `renderTreeHash`. All evidence hashes must use
+`sha256:<64 lowercase hex>`; symbolic hashes such as `sha256:test` are
+malformed. Malformed or untraced evidence reports as an `*Evidence` blocker and
+does not count as
 exercised coverage, even when the claimed names otherwise match.
 Coverage reports also carry a top-level `trace` summary with
 `candidateScope.level`, `path0.renderTreeHash`, `path0.layoutOutputHash`, and

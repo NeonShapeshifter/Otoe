@@ -213,6 +213,9 @@ schema/format contract and binds coverage declarations to
 `readiness.candidate.backend`; generated bundle runners repeat that identity
 check so packaged coverage cannot drift to a different backend name after
 manifest hashes are refreshed.
+Backend readiness, coverage evidence, and generated runners now require strict
+`sha256:<64 lowercase hex>` hashes for trace, boundary, capability, and runtime
+observation proofs.
 Candidate-specific JSON capability profiles can run through the same gate
 before they graduate into built-in profiles, and `otoe plan/build` now consume
 those profiles so bundle artifacts use the same support source as coverage.
