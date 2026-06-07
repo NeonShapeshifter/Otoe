@@ -2,7 +2,7 @@
 
 **Status:** post-v0.1.7 workshop hardening; backend capability gates, bundle hermeticity, dependency audit contract, namespace runtime discovery, RenderTree validation hardening, experimental external Path0 JSON runner, and first backend package manifest
 **Updated:** June 7, 2026
-**Current baseline:** 697 tests passing, 1 skipped when `mypy` is unavailable
+**Current baseline:** 700 tests passing, 1 skipped when `mypy` is unavailable
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, utility ops console, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
@@ -102,8 +102,10 @@ that subprocess report into backend readiness and coverage trace as optional
 evidence, with validation for process exit, output hashes, semantic shape, and
 `renderTreeHash` identity. The runner also has the first
 `backend-package-manifest`, and `otoe backend-package` can materialize a hashed
-`backend-package.json` descriptor plus declared runner files. It is still an
-experimental Path0 runner rather than the final external backend ABI.
+`backend-package.json` descriptor plus declared runner files. Build profiles can
+also declare `[backend.package].manifest` so bundles copy that package under
+`backend/<name>/` as hash-checked artifacts. It is still an experimental Path0
+runner rather than the final external backend ABI.
 The backend-candidate styleOps replay now also covers the real bundle path:
 `otoe build --validate`, `--bundle dist/...` runner verification, manifest style
 artifact discovery, and styleOps replay from the generated bundle.

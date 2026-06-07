@@ -17,6 +17,7 @@ from .build import (
     build_manifest,
     bundle_artifact,
     copy_assets,
+    copy_backend_package_artifacts,
     copy_framework_files,
     copy_runtime_files,
     write_runner,
@@ -78,6 +79,14 @@ def run_build(args: argparse.Namespace) -> int:
             artifact_manifest.append(
                 bundle_artifact(backend_coverage_path, output_dir=output)
             )
+        backend_package_artifacts = copy_backend_package_artifacts(
+            profile_config,
+            output_dir=output,
+        )
+        backend_package_manifest = None
+        if backend_package_artifacts is not None:
+            backend_package_manifest = backend_package_artifacts.summary
+            artifact_manifest.extend(backend_package_artifacts.artifacts)
         framework_file_manifest = copy_framework_files(
             profile_config,
             output_dir=output,
@@ -96,6 +105,7 @@ def run_build(args: argparse.Namespace) -> int:
             assets=asset_manifest,
             artifacts=artifact_manifest,
             backend_coverage=backend_coverage,
+            backend_package=backend_package_manifest,
             framework_files=framework_file_manifest,
             runner=runner_manifest,
             runtime_files=runtime_file_manifest,
@@ -112,6 +122,8 @@ def run_build(args: argparse.Namespace) -> int:
     print(f"plan artifact: {plan_path}")
     if backend_coverage_path is not None:
         print(f"backend coverage artifact: {backend_coverage_path}")
+    if backend_package_manifest is not None:
+        print(f"backend package: {backend_package_manifest['path']}")
     print(f"deps artifact: {deps_path}")
     print(f"styles artifact: {style_path}")
     print(f"manifest: {manifest_path}")

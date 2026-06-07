@@ -104,8 +104,10 @@ and validated for process exit, output hashes, semantic shape, and
 `renderTreeHash` binding. The same runner now has
 `examples/native/path0_external_backend.package.json`; inspect or materialize it
 with `otoe backend-package ... --package-out dist/path0-external-backend` to get
-a hashed `backend-package.json` descriptor plus declared runner files. It is a
-Path0 proof surface, not a stable external backend ABI yet.
+a hashed `backend-package.json` descriptor plus declared runner files. A profile
+can also point `[backend.package].manifest` at that manifest so `otoe build`
+copies the package under `backend/<name>/` as declared, hashed artifacts. It is
+a Path0 proof surface, not a stable external backend ABI yet.
 
 This is enough for renderer tests, visual fixtures, and early framework API
 validation. It is not yet a production desktop backend: there is no GPU
@@ -296,6 +298,10 @@ capability = "native-python"
 # Or, for experimental backend candidates:
 # capability_profile = "backend-profile.json"
 
+[backend.package]
+# Optional experimental backend package copied into the build bundle.
+manifest = "path0_external_backend.package.json"
+
 [deps]
 packages = ["pytest"]
 extras = ["dev"]
@@ -339,6 +345,9 @@ It then writes `dist/cage/manifest.json`, copies declared assets under
 package `__init__.py`, follows static local imports including package-relative
 imports such as `from .views import card`, and copies declared extra runtime
 files under `dist/cage/app/`.
+When `[backend.package].manifest` is declared, the validated backend package is
+copied under `dist/cage/backend/<name>/`, and every package file plus
+`backend-package.json` is listed in `manifest.json.artifacts`.
 It fails when the plan, dependency audit, backend coverage gate, or backend
 selection is invalid, allows warning plans, and does not install dependencies,
 or download anything. It reports visible `importlib.import_module(...)` and

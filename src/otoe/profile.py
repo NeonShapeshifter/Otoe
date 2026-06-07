@@ -74,7 +74,13 @@ def load_plan_profile(path: str | Path) -> PlanProfileConfig:
     _reject_unknown(
         backend,
         "[backend]",
-        {"name", "capability", "capability_profile", "coverage_requirements"},
+        {
+            "name",
+            "capability",
+            "capability_profile",
+            "coverage_requirements",
+            "package",
+        },
     )
     backend_name = _optional_string(backend, "name", context="[backend]")
     backend_capability = _optional_string(backend, "capability", context="[backend]")
@@ -84,6 +90,12 @@ def load_plan_profile(path: str | Path) -> PlanProfileConfig:
     )
     backend_coverage_requirements_path = _optional_backend_coverage_requirements_path(
         backend,
+        base=profile_path.parent,
+    )
+    backend_package = _table_value(backend, "package", context="[backend]")
+    _reject_unknown(backend_package, "[backend.package]", {"manifest"})
+    backend_package_manifest_path = _optional_backend_package_manifest_path(
+        backend_package,
         base=profile_path.parent,
     )
     if backend_capability is not None and backend_capability_profile_path is not None:
@@ -121,6 +133,7 @@ def load_plan_profile(path: str | Path) -> PlanProfileConfig:
         backend_capability=backend_capability,
         backend_capability_profile=backend_capability_profile_path,
         backend_coverage_requirements=backend_coverage_requirements_path,
+        backend_package_manifest=backend_package_manifest_path,
         dependency_packages=dependency_packages,
         dependency_extras=dependency_extras,
     )
@@ -202,6 +215,23 @@ def _optional_backend_coverage_requirements_path(
         return None
     relative = Path(value)
     _validate_relative_file_path(relative, key="backend.coverage_requirements")
+    return base / relative
+
+
+def _optional_backend_package_manifest_path(
+    backend_package: dict[str, Any],
+    *,
+    base: Path,
+) -> Path | None:
+    value = _optional_string(
+        backend_package,
+        "manifest",
+        context="[backend.package]",
+    )
+    if value is None:
+        return None
+    relative = Path(value)
+    _validate_relative_file_path(relative, key="backend.package.manifest")
     return base / relative
 
 

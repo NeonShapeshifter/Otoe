@@ -180,7 +180,15 @@ and rejects unsupported widget names instead of falling back silently. Add
 readiness evidence and coverage trace data. Use `otoe backend-package` on
 `examples/native/path0_external_backend.package.json` when you need the runner
 and its hashed `backend-package.json` descriptor materialized as a package
-directory.
+directory. Build profiles can declare that package too:
+
+```toml
+[backend.package]
+manifest = "examples/native/path0_external_backend.package.json"
+```
+
+`otoe build` then copies it under `backend/<name>/` and lists the descriptor
+plus runner files as hash-checked artifacts.
 `--composed-renderer-contract-json` prints that composed contract, and
 `--composed-renderer-png` chooses the PNG smoke path. Add
 `--compact-contract` to either renderer contract command when the desired

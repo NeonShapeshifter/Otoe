@@ -67,6 +67,9 @@ A candidate should be able to produce or consume these artifacts:
   from a `backend-package-manifest`. It records the backend entrypoint, package
   kind, runtime install policy, declared contracts, copied files, file hashes,
   and a package hash that readiness evidence can bind to a subprocess run.
+  `otoe.profile.toml` can declare `[backend.package].manifest` so `otoe build`
+  copies that package under `backend/<name>/` and declares the descriptor plus
+  package files as bundle artifacts.
 - `otoe-backend-coverage.json`: the plan/build gate proving the selected
   backend profile covers the readiness requirements.
 - `manifest.json` and `.tar.gz` bundle output: the final offline deployment
@@ -182,9 +185,16 @@ mounted-tree renderer, native renderer SPI, or backend-candidate harness
 modules. Its package manifest lives at
 `examples/native/path0_external_backend.package.json`; `otoe backend-package`
 validates and materializes it into a directory with `backend-package.json` plus
-the declared runner files. It is still an experimental Path0 runner, not the
-final external ABI; use `--external-path0-backend` with readiness/coverage when
-that subprocess output should be recorded as optional candidate evidence.
+the declared runner files. Build profiles can also include it directly:
+
+```toml
+[backend.package]
+manifest = "examples/native/path0_external_backend.package.json"
+```
+
+It is still an experimental Path0 runner, not the final external ABI; use
+`--external-path0-backend` with readiness/coverage when that subprocess output
+should be recorded as optional candidate evidence.
 Backend coverage then adds `trace.path0.externalBackend` and rejects drift in
 the package hash, external output hashes, semantic validation, process exit, or
 `renderTreeHash` binding.

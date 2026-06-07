@@ -25,7 +25,7 @@ PACK_TOP_LEVEL_FILES = frozenset(
         "otoe-run.py",
     }
 )
-PACK_DIRECTORIES = frozenset({"app", "assets", "framework"})
+PACK_DIRECTORIES = frozenset({"app", "assets", "backend", "framework"})
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -112,6 +112,9 @@ def _verify_manifest_contract(manifest: dict[str, Any]) -> None:
         raise ValueError("manifest.json: artifacts must be a list")
     if not isinstance(manifest.get("runner"), dict):
         raise ValueError("manifest.json: runner must be an object")
+    backend_package = manifest.get("backendPackage")
+    if backend_package is not None:
+        _verify_manifest_backend_package_contract(backend_package)
     for group in ("assets", "frameworkFiles", "runtimeFiles"):
         if not isinstance(manifest.get(group), list):
             raise ValueError(f"manifest.json: {group} must be a list")
@@ -167,6 +170,11 @@ def _verify_manifest_file_entry_contracts(manifest: dict[str, Any]) -> None:
         if not isinstance(backend_coverage, str) or not backend_coverage:
             raise ValueError("manifest.json: backendCoverage must be a non-empty string")
         _bundle_path(backend_coverage)
+    backend_package = manifest.get("backendPackage")
+    if isinstance(backend_package, dict):
+        path = backend_package.get("path")
+        if isinstance(path, str):
+            _bundle_path(path)
 
     declared: dict[str, str] = {}
     runner = manifest.get("runner")
@@ -220,6 +228,9 @@ def _verify_manifest_artifact_references(manifest: dict[str, Any]) -> None:
         _require_artifact_entry(manifest, manifest[key])
     if "backendCoverage" in manifest:
         _require_artifact_entry(manifest, manifest["backendCoverage"])
+    backend_package = manifest.get("backendPackage")
+    if isinstance(backend_package, dict):
+        _require_artifact_entry(manifest, backend_package.get("path"))
 
 
 def _reject_unmanifested_bundle_files(manifest: dict[str, Any]) -> None:
@@ -316,6 +327,65 @@ def _verify_artifact_schemas(manifest: dict[str, Any]) -> None:
     backend_coverage = manifest.get("backendCoverage")
     if backend_coverage is not None:
         _verify_backend_coverage(backend_coverage)
+    if manifest.get("backendPackage") is not None:
+        _verify_backend_package(manifest)
+
+
+def _verify_manifest_backend_package_contract(package: Any) -> None:
+    if not isinstance(package, dict):
+        raise ValueError("manifest.json: backendPackage must be an object")
+    for key in ("name", "label", "kind", "path", "root", "entrypoint", "packageHash"):
+        _require_non_empty_string(package, key, "manifest.json.backendPackage")
+    _bundle_path(package["path"])
+    _bundle_path(package["entrypoint"])
+    _bundle_path(package["root"] + "/backend-package.json")
+    if not _is_sha256_uri(package.get("packageHash")):
+        raise ValueError(
+            "manifest.json.backendPackage.packageHash must be a sha256 string"
+        )
+    files = package.get("files")
+    if not isinstance(files, list) or not files:
+        raise ValueError("manifest.json.backendPackage.files must be a non-empty list")
+    for index, relative in enumerate(files):
+        if not isinstance(relative, str) or not relative:
+            raise ValueError(
+                f"manifest.json.backendPackage.files[{index}] "
+                "must be a non-empty string"
+            )
+        _bundle_path(relative)
+
+
+def _verify_backend_package(manifest: dict[str, Any]) -> None:
+    package = manifest["backendPackage"]
+    descriptor_path = package["path"]
+    descriptor = _load_json_bundle_file(descriptor_path)
+    from otoe.backend_package import backend_package_payload_errors
+
+    errors = backend_package_payload_errors(descriptor)
+    if errors:
+        raise ValueError(f"{descriptor_path}: {'; '.join(errors)}")
+    for key in ("name", "label", "kind", "packageHash"):
+        if descriptor.get(key) != package.get(key):
+            raise ValueError(
+                f"manifest.json.backendPackage.{key} must match {descriptor_path}"
+            )
+    package_root = Path(descriptor_path).parent
+    expected_entrypoint = (package_root / descriptor["entrypoint"]).as_posix()
+    if package.get("entrypoint") != expected_entrypoint:
+        raise ValueError(
+            "manifest.json.backendPackage.entrypoint must match backend package"
+        )
+    declared_files = set(package.get("files", []))
+    descriptor_files = descriptor.get("files", [])
+    for file_payload in descriptor_files:
+        relative = (package_root / file_payload["path"]).as_posix()
+        if relative not in declared_files:
+            raise ValueError(
+                "manifest.json.backendPackage.files missing "
+                f"{relative!r} from {descriptor_path}"
+            )
+        _require_artifact_entry(manifest, relative)
+        _require_bundle_file(relative)
 
 
 def _verify_dependency_audit_contract(payload: dict[str, Any], label: str) -> None:

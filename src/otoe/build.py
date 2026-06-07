@@ -6,6 +6,12 @@ from typing import Any
 
 from pathlib import Path
 
+from .backend_package import (
+    BACKEND_PACKAGE_DESCRIPTOR,
+    BackendPackageError,
+    copy_backend_package as write_backend_package,
+    load_backend_package_manifest,
+)
 from .build_runner import build_runner_source
 from .profile_types import PlanProfileConfig, ProfileAsset, ProfileRuntimeFile
 
@@ -19,11 +25,13 @@ RUNNER_FILENAME = "otoe-run.py"
 ASSET_OUTPUT_DIR = "assets"
 RUNTIME_OUTPUT_DIR = "app"
 FRAMEWORK_OUTPUT_DIR = "framework"
+BACKEND_PACKAGE_OUTPUT_DIR = "backend"
 RUNNER_PYTHON_PATH = ("app", "framework")
 OTOE_PACKAGE_DIR = Path(__file__).resolve().parent
 CORE_RUNTIME_FILES = (
     "__init__.py",
     "api_status.py",
+    "backend_package.py",
     "capabilities.py",
     "component.py",
     "control.py",
@@ -91,6 +99,12 @@ class BundleFile:
     relative_path: Path
 
 
+@dataclass(frozen=True)
+class BackendPackageArtifacts:
+    summary: dict[str, Any]
+    artifacts: list[dict[str, Any]]
+
+
 def build_manifest(
     *,
     target: str,
@@ -100,6 +114,7 @@ def build_manifest(
     assets: list[dict[str, Any]] | None = None,
     artifacts: list[dict[str, Any]] | None = None,
     backend_coverage: dict[str, Any] | None = None,
+    backend_package: dict[str, Any] | None = None,
     framework_files: list[dict[str, Any]] | None = None,
     runner: dict[str, Any] | None = None,
     runtime_files: list[dict[str, Any]] | None = None,
@@ -129,6 +144,8 @@ def build_manifest(
     }
     if backend_coverage is not None:
         manifest["backendCoverage"] = BACKEND_COVERAGE_ARTIFACT_FILENAME
+    if backend_package is not None:
+        manifest["backendPackage"] = backend_package
     return manifest
 
 
@@ -169,6 +186,50 @@ def copy_framework_files(
         bundle_dir=FRAMEWORK_OUTPUT_DIR,
         missing_label="framework file",
     )
+
+
+def copy_backend_package_artifacts(
+    profile_config: PlanProfileConfig,
+    *,
+    output_dir: Path,
+) -> BackendPackageArtifacts | None:
+    manifest_path = profile_config.backend_package_manifest
+    if manifest_path is None:
+        return None
+    try:
+        package_manifest = load_backend_package_manifest(manifest_path)
+    except BackendPackageError as exc:
+        raise BuildError(str(exc)) from exc
+
+    package_root = _backend_package_bundle_root(package_manifest.name)
+    package_output_dir = output_dir / package_root
+    descriptor = write_backend_package(
+        package_manifest,
+        output_dir=package_output_dir,
+    )
+    descriptor_path = package_output_dir / BACKEND_PACKAGE_DESCRIPTOR
+    artifacts = [bundle_artifact(descriptor_path, output_dir=output_dir)]
+    for file in package_manifest.files:
+        artifacts.append(
+            bundle_artifact(package_output_dir / file.bundle_path, output_dir=output_dir)
+        )
+
+    descriptor_bundle_path = (package_root / BACKEND_PACKAGE_DESCRIPTOR).as_posix()
+    entrypoint_bundle_path = (package_root / package_manifest.entrypoint).as_posix()
+    summary = {
+        "name": descriptor["name"],
+        "label": descriptor["label"],
+        "kind": descriptor["kind"],
+        "path": descriptor_bundle_path,
+        "root": package_root.as_posix(),
+        "entrypoint": entrypoint_bundle_path,
+        "packageHash": descriptor["packageHash"],
+        "files": [
+            (package_root / file.bundle_path).as_posix()
+            for file in package_manifest.files
+        ],
+    }
+    return BackendPackageArtifacts(summary=summary, artifacts=artifacts)
 
 
 def write_runner(*, output_dir: Path) -> dict[str, Any]:
@@ -219,6 +280,18 @@ def _framework_files(profile_config: PlanProfileConfig) -> tuple[BundleFile, ...
         )
         for path in paths
     )
+
+
+def _backend_package_bundle_root(name: str) -> Path:
+    path = Path(name)
+    if (
+        path.is_absolute()
+        or path.as_posix() != name
+        or len(path.parts) != 1
+        or any(part in {"", ".", ".."} for part in path.parts)
+    ):
+        raise BuildError("backend package name must be a safe bundle directory name")
+    return Path(BACKEND_PACKAGE_OUTPUT_DIR) / path
 
 
 def _unique_paths(paths: tuple[str, ...]) -> tuple[str, ...]:

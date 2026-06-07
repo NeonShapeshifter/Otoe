@@ -29,5 +29,6 @@ class PlanProfileConfig:
     backend_capability: str | None = None
     backend_capability_profile: Path | None = None
     backend_coverage_requirements: Path | None = None
+    backend_package_manifest: Path | None = None
     dependency_packages: tuple[str, ...] = ()
     dependency_extras: tuple[str, ...] = ()
