@@ -1,8 +1,8 @@
 # Otoe Roadmap
 
 **Status:** post-v0.1.7 workshop hardening; backend capability gates, bundle hermeticity, dependency audit contract, namespace runtime discovery, and RenderTree validation hardening
-**Updated:** June 6, 2026
-**Current baseline:** 675 tests passing, 1 skipped when `mypy` is unavailable
+**Updated:** June 7, 2026
+**Current baseline:** 676 tests passing, 1 skipped when `mypy` is unavailable
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, utility ops console, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
@@ -197,7 +197,10 @@ same `RenderTree` artifact before coverage counts the claim. Invalid evidence
 groups no longer count toward
 exercised/covered support totals, and coverage sections now include an
 `evidenceMap` that traces each covered claim back to source/gate metadata,
-renderer boundary proof, and runtime style hashes.
+renderer boundary proof, and runtime style hashes. The coverage artifact now
+also carries a top-level `trace` summary for candidate scope and Path0 hashes,
+and generated runners reject refreshed coverage artifacts whose covered
+renderer-boundary proofs do not match that summary.
 Candidate-specific JSON capability profiles can run through the same gate
 before they graduate into built-in profiles, and `otoe plan/build` now consume
 those profiles so bundle artifacts use the same support source as coverage.

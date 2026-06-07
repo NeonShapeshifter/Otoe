@@ -356,6 +356,7 @@ def _verify_backend_coverage_traceability(
     payload: dict[str, Any],
     label: str,
 ) -> None:
+    coverage_trace = _verify_backend_coverage_trace_contract(payload, label)
     coverage = payload.get("coverage")
     if not isinstance(coverage, dict):
         raise ValueError(f"{label}: coverage must be an object")
@@ -376,6 +377,7 @@ def _verify_backend_coverage_traceability(
                 "widgets": "observedWidgets",
                 "inputs": "observedCapabilities",
             }.get(section),
+            coverage_trace=coverage_trace,
         )
 
 
@@ -387,6 +389,7 @@ def _verify_backend_coverage_section_traceability(
     requires_runtime: bool,
     requires_boundary: bool,
     capability_observed_key: str | None,
+    coverage_trace: dict[str, str],
 ) -> None:
     prefix = f"{label}: coverage.{section}"
     if not isinstance(section_payload, dict):
@@ -466,7 +469,46 @@ def _verify_backend_coverage_section_traceability(
             requires_runtime=requires_runtime,
             requires_boundary=requires_boundary,
             capability_observed_key=capability_observed_key,
+            coverage_trace=coverage_trace,
         )
+
+
+def _verify_backend_coverage_trace_contract(
+    payload: dict[str, Any],
+    label: str,
+) -> dict[str, str]:
+    trace = payload.get("trace")
+    if not isinstance(trace, dict):
+        raise ValueError(f"{label}: trace must be an object")
+    candidate_scope = trace.get("candidateScope")
+    if not isinstance(candidate_scope, dict):
+        raise ValueError(f"{label}: trace.candidateScope must be an object")
+    level = candidate_scope.get("level")
+    if not isinstance(level, str) or not level:
+        raise ValueError(
+            f"{label}: trace.candidateScope.level must be a non-empty string"
+        )
+    readiness = payload.get("readiness")
+    if not isinstance(readiness, dict):
+        raise ValueError(f"{label}: readiness must be an object")
+    readiness_candidate_scope = readiness.get("candidateScope")
+    if not isinstance(readiness_candidate_scope, dict):
+        raise ValueError(f"{label}: readiness.candidateScope must be an object")
+    if level != readiness_candidate_scope.get("level"):
+        raise ValueError(
+            f"{label}: trace.candidateScope.level must match "
+            "readiness.candidateScope.level"
+        )
+    path0 = trace.get("path0")
+    if not isinstance(path0, dict):
+        raise ValueError(f"{label}: trace.path0 must be an object")
+    result = {"candidateScopeLevel": level}
+    for key in ("renderTreeHash", "layoutOutputHash", "paintOutputHash"):
+        value = path0.get(key)
+        if not isinstance(value, str) or not value.startswith("sha256:"):
+            raise ValueError(f"{label}: trace.path0.{key} must be a sha256 string")
+        result[key] = value
+    return result
 
 
 def _coverage_string_set(value: Any, label: str) -> set[str]:
@@ -505,6 +547,7 @@ def _verify_backend_coverage_map_entry(
     requires_runtime: bool,
     requires_boundary: bool,
     capability_observed_key: str | None,
+    coverage_trace: dict[str, str],
 ) -> None:
     if not isinstance(entry, dict):
         raise ValueError(f"{label} must be an object")
@@ -524,6 +567,7 @@ def _verify_backend_coverage_map_entry(
             boundary_name=name if requires_boundary else None,
             capability_name=name if capability_observed_key is not None else None,
             capability_observed_key=capability_observed_key,
+            coverage_trace=coverage_trace,
         )
 
 
@@ -535,6 +579,7 @@ def _verify_backend_coverage_source_ref(
     boundary_name: str | None,
     capability_name: str | None,
     capability_observed_key: str | None,
+    coverage_trace: dict[str, str],
 ) -> None:
     if not isinstance(source, dict):
         raise ValueError(f"{label} must be an object")
@@ -553,6 +598,7 @@ def _verify_backend_coverage_source_ref(
             source.get("boundaryProof"),
             f"{label}.boundaryProof",
             boundary_name=boundary_name,
+            coverage_trace=coverage_trace,
         )
     if capability_name is not None and capability_observed_key is not None:
         _verify_capability_proof(
@@ -569,6 +615,7 @@ def _verify_boundary_proof(
     label: str,
     *,
     boundary_name: str,
+    coverage_trace: dict[str, str],
 ) -> None:
     if not isinstance(proof, dict):
         raise ValueError(f"{label} must be an object")
@@ -578,9 +625,17 @@ def _verify_boundary_proof(
     if not isinstance(value, str) or not value.startswith("sha256:"):
         raise ValueError(f"{label}.outputHash must be a sha256 string")
     if boundary_name == "renderTreeLayout":
+        if value != coverage_trace["layoutOutputHash"]:
+            raise ValueError(
+                f"{label}.outputHash must match trace.path0.layoutOutputHash"
+            )
         value = proof.get("renderTreeHash")
         if not isinstance(value, str) or not value.startswith("sha256:"):
             raise ValueError(f"{label}.renderTreeHash must be a sha256 string")
+        if value != coverage_trace["renderTreeHash"]:
+            raise ValueError(
+                f"{label}.renderTreeHash must match trace.path0.renderTreeHash"
+            )
         if proof.get("phase") != "layout":
             raise ValueError(f"{label}.phase must be 'layout'")
         if proof.get("boundary") != "renderTree":
@@ -588,6 +643,10 @@ def _verify_boundary_proof(
         if not _positive_number(proof.get("layoutBoxes")):
             raise ValueError(f"{label}.layoutBoxes must be a positive number")
     elif boundary_name == "paint":
+        if value != coverage_trace["paintOutputHash"]:
+            raise ValueError(
+                f"{label}.outputHash must match trace.path0.paintOutputHash"
+            )
         if proof.get("phase") != "paint":
             raise ValueError(f"{label}.phase must be 'paint'")
         if not _positive_number(proof.get("paintCommands")):

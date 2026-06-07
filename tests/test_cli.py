@@ -2138,6 +2138,20 @@ def test_cli_build_writes_backend_coverage_artifact_from_profile_file(
     assert result == 0
     assert f"backend coverage artifact: {coverage_path}" in captured.out
     assert coverage["passed"] is True
+    assert coverage["trace"] == {
+        "candidateScope": {
+            "level": "path0-render-tree-ir-v0",
+        },
+        "path0": {
+            "renderTreeHash": "sha256:test-render-tree",
+            "layoutOutputHash": coverage["coverage"]["rendererBoundaries"][
+                "evidenceMap"
+            ]["renderTreeLayout"]["sources"][0]["boundaryProof"]["outputHash"],
+            "paintOutputHash": coverage["coverage"]["rendererBoundaries"][
+                "evidenceMap"
+            ]["paint"]["sources"][0]["boundaryProof"]["outputHash"],
+        },
+    }
     assert manifest["backendCoverage"] == "otoe-backend-coverage.json"
     assert {
         "path": "otoe-backend-coverage.json",
@@ -4089,6 +4103,96 @@ def test_cli_pack_rejects_backend_coverage_without_traceable_evidence_map(
     assert "coverage.widgets.evidenceMap.Text.sources" in captured.err
 
 
+def test_cli_build_runner_rejects_backend_coverage_trace_tampering(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    app = tmp_path / "backend_coverage_trace_tamper_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Backend coverage trace tamper')\n",
+        encoding="utf-8",
+    )
+    requirements = tmp_path / "backend-requirements.json"
+    _write_backend_coverage_requirements(requirements)
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[runtime]\n"
+        'files = ["backend_coverage_trace_tamper_app.py"]\n'
+        "\n"
+        "[backend]\n"
+        'coverage_requirements = "backend-requirements.json"\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "backend-coverage-trace-tamper"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    assert (
+        main(
+            [
+                "build",
+                "backend_coverage_trace_tamper_app:app",
+                "--profile-file",
+                str(profile_file),
+                "--out",
+                str(output),
+                "--validate",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    coverage_path = output / "otoe-backend-coverage.json"
+    original_coverage = json.loads(coverage_path.read_text(encoding="utf-8"))
+
+    def verify_tamper(mutator, expected_error: str) -> None:
+        coverage = json.loads(json.dumps(original_coverage))
+        mutator(coverage)
+        coverage_path.write_text(json.dumps(coverage, sort_keys=True), encoding="utf-8")
+        _refresh_manifest_artifact_hash(output, "otoe-backend-coverage.json")
+
+        verify = subprocess.run(
+            [sys.executable, str(output / "otoe-run.py"), "--verify"],
+            capture_output=True,
+            cwd=output,
+            env={**os.environ, "PYTHONPATH": ""},
+            text=True,
+        )
+
+        assert verify.returncode == 1
+        assert expected_error in verify.stderr
+
+    verify_tamper(
+        lambda coverage: coverage.pop("trace"),
+        "otoe-backend-coverage.json: trace must be an object",
+    )
+    verify_tamper(
+        lambda coverage: coverage["trace"]["path0"].__setitem__(
+            "renderTreeHash",
+            "sha256:wrong-render-tree",
+        ),
+        "boundaryProof.renderTreeHash must match trace.path0.renderTreeHash",
+    )
+    verify_tamper(
+        lambda coverage: coverage["trace"]["path0"].__setitem__(
+            "layoutOutputHash",
+            "sha256:wrong-layout",
+        ),
+        "boundaryProof.outputHash must match trace.path0.layoutOutputHash",
+    )
+    verify_tamper(
+        lambda coverage: coverage["trace"]["path0"].__setitem__(
+            "paintOutputHash",
+            "sha256:wrong-paint",
+        ),
+        "boundaryProof.outputHash must match trace.path0.paintOutputHash",
+    )
+
+
 def test_cli_pack_rejects_backend_coverage_without_capability_proof_observation(
     tmp_path,
     monkeypatch,
@@ -4551,6 +4655,9 @@ def _write_backend_coverage_requirements(
                 "format": "backend-readiness-report",
                 "passed": True,
                 "blockers": [],
+                "candidateScope": {
+                    "level": "path0-render-tree-ir-v0",
+                },
                 "gates": {
                     "rendererReplay": True,
                     "styleOpsReplay": True,

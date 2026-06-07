@@ -169,6 +169,12 @@ layout or paint artifact it proved; `renderTreeLayout` proofs must also match
 the Path0 input `renderTreeHash`. Malformed or untraced evidence reports as an
 `*Evidence` blocker and does not count as
 exercised coverage, even when the claimed names otherwise match.
+Coverage reports also carry a top-level `trace` summary with
+`candidateScope.level`, `path0.renderTreeHash`, `path0.layoutOutputHash`, and
+`path0.paintOutputHash`. Generated bundle runners compare covered
+`rendererBoundaries` proofs against that summary, so tampered coverage artifacts
+cannot refresh manifest hashes and silently point boundary evidence at different
+Path0 output.
 The report includes an `evidenceMap` for every coverage section; each covered
 claim points to the source/gate that exercised it, and style claims include the
 runtime observation hashes that proved their layout/paint phase.

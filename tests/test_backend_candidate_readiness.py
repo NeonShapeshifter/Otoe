@@ -513,6 +513,22 @@ def test_backend_coverage_report_accepts_full_declaration_fixture():
     assert payload["readiness"]["candidateScope"][
         "externalBackendAbiStable"
     ] is False
+    assert payload["trace"] == {
+        "candidateScope": {
+            "level": readiness_report["candidateScope"]["level"],
+        },
+        "path0": {
+            "renderTreeHash": readiness_report["path0"]["input"][
+                "renderTreeHash"
+            ],
+            "layoutOutputHash": readiness_report["path0"]["output"]["layout"][
+                "outputHash"
+            ],
+            "paintOutputHash": readiness_report["path0"]["output"]["paint"][
+                "outputHash"
+            ],
+        },
+    }
     assert payload["readiness"]["evidenceBlockers"] == []
     assert payload["readiness"]["strictEvidence"] is True
     assert payload["blockers"] == []

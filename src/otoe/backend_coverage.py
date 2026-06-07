@@ -39,6 +39,7 @@ def backend_coverage_report_to_dict(
     candidate_scope = readiness_report.get("candidateScope", {})
     if not isinstance(candidate_scope, dict):
         candidate_scope = {}
+    trace = _coverage_trace_from_readiness(readiness_report)
     capability_proof_expectations = renderer_capability_proof_expectations(
         readiness_report
     )
@@ -102,6 +103,7 @@ def backend_coverage_report_to_dict(
             "evidenceErrors": evidence_errors,
             "strictEvidence": strict_evidence,
         },
+        "trace": trace,
         "coverage": coverage,
         "declarationErrors": declaration_errors,
         "blockers": blockers,
@@ -127,6 +129,51 @@ def _unique_strings(values: list[str]) -> list[str]:
         if value not in unique:
             unique.append(value)
     return unique
+
+
+def _coverage_trace_from_readiness(readiness_report: dict[str, Any]) -> dict[str, Any]:
+    candidate_scope = readiness_report.get("candidateScope")
+    if not isinstance(candidate_scope, dict):
+        candidate_scope = {}
+    return {
+        "candidateScope": {
+            "level": _string_or_none(candidate_scope.get("level")),
+        },
+        "path0": {
+            "renderTreeHash": _path0_render_tree_hash(readiness_report),
+            "layoutOutputHash": _path0_output_hash(readiness_report, "layout"),
+            "paintOutputHash": _path0_output_hash(readiness_report, "paint"),
+        },
+    }
+
+
+def _path0_render_tree_hash(readiness_report: dict[str, Any]) -> Any:
+    path0 = readiness_report.get("path0")
+    if not isinstance(path0, dict):
+        return None
+    path0_input = path0.get("input")
+    if not isinstance(path0_input, dict):
+        return None
+    return path0_input.get("renderTreeHash")
+
+
+def _path0_output_hash(readiness_report: dict[str, Any], section_name: str) -> Any:
+    path0 = readiness_report.get("path0")
+    if not isinstance(path0, dict):
+        return None
+    output = path0.get("output")
+    if not isinstance(output, dict):
+        return None
+    section = output.get(section_name)
+    if not isinstance(section, dict):
+        return None
+    return section.get("outputHash")
+
+
+def _string_or_none(value: Any) -> Any:
+    if isinstance(value, str) and value:
+        return value
+    return None
 
 
 def _coverage_evidence_errors(

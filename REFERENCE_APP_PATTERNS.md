@@ -159,8 +159,9 @@ Full-suite baseline after the live preview, static class hardening, Style IR
 pack gate, bundle replay, backend readiness fixture, backend readiness report,
 backend coverage declaration, renderer capability audit, StyleOps capability
 audit, primitive value validation, bundle manifest hardening, namespace runtime
-discovery, dependency audit contract metadata, and RenderTree validation pass:
-`675 passed, 1 skipped`.
+discovery, dependency audit contract metadata, RenderTree validation, and
+backend coverage trace contract pass:
+`676 passed, 1 skipped`.
 
 ## Current Decision
 
