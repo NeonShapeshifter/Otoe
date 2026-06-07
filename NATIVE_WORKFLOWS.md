@@ -284,8 +284,12 @@ Add `--audit` when the candidate needs a human-readable trace of every covered,
 missing, or unproven renderer boundary/widget/input/style back to its source,
 gate, boundary proof, and runtime style proof.
 The JSON coverage artifact also includes a top-level `trace` summary for
-`candidateScope.level` and Path0 render-tree/layout/paint hashes; bundle
-runners verify covered renderer-boundary proofs against that summary.
+`candidateScope.level`, Path0 render-tree/layout/paint hashes, and Path0
+`semanticValidation`; bundle runners verify covered renderer-boundary proofs
+and semantic pass/fail state against that summary. Coverage artifacts also
+include an evidence summary that counts malformed evidence by blocker so audit
+output can distinguish missing support from claims that were declared but not
+validly exercised.
 The requirements path should be a backend-readiness report with executed
 `evidence`; requirements-only JSON is treated as insufficient because declared
 coverage is not proof.

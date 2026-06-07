@@ -708,6 +708,10 @@ def test_cli_backend_coverage_accepts_builtin_profile(capsys):
     assert payload["passed"] is True
     assert payload["readiness"]["passed"] is True
     assert payload["readiness"]["strictEvidence"] is True
+    assert payload["readiness"]["evidenceSummary"] == {
+        "malformed": 0,
+        "malformedByBlocker": {},
+    }
     assert payload["blockers"] == []
     assert payload["coverage"]["widgets"]["extra"] == []
     assert payload["coverage"]["widgets"]["evidence"]["claimed"] == [
@@ -829,6 +833,8 @@ def test_cli_backend_coverage_reports_evidence_contract_errors(tmp_path, capsys)
         "ShortcutScope, Show, VStack"
     ) in captured.out
     assert "evidence errors: 1" in captured.out
+    assert "evidence malformed: 1" in captured.out
+    assert "evidence malformed by blocker: widgetsEvidence=1" in captured.out
     assert (
         "evidence error: evidence.widgets[0].source must be a non-empty string"
         in captured.out
@@ -867,6 +873,8 @@ def test_cli_backend_coverage_audit_reports_unproven_claims(tmp_path, capsys):
     )
     assert "widgets FocusScope proof: none" in captured.out
     assert "evidence errors: 1" in captured.out
+    assert "evidence malformed: 1" in captured.out
+    assert "evidence malformed by blocker: widgetsEvidence=1" in captured.out
     assert "blockers: widgetsEvidence" in captured.out
 
 
@@ -939,6 +947,12 @@ def test_cli_backend_coverage_rejects_requirements_without_evidence(tmp_path, ca
     assert payload["passed"] is False
     assert payload["readiness"]["strictEvidence"] is True
     assert payload["readiness"]["evidenceBlockers"] == ["capabilityEvidence"]
+    assert payload["readiness"]["evidenceSummary"] == {
+        "malformed": 1,
+        "malformedByBlocker": {
+            "capabilityEvidence": 1,
+        },
+    }
     assert payload["coverage"]["widgets"]["exercised"] == []
     assert payload["coverage"]["widgets"]["summary"]["unproven"] == 11
     assert "capabilityEvidence" in payload["blockers"]

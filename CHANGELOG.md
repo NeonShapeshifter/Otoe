@@ -58,6 +58,9 @@
 - Extended the backend coverage `trace` with Path0 `semanticValidation` and
   hardened generated runner verification so coverage artifacts with stale or
   failed semantic summaries are rejected after packaging.
+- Added a backend coverage `readiness.evidenceSummary` and audit output for
+  malformed evidence counts by blocker, making invalid proof distinct from
+  missing declarations and unproven claims.
 - Added machine-readable backend readiness `candidateScope` metadata so Path0
   RenderTree IR fixture evidence is not confused with a stable external backend
   ABI.

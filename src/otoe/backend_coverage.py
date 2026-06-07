@@ -67,6 +67,7 @@ def backend_coverage_report_to_dict(
         )
     )
     evidence_blockers = readiness_evidence_blockers(evidence_errors)
+    evidence_summary = _coverage_evidence_summary(evidence_errors)
     readiness_passed = readiness_report.get("passed", True) is True
     blockers: list[str] = []
     if not readiness_passed:
@@ -101,6 +102,7 @@ def backend_coverage_report_to_dict(
             "candidateScope": candidate_scope,
             "evidenceBlockers": evidence_blockers,
             "evidenceErrors": evidence_errors,
+            "evidenceSummary": evidence_summary,
             "strictEvidence": strict_evidence,
         },
         "trace": trace,
@@ -129,6 +131,20 @@ def _unique_strings(values: list[str]) -> list[str]:
         if value not in unique:
             unique.append(value)
     return unique
+
+
+def _coverage_evidence_summary(
+    evidence_errors: list[dict[str, str]],
+) -> dict[str, Any]:
+    malformed_by_blocker: dict[str, int] = {}
+    for error in evidence_errors:
+        blocker = error.get("blocker") if isinstance(error, dict) else None
+        if isinstance(blocker, str) and blocker:
+            malformed_by_blocker[blocker] = malformed_by_blocker.get(blocker, 0) + 1
+    return {
+        "malformed": sum(malformed_by_blocker.values()),
+        "malformedByBlocker": dict(sorted(malformed_by_blocker.items())),
+    }
 
 
 def _coverage_trace_from_readiness(readiness_report: dict[str, Any]) -> dict[str, Any]:

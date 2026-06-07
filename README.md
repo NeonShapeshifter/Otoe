@@ -241,6 +241,9 @@ a top-level `trace` summary with the candidate scope level, Path0
 render-tree/layout/paint hashes, and Path0 `semanticValidation`; generated
 bundle runners verify that covered renderer-boundary proofs match that trace
 and that the semantic summary still passed with no errors.
+Coverage artifacts also include `readiness.evidenceSummary`, so JSON reports
+and audit output distinguish malformed evidence from missing support or
+declared-but-unproven claims.
 `--audit` prints that traceability as a text report for humans; `--json` and
 `--out` keep writing the machine-readable coverage artifact.
 See `BACKEND_CANDIDATE_GUIDE.md` for the full backend-candidate graduation path

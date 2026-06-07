@@ -205,6 +205,9 @@ whose semantic summary is no longer passed with no errors.
 Path0 readiness now also recomputes `semanticValidation` from layout/paint
 output so duplicate layout paths, invalid bounds, and paint commands pointing
 outside layout cannot pass by refreshing hashes.
+Backend coverage reports now also summarize malformed evidence by blocker so
+candidate audits distinguish invalid proof from missing support and unproven
+profile claims.
 Candidate-specific JSON capability profiles can run through the same gate
 before they graduate into built-in profiles, and `otoe plan/build` now consume
 those profiles so bundle artifacts use the same support source as coverage.

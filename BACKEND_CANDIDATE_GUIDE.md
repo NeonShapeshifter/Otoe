@@ -182,6 +182,9 @@ boundary evidence at different or structurally invalid Path0 output.
 The report includes an `evidenceMap` for every coverage section; each covered
 claim points to the source/gate that exercised it, and style claims include the
 runtime observation hashes that proved their layout/paint phase.
+The report also includes `readiness.evidenceSummary.malformedByBlocker`, and
+`--audit` prints those counts so reviewers can separate missing declarations,
+declared-but-unproven claims, and evidence that was present but invalid.
 
 ```json
 {

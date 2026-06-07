@@ -233,6 +233,7 @@ def format_backend_coverage_report(report: dict[str, Any]) -> str:
     evidence_errors = report["readiness"].get("evidenceErrors", [])
     if evidence_errors:
         lines.append(f"evidence errors: {len(evidence_errors)}")
+        lines.extend(_format_backend_coverage_evidence_summary(report))
         lines.extend(
             f"evidence error: {error['message']}"
             for error in evidence_errors
@@ -282,6 +283,7 @@ def format_backend_coverage_audit(report: dict[str, Any]) -> str:
     evidence_errors = report["readiness"].get("evidenceErrors", [])
     if evidence_errors:
         lines.append(f"evidence errors: {len(evidence_errors)}")
+        lines.extend(_format_backend_coverage_evidence_summary(report))
         lines.extend(
             f"evidence error: {error['message']}"
             for error in evidence_errors
@@ -319,6 +321,29 @@ def _format_backend_coverage_audit_entry(
             f"{section} {name} proof[{index}]: "
             f"{_format_backend_coverage_source(source)}"
         )
+    return lines
+
+
+def _format_backend_coverage_evidence_summary(report: Mapping[str, Any]) -> list[str]:
+    readiness = report.get("readiness")
+    if not isinstance(readiness, dict):
+        return []
+    summary = readiness.get("evidenceSummary")
+    if not isinstance(summary, dict):
+        return []
+    malformed = summary.get("malformed")
+    by_blocker = summary.get("malformedByBlocker")
+    if not isinstance(malformed, int) or malformed <= 0:
+        return []
+    lines = [f"evidence malformed: {malformed}"]
+    if isinstance(by_blocker, dict):
+        counts = [
+            f"{blocker}={count}"
+            for blocker, count in sorted(by_blocker.items())
+            if isinstance(blocker, str) and blocker and isinstance(count, int)
+        ]
+        if counts:
+            lines.append(f"evidence malformed by blocker: {', '.join(counts)}")
     return lines
 
 
