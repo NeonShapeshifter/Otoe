@@ -2150,6 +2150,10 @@ def test_cli_build_writes_backend_coverage_artifact_from_profile_file(
             "paintOutputHash": coverage["coverage"]["rendererBoundaries"][
                 "evidenceMap"
             ]["paint"]["sources"][0]["boundaryProof"]["outputHash"],
+            "semanticValidation": {
+                "passed": True,
+                "errors": [],
+            },
         },
     }
     assert manifest["backendCoverage"] == "otoe-backend-coverage.json"
@@ -4190,6 +4194,24 @@ def test_cli_build_runner_rejects_backend_coverage_trace_tampering(
             "sha256:wrong-paint",
         ),
         "boundaryProof.outputHash must match trace.path0.paintOutputHash",
+    )
+    verify_tamper(
+        lambda coverage: coverage["trace"]["path0"].pop("semanticValidation"),
+        "trace.path0.semanticValidation must be an object",
+    )
+    verify_tamper(
+        lambda coverage: coverage["trace"]["path0"]["semanticValidation"].__setitem__(
+            "passed",
+            False,
+        ),
+        "trace.path0.semanticValidation.passed must be true",
+    )
+    verify_tamper(
+        lambda coverage: coverage["trace"]["path0"]["semanticValidation"].__setitem__(
+            "errors",
+            ["semantic drift"],
+        ),
+        "trace.path0.semanticValidation.errors must be []",
     )
 
 

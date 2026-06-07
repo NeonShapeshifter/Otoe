@@ -237,9 +237,10 @@ Each coverage section also carries an `evidenceMap` keyed by capability name so
 audits can trace a covered renderer boundary, widget, input, style, or omission
 back to its source/gate and, for renderer/style entries, boundary proof or
 runtime observation hashes. The machine-readable coverage artifact also carries
-a top-level `trace` summary with the candidate scope level and Path0
-render-tree/layout/paint hashes; generated bundle runners verify that covered
-renderer-boundary proofs match that trace.
+a top-level `trace` summary with the candidate scope level, Path0
+render-tree/layout/paint hashes, and Path0 `semanticValidation`; generated
+bundle runners verify that covered renderer-boundary proofs match that trace
+and that the semantic summary still passed with no errors.
 `--audit` prints that traceability as a text report for humans; `--json` and
 `--out` keep writing the machine-readable coverage artifact.
 See `BACKEND_CANDIDATE_GUIDE.md` for the full backend-candidate graduation path

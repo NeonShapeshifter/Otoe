@@ -198,9 +198,10 @@ groups no longer count toward
 exercised/covered support totals, and coverage sections now include an
 `evidenceMap` that traces each covered claim back to source/gate metadata,
 renderer boundary proof, and runtime style hashes. The coverage artifact now
-also carries a top-level `trace` summary for candidate scope and Path0 hashes,
-and generated runners reject refreshed coverage artifacts whose covered
-renderer-boundary proofs do not match that summary.
+also carries a top-level `trace` summary for candidate scope, Path0 hashes, and
+Path0 `semanticValidation`, and generated runners reject refreshed coverage
+artifacts whose covered renderer-boundary proofs do not match that summary or
+whose semantic summary is no longer passed with no errors.
 Path0 readiness now also recomputes `semanticValidation` from layout/paint
 output so duplicate layout paths, invalid bounds, and paint commands pointing
 outside layout cannot pass by refreshing hashes.

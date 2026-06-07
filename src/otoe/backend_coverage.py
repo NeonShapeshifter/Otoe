@@ -143,6 +143,7 @@ def _coverage_trace_from_readiness(readiness_report: dict[str, Any]) -> dict[str
             "renderTreeHash": _path0_render_tree_hash(readiness_report),
             "layoutOutputHash": _path0_output_hash(readiness_report, "layout"),
             "paintOutputHash": _path0_output_hash(readiness_report, "paint"),
+            "semanticValidation": _path0_semantic_validation(readiness_report),
         },
     }
 
@@ -168,6 +169,19 @@ def _path0_output_hash(readiness_report: dict[str, Any], section_name: str) -> A
     if not isinstance(section, dict):
         return None
     return section.get("outputHash")
+
+
+def _path0_semantic_validation(readiness_report: dict[str, Any]) -> Any:
+    path0 = readiness_report.get("path0")
+    if not isinstance(path0, dict):
+        return None
+    semantic_validation = path0.get("semanticValidation")
+    if not isinstance(semantic_validation, dict):
+        return None
+    return {
+        "passed": semantic_validation.get("passed"),
+        "errors": semantic_validation.get("errors"),
+    }
 
 
 def _string_or_none(value: Any) -> Any:

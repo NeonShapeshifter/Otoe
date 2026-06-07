@@ -531,6 +531,7 @@ def test_backend_coverage_report_accepts_full_declaration_fixture():
             "paintOutputHash": readiness_report["path0"]["output"]["paint"][
                 "outputHash"
             ],
+            "semanticValidation": readiness_report["path0"]["semanticValidation"],
         },
     }
     assert payload["readiness"]["evidenceBlockers"] == []

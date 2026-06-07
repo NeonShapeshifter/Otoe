@@ -508,6 +508,14 @@ def _verify_backend_coverage_trace_contract(
         if not isinstance(value, str) or not value.startswith("sha256:"):
             raise ValueError(f"{label}: trace.path0.{key} must be a sha256 string")
         result[key] = value
+    semantic_validation = path0.get("semanticValidation")
+    if not isinstance(semantic_validation, dict):
+        raise ValueError(f"{label}: trace.path0.semanticValidation must be an object")
+    if semantic_validation.get("passed") is not True:
+        raise ValueError(f"{label}: trace.path0.semanticValidation.passed must be true")
+    errors = semantic_validation.get("errors")
+    if errors != []:
+        raise ValueError(f"{label}: trace.path0.semanticValidation.errors must be []")
     return result
 
 

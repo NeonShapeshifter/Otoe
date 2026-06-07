@@ -55,6 +55,9 @@
   render-tree/layout/paint hashes, and hardened generated runner verification
   so refreshed coverage artifacts are rejected when renderer-boundary proofs do
   not match that trace.
+- Extended the backend coverage `trace` with Path0 `semanticValidation` and
+  hardened generated runner verification so coverage artifacts with stale or
+  failed semantic summaries are rejected after packaging.
 - Added machine-readable backend readiness `candidateScope` metadata so Path0
   RenderTree IR fixture evidence is not confused with a stable external backend
   ABI.
