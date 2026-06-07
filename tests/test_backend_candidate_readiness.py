@@ -167,6 +167,10 @@ def test_backend_readiness_report_combines_renderer_and_style_audits():
         "paintCommands": 18,
         "pngPath": None,
     }
+    assert payload["path0"]["semanticValidation"] == {
+        "passed": True,
+        "errors": [],
+    }
     assert payload["path0"]["output"]["layout"]["format"] == "path0-layout-output"
     assert payload["path0"]["output"]["layout"]["boxCount"] == 15
     assert payload["path0"]["output"]["paint"]["format"] == "path0-paint-output"

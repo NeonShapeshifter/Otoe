@@ -81,7 +81,10 @@ layout runs. Path0 evidence verifies that any supplied `styleOps` artifact
 resolves to the same styles embedded in that `RenderTree` before readiness can
 count the style runtime as proven, and Path0 layout proofs carry the input
 `renderTreeHash` so renderer-boundary evidence cannot be reused against a
-different tree. `validate_render_tree(...)` and
+different tree. Readiness also records `path0.semanticValidation` and
+recomputes it from the Path0 layout/paint output, rejecting duplicate layout
+paths, invalid bounds, and paint commands that do not reference layout boxes.
+`validate_render_tree(...)` and
 `assert_render_tree_valid(...)` check that boundary before Path0 layout/paint
 work starts, and
 `render_tree_from_dict(...)` plus `load_render_tree_artifact(...)` load

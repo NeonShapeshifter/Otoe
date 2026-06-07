@@ -4668,6 +4668,10 @@ def _write_backend_coverage_requirements(
                         "renderTreeHash": path0_render_tree_hash,
                     },
                     "output": path0_output,
+                    "semanticValidation": {
+                        "passed": True,
+                        "errors": [],
+                    },
                 },
                 "requirements": {
                     "rendererBoundaries": [

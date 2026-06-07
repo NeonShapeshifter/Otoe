@@ -2,7 +2,7 @@
 
 **Status:** post-v0.1.7 workshop hardening; backend capability gates, bundle hermeticity, dependency audit contract, namespace runtime discovery, and RenderTree validation hardening
 **Updated:** June 7, 2026
-**Current baseline:** 676 tests passing, 1 skipped when `mypy` is unavailable
+**Current baseline:** 680 tests passing, 1 skipped when `mypy` is unavailable
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, utility ops console, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
@@ -201,6 +201,9 @@ renderer boundary proof, and runtime style hashes. The coverage artifact now
 also carries a top-level `trace` summary for candidate scope and Path0 hashes,
 and generated runners reject refreshed coverage artifacts whose covered
 renderer-boundary proofs do not match that summary.
+Path0 readiness now also recomputes `semanticValidation` from layout/paint
+output so duplicate layout paths, invalid bounds, and paint commands pointing
+outside layout cannot pass by refreshing hashes.
 Candidate-specific JSON capability profiles can run through the same gate
 before they graduate into built-in profiles, and `otoe plan/build` now consume
 those profiles so bundle artifacts use the same support source as coverage.

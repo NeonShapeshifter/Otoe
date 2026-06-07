@@ -47,6 +47,10 @@
 - Hardened Path0 renderer-boundary evidence so layout proofs carry the
   `renderTreeHash` of the input `RenderTree` and readiness/coverage reject
   Path0 or renderer layout proofs that do not match that input.
+- Added Path0 output semantic validation so readiness rejects duplicate layout
+  paths, invalid bounds, stale semantic validation summaries, and paint
+  commands that do not reference layout boxes even when output hashes are
+  refreshed.
 - Added a backend coverage `trace` summary for candidate scope plus Path0
   render-tree/layout/paint hashes, and hardened generated runner verification
   so refreshed coverage artifacts are rejected when renderer-boundary proofs do

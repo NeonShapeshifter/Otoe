@@ -94,6 +94,7 @@ def backend_readiness_report_payload_to_dict(
             "input": path0_contract["input"],
             "render": path0_contract["render"],
             "output": path0_contract["output"],
+            "semanticValidation": path0_contract["semanticValidation"],
             "evidence": path0_contract["evidence"],
             "calls": compact_call_stream(path0_report.calls),
             "errors": path0_contract["errors"],

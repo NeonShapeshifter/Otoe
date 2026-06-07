@@ -139,7 +139,10 @@ RenderTree boundary. Path0 evidence also records whether the supplied
 readiness and coverage reject style runtime proof when that match is missing.
 The `evidence.path0` summary stores the corresponding layout/paint output
 hashes, so coverage can validate the full output payload without duplicating
-it. Coverage rejects Path0 evidence that only claims generic layout/paint
+it. Path0 readiness also records and recomputes `semanticValidation`, rejecting
+layout paths/bounds and paint commands that are structurally incoherent even
+when output hashes are refreshed. Coverage rejects Path0 evidence that only
+claims generic layout/paint
 phases. Coverage also includes a first-class `rendererBoundaries` section,
 currently proving `renderTreeLayout` and `paint`, so a candidate profile cannot
 claim renderer-boundary support without matching readiness evidence. The

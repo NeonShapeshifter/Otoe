@@ -27,10 +27,10 @@ def test_reference_app_patterns_tracks_current_phase5_apps():
         "capability audit, StyleOps capability\naudit, primitive value "
         "validation, bundle manifest hardening, namespace runtime\n"
         "discovery, dependency audit contract metadata, RenderTree validation, "
-        "and\nbackend coverage trace contract pass:"
+        "and\nbackend coverage trace plus Path0 output semantic contract pass:"
         in text
     )
-    assert "`676 passed, 1 skipped`." in text
+    assert "`680 passed, 1 skipped`." in text
 
 
 def test_reference_theme_covers_extracted_ui_helpers():

@@ -12,6 +12,7 @@ from .backend_evidence_common import (
     positive_number,
     required_string_errors,
 )
+from .backend_evidence_path0_semantics import path0_output_semantic_errors
 
 
 def path0_evidence_errors(
@@ -19,6 +20,7 @@ def path0_evidence_errors(
     gates: Any,
     *,
     output: Any = None,
+    semantic_validation: Any = None,
     expected_render_tree_hash: Any = None,
 ) -> list[dict[str, str]]:
     blocker = "path0RenderTreeEvidence"
@@ -99,6 +101,12 @@ def path0_evidence_errors(
                 )
             )
     errors.extend(_path0_output_errors(path0, output=output))
+    errors.extend(
+        _path0_output_semantic_validation_errors(
+            output,
+            semantic_validation=semantic_validation,
+        )
+    )
     phases = path0.get("phases")
     if not isinstance(phases, list) or not {"layout", "paint"} <= set(phases):
         errors.append(
@@ -121,6 +129,42 @@ def path0_evidence_errors(
             prefix="evidence.path0.paintEvidence",
         )
     )
+    return errors
+
+
+def _path0_output_semantic_validation_errors(
+    output: Any,
+    *,
+    semantic_validation: Any,
+) -> list[dict[str, str]]:
+    blocker = "path0RenderTreeEvidence"
+    errors: list[dict[str, str]] = []
+    semantic_errors = path0_output_semantic_errors(output)
+    errors.extend(evidence_error(blocker, message) for message in semantic_errors)
+    if not isinstance(semantic_validation, dict):
+        errors.append(
+            evidence_error(
+                blocker,
+                "path0.semanticValidation must be a JSON object",
+            )
+        )
+        return errors
+    expected_passed = not semantic_errors
+    if semantic_validation.get("passed") is not expected_passed:
+        errors.append(
+            evidence_error(
+                blocker,
+                "path0.semanticValidation.passed must match path0.output semantic audit",
+            )
+        )
+    declared_errors = semantic_validation.get("errors")
+    if declared_errors != semantic_errors:
+        errors.append(
+            evidence_error(
+                blocker,
+                "path0.semanticValidation.errors must match path0.output semantic audit",
+            )
+        )
     return errors
 
 

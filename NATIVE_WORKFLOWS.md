@@ -160,7 +160,9 @@ input. Backend readiness records that boundary as `renderTreeBoundary`, and
 layout phase without the `renderTree` boundary marker. It also fails when a
 supplied `styleOps` artifact does not resolve to the same styles already
 embedded in the `RenderTree`, or when Path0/renderTreeLayout proofs do not
-carry the input `renderTreeHash`. The same readiness artifact now emits
+carry the input `renderTreeHash`. Path0 readiness also recomputes
+`semanticValidation` from the layout/paint output so structurally incoherent
+output cannot pass by refreshing hashes. The same readiness artifact now emits
 `rendererBoundaries` evidence for `renderTreeLayout` and
 `paint`, and backend coverage treats those as first-class claims with their own
 `evidenceMap` entries.

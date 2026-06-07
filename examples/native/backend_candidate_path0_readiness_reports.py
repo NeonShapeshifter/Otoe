@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from otoe.backend_evidence_path0_semantics import path0_output_semantic_validation
+
 from .backend_candidate_snapshot_payloads import renderer_call_to_dict
 from .backend_candidate_render_tree_types import Path0RenderTreeEvidenceReport
 
@@ -38,6 +40,12 @@ def path0_render_tree_evidence_report_to_dict(
             "layout": dict(report.layout_output),
             "paint": dict(report.paint_output),
         },
+        "semanticValidation": path0_output_semantic_validation(
+            {
+                "layout": report.layout_output,
+                "paint": report.paint_output,
+            }
+        ),
         "evidence": {
             "layout": {
                 "layoutBoxes": report.layout_boxes,
@@ -66,6 +74,12 @@ def path0_report_has_style_phase_evidence(
 ) -> bool:
     return (
         report.passed
+        and path0_output_semantic_validation(
+            {
+                "layout": report.layout_output,
+                "paint": report.paint_output,
+            }
+        )["passed"]
         and report.style_ops_present
         and _path0_report_has_render_tree_boundary_evidence(report)
         and _path0_observations_cover(

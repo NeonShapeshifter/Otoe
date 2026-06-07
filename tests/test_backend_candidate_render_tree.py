@@ -151,6 +151,10 @@ def test_path0_render_tree_evidence_consumes_render_tree_without_mounting(
     assert payload["output"]["paint"]["commandCount"] == report.paint_commands
     assert payload["output"]["paint"]["outputHash"].startswith("sha256:")
     assert payload["output"]["paint"]["commands"][0]["kind"] == "rect"
+    assert payload["semanticValidation"] == {
+        "passed": True,
+        "errors": [],
+    }
     assert _call_signature(payload["calls"]) == [
         ("layout", "contract:minimal", report.layout_boxes, 0),
         (
@@ -434,6 +438,10 @@ def test_backend_candidate_skeleton_main_outputs_path0_render_tree_evidence_json
     assert payload["render"]["layoutBoxes"] == 15
     assert payload["render"]["paintCommands"] > 0
     assert payload["render"]["pngPath"] == output.name
+    assert payload["semanticValidation"] == {
+        "passed": True,
+        "errors": [],
+    }
     assert payload["output"]["layout"]["boxCount"] == payload["render"]["layoutBoxes"]
     assert payload["output"]["paint"]["commandCount"] == payload["render"][
         "paintCommands"

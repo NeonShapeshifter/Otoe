@@ -74,6 +74,7 @@ def readiness_evidence_errors(
             evidence.get("path0"),
             gates,
             output=output,
+            semantic_validation=_path0_semantic_validation(report_path0),
             expected_render_tree_hash=expected_render_tree_hash,
         )
     )
@@ -161,3 +162,9 @@ def _path0_render_tree_hash(path0: Any) -> Any:
     if not isinstance(path0_input, dict):
         return None
     return path0_input.get("renderTreeHash")
+
+
+def _path0_semantic_validation(path0: Any) -> Any:
+    if not isinstance(path0, dict):
+        return None
+    return path0.get("semanticValidation")

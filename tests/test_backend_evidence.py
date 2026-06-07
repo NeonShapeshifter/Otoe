@@ -351,7 +351,7 @@ def test_readiness_evidence_requires_path0_output_counts_to_match():
 
 def test_readiness_evidence_requires_path0_output_hash_to_match():
     report = _valid_readiness_report()
-    report["path0"]["output"]["paint"]["commands"][0]["kind"] = "circle"
+    report["path0"]["output"]["paint"]["commands"][0]["fill"] = "#000000"
 
     errors = readiness_evidence_errors(report)
 
@@ -360,6 +360,111 @@ def test_readiness_evidence_requires_path0_output_hash_to_match():
             "blocker": "path0RenderTreeEvidence",
             "message": "evidence.path0.output.paint.outputHash must match payload",
         }
+    ]
+    assert readiness_evidence_blockers(errors) == ["path0RenderTreeEvidence"]
+
+
+def test_readiness_evidence_rejects_duplicate_layout_output_path():
+    report = _valid_readiness_report()
+    layout = report["path0"]["output"]["layout"]
+    layout["boxes"].append(deepcopy(layout["boxes"][0]))
+    layout["boxCount"] = 2
+    report["evidence"]["path0"]["layoutBoxes"] = 2
+    report["evidence"]["path0"]["renderTreeBoundary"]["layoutBoxes"] = 2
+    report["evidence"]["rendererBoundaries"][0]["boundaries"][1]["proof"][
+        "layoutBoxes"
+    ] = 2
+    _refresh_path0_layout_hashes(report)
+    report["path0"]["semanticValidation"] = {
+        "passed": False,
+        "errors": ["evidence.path0.output.layout.boxes[1].path must be unique"],
+    }
+
+    errors = readiness_evidence_errors(report)
+
+    assert errors == [
+        {
+            "blocker": "path0RenderTreeEvidence",
+            "message": "evidence.path0.output.layout.boxes[1].path must be unique",
+        }
+    ]
+    assert readiness_evidence_blockers(errors) == ["path0RenderTreeEvidence"]
+
+
+def test_readiness_evidence_rejects_bad_layout_output_bounds():
+    report = _valid_readiness_report()
+    report["path0"]["output"]["layout"]["boxes"][0]["bounds"] = [0, 0, -1, 10]
+    _refresh_path0_layout_hashes(report)
+    message = (
+        "evidence.path0.output.layout.boxes[0].bounds must be finite "
+        "numbers with non-negative size"
+    )
+    report["path0"]["semanticValidation"] = {
+        "passed": False,
+        "errors": [message],
+    }
+
+    errors = readiness_evidence_errors(report)
+
+    assert errors == [
+        {
+            "blocker": "path0RenderTreeEvidence",
+            "message": message,
+        }
+    ]
+    assert readiness_evidence_blockers(errors) == ["path0RenderTreeEvidence"]
+
+
+def test_readiness_evidence_rejects_paint_output_path_without_layout_box():
+    report = _valid_readiness_report()
+    report["path0"]["output"]["paint"]["commands"][0]["path"] = [99]
+    _refresh_path0_paint_hashes(report)
+    message = "evidence.path0.output.paint.commands[0].path must reference a layout box"
+    report["path0"]["semanticValidation"] = {
+        "passed": False,
+        "errors": [message],
+    }
+
+    errors = readiness_evidence_errors(report)
+
+    assert errors == [
+        {
+            "blocker": "path0RenderTreeEvidence",
+            "message": message,
+        }
+    ]
+    assert readiness_evidence_blockers(errors) == ["path0RenderTreeEvidence"]
+
+
+def test_readiness_evidence_rejects_stale_path0_semantic_validation():
+    report = _valid_readiness_report()
+    report["path0"]["output"]["paint"]["commands"][0]["path"] = [99]
+    _refresh_path0_paint_hashes(report)
+
+    errors = readiness_evidence_errors(report)
+
+    assert errors == [
+        {
+            "blocker": "path0RenderTreeEvidence",
+            "message": (
+                "evidence.path0.output.paint.commands[0].path must reference "
+                "a layout box"
+            ),
+        },
+        {
+            "blocker": "path0RenderTreeEvidence",
+            "message": (
+                "path0.semanticValidation.passed must match path0.output "
+                "semantic audit"
+            ),
+        },
+        {
+            "blocker": "path0RenderTreeEvidence",
+            "message": (
+                "path0.semanticValidation.errors must match path0.output "
+                "semantic audit"
+            ),
+        },
     ]
     assert readiness_evidence_blockers(errors) == ["path0RenderTreeEvidence"]
 
@@ -535,6 +640,10 @@ def _valid_readiness_report() -> dict:
                     "renderTreeHash": "sha256:render-tree",
                 },
                 "output": _valid_path0_output(),
+                "semanticValidation": {
+                    "passed": True,
+                    "errors": [],
+                },
             },
             "evidence": {
                 "rendererBoundaries": [
@@ -745,7 +854,29 @@ def _valid_path0_output() -> dict:
     }
 
 
+def _refresh_path0_layout_hashes(report: dict) -> None:
+    layout = report["path0"]["output"]["layout"]
+    layout["outputHash"] = _output_hash(layout)
+    report["evidence"]["path0"]["layoutOutputHash"] = layout["outputHash"]
+    report["evidence"]["path0"]["renderTreeBoundary"]["outputHash"] = layout[
+        "outputHash"
+    ]
+    report["evidence"]["rendererBoundaries"][0]["boundaries"][1]["proof"][
+        "outputHash"
+    ] = layout["outputHash"]
+
+
+def _refresh_path0_paint_hashes(report: dict) -> None:
+    paint = report["path0"]["output"]["paint"]
+    paint["outputHash"] = _output_hash(paint)
+    report["evidence"]["path0"]["paintOutputHash"] = paint["outputHash"]
+    report["evidence"]["rendererBoundaries"][0]["boundaries"][0]["proof"][
+        "outputHash"
+    ] = paint["outputHash"]
+
+
 def _output_hash(payload: dict) -> str:
+    payload = {key: value for key, value in payload.items() if key != "outputHash"}
     encoded = json.dumps(
         payload,
         ensure_ascii=True,

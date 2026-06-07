@@ -2949,7 +2949,11 @@
       "paintCommands": 18,
       "pngPath": null
     },
-    "rendererBackend": "path0-renderer-candidate"
+    "rendererBackend": "path0-renderer-candidate",
+    "semanticValidation": {
+      "errors": [],
+      "passed": true
+    }
   },
   "readiness": "ready-for-candidate-comparison",
   "renderTree": {
