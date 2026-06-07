@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -197,6 +200,17 @@ def test_cli_build_copies_profile_backend_package_as_declared_artifacts(
     }
     descriptor_path = output / package["path"]
     descriptor = json.loads(descriptor_path.read_text(encoding="utf-8"))
+    backend_check = subprocess.run(
+        [
+            sys.executable,
+            str(output / "otoe-run.py"),
+            "--backend-package-check",
+        ],
+        capture_output=True,
+        cwd=output,
+        env={"PYTHONPATH": ""},
+        text=True,
+    )
     archive = pack_bundle(output, tmp_path / "bundle.otoe.tar.gz")
 
     assert result == 0
@@ -212,7 +226,95 @@ def test_cli_build_copies_profile_backend_package_as_declared_artifacts(
     assert descriptor["packageHash"] == package["packageHash"]
     assert backend_package_payload_errors(descriptor) == []
     assert (output / package["entrypoint"]).is_file()
+    assert "backend-package-check" in manifest["runner"]["modes"]
+    assert backend_check.returncode == 0
+    assert (
+        "backend package checked: "
+        "backend/path0-external-json-backend/backend-package.json"
+    ) in backend_check.stdout
     assert "backend package: backend/path0-external-json-backend/backend-package.json" in (
         captured.out
     )
     assert archive.files > 0
+
+
+def test_cli_build_backend_package_verify_rejects_descriptor_file_hash_drift(
+    tmp_path,
+    monkeypatch,
+):
+    module = tmp_path / "backend_package_tamper_surface.py"
+    module.write_text(
+        "from otoe import Text\n"
+        "app = Text('Backend package tamper')\n",
+        encoding="utf-8",
+    )
+    package_manifest = tmp_path / PACKAGE_MANIFEST.name
+    package_runner = tmp_path / "path0_external_backend.py"
+    shutil.copyfile(PACKAGE_MANIFEST, package_manifest)
+    shutil.copyfile(
+        Path("examples/native/path0_external_backend.py"),
+        package_runner,
+    )
+    profile = tmp_path / "otoe.profile.toml"
+    profile.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[backend.package]\n"
+        f'manifest = "{package_manifest.name}"\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "backend-package-tamper"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    assert (
+        otoe_cli_main(
+            [
+                "build",
+                "backend_package_tamper_surface:app",
+                "--profile-file",
+                str(profile),
+                "--out",
+                str(output),
+            ]
+        )
+        == 0
+    )
+
+    runner = output / "backend/path0-external-json-backend/path0_external_backend.py"
+    data = bytearray(runner.read_bytes())
+    data[-2] = ord("x") if data[-2] != ord("x") else ord("y")
+    runner.write_bytes(data)
+    _refresh_manifest_artifact_hash(output, runner.relative_to(output).as_posix())
+
+    verify = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--verify"],
+        capture_output=True,
+        cwd=output,
+        env={"PYTHONPATH": ""},
+        text=True,
+    )
+
+    assert verify.returncode == 1
+    assert (
+        "backend/path0-external-json-backend/backend-package.json: file "
+        "'backend/path0-external-json-backend/path0_external_backend.py' "
+        "sha256 mismatch"
+    ) in verify.stderr
+
+
+def _refresh_manifest_artifact_hash(output: Path, relative: str) -> None:
+    manifest_path = output / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    path = output / relative
+    data = path.read_bytes()
+    for artifact in manifest["artifacts"]:
+        if artifact["path"] == relative:
+            artifact["size"] = len(data)
+            artifact["sha256"] = hashlib.sha256(data).hexdigest()
+            break
+    else:
+        raise AssertionError(f"artifact {relative!r} not found")
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=True, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )

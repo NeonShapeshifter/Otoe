@@ -2162,7 +2162,7 @@ def test_cli_build_writes_minimal_bundle_manifest(tmp_path, monkeypatch, capsys)
     assert runner == {
         "path": "otoe-run.py",
         "pythonPath": ["app", "framework"],
-        "modes": ["check", "layout-check", "png", "verify"],
+        "modes": ["backend-package-check", "check", "layout-check", "png", "verify"],
         "size": (output / "otoe-run.py").stat().st_size,
         "sha256": hashlib.sha256((output / "otoe-run.py").read_bytes()).hexdigest(),
     }

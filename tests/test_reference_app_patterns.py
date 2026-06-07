@@ -32,7 +32,7 @@ def test_reference_app_patterns_tracks_current_phase5_apps():
         "manifest pass:"
         in text
     )
-    assert "`705 passed, 1 skipped`." in text
+    assert "`706 passed, 1 skipped`." in text
 
 
 def test_reference_theme_covers_extracted_ui_helpers():

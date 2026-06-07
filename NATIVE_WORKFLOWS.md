@@ -344,7 +344,10 @@ artifacts or runtime-install/runtime-policy drift, and includes
 `otoe-backend-coverage.json` when the manifest declares it before writing the
 `.tar.gz`. Runtime policy remains static audit: set `[runtime.policy]` entries
 to `error` for hardware profiles that must fail on visible stdlib network or
-process-spawning usage.
+process-spawning usage. When the manifest declares `backendPackage`,
+verification also checks the package descriptor's internal file hashes and runs
+the bundled Path0 JSON backend smoke; `otoe-run.py --backend-package-check`
+exposes that smoke directly.
 
 ## run_native
 

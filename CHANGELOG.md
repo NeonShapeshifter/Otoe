@@ -92,6 +92,10 @@
   validated backend package under `backend/<name>/`, declares every package
   file as a hash-checked bundle artifact, and verifies the descriptor in the
   generated runner.
+- Added generated runner backend package smoke verification: `otoe-run.py
+  --verify` now checks backend package descriptor file hashes and runs the
+  bundled Path0 JSON backend through a minimal JSON-in/JSON-out smoke; the
+  smoke is also available as `otoe-run.py --backend-package-check`.
 - Added machine-readable backend readiness `candidateScope` metadata so Path0
   RenderTree IR fixture evidence is not confused with a stable external backend
   ABI.

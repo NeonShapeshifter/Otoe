@@ -69,7 +69,9 @@ A candidate should be able to produce or consume these artifacts:
   and a package hash that readiness evidence can bind to a subprocess run.
   `otoe.profile.toml` can declare `[backend.package].manifest` so `otoe build`
   copies that package under `backend/<name>/` and declares the descriptor plus
-  package files as bundle artifacts.
+  package files as bundle artifacts. Generated bundle runners verify the
+  descriptor file hashes and can run `--backend-package-check` for a
+  bundle-contained Path0 JSON-in/JSON-out smoke.
 - `otoe-backend-coverage.json`: the plan/build gate proving the selected
   backend profile covers the readiness requirements.
 - `manifest.json` and `.tar.gz` bundle output: the final offline deployment
@@ -197,7 +199,9 @@ It is still an experimental Path0 runner, not the final external ABI; use
 should be recorded as optional candidate evidence.
 Backend coverage then adds `trace.path0.externalBackend` and rejects drift in
 the package hash, external output hashes, semantic validation, process exit, or
-`renderTreeHash` binding.
+`renderTreeHash` binding. Bundle verification now adds a smaller smoke: it runs
+the copied package entrypoint against a minimal serialized `RenderTree` and
+requires schema-versioned layout/paint output from inside the bundle.
 
 ## Capability Profile Contract
 

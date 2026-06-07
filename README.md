@@ -394,7 +394,11 @@ bundle runner no longer needs source CSS text or workspace styles to reconstruct
 that stylesheet. It also supports `--verify` to check referenced bundle files,
 sizes, SHA-256 hashes, schema versions, declared backend coverage reports,
 backend coverage `evidenceMap` traceability, unmanifested packable files, and
-strict Style IR drift through the copied `otoe.style_ops` runtime module.
+strict Style IR drift through the copied `otoe.style_ops` runtime module. When
+the manifest declares `backendPackage`, `--verify` also checks the package
+descriptor file hashes against the copied files and runs a Path0 JSON-in/JSON-out
+smoke through the backend package entrypoint. Use
+`otoe-run.py --backend-package-check` to run only that bundled package smoke.
 Core bundle artifacts declared through `plan`, `deps`, `styles`, and
 `backendCoverage` must also appear in `artifacts` with size/hash metadata, and
 all declared file entries must use safe relative paths, size metadata,

@@ -4,7 +4,9 @@ import argparse
 import hashlib
 import importlib
 import json
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -39,6 +41,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     mode.add_argument("--png", help="render one native PNG frame")
     mode.add_argument("--verify", action="store_true", help="verify bundled files")
+    mode.add_argument(
+        "--backend-package-check",
+        action="store_true",
+        help="run the bundled backend package smoke check",
+    )
     parser.add_argument("--background", default="#ffffff", help="PNG background")
     args = parser.parse_args(argv)
 
@@ -50,6 +57,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.verify:
         _verify_bundle(manifest)
         print("verified: manifest.json")
+        return 0
+    if args.backend_package_check:
+        _verify_backend_package_smoke(manifest)
+        package = manifest.get("backendPackage")
+        if isinstance(package, dict):
+            print(f"backend package checked: {package['path']}")
+        else:
+            print("backend package checked: none")
         return 0
 
     mounted = _coerce_target(_load_target(manifest["target"]))
@@ -160,6 +175,7 @@ def _verify_bundle(manifest: dict[str, Any]) -> None:
                 label=f"{group}[{index}]",
             )
     _reject_unmanifested_bundle_files(manifest)
+    _verify_backend_package_smoke(manifest)
 
 
 def _verify_manifest_file_entry_contracts(manifest: dict[str, Any]) -> None:
@@ -385,7 +401,144 @@ def _verify_backend_package(manifest: dict[str, Any]) -> None:
                 f"{relative!r} from {descriptor_path}"
             )
         _require_artifact_entry(manifest, relative)
-        _require_bundle_file(relative)
+        path = _require_bundle_file(relative)
+        data = path.read_bytes()
+        if len(data) != file_payload["size"]:
+            raise ValueError(
+                f"{descriptor_path}: file {relative!r} size mismatch"
+            )
+        if hashlib.sha256(data).hexdigest() != file_payload["sha256"]:
+            raise ValueError(
+                f"{descriptor_path}: file {relative!r} sha256 mismatch"
+            )
+
+
+def _verify_backend_package_smoke(manifest: dict[str, Any]) -> None:
+    package = manifest.get("backendPackage")
+    if package is None:
+        return
+    if not isinstance(package, dict):
+        raise ValueError("manifest.json: backendPackage must be an object")
+    descriptor = _load_json_bundle_file(package["path"])
+    if descriptor.get("kind") != "path0-external-json":
+        raise ValueError(
+            "manifest.json.backendPackage.kind must be 'path0-external-json' "
+            "for bundled smoke verification"
+        )
+    runtime = descriptor.get("runtime")
+    if not isinstance(runtime, dict) or runtime.get("language") != "python":
+        raise ValueError(f"{package['path']}: runtime.language must be 'python'")
+
+    package_root = _require_bundle_file(package["path"]).parent
+    entrypoint = _require_bundle_file(package["entrypoint"])
+    with tempfile.TemporaryDirectory(prefix="otoe-backend-package-") as directory:
+        tempdir = Path(directory)
+        render_tree_path = tempdir / "render-tree.json"
+        layout_path = tempdir / "layout.json"
+        paint_path = tempdir / "paint.json"
+        report_path = tempdir / "report.json"
+        render_tree_path.write_text(
+            json.dumps(_backend_package_smoke_render_tree(), sort_keys=True),
+            encoding="utf-8",
+        )
+        command = [
+            sys.executable,
+            str(entrypoint),
+            "--render-tree",
+            str(render_tree_path),
+            "--layout-out",
+            str(layout_path),
+            "--paint-out",
+            str(paint_path),
+            "--contract-out",
+            str(report_path),
+            "--source",
+            "bundle-backend-package-smoke",
+        ]
+        try:
+            result = subprocess.run(
+                command,
+                capture_output=True,
+                cwd=package_root,
+                text=True,
+                timeout=10,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise ValueError(
+                f"{package['path']}: backend package smoke timed out"
+            ) from exc
+        if result.returncode != 0:
+            details = result.stderr.strip() or result.stdout.strip()
+            if not details:
+                details = f"backend package exited with status {result.returncode}"
+            raise ValueError(f"{package['path']}: backend package smoke failed: {details}")
+        layout = _load_json_file(layout_path, label="backend package layout output")
+        paint = _load_json_file(paint_path, label="backend package paint output")
+        report = _load_json_file(report_path, label="backend package report")
+        _verify_path0_external_smoke_output(
+            package=package,
+            layout=layout,
+            paint=paint,
+            report=report,
+        )
+
+
+def _backend_package_smoke_render_tree() -> dict[str, Any]:
+    return {
+        "schemaVersion": 1,
+        "format": "otoe-render-tree",
+        "nodeCount": 1,
+        "root": {
+            "id": "smoke-root",
+            "path": [],
+            "name": "Text",
+            "widgetId": "smoke-text",
+            "key": None,
+            "className": None,
+            "props": {"content": "Backend package smoke"},
+            "events": [],
+            "state": [],
+            "context": "backend-package-smoke",
+            "style": {},
+            "children": [],
+        },
+    }
+
+
+def _verify_path0_external_smoke_output(
+    *,
+    package: dict[str, Any],
+    layout: dict[str, Any],
+    paint: dict[str, Any],
+    report: dict[str, Any],
+) -> None:
+    if layout.get("format") != "path0-layout-output":
+        raise ValueError("backend package layout output format mismatch")
+    if not _positive_number(layout.get("boxCount")):
+        raise ValueError("backend package layout output must contain boxes")
+    if not _is_sha256_uri(layout.get("outputHash")):
+        raise ValueError("backend package layout outputHash must be a sha256 string")
+    if paint.get("format") != "path0-paint-output":
+        raise ValueError("backend package paint output format mismatch")
+    if not _positive_number(paint.get("commandCount")):
+        raise ValueError("backend package paint output must contain commands")
+    if not _is_sha256_uri(paint.get("outputHash")):
+        raise ValueError("backend package paint outputHash must be a sha256 string")
+    if report.get("format") != "path0-external-backend-report":
+        raise ValueError("backend package report format mismatch")
+    if report.get("backend") != package["name"]:
+        raise ValueError("backend package report backend must match manifest package")
+    output = report.get("output")
+    if not isinstance(output, dict):
+        raise ValueError("backend package report output must be an object")
+    report_layout = output.get("layout")
+    report_paint = output.get("paint")
+    if not isinstance(report_layout, dict) or not isinstance(report_paint, dict):
+        raise ValueError("backend package report must include layout and paint output")
+    if report_layout.get("outputHash") != layout["outputHash"]:
+        raise ValueError("backend package report layout hash mismatch")
+    if report_paint.get("outputHash") != paint["outputHash"]:
+        raise ValueError("backend package report paint hash mismatch")
 
 
 def _verify_dependency_audit_contract(payload: dict[str, Any], label: str) -> None:
@@ -911,6 +1064,17 @@ def _load_json_bundle_file(
     _verify_schema_version(payload, relative)
     if style_artifact:
         _verify_style_ops_schema(payload, relative)
+    return payload
+
+
+def _load_json_file(path: Path, *, label: str) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise ValueError(f"{label} file was not written") from exc
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{label} must be valid JSON: {exc}") from exc
+    _verify_schema_version(payload, label)
     return payload
 
 

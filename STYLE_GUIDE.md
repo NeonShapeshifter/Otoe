@@ -265,6 +265,7 @@ recorded in `frameworkFiles`.
 The build also writes `otoe-run.py` as the first executable bundle entry. It
 loads the manifest target from the copied app/framework paths, supports `--check`
 for import validation, supports `--verify` for file size/hash checks, supports
+`--backend-package-check` for the bundled Path0 backend package smoke, supports
 `--layout-check` for layout/paint validation without writing a PNG, and supports
 `--png` for a single headless native frame using the bundled compiled styles.
 Every runner mode validates `schemaVersion = 1` for `manifest.json`,
@@ -276,7 +277,9 @@ Runner verification also requires the core `plan`, `deps`, `styles`, and
 size/hash metadata. It rejects invalid plan, dependency, or style artifact
 status even if those hashes were updated after tampering, and keeps
 `runtimeInstallsAllowed = false` as a runner/pack invariant for hardware
-bundles.
+bundles. When `backendPackage` is declared, it verifies the package descriptor's
+own file hashes against the copied backend files and runs a JSON-in/JSON-out
+Path0 smoke from inside the bundle.
 The runner also enforces the backend framework policy: a `native` bundle must
 declare and include the expected `frameworkFiles` set before `--check`,
 `--layout-check`, `--png`, `--verify`, or `otoe pack` can succeed.

@@ -242,7 +242,7 @@ def write_runner(*, output_dir: Path) -> dict[str, Any]:
     return {
         "path": RUNNER_FILENAME,
         "pythonPath": list(RUNNER_PYTHON_PATH),
-        "modes": ["check", "layout-check", "png", "verify"],
+        "modes": ["backend-package-check", "check", "layout-check", "png", "verify"],
         "size": len(data),
         "sha256": hashlib.sha256(data).hexdigest(),
     }
