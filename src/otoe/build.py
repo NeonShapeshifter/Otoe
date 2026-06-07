@@ -32,6 +32,7 @@ CORE_RUNTIME_FILES = (
     "__init__.py",
     "api_status.py",
     "backend_package.py",
+    "bundle_backend_coverage.py",
     "bundle_backend_package.py",
     "bundle_deps.py",
     "capabilities.py",
