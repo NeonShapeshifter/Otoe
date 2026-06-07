@@ -58,6 +58,11 @@ A candidate should be able to produce or consume these artifacts:
   `RenderTree` JSON file. With `--bundle`, the contract verifies the bundle and
   loads the target named in `manifest.json` before adding an `artifactTarget`
   tree.
+- `path0-layout-output.json` and `path0-paint-output.json`: the backend-neutral
+  Path0 output payloads emitted by either readiness evidence or the
+  experimental external JSON runner. They carry schema versions, output hashes,
+  layout boxes, paint commands, and semantic shape that can be audited without
+  importing native Python layout/paint objects.
 - `otoe-backend-coverage.json`: the plan/build gate proving the selected
   backend profile covers the readiness requirements.
 - `manifest.json` and `.tar.gz` bundle output: the final offline deployment
@@ -86,9 +91,14 @@ A candidate should be able to produce or consume these artifacts:
    before layout/paint work so malformed IR fails at the boundary, and use
    `render_tree_from_dict(...)` or `load_render_tree_artifact(...)` when
    consuming serialized RenderTree JSON artifacts.
-7. Emit `--backend-readiness-json` and compare the candidate capability profile
+7. Run the external Path0 JSON backend against an explicit `RenderTree`
+   artifact when you need a stricter out-of-process check. This path consumes
+   JSON files and emits JSON files; it is intentionally small and rejects
+   unknown widgets instead of hiding support gaps behind generic container
+   fallback.
+8. Emit `--backend-readiness-json` and compare the candidate capability profile
    with `otoe backend-coverage`.
-8. Run the same gate through `otoe plan`, `otoe build --validate`,
+9. Run the same gate through `otoe plan`, `otoe build --validate`,
    `otoe style-ir --strict`, and `otoe pack`.
 
 ## Core Commands
@@ -101,6 +111,7 @@ PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --backend-
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --style-ops-contract-json --contract-out style-ops-contract.json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --render-tree-contract-json --contract-out render-tree-contract.json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --path0-render-tree-evidence-json --render-tree-artifact render-tree.json --contract-out path0-evidence.json
+PYTHONPATH=src:. python -m examples.native.path0_external_backend --render-tree render-tree.json --styles otoe-styles.json --layout-out path0-layout-output.json --paint-out path0-paint-output.json --contract-out path0-external-report.json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --backend-readiness-json --render-tree-artifact render-tree.json --contract-out backend-readiness.json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --render-tree-contract-json --bundle dist/cage --contract-out render-tree-contract.json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --backend-readiness-json --bundle dist/cage --contract-out backend-readiness.json
@@ -153,6 +164,14 @@ layout result to the exact `RenderTree` artifact consumed by Path0.
 native renderer and partial layout/paint/raster replacement tests. It receives
 Otoe internals such as `FakeWidget`, `MountedNode`, and `StyleSheet`, so passing
 only that SPI is not enough to claim an externally replaceable hardware backend.
+`examples.native.path0_external_backend` is the first stricter Path0 external
+runner. It is deliberately a JSON-in/JSON-out subprocess surface: it reads
+`otoe-render-tree`, optionally records `otoe-styles.json` styleOps metadata,
+emits `path0-layout-output` and `path0-paint-output`, and does not import Otoe's
+mounted-tree renderer, native renderer SPI, or backend-candidate harness
+modules. It is still an experimental Path0 runner, not the final external ABI;
+the next graduation step is binding this output directly into readiness and
+coverage evidence for real backend candidates.
 
 ## Capability Profile Contract
 

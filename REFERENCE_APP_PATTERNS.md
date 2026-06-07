@@ -160,8 +160,9 @@ pack gate, bundle replay, backend readiness fixture, backend readiness report,
 backend coverage declaration, renderer capability audit, StyleOps capability
 audit, primitive value validation, bundle manifest hardening, namespace runtime
 discovery, dependency audit contract metadata, RenderTree validation, and
-backend coverage trace plus Path0 output semantic contract pass:
-`680 passed, 1 skipped`.
+backend coverage trace plus Path0 output semantic contract and external Path0
+JSON runner pass:
+`689 passed, 1 skipped`.
 
 ## Current Decision
 

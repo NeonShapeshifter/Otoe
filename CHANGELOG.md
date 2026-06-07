@@ -71,6 +71,11 @@
 - Hardened backend readiness, coverage evidence, and generated runner hash
   checks so evidence hashes must be `sha256:` followed by 64 lowercase
   hexadecimal characters instead of any string with a `sha256:` prefix.
+- Added an experimental Path0 external JSON backend runner that consumes
+  serialized `RenderTree` artifacts out-of-process, optionally binds an
+  `otoe-styles.json` artifact, emits schema-versioned Path0 layout/paint JSON
+  outputs, and rejects unknown widgets instead of silently treating them as
+  generic containers.
 - Added machine-readable backend readiness `candidateScope` metadata so Path0
   RenderTree IR fixture evidence is not confused with a stable external backend
   ABI.

@@ -93,6 +93,12 @@ includes a `RenderTree` contract fixture for minimal, task board, keyed reorder,
 and `Show` branch shapes, plus artifact-backed paths that can load explicit
 `--render-tree-artifact` JSON files or verify a bundle and load the target from
 `manifest.json`.
+The experimental `examples.native.path0_external_backend` runner takes the next
+small step: it runs out-of-process, reads serialized `RenderTree` JSON,
+optionally binds `otoe-styles.json` styleOps metadata, and writes
+`path0-layout-output` plus `path0-paint-output` JSON without importing Otoe's
+mounted-tree renderer or native renderer SPI. It is a Path0 proof surface, not a
+stable external backend ABI yet.
 
 This is enough for renderer tests, visual fixtures, and early framework API
 validation. It is not yet a production desktop backend: there is no GPU
