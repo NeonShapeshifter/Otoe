@@ -46,6 +46,7 @@ def handle_backend_readiness(
         payload = backend_readiness_payload(
             style_artifact,
             render_tree_source,
+            include_external_path0_backend=args.external_path0_backend,
         )
     except (OSError, json.JSONDecodeError, ValueError) as exc:
         print(f"backend-readiness: {exc}", file=sys.stderr)
@@ -116,6 +117,7 @@ def handle_backend_coverage(
         readiness_report = backend_readiness_payload(
             style_artifact,
             render_tree_source,
+            include_external_path0_backend=args.external_path0_backend,
         )
     except (
         OSError,
@@ -136,6 +138,8 @@ def handle_backend_coverage(
 def backend_readiness_payload(
     style_artifact: dict[str, Any] | None,
     render_tree_source: RenderTreeSource,
+    *,
+    include_external_path0_backend: bool = False,
 ) -> dict[str, Any]:
     readiness_style_artifact = style_artifact_or_default(
         style_artifact,
@@ -148,4 +152,5 @@ def backend_readiness_payload(
             readiness_style_artifact,
         ),
         style_artifact=readiness_style_artifact,
+        include_external_path0_backend=include_external_path0_backend,
     )

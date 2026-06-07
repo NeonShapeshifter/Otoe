@@ -2,7 +2,7 @@
 
 **Status:** post-v0.1.7 workshop hardening; backend capability gates, bundle hermeticity, dependency audit contract, namespace runtime discovery, RenderTree validation hardening, and experimental external Path0 JSON runner
 **Updated:** June 7, 2026
-**Current baseline:** 689 tests passing, 1 skipped when `mypy` is unavailable
+**Current baseline:** 692 tests passing, 1 skipped when `mypy` is unavailable
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, utility ops console, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
@@ -97,8 +97,11 @@ runner: it consumes serialized `RenderTree` JSON, optionally records
 `otoe-styles.json` styleOps metadata, emits schema-versioned layout/paint JSON
 outputs, and rejects unsupported widget names instead of hiding them behind a
 generic container fallback. This proves the JSON artifact surface is usable
-outside the mounted-tree renderer path, but it is still an experimental Path0
-runner rather than the final external backend ABI.
+outside the mounted-tree renderer path. `--external-path0-backend` can now bind
+that subprocess report into backend readiness and coverage trace as optional
+evidence, with validation for process exit, output hashes, semantic shape, and
+`renderTreeHash` identity. It is still an experimental Path0 runner rather than
+the final external backend ABI.
 The backend-candidate styleOps replay now also covers the real bundle path:
 `otoe build --validate`, `--bundle dist/...` runner verification, manifest style
 artifact discovery, and styleOps replay from the generated bundle.

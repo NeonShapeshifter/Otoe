@@ -35,6 +35,7 @@ def backend_readiness_report_payload_to_dict(
     style_ops_report: StyleOpsCandidateAcceptanceReport,
     render_tree_report: RenderTreeCandidateAcceptanceReport,
     path0_report: Path0RenderTreeEvidenceReport,
+    external_path0_report: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     renderer_audit = renderer_capability_audit_to_dict(renderer_report.headless)
     style_ops_audit = style_ops_capability_audit_to_dict(style_ops_report)
@@ -56,6 +57,11 @@ def backend_readiness_report_payload_to_dict(
             unsupported_keys=("unsupportedProperties",),
         ),
     }
+    if external_path0_report is not None:
+        gates["path0ExternalJsonBackend"] = _external_path0_report_passed(
+            external_path0_report,
+            path0_contract=path0_contract,
+        )
     blockers = [
         name
         for name, passed in gates.items()
@@ -70,6 +76,16 @@ def backend_readiness_report_payload_to_dict(
             "backend": style_ops_report.backend,
             "rendererBackend": renderer_report.renderer_backend,
             "path0RendererBackend": path0_report.renderer_backend,
+            **(
+                {
+                    "externalPath0Backend": external_path0_report.get(
+                        "backend",
+                    )
+                }
+                if external_path0_report is not None
+                and isinstance(external_path0_report.get("backend"), str)
+                else {}
+            ),
         },
         "candidateScope": backend_candidate_scope_to_dict(),
         "gates": gates,
@@ -100,6 +116,11 @@ def backend_readiness_report_payload_to_dict(
             "render": path0_contract["render"],
             "output": path0_contract["output"],
             "semanticValidation": path0_contract["semanticValidation"],
+            **(
+                {"externalBackend": external_path0_report}
+                if external_path0_report is not None
+                else {}
+            ),
             "evidence": path0_contract["evidence"],
             "calls": compact_call_stream(path0_report.calls),
             "errors": path0_contract["errors"],
@@ -127,6 +148,28 @@ def backend_candidate_scope_to_dict() -> dict[str, Any]:
         "externalBackendAbiStable": False,
         "productionBackend": False,
     }
+
+
+def _external_path0_report_passed(
+    external_path0_report: dict[str, Any],
+    *,
+    path0_contract: dict[str, Any],
+) -> bool:
+    external_input = external_path0_report.get("input")
+    external_output = external_path0_report.get("output")
+    semantic_validation = external_path0_report.get("semanticValidation")
+    return (
+        external_path0_report.get("passed") is True
+        and isinstance(external_input, dict)
+        and external_input.get("renderTreeHash")
+        == path0_contract["input"]["renderTreeHash"]
+        and isinstance(external_output, dict)
+        and isinstance(external_output.get("layout"), dict)
+        and isinstance(external_output.get("paint"), dict)
+        and isinstance(semantic_validation, dict)
+        and semantic_validation.get("passed") is True
+        and semantic_validation.get("errors") == []
+    )
 
 
 def _audit_has_no_unsupported(

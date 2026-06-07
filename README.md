@@ -97,8 +97,12 @@ The experimental `examples.native.path0_external_backend` runner takes the next
 small step: it runs out-of-process, reads serialized `RenderTree` JSON,
 optionally binds `otoe-styles.json` styleOps metadata, and writes
 `path0-layout-output` plus `path0-paint-output` JSON without importing Otoe's
-mounted-tree renderer or native renderer SPI. It is a Path0 proof surface, not a
-stable external backend ABI yet.
+mounted-tree renderer or native renderer SPI. Add
+`--external-path0-backend` to backend-readiness/coverage compatibility commands
+when that subprocess report should be included under `path0.externalBackend`
+and validated for process exit, output hashes, semantic shape, and
+`renderTreeHash` binding. It is a Path0 proof surface, not a stable external
+backend ABI yet.
 
 This is enough for renderer tests, visual fixtures, and early framework API
 validation. It is not yet a production desktop backend: there is no GPU

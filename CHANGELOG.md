@@ -76,6 +76,11 @@
   `otoe-styles.json` artifact, emits schema-versioned Path0 layout/paint JSON
   outputs, and rejects unknown widgets instead of silently treating them as
   generic containers.
+- Added optional `--external-path0-backend` readiness/coverage evidence so the
+  external JSON runner can be executed as a subprocess, recorded under
+  `path0.externalBackend`, traced in backend coverage, and rejected when its
+  output hashes, semantic validation, process exit, or `renderTreeHash` binding
+  drift.
 - Added machine-readable backend readiness `candidateScope` metadata so Path0
   RenderTree IR fixture evidence is not confused with a stable external backend
   ABI.

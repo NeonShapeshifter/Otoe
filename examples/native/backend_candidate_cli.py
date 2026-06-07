@@ -52,6 +52,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="print low-level Path0 RenderTree render evidence as JSON",
     )
     parser.add_argument(
+        "--external-path0-backend",
+        action="store_true",
+        help=(
+            "include experimental JSON-only external Path0 backend subprocess "
+            "evidence in readiness/coverage reports"
+        ),
+    )
+    parser.add_argument(
         "--backend-readiness-json",
         action="store_true",
         help="print a combined renderer, styleOps, and RenderTree readiness report",

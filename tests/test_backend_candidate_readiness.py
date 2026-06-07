@@ -361,6 +361,84 @@ def test_backend_readiness_report_combines_renderer_and_style_audits():
         }
     ]
 
+
+def test_backend_readiness_can_include_external_path0_backend_evidence():
+    payload = backend_readiness_report_to_dict(include_external_path0_backend=True)
+
+    assert payload["passed"] is True
+    assert payload["gates"]["path0ExternalJsonBackend"] is True
+    assert payload["candidate"]["externalPath0Backend"] == (
+        "path0-external-json-backend"
+    )
+    external = payload["path0"]["externalBackend"]
+    assert external["format"] == "path0-external-backend-evidence"
+    assert external["passed"] is True
+    assert external["backend"] == "path0-external-json-backend"
+    assert external["source"] == payload["path0"]["input"]["source"]
+    assert external["process"] == {
+        "mode": "subprocess",
+        "entrypoint": "examples/native/path0_external_backend.py",
+        "exitCode": 0,
+    }
+    assert external["input"]["renderTreeHash"] == payload["path0"]["input"][
+        "renderTreeHash"
+    ]
+    assert external["input"]["nodeCount"] == payload["path0"]["input"]["nodeCount"]
+    assert external["input"]["styleOps"]["present"] is True
+    assert external["input"]["styleOps"]["artifactHash"].startswith("sha256:")
+    assert external["output"]["layout"]["format"] == "path0-layout-output"
+    assert external["output"]["layout"]["boxCount"] == payload["path0"]["input"][
+        "nodeCount"
+    ]
+    assert external["output"]["paint"]["format"] == "path0-paint-output"
+    assert external["semanticValidation"] == {"passed": True, "errors": []}
+    assert external["errors"] == []
+
+    declaration = json.loads(
+        BACKEND_COVERAGE_DECLARATION_FIXTURE.read_text(encoding="utf-8")
+    )
+    coverage = backend_coverage_report_to_dict(
+        declaration,
+        readiness_report=payload,
+    )
+
+    assert coverage["passed"] is True
+    assert coverage["readiness"]["gates"]["path0ExternalJsonBackend"] is True
+    assert coverage["trace"]["path0"]["externalBackend"] == {
+        "backend": "path0-external-json-backend",
+        "renderTreeHash": external["input"]["renderTreeHash"],
+        "layoutOutputHash": external["output"]["layout"]["outputHash"],
+        "paintOutputHash": external["output"]["paint"]["outputHash"],
+        "semanticValidation": external["semanticValidation"],
+    }
+
+
+def test_backend_coverage_rejects_tampered_external_path0_output():
+    readiness_report = backend_readiness_report_to_dict(
+        include_external_path0_backend=True
+    )
+    declaration = json.loads(
+        BACKEND_COVERAGE_DECLARATION_FIXTURE.read_text(encoding="utf-8")
+    )
+    readiness_report["path0"]["externalBackend"]["output"]["layout"][
+        "outputHash"
+    ] = "sha256:" + "0" * 64
+
+    payload = backend_coverage_report_to_dict(
+        declaration,
+        readiness_report=readiness_report,
+    )
+
+    assert payload["passed"] is False
+    assert "path0ExternalJsonBackend" in payload["blockers"]
+    assert {
+        "blocker": "path0ExternalJsonBackend",
+        "message": (
+            "path0.externalBackend.output.layout.outputHash must match payload"
+        ),
+    } in payload["readiness"]["evidenceErrors"]
+
+
 def test_backend_readiness_report_blocks_on_style_ops_mismatch():
     artifact = deepcopy(backend_candidate_style_artifact())
     shell_ops = next(
@@ -504,6 +582,22 @@ def test_backend_candidate_skeleton_main_outputs_backend_readiness_json(capsys):
     assert payload["requirements"]["styles"]
     assert payload["gates"]["path0RenderTreeEvidence"] is True
     assert payload["path0"]["input"]["styleOps"]["present"] is True
+
+
+def test_backend_candidate_skeleton_main_outputs_external_path0_readiness_json(
+    capsys,
+):
+    result = main(["--backend-readiness-json", "--external-path0-backend"])
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["passed"] is True
+    assert payload["gates"]["path0ExternalJsonBackend"] is True
+    assert payload["path0"]["externalBackend"]["backend"] == (
+        "path0-external-json-backend"
+    )
+
 
 def test_backend_coverage_report_accepts_full_declaration_fixture():
     declaration = json.loads(

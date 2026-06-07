@@ -5,6 +5,7 @@ from typing import Any
 from .backend_capability_proofs import renderer_capability_proof_expectations
 from .backend_evidence_common import evidence_error, is_sha256_uri
 from .backend_evidence_path0 import path0_evidence_errors
+from .backend_evidence_path0_external import external_path0_evidence_errors
 from .backend_evidence_sections import section_evidence_errors
 
 
@@ -75,6 +76,7 @@ def readiness_evidence_errors(
             expected_render_tree_hash=expected_render_tree_hash,
         )
     )
+    errors.extend(external_path0_evidence_errors(report_path0, gates))
     errors.extend(
         section_evidence_errors(
             evidence.get("rendererBoundaries"),

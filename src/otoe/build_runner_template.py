@@ -538,7 +538,45 @@ def _verify_backend_coverage_trace_contract(
     errors = semantic_validation.get("errors")
     if errors != []:
         raise ValueError(f"{label}: trace.path0.semanticValidation.errors must be []")
+    external = path0.get("externalBackend")
+    if external is not None:
+        _verify_backend_coverage_external_path0_trace(
+            external,
+            label=f"{label}: trace.path0.externalBackend",
+            expected_render_tree_hash=result["renderTreeHash"],
+        )
     return result
+
+
+def _verify_backend_coverage_external_path0_trace(
+    external: Any,
+    *,
+    label: str,
+    expected_render_tree_hash: str,
+) -> None:
+    if not isinstance(external, dict):
+        raise ValueError(f"{label} must be an object")
+    backend = external.get("backend")
+    if not isinstance(backend, str) or not backend:
+        raise ValueError(f"{label}.backend must be a non-empty string")
+    render_tree_hash = external.get("renderTreeHash")
+    if not _is_sha256_uri(render_tree_hash):
+        raise ValueError(f"{label}.renderTreeHash must be a sha256 string")
+    if render_tree_hash != expected_render_tree_hash:
+        raise ValueError(
+            f"{label}.renderTreeHash must match trace.path0.renderTreeHash"
+        )
+    for key in ("layoutOutputHash", "paintOutputHash"):
+        value = external.get(key)
+        if not _is_sha256_uri(value):
+            raise ValueError(f"{label}.{key} must be a sha256 string")
+    semantic_validation = external.get("semanticValidation")
+    if not isinstance(semantic_validation, dict):
+        raise ValueError(f"{label}.semanticValidation must be an object")
+    if semantic_validation.get("passed") is not True:
+        raise ValueError(f"{label}.semanticValidation.passed must be true")
+    if semantic_validation.get("errors") != []:
+        raise ValueError(f"{label}.semanticValidation.errors must be []")
 
 
 def _coverage_string_set(value: Any, label: str) -> set[str]:

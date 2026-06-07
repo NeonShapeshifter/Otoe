@@ -249,16 +249,20 @@ def _coverage_trace_from_readiness(readiness_report: dict[str, Any]) -> dict[str
     candidate_scope = readiness_report.get("candidateScope")
     if not isinstance(candidate_scope, dict):
         candidate_scope = {}
+    path0_trace = {
+        "renderTreeHash": _path0_render_tree_hash(readiness_report),
+        "layoutOutputHash": _path0_output_hash(readiness_report, "layout"),
+        "paintOutputHash": _path0_output_hash(readiness_report, "paint"),
+        "semanticValidation": _path0_semantic_validation(readiness_report),
+    }
+    external_trace = _external_path0_trace(readiness_report)
+    if external_trace is not None:
+        path0_trace["externalBackend"] = external_trace
     return {
         "candidateScope": {
             "level": _string_or_none(candidate_scope.get("level")),
         },
-        "path0": {
-            "renderTreeHash": _path0_render_tree_hash(readiness_report),
-            "layoutOutputHash": _path0_output_hash(readiness_report, "layout"),
-            "paintOutputHash": _path0_output_hash(readiness_report, "paint"),
-            "semanticValidation": _path0_semantic_validation(readiness_report),
-        },
+        "path0": path0_trace,
     }
 
 
@@ -290,6 +294,45 @@ def _path0_semantic_validation(readiness_report: dict[str, Any]) -> Any:
     if not isinstance(path0, dict):
         return None
     semantic_validation = path0.get("semanticValidation")
+    if not isinstance(semantic_validation, dict):
+        return None
+    return {
+        "passed": semantic_validation.get("passed"),
+        "errors": semantic_validation.get("errors"),
+    }
+
+
+def _external_path0_trace(readiness_report: dict[str, Any]) -> dict[str, Any] | None:
+    path0 = readiness_report.get("path0")
+    if not isinstance(path0, dict):
+        return None
+    external = path0.get("externalBackend")
+    if not isinstance(external, dict):
+        return None
+    output = external.get("output")
+    if not isinstance(output, dict):
+        output = {}
+    external_input = external.get("input")
+    if not isinstance(external_input, dict):
+        external_input = {}
+    return {
+        "backend": _string_or_none(external.get("backend")),
+        "renderTreeHash": external_input.get("renderTreeHash"),
+        "layoutOutputHash": _output_section_hash(output, "layout"),
+        "paintOutputHash": _output_section_hash(output, "paint"),
+        "semanticValidation": _external_path0_semantic_validation(external),
+    }
+
+
+def _output_section_hash(output: dict[str, Any], section_name: str) -> Any:
+    section = output.get(section_name)
+    if not isinstance(section, dict):
+        return None
+    return section.get("outputHash")
+
+
+def _external_path0_semantic_validation(external: dict[str, Any]) -> Any:
+    semantic_validation = external.get("semanticValidation")
     if not isinstance(semantic_validation, dict):
         return None
     return {

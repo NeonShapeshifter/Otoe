@@ -174,7 +174,10 @@ optionally records `otoe-styles.json` styleOps metadata, and writes
 `path0-layout-output` plus `path0-paint-output` JSON without importing the
 mounted-tree renderer or native renderer SPI. This is the current external
 Path0 proof surface; it is intentionally smaller than a real hardware backend
-and rejects unsupported widget names instead of falling back silently.
+and rejects unsupported widget names instead of falling back silently. Add
+`--external-path0-backend` to `--backend-readiness-json` or
+`--backend-coverage-json` when that subprocess report should become optional
+readiness evidence and coverage trace data.
 `--composed-renderer-contract-json` prints that composed contract, and
 `--composed-renderer-png` chooses the PNG smoke path. Add
 `--compact-contract` to either renderer contract command when the desired
@@ -236,6 +239,7 @@ PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --style-op
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --style-ops-contract-json --style-artifact dist/cage/otoe-styles.json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --style-ops-contract-json --contract-out examples/native/contracts/style_ops_expected.json
 PYTHONPATH=src:. python -m examples.native.path0_external_backend --render-tree render-tree.json --styles otoe-styles.json --layout-out path0-layout-output.json --paint-out path0-paint-output.json --contract-out path0-external-report.json
+PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --backend-readiness-json --external-path0-backend --render-tree-artifact render-tree.json
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --composed-renderer-contract-json --composed-renderer-png preview/native/composed_renderer_candidate.png
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --composed-renderer-contract-json --compact-contract --composed-renderer-png preview/native/composed_renderer_candidate.png
 PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --composed-renderer-contract-json --compact-contract --composed-renderer-png /tmp/composed_renderer_candidate.png --contract-out examples/native/contracts/composed_renderer_compact_expected.json

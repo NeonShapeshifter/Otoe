@@ -22,6 +22,9 @@ from .backend_candidate_style_ops_contracts import (
 from .backend_candidate_path0_evidence import (
     run_path0_render_tree_evidence,
 )
+from .backend_candidate_path0_external_evidence import (
+    run_external_path0_backend_evidence,
+)
 from .backend_candidate_renderer_acceptance import (
     run_composed_renderer_candidate_acceptance,
     run_headless_candidate_acceptance,
@@ -93,6 +96,7 @@ def backend_readiness_report_to_dict(
     render_tree_report: RenderTreeCandidateAcceptanceReport | None = None,
     path0_report: Path0RenderTreeEvidenceReport | None = None,
     style_artifact: dict[str, Any] | None = None,
+    include_external_path0_backend: bool = False,
 ) -> dict[str, Any]:
     if style_artifact is None and (
         style_ops_report is None
@@ -110,11 +114,20 @@ def backend_readiness_report_to_dict(
         render_tree_report,
         style_artifact=style_artifact,
     )
+    external_path0_report = (
+        _external_path0_report_from_render_tree_report(
+            render_tree_report,
+            style_artifact=style_artifact,
+        )
+        if include_external_path0_backend
+        else None
+    )
     return backend_readiness_report_payload_to_dict(
         renderer_report=renderer_report,
         style_ops_report=style_ops_report,
         render_tree_report=render_tree_report,
         path0_report=path0_report,
+        external_path0_report=external_path0_report,
     )
 
 
@@ -126,6 +139,20 @@ def _path0_report_from_render_tree_report(
     source = render_tree_report.artifact_source or "contract:minimal"
     render_tree = render_tree_report.artifact_target or render_tree_report.minimal
     return run_path0_render_tree_evidence(
+        render_tree,
+        style_artifact=style_artifact,
+        source=source,
+    )
+
+
+def _external_path0_report_from_render_tree_report(
+    render_tree_report: RenderTreeCandidateAcceptanceReport,
+    *,
+    style_artifact: dict[str, Any] | None,
+) -> dict[str, Any]:
+    source = render_tree_report.artifact_source or "contract:minimal"
+    render_tree = render_tree_report.artifact_target or render_tree_report.minimal
+    return run_external_path0_backend_evidence(
         render_tree,
         style_artifact=style_artifact,
         source=source,
