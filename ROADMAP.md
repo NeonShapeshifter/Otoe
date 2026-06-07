@@ -107,6 +107,8 @@ also declare `[backend.package].manifest` so bundles copy that package under
 `backend/<name>/` as hash-checked artifacts. Generated bundle runners now also
 check the package descriptor's internal file hashes and run a minimal
 `--backend-package-check` Path0 JSON-in/JSON-out smoke from inside the bundle.
+That verification lives in copied runtime helper code instead of expanding the
+generated runner template further.
 It is still an experimental Path0 runner rather than the final external backend
 ABI.
 The backend-candidate styleOps replay now also covers the real bundle path:

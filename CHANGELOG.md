@@ -96,6 +96,9 @@
   --verify` now checks backend package descriptor file hashes and runs the
   bundled Path0 JSON backend through a minimal JSON-in/JSON-out smoke; the
   smoke is also available as `otoe-run.py --backend-package-check`.
+- Extracted bundled backend package verification into
+  `otoe.bundle_backend_package`, keeping generated runners smaller while still
+  verifying packages through copied runtime code.
 - Added machine-readable backend readiness `candidateScope` metadata so Path0
   RenderTree IR fixture evidence is not confused with a stable external backend
   ABI.
