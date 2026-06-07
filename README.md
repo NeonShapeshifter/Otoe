@@ -225,7 +225,12 @@ explicit coverage declaration against a backend-readiness JSON artifact. This is
 a declaration/evidence report, not proof of a production backend by itself:
 required items must be exercised by readiness evidence, declared support is
 treated as claimed by the profile, and extra claims are reported as unproven
-until a replay artifact exercises them. Requirements-only JSON is not evidence.
+until a replay artifact exercises them. Requirements-only JSON is not evidence,
+and readiness-like artifacts must keep `schemaVersion = 1` plus
+`format = "backend-readiness-report"` before executed evidence can count.
+Coverage declarations are also bound to `readiness.candidate.backend`, so a
+profile cannot reuse another backend's readiness artifact by only changing the
+declared backend name.
 Coverage validates the evidence contract: exercised groups need source/gate
 metadata, their gates must be passing, widget/input proofs must match the
 renderer capability audit, and style evidence must carry runtime Path 0 proof

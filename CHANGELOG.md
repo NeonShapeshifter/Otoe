@@ -61,6 +61,13 @@
 - Added a backend coverage `readiness.evidenceSummary` and audit output for
   malformed evidence counts by blocker, making invalid proof distinct from
   missing declarations and unproven claims.
+- Hardened backend coverage so readiness-like payloads must carry
+  `schemaVersion = 1` and `format = "backend-readiness-report"` before executed
+  evidence can count.
+- Added backend identity binding between coverage declarations and
+  `readiness.candidate.backend`, and hardened generated runner verification so
+  packaged coverage artifacts cannot drift to a different backend identity after
+  manifest hashes are refreshed.
 - Added machine-readable backend readiness `candidateScope` metadata so Path0
   RenderTree IR fixture evidence is not confused with a stable external backend
   ABI.

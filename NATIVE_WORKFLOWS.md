@@ -280,6 +280,11 @@ feed a backend coverage comparison.
 `otoe backend-coverage --requirements backend-readiness.json --backend-capability-profile
 path/to/profile.json` runs that comparison from core CLI, leaving the skeleton
 focused on generating readiness/replay artifacts.
+Readiness-like payloads must keep `schemaVersion = 1`,
+`format = "backend-readiness-report"`, and `candidate.backend` equal to the
+coverage declaration backend; otherwise coverage reports
+`backendReadinessContract` or `backendIdentity` blockers instead of counting
+the evidence.
 Add `--audit` when the candidate needs a human-readable trace of every covered,
 missing, or unproven renderer boundary/widget/input/style back to its source,
 gate, boundary proof, and runtime style proof.

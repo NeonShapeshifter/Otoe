@@ -43,9 +43,10 @@ A candidate should be able to produce or consume these artifacts:
   and CLI implementation live in focused sibling modules. Command behavior is
   implemented in `backend_candidate_commands.py`, while
   `backend_candidate_cli.py` owns argument parsing and dispatch.
-  The report includes `candidateScope`, which explicitly marks the current
-  scope as Path0 `RenderTree` IR v0 fixture evidence and records that the
-  external backend ABI is not stable yet.
+  The report includes `candidate`, which names the backend identity the
+  readiness evidence belongs to, and `candidateScope`, which explicitly marks
+  the current scope as Path0 `RenderTree` IR v0 fixture evidence and records
+  that the external backend ABI is not stable yet.
 - `backend-coverage-declaration.json`: the candidate's claimed widget, input,
   style, and omitted-style coverage.
 - `otoe-styles.json`: the compiled Style IR artifact from `otoe build`,
@@ -159,8 +160,12 @@ The candidate profile is a planning and build artifact. It is not proof by
 itself; it is a claim that gets compared against replay requirements. Coverage
 reports distinguish required/exercised items from declared/claimed items, and
 claims outside the readiness artifact are reported as unproven until a replay
-or contract fixture exercises them. Strict readiness artifacts must also carry
-evidence metadata: each exercised group needs a source, a passing gate, and
+or contract fixture exercises them. Strict readiness artifacts must keep
+`schemaVersion = 1`, `format = "backend-readiness-report"`, and a
+`candidate.backend` matching the coverage declaration backend. That binding
+prevents a profile from reusing another backend's readiness artifact by only
+renaming the declaration. Strict readiness artifacts must also carry evidence
+metadata: each exercised group needs a source, a passing gate, and
 widget/input evidence must match the renderer capability audit hash, item
 count, and observed capability names. Style evidence needs runtime Path 0 proof
 from `styleOps` plus layout/paint observation hashes for each property's

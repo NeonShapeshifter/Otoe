@@ -126,6 +126,11 @@ def test_backend_readiness_report_combines_renderer_and_style_audits():
         "styleCapabilityAudit": True,
     }
     assert payload["blockers"] == []
+    assert payload["candidate"] == {
+        "backend": "native-python",
+        "rendererBackend": "recording-renderer-candidate",
+        "path0RendererBackend": "path0-renderer-candidate",
+    }
     assert payload["renderer"]["backend"] == "recording-renderer-candidate"
     assert payload["renderer"]["capabilityAudit"]["summary"] == {
         "widgetInstances": 46,
@@ -513,6 +518,7 @@ def test_backend_coverage_report_accepts_full_declaration_fixture():
     assert payload["backend"] == "native-python"
     assert payload["passed"] is True
     assert payload["readiness"]["passed"] is True
+    assert payload["readiness"]["candidate"]["backend"] == "native-python"
     assert payload["readiness"]["gates"]["path0RenderTreeEvidence"] is True
     assert payload["readiness"]["candidateScope"][
         "externalBackendAbiStable"
@@ -1233,12 +1239,14 @@ def test_backend_candidate_skeleton_main_reports_custom_profile_gaps(capsys):
     assert payload["backend"] == "partial-backend-candidate"
     assert payload["passed"] is False
     assert payload["blockers"] == [
+        "backendIdentity",
         "rendererBoundariesCoverage",
         "widgetsCoverage",
         "inputsCoverage",
         "stylesCoverage",
         "declaredStyleOmissionsCoverage",
     ]
+    assert payload["readiness"]["evidenceBlockers"] == ["backendIdentity"]
     assert payload["coverage"]["widgets"]["missing"] == [
         "Button",
         "FocusScope",

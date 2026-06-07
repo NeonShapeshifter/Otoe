@@ -707,6 +707,7 @@ def test_cli_backend_coverage_accepts_builtin_profile(capsys):
     assert payload["backend"] == "native-python"
     assert payload["passed"] is True
     assert payload["readiness"]["passed"] is True
+    assert payload["readiness"]["candidate"]["backend"] == "native-python"
     assert payload["readiness"]["strictEvidence"] is True
     assert payload["readiness"]["evidenceSummary"] == {
         "malformed": 0,
@@ -878,6 +879,144 @@ def test_cli_backend_coverage_audit_reports_unproven_claims(tmp_path, capsys):
     assert "blockers: widgetsEvidence" in captured.out
 
 
+def test_cli_backend_coverage_rejects_readiness_without_contract_format(
+    tmp_path,
+    capsys,
+):
+    readiness = json.loads(
+        open(
+            "examples/native/contracts/backend_readiness_expected.json",
+            encoding="utf-8",
+        ).read()
+    )
+    readiness.pop("format")
+    requirements_path = tmp_path / "missing-format-readiness.json"
+    requirements_path.write_text(json.dumps(readiness), encoding="utf-8")
+
+    result = main(
+        [
+            "backend-coverage",
+            "--requirements",
+            str(requirements_path),
+            "--backend",
+            "native-python",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "status: failed" in captured.out
+    assert "evidence errors: 1" in captured.out
+    assert "evidence malformed by blocker: backendReadinessContract=1" in captured.out
+    assert (
+        "evidence error: readiness.format must be 'backend-readiness-report'"
+        in captured.out
+    )
+    assert "blockers: backendReadinessContract" in captured.out
+
+
+def test_cli_backend_coverage_rejects_readiness_with_wrong_contract_format(
+    tmp_path,
+    capsys,
+):
+    readiness = json.loads(
+        open(
+            "examples/native/contracts/backend_readiness_expected.json",
+            encoding="utf-8",
+        ).read()
+    )
+    readiness["format"] = "not-readiness"
+    requirements_path = tmp_path / "wrong-format-readiness.json"
+    requirements_path.write_text(json.dumps(readiness), encoding="utf-8")
+
+    result = main(
+        [
+            "backend-coverage",
+            "--requirements",
+            str(requirements_path),
+            "--backend",
+            "native-python",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "status: failed" in captured.out
+    assert "evidence errors: 1" in captured.out
+    assert "evidence malformed by blocker: backendReadinessContract=1" in captured.out
+    assert (
+        "evidence error: readiness.format must be 'backend-readiness-report'"
+        in captured.out
+    )
+    assert "blockers: backendReadinessContract" in captured.out
+
+
+def test_cli_backend_coverage_rejects_readiness_with_wrong_schema_version(
+    tmp_path,
+    capsys,
+):
+    readiness = json.loads(
+        open(
+            "examples/native/contracts/backend_readiness_expected.json",
+            encoding="utf-8",
+        ).read()
+    )
+    readiness["schemaVersion"] = 2
+    requirements_path = tmp_path / "wrong-schema-readiness.json"
+    requirements_path.write_text(json.dumps(readiness), encoding="utf-8")
+
+    result = main(
+        [
+            "backend-coverage",
+            "--requirements",
+            str(requirements_path),
+            "--backend",
+            "native-python",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "status: failed" in captured.out
+    assert "evidence errors: 1" in captured.out
+    assert "evidence malformed by blocker: backendReadinessContract=1" in captured.out
+    assert "evidence error: readiness.schemaVersion must be 1" in captured.out
+    assert "blockers: backendReadinessContract" in captured.out
+
+
+def test_cli_backend_coverage_rejects_backend_identity_mismatch(tmp_path, capsys):
+    declaration = json.loads(
+        open(
+            "examples/native/contracts/backend_coverage_full_declaration.json",
+            encoding="utf-8",
+        ).read()
+    )
+    declaration["backend"] = "totally-fake-backend"
+    declaration_path = tmp_path / "fake-backend-declaration.json"
+    declaration_path.write_text(json.dumps(declaration), encoding="utf-8")
+
+    result = main(
+        [
+            "backend-coverage",
+            "--requirements",
+            "examples/native/contracts/backend_readiness_expected.json",
+            "--coverage-declaration",
+            str(declaration_path),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "backend-coverage totally-fake-backend" in captured.out
+    assert "status: failed" in captured.out
+    assert "evidence malformed by blocker: backendIdentity=1" in captured.out
+    assert (
+        "evidence error: coverage declaration backend must match "
+        "readiness.candidate.backend"
+    ) in captured.out
+    assert "blockers: backendIdentity" in captured.out
+
+
 def test_cli_backend_coverage_reports_partial_profile_gaps(capsys):
     result = main(
         [
@@ -911,8 +1050,9 @@ def test_cli_backend_coverage_reports_partial_profile_gaps(capsys):
         in captured.out
     )
     assert (
-        "blockers: rendererBoundariesCoverage, widgetsCoverage, inputsCoverage, "
-        "stylesCoverage, declaredStyleOmissionsCoverage"
+        "blockers: backendIdentity, rendererBoundariesCoverage, "
+        "widgetsCoverage, inputsCoverage, stylesCoverage, "
+        "declaredStyleOmissionsCoverage"
         in captured.out
     )
 
@@ -4214,6 +4354,13 @@ def test_cli_build_runner_rejects_backend_coverage_trace_tampering(
         "trace.path0.semanticValidation must be an object",
     )
     verify_tamper(
+        lambda coverage: coverage["readiness"]["candidate"].__setitem__(
+            "backend",
+            "totally-fake-backend",
+        ),
+        "backend must match readiness.candidate.backend",
+    )
+    verify_tamper(
         lambda coverage: coverage["trace"]["path0"]["semanticValidation"].__setitem__(
             "passed",
             False,
@@ -4693,6 +4840,9 @@ def _write_backend_coverage_requirements(
                 "blockers": [],
                 "candidateScope": {
                     "level": "path0-render-tree-ir-v0",
+                },
+                "candidate": {
+                    "backend": "native-python",
                 },
                 "gates": {
                     "rendererReplay": True,

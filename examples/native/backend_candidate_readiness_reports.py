@@ -66,6 +66,11 @@ def backend_readiness_report_payload_to_dict(
         "format": "backend-readiness-report",
         "passed": not blockers,
         "readiness": "ready-for-candidate-comparison" if not blockers else "blocked",
+        "candidate": {
+            "backend": style_ops_report.backend,
+            "rendererBackend": renderer_report.renderer_backend,
+            "path0RendererBackend": path0_report.renderer_backend,
+        },
         "candidateScope": backend_candidate_scope_to_dict(),
         "gates": gates,
         "blockers": blockers,

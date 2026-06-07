@@ -1,5 +1,10 @@
 {
   "blockers": [],
+  "candidate": {
+    "backend": "native-python",
+    "path0RendererBackend": "path0-renderer-candidate",
+    "rendererBackend": "recording-renderer-candidate"
+  },
   "candidateScope": {
     "externalBackendAbiStable": false,
     "level": "path0-render-tree-ir-v0",

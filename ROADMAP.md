@@ -208,6 +208,11 @@ outside layout cannot pass by refreshing hashes.
 Backend coverage reports now also summarize malformed evidence by blocker so
 candidate audits distinguish invalid proof from missing support and unproven
 profile claims.
+Backend coverage now also rejects readiness-like payloads without the expected
+schema/format contract and binds coverage declarations to
+`readiness.candidate.backend`; generated bundle runners repeat that identity
+check so packaged coverage cannot drift to a different backend name after
+manifest hashes are refreshed.
 Candidate-specific JSON capability profiles can run through the same gate
 before they graduate into built-in profiles, and `otoe plan/build` now consume
 those profiles so bundle artifacts use the same support source as coverage.

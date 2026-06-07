@@ -356,6 +356,7 @@ def _verify_backend_coverage_traceability(
     payload: dict[str, Any],
     label: str,
 ) -> None:
+    _verify_backend_coverage_identity(payload, label)
     coverage_trace = _verify_backend_coverage_trace_contract(payload, label)
     coverage = payload.get("coverage")
     if not isinstance(coverage, dict):
@@ -470,6 +471,27 @@ def _verify_backend_coverage_section_traceability(
             requires_boundary=requires_boundary,
             capability_observed_key=capability_observed_key,
             coverage_trace=coverage_trace,
+        )
+
+
+def _verify_backend_coverage_identity(payload: dict[str, Any], label: str) -> None:
+    backend = payload.get("backend")
+    if not isinstance(backend, str) or not backend:
+        raise ValueError(f"{label}: backend must be a non-empty string")
+    readiness = payload.get("readiness")
+    if not isinstance(readiness, dict):
+        raise ValueError(f"{label}: readiness must be an object")
+    candidate = readiness.get("candidate")
+    if not isinstance(candidate, dict):
+        raise ValueError(f"{label}: readiness.candidate must be an object")
+    candidate_backend = candidate.get("backend")
+    if not isinstance(candidate_backend, str) or not candidate_backend:
+        raise ValueError(
+            f"{label}: readiness.candidate.backend must be a non-empty string"
+        )
+    if candidate_backend != backend:
+        raise ValueError(
+            f"{label}: backend must match readiness.candidate.backend"
         )
 
 
