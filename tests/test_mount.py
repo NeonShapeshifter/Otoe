@@ -9,6 +9,7 @@ from otoe import (
     EventHandlerError,
     HStack,
     Input,
+    Node,
     Text,
     UnknownEventError,
     UnknownPropError,
@@ -22,6 +23,23 @@ from otoe import (
     signal,
     unmount,
 )
+
+
+def test_node_copies_props_and_children_as_readonly():
+    child = Text("Child")
+    props = {"id": "root"}
+    children = [child]
+
+    node = Node(tag=HStack, props=props, children=children)
+    props["id"] = "changed"
+    children.append(Text("Other"))
+
+    assert node.props["id"] == "root"
+    assert node.children == (child,)
+    with pytest.raises(TypeError):
+        node.props["id"] = "mutated"
+    with pytest.raises(AttributeError):
+        node.children.append(child)
 
 
 def test_widget_schema_classifies_events_before_reactive_props():

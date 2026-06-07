@@ -63,6 +63,7 @@ def plan_to_dict(plan: OtoePlan, *, target: str) -> dict[str, Any]:
         "directStyles": [
             {
                 "path": list(entry.path),
+                "nodeId": entry.node_id,
                 "widget": entry.widget,
                 "declarations": {
                     declaration.property: _artifact_style_value_to_dict(

@@ -13,7 +13,13 @@ from ._native_shared import (
     resolve_token,
 )
 from ._native_contracts import NativePaintError
-from .mount import MountedNode, root_widget
+from ._render_identity import (
+    mounted_child_key,
+    optional_string,
+    render_key_label,
+    render_node_id,
+)
+from .mount import MountedNode
 from .style import DIMENSION_PROPERTIES, Size, StyleSheet, Token
 
 
@@ -63,6 +69,7 @@ class DirectStyleOmission:
 @dataclass(frozen=True)
 class DirectStyleEntry:
     path: tuple[int, ...]
+    node_id: str
     widget: str
     declarations: tuple[DirectStyleDeclaration, ...]
     omitted_declarations: tuple[DirectStyleOmission, ...]
@@ -126,9 +133,8 @@ def plan_mounted(
         except CapabilityProfileError as exc:
             raise PlanError(str(exc)) from exc
 
-    widget = root_widget(target)
-    widgets_with_paths = tuple(_walk_widgets_with_paths(widget))
-    widgets = [entry[1] for entry in widgets_with_paths]
+    widgets_with_paths = tuple(_walk_widgets_with_paths(target))
+    widgets = [entry.widget for entry in widgets_with_paths]
     widget_support_counts = _widget_support_counts(widgets, capabilities)
     used_classes = _used_classes(widgets)
     safelisted_classes = tuple(_dedupe(safelist))
@@ -191,7 +197,10 @@ def plan_mounted(
                     )
                 )
 
-    for path, widget in widgets_with_paths:
+    for entry in widgets_with_paths:
+        path = entry.path
+        node_id = entry.node_id
+        widget = entry.widget
         direct_declarations: list[DirectStyleDeclaration] = []
         omitted_direct_declarations: list[DirectStyleOmission] = []
         for prop in DIRECT_STYLE_PROPS:
@@ -228,6 +237,7 @@ def plan_mounted(
             direct_styles.append(
                 DirectStyleEntry(
                     path=path,
+                    node_id=node_id,
                     widget=widget.name,
                     declarations=tuple(direct_declarations),
                     omitted_declarations=tuple(omitted_direct_declarations),
@@ -322,10 +332,47 @@ def _widget_support_counts(
     return dict(sorted(counts.items()))
 
 
-def _walk_widgets_with_paths(widget, path: tuple[int, ...] = ()):
-    yield path, widget
-    for index, child in enumerate(widget.children):
-        yield from _walk_widgets_with_paths(child, (*path, index))
+@dataclass(frozen=True)
+class _PlannedWidget:
+    path: tuple[int, ...]
+    node_id: str
+    widget: Any
+
+
+def _walk_widgets_with_paths(
+    mounted: MountedNode,
+    *,
+    path: tuple[int, ...] = (),
+    parent_id: str | None = None,
+    key: Any = None,
+):
+    if mounted.widget is None:
+        if len(mounted.children) != 1:
+            return
+        yield from _walk_widgets_with_paths(
+            mounted.children[0],
+            path=path,
+            parent_id=parent_id,
+            key=key,
+        )
+        return
+
+    widget = mounted.widget
+    node_id = render_node_id(
+        parent_id=parent_id,
+        name=widget.name,
+        path=path,
+        widget_id=optional_string(widget.props.get("id")),
+        key_label=render_key_label(key),
+    )
+    yield _PlannedWidget(path=path, node_id=node_id, widget=widget)
+    for index, child in enumerate(mounted.children):
+        yield from _walk_widgets_with_paths(
+            child,
+            path=(*path, index),
+            parent_id=node_id,
+            key=mounted_child_key(mounted, child),
+        )
 
 
 def _classify_dimension(prop: str, value: Any) -> tuple[str, str] | None:

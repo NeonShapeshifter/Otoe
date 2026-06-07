@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
+from types import MappingProxyType
 from typing import Any, ClassVar, Iterable
 
 from .errors import DuplicatePrimaryPropError
@@ -10,8 +12,12 @@ from .events import EventSignature
 @dataclass(frozen=True)
 class Node:
     tag: Any
-    props: dict[str, Any] = field(default_factory=dict)
-    children: list["Node"] = field(default_factory=list)
+    props: Mapping[str, Any] = field(default_factory=dict)
+    children: tuple["Node", ...] = field(default_factory=tuple)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "props", MappingProxyType(dict(self.props)))
+        object.__setattr__(self, "children", tuple(self.children))
 
 
 class Widget:

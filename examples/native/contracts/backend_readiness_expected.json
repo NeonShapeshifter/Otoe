@@ -1,95 +1,3081 @@
 {
   "blockers": [],
+  "candidateScope": {
+    "externalBackendAbiStable": false,
+    "level": "path0-render-tree-ir-v0",
+    "path0Evidence": "render-tree-ir-v0-fixture",
+    "productionBackend": false,
+    "rendererReplay": "internal-native-replay",
+    "styleRuntime": "styleOps-resolved",
+    "windowAdapterBoundary": "NativeWindowDriver"
+  },
+  "evidence": {
+    "declaredStyleOmissions": [
+      {
+        "gate": "styleOpsReplay+path0RenderTreeEvidence",
+        "kind": "omit",
+        "properties": [
+          {
+            "count": 1,
+            "property": "borderStyle"
+          },
+          {
+            "count": 1,
+            "property": "display"
+          },
+          {
+            "count": 1,
+            "property": "fontWeight"
+          },
+          {
+            "count": 1,
+            "property": "margin"
+          },
+          {
+            "count": 1,
+            "property": "opacity"
+          }
+        ],
+        "runtime": {
+          "layoutBoxes": 15,
+          "layoutEvidence": {
+            "layoutBoxes": 15,
+            "observationCount": 13,
+            "observationHash": "sha256:772d13914d42926d186d0f6bca52f03d228fe58f314b9321fdf93c8d7713aeb5",
+            "observedProperties": [
+              "alignItems",
+              "borderWidth",
+              "fontSize",
+              "gap",
+              "height",
+              "justifyContent",
+              "maxHeight",
+              "maxWidth",
+              "minHeight",
+              "minWidth",
+              "padding",
+              "scrollY",
+              "width"
+            ],
+            "styleProperties": [
+              "alignItems",
+              "borderWidth",
+              "fontSize",
+              "gap",
+              "height",
+              "justifyContent",
+              "maxHeight",
+              "maxWidth",
+              "minHeight",
+              "minWidth",
+              "padding",
+              "scrollY",
+              "width"
+            ]
+          },
+          "paintCommands": 18,
+          "paintEvidence": {
+            "observationCount": 6,
+            "observationHash": "sha256:ee7b5a1b11167ce565ebb949c26d1f6e77c1e2c34b03fa82cfb8061899c0116a",
+            "observedProperties": [
+              "background",
+              "borderColor",
+              "borderRadius",
+              "borderWidth",
+              "color",
+              "fontSize"
+            ],
+            "paintCommands": 18,
+            "styleProperties": [
+              "background",
+              "borderColor",
+              "borderRadius",
+              "borderWidth",
+              "color",
+              "fontSize"
+            ]
+          },
+          "rasterEvidence": {
+            "byteSize": 0,
+            "pngPath": null,
+            "pngWritten": false,
+            "sha256": null
+          },
+          "rendererBackend": "path0-renderer-candidate",
+          "source": "contract:minimal",
+          "styleOpsMatchesRenderTree": true,
+          "styleOpsPresent": true,
+          "styledNodes": 12
+        },
+        "source": "styleOpsReplay+path0RenderTreeEvidence",
+        "status": "html-only"
+      }
+    ],
+    "inputs": [
+      {
+        "capabilities": [
+          {
+            "capability": "click",
+            "count": 10
+          },
+          {
+            "capability": "focus",
+            "count": 7
+          },
+          {
+            "capability": "input_text",
+            "count": 3
+          },
+          {
+            "capability": "key_down",
+            "count": 4
+          },
+          {
+            "capability": "key_input",
+            "count": 1
+          },
+          {
+            "capability": "shortcut",
+            "count": 3
+          },
+          {
+            "capability": "tab_focus",
+            "count": 1
+          },
+          {
+            "capability": "wheel",
+            "count": 3
+          }
+        ],
+        "gate": "rendererReplay",
+        "kind": "input",
+        "proof": {
+          "auditHash": "sha256:ea1e65b1466c67dbfd97147486bdc00fa2e978e66c14c876f51aef71dac530c0",
+          "itemCount": 32,
+          "observedCapabilities": [
+            "click",
+            "focus",
+            "input_text",
+            "key_down",
+            "key_input",
+            "shortcut",
+            "tab_focus",
+            "wheel"
+          ],
+          "source": "rendererReplay"
+        },
+        "source": "rendererReplay",
+        "support": "supported"
+      }
+    ],
+    "path0": {
+      "gate": "path0RenderTreeEvidence",
+      "layoutBoxes": 15,
+      "layoutEvidence": {
+        "layoutBoxes": 15,
+        "observationCount": 13,
+        "observationHash": "sha256:772d13914d42926d186d0f6bca52f03d228fe58f314b9321fdf93c8d7713aeb5",
+        "observedProperties": [
+          "alignItems",
+          "borderWidth",
+          "fontSize",
+          "gap",
+          "height",
+          "justifyContent",
+          "maxHeight",
+          "maxWidth",
+          "minHeight",
+          "minWidth",
+          "padding",
+          "scrollY",
+          "width"
+        ],
+        "styleProperties": [
+          "alignItems",
+          "borderWidth",
+          "fontSize",
+          "gap",
+          "height",
+          "justifyContent",
+          "maxHeight",
+          "maxWidth",
+          "minHeight",
+          "minWidth",
+          "padding",
+          "scrollY",
+          "width"
+        ]
+      },
+      "layoutOutputHash": "sha256:53f705a49cf269a14ea0ca186a11018de87608ef086baa1194f9ae85b792ed4a",
+      "nodeCount": 15,
+      "paintCommands": 18,
+      "paintEvidence": {
+        "observationCount": 6,
+        "observationHash": "sha256:ee7b5a1b11167ce565ebb949c26d1f6e77c1e2c34b03fa82cfb8061899c0116a",
+        "observedProperties": [
+          "background",
+          "borderColor",
+          "borderRadius",
+          "borderWidth",
+          "color",
+          "fontSize"
+        ],
+        "paintCommands": 18,
+        "styleProperties": [
+          "background",
+          "borderColor",
+          "borderRadius",
+          "borderWidth",
+          "color",
+          "fontSize"
+        ]
+      },
+      "paintOutputHash": "sha256:455f2fdf5eda9b3602cbe4f7d944de2a484ebe6e8887ce2ae7e593af519042a3",
+      "phases": [
+        "layout",
+        "paint"
+      ],
+      "rasterEvidence": {
+        "byteSize": 0,
+        "pngPath": null,
+        "pngWritten": false,
+        "sha256": null
+      },
+      "renderTreeBoundary": {
+        "boundary": "renderTree",
+        "layoutBoxes": 15,
+        "outputHash": "sha256:53f705a49cf269a14ea0ca186a11018de87608ef086baa1194f9ae85b792ed4a",
+        "phase": "layout",
+        "renderTreeHash": "sha256:375fff3777ac1a88f42c2dd3628da4d540598bb3861419afead1bd421e843dfd",
+        "source": "contract:minimal"
+      },
+      "renderTreeHash": "sha256:375fff3777ac1a88f42c2dd3628da4d540598bb3861419afead1bd421e843dfd",
+      "rendererBackend": "path0-renderer-candidate",
+      "source": "contract:minimal",
+      "styleOpsMatchesRenderTree": true,
+      "styleOpsPresent": true,
+      "styledNodes": 12
+    },
+    "rendererBoundaries": [
+      {
+        "boundaries": [
+          {
+            "boundary": "renderTreeLayout",
+            "count": 1,
+            "proof": {
+              "boundary": "renderTree",
+              "layoutBoxes": 15,
+              "outputHash": "sha256:53f705a49cf269a14ea0ca186a11018de87608ef086baa1194f9ae85b792ed4a",
+              "phase": "layout",
+              "renderTreeHash": "sha256:375fff3777ac1a88f42c2dd3628da4d540598bb3861419afead1bd421e843dfd",
+              "source": "contract:minimal"
+            }
+          },
+          {
+            "boundary": "paint",
+            "count": 1,
+            "proof": {
+              "outputHash": "sha256:455f2fdf5eda9b3602cbe4f7d944de2a484ebe6e8887ce2ae7e593af519042a3",
+              "paintCommands": 18,
+              "phase": "paint",
+              "source": "contract:minimal"
+            }
+          }
+        ],
+        "gate": "path0RenderTreeEvidence",
+        "kind": "rendererBoundary",
+        "source": "path0RenderTreeEvidence"
+      }
+    ],
+    "styles": [
+      {
+        "gate": "styleOpsReplay+path0RenderTreeEvidence",
+        "kind": "apply",
+        "properties": [
+          {
+            "count": 1,
+            "property": "alignItems"
+          },
+          {
+            "count": 3,
+            "property": "gap"
+          },
+          {
+            "count": 2,
+            "property": "height"
+          },
+          {
+            "count": 1,
+            "property": "justifyContent"
+          },
+          {
+            "count": 2,
+            "property": "maxHeight"
+          },
+          {
+            "count": 1,
+            "property": "maxWidth"
+          },
+          {
+            "count": 2,
+            "property": "minHeight"
+          },
+          {
+            "count": 1,
+            "property": "minWidth"
+          },
+          {
+            "count": 3,
+            "property": "padding"
+          },
+          {
+            "count": 1,
+            "property": "scrollY"
+          },
+          {
+            "count": 5,
+            "property": "width"
+          }
+        ],
+        "runtime": {
+          "layoutBoxes": 15,
+          "layoutEvidence": {
+            "layoutBoxes": 15,
+            "observationCount": 13,
+            "observationHash": "sha256:772d13914d42926d186d0f6bca52f03d228fe58f314b9321fdf93c8d7713aeb5",
+            "observedProperties": [
+              "alignItems",
+              "borderWidth",
+              "fontSize",
+              "gap",
+              "height",
+              "justifyContent",
+              "maxHeight",
+              "maxWidth",
+              "minHeight",
+              "minWidth",
+              "padding",
+              "scrollY",
+              "width"
+            ],
+            "styleProperties": [
+              "alignItems",
+              "borderWidth",
+              "fontSize",
+              "gap",
+              "height",
+              "justifyContent",
+              "maxHeight",
+              "maxWidth",
+              "minHeight",
+              "minWidth",
+              "padding",
+              "scrollY",
+              "width"
+            ]
+          },
+          "paintCommands": 18,
+          "paintEvidence": {
+            "observationCount": 6,
+            "observationHash": "sha256:ee7b5a1b11167ce565ebb949c26d1f6e77c1e2c34b03fa82cfb8061899c0116a",
+            "observedProperties": [
+              "background",
+              "borderColor",
+              "borderRadius",
+              "borderWidth",
+              "color",
+              "fontSize"
+            ],
+            "paintCommands": 18,
+            "styleProperties": [
+              "background",
+              "borderColor",
+              "borderRadius",
+              "borderWidth",
+              "color",
+              "fontSize"
+            ]
+          },
+          "rasterEvidence": {
+            "byteSize": 0,
+            "pngPath": null,
+            "pngWritten": false,
+            "sha256": null
+          },
+          "rendererBackend": "path0-renderer-candidate",
+          "source": "contract:minimal",
+          "styleOpsMatchesRenderTree": true,
+          "styleOpsPresent": true,
+          "styledNodes": 12
+        },
+        "source": "styleOpsReplay+path0RenderTreeEvidence",
+        "support": "layout"
+      },
+      {
+        "gate": "styleOpsReplay+path0RenderTreeEvidence",
+        "kind": "apply",
+        "properties": [
+          {
+            "count": 3,
+            "property": "borderWidth"
+          },
+          {
+            "count": 1,
+            "property": "fontSize"
+          }
+        ],
+        "runtime": {
+          "layoutBoxes": 15,
+          "layoutEvidence": {
+            "layoutBoxes": 15,
+            "observationCount": 13,
+            "observationHash": "sha256:772d13914d42926d186d0f6bca52f03d228fe58f314b9321fdf93c8d7713aeb5",
+            "observedProperties": [
+              "alignItems",
+              "borderWidth",
+              "fontSize",
+              "gap",
+              "height",
+              "justifyContent",
+              "maxHeight",
+              "maxWidth",
+              "minHeight",
+              "minWidth",
+              "padding",
+              "scrollY",
+              "width"
+            ],
+            "styleProperties": [
+              "alignItems",
+              "borderWidth",
+              "fontSize",
+              "gap",
+              "height",
+              "justifyContent",
+              "maxHeight",
+              "maxWidth",
+              "minHeight",
+              "minWidth",
+              "padding",
+              "scrollY",
+              "width"
+            ]
+          },
+          "paintCommands": 18,
+          "paintEvidence": {
+            "observationCount": 6,
+            "observationHash": "sha256:ee7b5a1b11167ce565ebb949c26d1f6e77c1e2c34b03fa82cfb8061899c0116a",
+            "observedProperties": [
+              "background",
+              "borderColor",
+              "borderRadius",
+              "borderWidth",
+              "color",
+              "fontSize"
+            ],
+            "paintCommands": 18,
+            "styleProperties": [
+              "background",
+              "borderColor",
+              "borderRadius",
+              "borderWidth",
+              "color",
+              "fontSize"
+            ]
+          },
+          "rasterEvidence": {
+            "byteSize": 0,
+            "pngPath": null,
+            "pngWritten": false,
+            "sha256": null
+          },
+          "rendererBackend": "path0-renderer-candidate",
+          "source": "contract:minimal",
+          "styleOpsMatchesRenderTree": true,
+          "styleOpsPresent": true,
+          "styledNodes": 12
+        },
+        "source": "styleOpsReplay+path0RenderTreeEvidence",
+        "support": "layout+paint"
+      },
+      {
+        "gate": "styleOpsReplay+path0RenderTreeEvidence",
+        "kind": "apply",
+        "properties": [
+          {
+            "count": 3,
+            "property": "background"
+          },
+          {
+            "count": 3,
+            "property": "borderColor"
+          },
+          {
+            "count": 3,
+            "property": "borderRadius"
+          },
+          {
+            "count": 1,
+            "property": "color"
+          }
+        ],
+        "runtime": {
+          "layoutBoxes": 15,
+          "layoutEvidence": {
+            "layoutBoxes": 15,
+            "observationCount": 13,
+            "observationHash": "sha256:772d13914d42926d186d0f6bca52f03d228fe58f314b9321fdf93c8d7713aeb5",
+            "observedProperties": [
+              "alignItems",
+              "borderWidth",
+              "fontSize",
+              "gap",
+              "height",
+              "justifyContent",
+              "maxHeight",
+              "maxWidth",
+              "minHeight",
+              "minWidth",
+              "padding",
+              "scrollY",
+              "width"
+            ],
+            "styleProperties": [
+              "alignItems",
+              "borderWidth",
+              "fontSize",
+              "gap",
+              "height",
+              "justifyContent",
+              "maxHeight",
+              "maxWidth",
+              "minHeight",
+              "minWidth",
+              "padding",
+              "scrollY",
+              "width"
+            ]
+          },
+          "paintCommands": 18,
+          "paintEvidence": {
+            "observationCount": 6,
+            "observationHash": "sha256:ee7b5a1b11167ce565ebb949c26d1f6e77c1e2c34b03fa82cfb8061899c0116a",
+            "observedProperties": [
+              "background",
+              "borderColor",
+              "borderRadius",
+              "borderWidth",
+              "color",
+              "fontSize"
+            ],
+            "paintCommands": 18,
+            "styleProperties": [
+              "background",
+              "borderColor",
+              "borderRadius",
+              "borderWidth",
+              "color",
+              "fontSize"
+            ]
+          },
+          "rasterEvidence": {
+            "byteSize": 0,
+            "pngPath": null,
+            "pngWritten": false,
+            "sha256": null
+          },
+          "rendererBackend": "path0-renderer-candidate",
+          "source": "contract:minimal",
+          "styleOpsMatchesRenderTree": true,
+          "styleOpsPresent": true,
+          "styledNodes": 12
+        },
+        "source": "styleOpsReplay+path0RenderTreeEvidence",
+        "support": "paint"
+      }
+    ],
+    "widgets": [
+      {
+        "gate": "rendererReplay",
+        "kind": "widget",
+        "proof": {
+          "auditHash": "sha256:77bf1014afcd8369ad7cc65a587f2db562832a95beb572c21f75c7ac97b73752",
+          "itemCount": 46,
+          "observedWidgets": [
+            "Button",
+            "FocusScope",
+            "For",
+            "HStack",
+            "Input",
+            "Panel",
+            "ScrollView",
+            "ShortcutScope",
+            "Show",
+            "Text",
+            "VStack"
+          ],
+          "source": "rendererReplay"
+        },
+        "source": "rendererReplay",
+        "support": "container",
+        "widgets": [
+          {
+            "count": 1,
+            "name": "FocusScope"
+          },
+          {
+            "count": 1,
+            "name": "For"
+          },
+          {
+            "count": 7,
+            "name": "HStack"
+          },
+          {
+            "count": 1,
+            "name": "Panel"
+          },
+          {
+            "count": 2,
+            "name": "ScrollView"
+          },
+          {
+            "count": 2,
+            "name": "ShortcutScope"
+          },
+          {
+            "count": 1,
+            "name": "Show"
+          },
+          {
+            "count": 3,
+            "name": "VStack"
+          }
+        ]
+      },
+      {
+        "gate": "rendererReplay",
+        "kind": "widget",
+        "proof": {
+          "auditHash": "sha256:77bf1014afcd8369ad7cc65a587f2db562832a95beb572c21f75c7ac97b73752",
+          "itemCount": 46,
+          "observedWidgets": [
+            "Button",
+            "FocusScope",
+            "For",
+            "HStack",
+            "Input",
+            "Panel",
+            "ScrollView",
+            "ShortcutScope",
+            "Show",
+            "Text",
+            "VStack"
+          ],
+          "source": "rendererReplay"
+        },
+        "source": "rendererReplay",
+        "support": "control",
+        "widgets": [
+          {
+            "count": 9,
+            "name": "Button"
+          },
+          {
+            "count": 2,
+            "name": "Input"
+          }
+        ]
+      },
+      {
+        "gate": "rendererReplay",
+        "kind": "widget",
+        "proof": {
+          "auditHash": "sha256:77bf1014afcd8369ad7cc65a587f2db562832a95beb572c21f75c7ac97b73752",
+          "itemCount": 46,
+          "observedWidgets": [
+            "Button",
+            "FocusScope",
+            "For",
+            "HStack",
+            "Input",
+            "Panel",
+            "ScrollView",
+            "ShortcutScope",
+            "Show",
+            "Text",
+            "VStack"
+          ],
+          "source": "rendererReplay"
+        },
+        "source": "rendererReplay",
+        "support": "text",
+        "widgets": [
+          {
+            "count": 17,
+            "name": "Text"
+          }
+        ]
+      }
+    ]
+  },
   "format": "backend-readiness-report",
   "gates": {
+    "path0RenderTreeEvidence": true,
+    "renderTreeReplay": true,
     "rendererReplay": true,
     "styleCapabilityAudit": true,
     "styleOpsReplay": true,
     "widgetInputAudit": true
   },
   "passed": true,
+  "path0": {
+    "calls": {
+      "count": 2,
+      "hash": "sha256:5a2c41da53b5028fa62a31238b96d43290da50e965f630a4373d1300e4bc6ccf",
+      "signature": [
+        {
+          "boundary": "renderTree",
+          "layoutBoxes": 15,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "contract:minimal"
+        },
+        {
+          "layoutBoxes": 15,
+          "paintCommands": 18,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        }
+      ]
+    },
+    "errors": [],
+    "evidence": {
+      "layout": {
+        "layoutBoxes": 15,
+        "observations": [
+          {
+            "count": 1,
+            "property": "alignItems",
+            "samples": [
+              {
+                "bounds": [
+                  8,
+                  50,
+                  200,
+                  44
+                ],
+                "children": [
+                  {
+                    "bounds": [
+                      8,
+                      54,
+                      42,
+                      36
+                    ],
+                    "name": "Button",
+                    "path": [
+                      0,
+                      0,
+                      1,
+                      0
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      166,
+                      54,
+                      42,
+                      36
+                    ],
+                    "name": "Button",
+                    "path": [
+                      0,
+                      0,
+                      1,
+                      1
+                    ]
+                  }
+                ],
+                "name": "HStack",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0,
+                  1
+                ],
+                "value": {
+                  "type": "literal",
+                  "value": "center"
+                }
+              }
+            ]
+          },
+          {
+            "count": 4,
+            "property": "borderWidth",
+            "samples": [
+              {
+                "bounds": [
+                  8,
+                  8,
+                  120,
+                  36
+                ],
+                "name": "Input",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0,
+                  0
+                ],
+                "value": {
+                  "type": "size",
+                  "unit": "px",
+                  "value": 1
+                }
+              }
+            ]
+          },
+          {
+            "count": 4,
+            "property": "fontSize",
+            "samples": [
+              {
+                "bounds": [
+                  11,
+                  153,
+                  115,
+                  17
+                ],
+                "name": "Text",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0,
+                  3,
+                  0
+                ],
+                "value": {
+                  "type": "size",
+                  "unit": "px",
+                  "value": 13
+                }
+              }
+            ]
+          },
+          {
+            "count": 3,
+            "property": "gap",
+            "samples": [
+              {
+                "bounds": [
+                  0,
+                  0,
+                  220,
+                  251
+                ],
+                "children": [
+                  {
+                    "bounds": [
+                      8,
+                      8,
+                      120,
+                      36
+                    ],
+                    "name": "Input",
+                    "path": [
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      8,
+                      50,
+                      200,
+                      44
+                    ],
+                    "name": "HStack",
+                    "path": [
+                      0,
+                      0,
+                      1
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      8,
+                      100,
+                      200,
+                      44
+                    ],
+                    "name": "ScrollView",
+                    "path": [
+                      0,
+                      0,
+                      2
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      8,
+                      150,
+                      180,
+                      24
+                    ],
+                    "name": "Panel",
+                    "path": [
+                      0,
+                      0,
+                      3
+                    ]
+                  }
+                ],
+                "name": "VStack",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0
+                ],
+                "value": {
+                  "type": "size",
+                  "unit": "px",
+                  "value": 6
+                }
+              }
+            ]
+          },
+          {
+            "count": 2,
+            "property": "height",
+            "samples": [
+              {
+                "bounds": [
+                  8,
+                  50,
+                  200,
+                  44
+                ],
+                "children": [
+                  {
+                    "bounds": [
+                      8,
+                      54,
+                      42,
+                      36
+                    ],
+                    "name": "Button",
+                    "path": [
+                      0,
+                      0,
+                      1,
+                      0
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      166,
+                      54,
+                      42,
+                      36
+                    ],
+                    "name": "Button",
+                    "path": [
+                      0,
+                      0,
+                      1,
+                      1
+                    ]
+                  }
+                ],
+                "name": "HStack",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0,
+                  1
+                ],
+                "value": {
+                  "type": "size",
+                  "unit": "px",
+                  "value": 44
+                }
+              }
+            ]
+          },
+          {
+            "count": 1,
+            "property": "justifyContent",
+            "samples": [
+              {
+                "bounds": [
+                  8,
+                  50,
+                  200,
+                  44
+                ],
+                "children": [
+                  {
+                    "bounds": [
+                      8,
+                      54,
+                      42,
+                      36
+                    ],
+                    "name": "Button",
+                    "path": [
+                      0,
+                      0,
+                      1,
+                      0
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      166,
+                      54,
+                      42,
+                      36
+                    ],
+                    "name": "Button",
+                    "path": [
+                      0,
+                      0,
+                      1,
+                      1
+                    ]
+                  }
+                ],
+                "name": "HStack",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0,
+                  1
+                ],
+                "value": {
+                  "type": "literal",
+                  "value": "space-between"
+                }
+              }
+            ]
+          },
+          {
+            "count": 2,
+            "property": "maxHeight",
+            "samples": [
+              {
+                "bounds": [
+                  0,
+                  0,
+                  220,
+                  251
+                ],
+                "children": [
+                  {
+                    "bounds": [
+                      0,
+                      0,
+                      220,
+                      251
+                    ],
+                    "name": "VStack",
+                    "path": [
+                      0,
+                      0
+                    ]
+                  }
+                ],
+                "name": "FocusScope",
+                "nodeId": null,
+                "path": [
+                  0
+                ],
+                "value": {
+                  "type": "size",
+                  "unit": "px",
+                  "value": 360
+                }
+              }
+            ]
+          },
+          {
+            "count": 1,
+            "property": "maxWidth",
+            "samples": [
+              {
+                "bounds": [
+                  0,
+                  0,
+                  220,
+                  251
+                ],
+                "children": [
+                  {
+                    "bounds": [
+                      8,
+                      8,
+                      120,
+                      36
+                    ],
+                    "name": "Input",
+                    "path": [
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      8,
+                      50,
+                      200,
+                      44
+                    ],
+                    "name": "HStack",
+                    "path": [
+                      0,
+                      0,
+                      1
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      8,
+                      100,
+                      200,
+                      44
+                    ],
+                    "name": "ScrollView",
+                    "path": [
+                      0,
+                      0,
+                      2
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      8,
+                      150,
+                      180,
+                      24
+                    ],
+                    "name": "Panel",
+                    "path": [
+                      0,
+                      0,
+                      3
+                    ]
+                  }
+                ],
+                "name": "VStack",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0
+                ],
+                "value": {
+                  "type": "size",
+                  "unit": "px",
+                  "value": 260
+                }
+              }
+            ]
+          },
+          {
+            "count": 2,
+            "property": "minHeight",
+            "samples": [
+              {
+                "bounds": [
+                  0,
+                  0,
+                  220,
+                  251
+                ],
+                "children": [
+                  {
+                    "bounds": [
+                      0,
+                      0,
+                      220,
+                      251
+                    ],
+                    "name": "VStack",
+                    "path": [
+                      0,
+                      0
+                    ]
+                  }
+                ],
+                "name": "FocusScope",
+                "nodeId": null,
+                "path": [
+                  0
+                ],
+                "value": {
+                  "type": "size",
+                  "unit": "px",
+                  "value": 200
+                }
+              }
+            ]
+          },
+          {
+            "count": 1,
+            "property": "minWidth",
+            "samples": [
+              {
+                "bounds": [
+                  0,
+                  0,
+                  220,
+                  251
+                ],
+                "children": [
+                  {
+                    "bounds": [
+                      8,
+                      8,
+                      120,
+                      36
+                    ],
+                    "name": "Input",
+                    "path": [
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      8,
+                      50,
+                      200,
+                      44
+                    ],
+                    "name": "HStack",
+                    "path": [
+                      0,
+                      0,
+                      1
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      8,
+                      100,
+                      200,
+                      44
+                    ],
+                    "name": "ScrollView",
+                    "path": [
+                      0,
+                      0,
+                      2
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      8,
+                      150,
+                      180,
+                      24
+                    ],
+                    "name": "Panel",
+                    "path": [
+                      0,
+                      0,
+                      3
+                    ]
+                  }
+                ],
+                "name": "VStack",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0
+                ],
+                "value": {
+                  "type": "size",
+                  "unit": "px",
+                  "value": 200
+                }
+              }
+            ]
+          },
+          {
+            "count": 3,
+            "property": "padding",
+            "samples": [
+              {
+                "bounds": [
+                  0,
+                  0,
+                  220,
+                  251
+                ],
+                "children": [
+                  {
+                    "bounds": [
+                      8,
+                      8,
+                      120,
+                      36
+                    ],
+                    "name": "Input",
+                    "path": [
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      8,
+                      50,
+                      200,
+                      44
+                    ],
+                    "name": "HStack",
+                    "path": [
+                      0,
+                      0,
+                      1
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      8,
+                      100,
+                      200,
+                      44
+                    ],
+                    "name": "ScrollView",
+                    "path": [
+                      0,
+                      0,
+                      2
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      8,
+                      150,
+                      180,
+                      24
+                    ],
+                    "name": "Panel",
+                    "path": [
+                      0,
+                      0,
+                      3
+                    ]
+                  }
+                ],
+                "name": "VStack",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0
+                ],
+                "value": {
+                  "type": "size",
+                  "unit": "px",
+                  "value": 8
+                }
+              }
+            ]
+          },
+          {
+            "count": 1,
+            "property": "scrollY",
+            "samples": [
+              {
+                "bounds": [
+                  8,
+                  100,
+                  200,
+                  44
+                ],
+                "children": [
+                  {
+                    "bounds": [
+                      12,
+                      104,
+                      55,
+                      34
+                    ],
+                    "name": "Button",
+                    "path": [
+                      0,
+                      0,
+                      2,
+                      0
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      12,
+                      142,
+                      63,
+                      34
+                    ],
+                    "name": "Button",
+                    "path": [
+                      0,
+                      0,
+                      2,
+                      1
+                    ]
+                  }
+                ],
+                "name": "ScrollView",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0,
+                  2
+                ],
+                "value": {
+                  "type": "literal",
+                  "value": 0
+                }
+              }
+            ]
+          },
+          {
+            "count": 5,
+            "property": "width",
+            "samples": [
+              {
+                "bounds": [
+                  0,
+                  0,
+                  220,
+                  251
+                ],
+                "children": [
+                  {
+                    "bounds": [
+                      8,
+                      8,
+                      120,
+                      36
+                    ],
+                    "name": "Input",
+                    "path": [
+                      0,
+                      0,
+                      0
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      8,
+                      50,
+                      200,
+                      44
+                    ],
+                    "name": "HStack",
+                    "path": [
+                      0,
+                      0,
+                      1
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      8,
+                      100,
+                      200,
+                      44
+                    ],
+                    "name": "ScrollView",
+                    "path": [
+                      0,
+                      0,
+                      2
+                    ]
+                  },
+                  {
+                    "bounds": [
+                      8,
+                      150,
+                      180,
+                      24
+                    ],
+                    "name": "Panel",
+                    "path": [
+                      0,
+                      0,
+                      3
+                    ]
+                  }
+                ],
+                "name": "VStack",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0
+                ],
+                "value": {
+                  "type": "size",
+                  "unit": "px",
+                  "value": 220
+                }
+              }
+            ]
+          }
+        ],
+        "styleProperties": [
+          "alignItems",
+          "borderWidth",
+          "fontSize",
+          "gap",
+          "height",
+          "justifyContent",
+          "maxHeight",
+          "maxWidth",
+          "minHeight",
+          "minWidth",
+          "padding",
+          "scrollY",
+          "width"
+        ]
+      },
+      "paint": {
+        "observations": [
+          {
+            "count": 3,
+            "property": "background",
+            "samples": [
+              {
+                "commandCount": 1,
+                "commands": [
+                  {
+                    "bounds": [
+                      0,
+                      0,
+                      220,
+                      251
+                    ],
+                    "clip": null,
+                    "color": null,
+                    "fill": "#f8fafc",
+                    "fontSize": 14,
+                    "kind": "rect",
+                    "path": [
+                      0,
+                      0
+                    ],
+                    "radius": 0,
+                    "stroke": null,
+                    "strokeWidth": 0,
+                    "text": null
+                  }
+                ],
+                "name": "VStack",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0
+                ],
+                "value": {
+                  "type": "literal",
+                  "value": "#f8fafc"
+                }
+              }
+            ]
+          },
+          {
+            "count": 4,
+            "property": "borderColor",
+            "samples": [
+              {
+                "commandCount": 2,
+                "commands": [
+                  {
+                    "bounds": [
+                      8,
+                      8,
+                      120,
+                      36
+                    ],
+                    "clip": null,
+                    "color": null,
+                    "fill": "#ffffff",
+                    "fontSize": 14,
+                    "kind": "rect",
+                    "path": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "radius": 7,
+                    "stroke": "#64748b",
+                    "strokeWidth": 1,
+                    "text": null
+                  }
+                ],
+                "name": "Input",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0,
+                  0
+                ],
+                "value": {
+                  "type": "literal",
+                  "value": "#64748b"
+                }
+              }
+            ]
+          },
+          {
+            "count": 4,
+            "property": "borderRadius",
+            "samples": [
+              {
+                "commandCount": 2,
+                "commands": [
+                  {
+                    "bounds": [
+                      8,
+                      8,
+                      120,
+                      36
+                    ],
+                    "clip": null,
+                    "color": null,
+                    "fill": "#ffffff",
+                    "fontSize": 14,
+                    "kind": "rect",
+                    "path": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "radius": 7,
+                    "stroke": "#64748b",
+                    "strokeWidth": 1,
+                    "text": null
+                  }
+                ],
+                "name": "Input",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0,
+                  0
+                ],
+                "value": {
+                  "type": "size",
+                  "unit": "px",
+                  "value": 7
+                }
+              }
+            ]
+          },
+          {
+            "count": 4,
+            "property": "borderWidth",
+            "samples": [
+              {
+                "commandCount": 2,
+                "commands": [
+                  {
+                    "bounds": [
+                      8,
+                      8,
+                      120,
+                      36
+                    ],
+                    "clip": null,
+                    "color": null,
+                    "fill": "#ffffff",
+                    "fontSize": 14,
+                    "kind": "rect",
+                    "path": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "radius": 7,
+                    "stroke": "#64748b",
+                    "strokeWidth": 1,
+                    "text": null
+                  }
+                ],
+                "name": "Input",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0,
+                  0
+                ],
+                "value": {
+                  "type": "size",
+                  "unit": "px",
+                  "value": 1
+                }
+              }
+            ]
+          },
+          {
+            "count": 4,
+            "property": "color",
+            "samples": [
+              {
+                "commandCount": 1,
+                "commands": [
+                  {
+                    "bounds": [
+                      11,
+                      156,
+                      115,
+                      11
+                    ],
+                    "clip": null,
+                    "color": "#0f172a",
+                    "fill": null,
+                    "fontSize": 13,
+                    "kind": "text",
+                    "path": [
+                      0,
+                      0,
+                      3,
+                      0
+                    ],
+                    "radius": 0,
+                    "stroke": null,
+                    "strokeWidth": 0,
+                    "text": "Capability Panel"
+                  }
+                ],
+                "name": "Text",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0,
+                  3,
+                  0
+                ],
+                "value": {
+                  "type": "literal",
+                  "value": "#0f172a"
+                }
+              }
+            ]
+          },
+          {
+            "count": 4,
+            "property": "fontSize",
+            "samples": [
+              {
+                "commandCount": 1,
+                "commands": [
+                  {
+                    "bounds": [
+                      11,
+                      156,
+                      115,
+                      11
+                    ],
+                    "clip": null,
+                    "color": "#0f172a",
+                    "fill": null,
+                    "fontSize": 13,
+                    "kind": "text",
+                    "path": [
+                      0,
+                      0,
+                      3,
+                      0
+                    ],
+                    "radius": 0,
+                    "stroke": null,
+                    "strokeWidth": 0,
+                    "text": "Capability Panel"
+                  }
+                ],
+                "name": "Text",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0,
+                  3,
+                  0
+                ],
+                "value": {
+                  "type": "size",
+                  "unit": "px",
+                  "value": 13
+                }
+              }
+            ]
+          }
+        ],
+        "paintCommands": 18,
+        "styleProperties": [
+          "background",
+          "borderColor",
+          "borderRadius",
+          "borderWidth",
+          "color",
+          "fontSize"
+        ]
+      },
+      "raster": {
+        "byteSize": 0,
+        "pngPath": null,
+        "pngWritten": false,
+        "sha256": null
+      }
+    },
+    "input": {
+      "format": "otoe-render-tree",
+      "nodeCount": 15,
+      "renderTreeHash": "sha256:375fff3777ac1a88f42c2dd3628da4d540598bb3861419afead1bd421e843dfd",
+      "source": "contract:minimal",
+      "styleOps": {
+        "format": "otoe-style-ops",
+        "matchesRenderTree": true,
+        "present": true,
+        "schemaVersion": 1
+      },
+      "styledNodes": 12
+    },
+    "output": {
+      "layout": {
+        "boxCount": 15,
+        "boxes": [
+          {
+            "bounds": [
+              0,
+              0,
+              220,
+              251
+            ],
+            "children": [
+              [
+                0
+              ]
+            ],
+            "context": "CandidateApp > ShortcutScope > ShortcutScope",
+            "events": [
+              "onGlobalKeyDown"
+            ],
+            "id": null,
+            "name": "ShortcutScope",
+            "path": [],
+            "state": [],
+            "style": {},
+            "text": null
+          },
+          {
+            "bounds": [
+              0,
+              0,
+              220,
+              251
+            ],
+            "children": [
+              [
+                0,
+                0
+              ]
+            ],
+            "context": "CandidateApp > ShortcutScope > FocusScope > FocusScope",
+            "events": [],
+            "id": null,
+            "name": "FocusScope",
+            "path": [
+              0
+            ],
+            "state": [],
+            "style": {
+              "maxHeight": {
+                "type": "size",
+                "unit": "px",
+                "value": 360
+              },
+              "minHeight": {
+                "type": "size",
+                "unit": "px",
+                "value": 200
+              }
+            },
+            "text": null
+          },
+          {
+            "bounds": [
+              0,
+              0,
+              220,
+              251
+            ],
+            "children": [
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                1
+              ],
+              [
+                0,
+                0,
+                2
+              ],
+              [
+                0,
+                0,
+                3
+              ],
+              [
+                0,
+                0,
+                4
+              ],
+              [
+                0,
+                0,
+                5
+              ],
+              [
+                0,
+                0,
+                6
+              ]
+            ],
+            "context": "CandidateApp > ShortcutScope > FocusScope > VStack",
+            "events": [],
+            "id": null,
+            "name": "VStack",
+            "path": [
+              0,
+              0
+            ],
+            "state": [],
+            "style": {
+              "background": {
+                "type": "literal",
+                "value": "#f8fafc"
+              },
+              "gap": {
+                "type": "size",
+                "unit": "px",
+                "value": 6
+              },
+              "maxWidth": {
+                "type": "size",
+                "unit": "px",
+                "value": 260
+              },
+              "minWidth": {
+                "type": "size",
+                "unit": "px",
+                "value": 200
+              },
+              "padding": {
+                "type": "size",
+                "unit": "px",
+                "value": 8
+              },
+              "width": {
+                "type": "size",
+                "unit": "px",
+                "value": 220
+              }
+            },
+            "text": null
+          },
+          {
+            "bounds": [
+              8,
+              8,
+              120,
+              36
+            ],
+            "children": [],
+            "context": "CandidateApp > ShortcutScope > FocusScope > Input",
+            "events": [
+              "onBlur",
+              "onChange",
+              "onFocus",
+              "onKeyDown"
+            ],
+            "id": null,
+            "name": "Input",
+            "path": [
+              0,
+              0,
+              0
+            ],
+            "state": [],
+            "style": {
+              "borderColor": {
+                "type": "literal",
+                "value": "#64748b"
+              },
+              "borderRadius": {
+                "type": "size",
+                "unit": "px",
+                "value": 7
+              },
+              "borderWidth": {
+                "type": "size",
+                "unit": "px",
+                "value": 1
+              },
+              "width": {
+                "type": "size",
+                "unit": "px",
+                "value": 120
+              }
+            },
+            "text": "seed"
+          },
+          {
+            "bounds": [
+              8,
+              50,
+              200,
+              44
+            ],
+            "children": [
+              [
+                0,
+                0,
+                1,
+                0
+              ],
+              [
+                0,
+                0,
+                1,
+                1
+              ]
+            ],
+            "context": "CandidateApp > ShortcutScope > FocusScope > HStack",
+            "events": [],
+            "id": null,
+            "name": "HStack",
+            "path": [
+              0,
+              0,
+              1
+            ],
+            "state": [],
+            "style": {
+              "alignItems": {
+                "type": "literal",
+                "value": "center"
+              },
+              "gap": {
+                "type": "size",
+                "unit": "px",
+                "value": 4
+              },
+              "height": {
+                "type": "size",
+                "unit": "px",
+                "value": 44
+              },
+              "justifyContent": {
+                "type": "literal",
+                "value": "space-between"
+              },
+              "width": {
+                "type": "size",
+                "unit": "px",
+                "value": 200
+              }
+            },
+            "text": null
+          },
+          {
+            "bounds": [
+              8,
+              54,
+              42,
+              36
+            ],
+            "children": [],
+            "context": "CandidateApp > ShortcutScope > FocusScope > Button",
+            "events": [
+              "onBlur",
+              "onClick",
+              "onFocus",
+              "onKeyDown"
+            ],
+            "id": null,
+            "name": "Button",
+            "path": [
+              0,
+              0,
+              1,
+              0
+            ],
+            "state": [],
+            "style": {
+              "borderColor": {
+                "type": "literal",
+                "value": "#1d4ed8"
+              },
+              "borderRadius": {
+                "type": "size",
+                "unit": "px",
+                "value": 8
+              },
+              "borderWidth": {
+                "type": "size",
+                "unit": "px",
+                "value": 1
+              }
+            },
+            "text": "One"
+          },
+          {
+            "bounds": [
+              166,
+              54,
+              42,
+              36
+            ],
+            "children": [],
+            "context": "CandidateApp > ShortcutScope > FocusScope > Button",
+            "events": [
+              "onBlur",
+              "onClick",
+              "onFocus",
+              "onKeyDown"
+            ],
+            "id": null,
+            "name": "Button",
+            "path": [
+              0,
+              0,
+              1,
+              1
+            ],
+            "state": [],
+            "style": {
+              "borderColor": {
+                "type": "literal",
+                "value": "#1d4ed8"
+              },
+              "borderRadius": {
+                "type": "size",
+                "unit": "px",
+                "value": 8
+              },
+              "borderWidth": {
+                "type": "size",
+                "unit": "px",
+                "value": 1
+              }
+            },
+            "text": "Two"
+          },
+          {
+            "bounds": [
+              8,
+              100,
+              200,
+              44
+            ],
+            "children": [
+              [
+                0,
+                0,
+                2,
+                0
+              ],
+              [
+                0,
+                0,
+                2,
+                1
+              ]
+            ],
+            "context": "CandidateApp > ShortcutScope > FocusScope > ScrollView",
+            "events": [
+              "onScroll"
+            ],
+            "id": null,
+            "name": "ScrollView",
+            "path": [
+              0,
+              0,
+              2
+            ],
+            "state": [],
+            "style": {
+              "background": {
+                "type": "literal",
+                "value": "#ffffff"
+              },
+              "gap": {
+                "type": "size",
+                "unit": "px",
+                "value": 4
+              },
+              "height": {
+                "type": "size",
+                "unit": "px",
+                "value": 44
+              },
+              "padding": {
+                "type": "size",
+                "unit": "px",
+                "value": 4
+              },
+              "scrollY": {
+                "type": "literal",
+                "value": 0
+              },
+              "width": {
+                "type": "size",
+                "unit": "px",
+                "value": 200
+              }
+            },
+            "text": null
+          },
+          {
+            "bounds": [
+              12,
+              104,
+              55,
+              34
+            ],
+            "children": [],
+            "context": "CandidateApp > ShortcutScope > FocusScope > Button",
+            "events": [
+              "onClick"
+            ],
+            "id": null,
+            "name": "Button",
+            "path": [
+              0,
+              0,
+              2,
+              0
+            ],
+            "state": [],
+            "style": {},
+            "text": "First"
+          },
+          {
+            "bounds": [
+              12,
+              142,
+              63,
+              34
+            ],
+            "children": [],
+            "context": "CandidateApp > ShortcutScope > FocusScope > Button",
+            "events": [
+              "onClick"
+            ],
+            "id": null,
+            "name": "Button",
+            "path": [
+              0,
+              0,
+              2,
+              1
+            ],
+            "state": [],
+            "style": {},
+            "text": "Second"
+          },
+          {
+            "bounds": [
+              8,
+              150,
+              180,
+              24
+            ],
+            "children": [
+              [
+                0,
+                0,
+                3,
+                0
+              ]
+            ],
+            "context": "CandidateApp > ShortcutScope > FocusScope > Panel",
+            "events": [],
+            "id": null,
+            "name": "Panel",
+            "path": [
+              0,
+              0,
+              3
+            ],
+            "state": [],
+            "style": {
+              "background": {
+                "type": "literal",
+                "value": "#e0f2fe"
+              },
+              "borderColor": {
+                "type": "literal",
+                "value": "#0369a1"
+              },
+              "borderRadius": {
+                "type": "size",
+                "unit": "px",
+                "value": 6
+              },
+              "borderWidth": {
+                "type": "size",
+                "unit": "px",
+                "value": 1
+              },
+              "maxHeight": {
+                "type": "size",
+                "unit": "px",
+                "value": 70
+              },
+              "minHeight": {
+                "type": "size",
+                "unit": "px",
+                "value": 24
+              },
+              "padding": {
+                "type": "size",
+                "unit": "px",
+                "value": 3
+              },
+              "width": {
+                "type": "size",
+                "unit": "px",
+                "value": 180
+              }
+            },
+            "text": null
+          },
+          {
+            "bounds": [
+              11,
+              153,
+              115,
+              17
+            ],
+            "children": [],
+            "context": "CandidateApp > ShortcutScope > FocusScope > Text",
+            "events": [],
+            "id": null,
+            "name": "Text",
+            "path": [
+              0,
+              0,
+              3,
+              0
+            ],
+            "state": [],
+            "style": {
+              "color": {
+                "type": "literal",
+                "value": "#0f172a"
+              },
+              "fontSize": {
+                "type": "size",
+                "unit": "px",
+                "value": 13
+              }
+            },
+            "text": "Capability Panel"
+          },
+          {
+            "bounds": [
+              8,
+              180,
+              65,
+              17
+            ],
+            "children": [],
+            "context": "CandidateApp > ShortcutScope > FocusScope > Text",
+            "events": [],
+            "id": null,
+            "name": "Text",
+            "path": [
+              0,
+              0,
+              4
+            ],
+            "state": [],
+            "style": {
+              "color": {
+                "type": "literal",
+                "value": "#0f172a"
+              },
+              "fontSize": {
+                "type": "size",
+                "unit": "px",
+                "value": 13
+              }
+            },
+            "text": "Echo seed"
+          },
+          {
+            "bounds": [
+              8,
+              203,
+              86,
+              17
+            ],
+            "children": [],
+            "context": "CandidateApp > ShortcutScope > FocusScope > Text",
+            "events": [],
+            "id": null,
+            "name": "Text",
+            "path": [
+              0,
+              0,
+              5
+            ],
+            "state": [],
+            "style": {
+              "color": {
+                "type": "literal",
+                "value": "#0f172a"
+              },
+              "fontSize": {
+                "type": "size",
+                "unit": "px",
+                "value": 13
+              }
+            },
+            "text": "Clicked none"
+          },
+          {
+            "bounds": [
+              8,
+              226,
+              79,
+              17
+            ],
+            "children": [],
+            "context": "CandidateApp > ShortcutScope > FocusScope > Text",
+            "events": [],
+            "id": null,
+            "name": "Text",
+            "path": [
+              0,
+              0,
+              6
+            ],
+            "state": [],
+            "style": {
+              "color": {
+                "type": "literal",
+                "value": "#0f172a"
+              },
+              "fontSize": {
+                "type": "size",
+                "unit": "px",
+                "value": 13
+              }
+            },
+            "text": "Shortcuts 0"
+          }
+        ],
+        "format": "path0-layout-output",
+        "outputHash": "sha256:53f705a49cf269a14ea0ca186a11018de87608ef086baa1194f9ae85b792ed4a",
+        "rootPath": [],
+        "schemaVersion": 1
+      },
+      "paint": {
+        "commandCount": 18,
+        "commands": [
+          {
+            "bounds": [
+              0,
+              0,
+              220,
+              251
+            ],
+            "clip": null,
+            "color": null,
+            "context": "PaintOnlyRendererCandidate surface",
+            "fill": "#ffffff",
+            "fontSize": 14,
+            "kind": "rect",
+            "path": [],
+            "radius": 0,
+            "stroke": null,
+            "strokeWidth": 0,
+            "text": null
+          },
+          {
+            "bounds": [
+              0,
+              0,
+              220,
+              251
+            ],
+            "clip": null,
+            "color": null,
+            "context": "PaintOnlyRendererCandidate VStack",
+            "fill": "#f8fafc",
+            "fontSize": 14,
+            "kind": "rect",
+            "path": [
+              0,
+              0
+            ],
+            "radius": 0,
+            "stroke": null,
+            "strokeWidth": 0,
+            "text": null
+          },
+          {
+            "bounds": [
+              8,
+              8,
+              120,
+              36
+            ],
+            "clip": null,
+            "color": null,
+            "context": "PaintOnlyRendererCandidate Input",
+            "fill": "#ffffff",
+            "fontSize": 14,
+            "kind": "rect",
+            "path": [
+              0,
+              0,
+              0
+            ],
+            "radius": 7,
+            "stroke": "#64748b",
+            "strokeWidth": 1,
+            "text": null
+          },
+          {
+            "bounds": [
+              16,
+              20,
+              104,
+              11
+            ],
+            "clip": null,
+            "color": "#111827",
+            "context": "PaintOnlyRendererCandidate Input",
+            "fill": null,
+            "fontSize": 14,
+            "kind": "text",
+            "path": [
+              0,
+              0,
+              0
+            ],
+            "radius": 0,
+            "stroke": null,
+            "strokeWidth": 0,
+            "text": "seed"
+          },
+          {
+            "bounds": [
+              8,
+              54,
+              42,
+              36
+            ],
+            "clip": null,
+            "color": null,
+            "context": "PaintOnlyRendererCandidate Button",
+            "fill": "#1f2937",
+            "fontSize": 14,
+            "kind": "rect",
+            "path": [
+              0,
+              0,
+              1,
+              0
+            ],
+            "radius": 8,
+            "stroke": "#1d4ed8",
+            "strokeWidth": 1,
+            "text": null
+          },
+          {
+            "bounds": [
+              16,
+              66,
+              26,
+              11
+            ],
+            "clip": null,
+            "color": "#ffffff",
+            "context": "PaintOnlyRendererCandidate Button",
+            "fill": null,
+            "fontSize": 14,
+            "kind": "text",
+            "path": [
+              0,
+              0,
+              1,
+              0
+            ],
+            "radius": 0,
+            "stroke": null,
+            "strokeWidth": 0,
+            "text": "One"
+          },
+          {
+            "bounds": [
+              166,
+              54,
+              42,
+              36
+            ],
+            "clip": null,
+            "color": null,
+            "context": "PaintOnlyRendererCandidate Button",
+            "fill": "#1f2937",
+            "fontSize": 14,
+            "kind": "rect",
+            "path": [
+              0,
+              0,
+              1,
+              1
+            ],
+            "radius": 8,
+            "stroke": "#1d4ed8",
+            "strokeWidth": 1,
+            "text": null
+          },
+          {
+            "bounds": [
+              174,
+              66,
+              26,
+              11
+            ],
+            "clip": null,
+            "color": "#ffffff",
+            "context": "PaintOnlyRendererCandidate Button",
+            "fill": null,
+            "fontSize": 14,
+            "kind": "text",
+            "path": [
+              0,
+              0,
+              1,
+              1
+            ],
+            "radius": 0,
+            "stroke": null,
+            "strokeWidth": 0,
+            "text": "Two"
+          },
+          {
+            "bounds": [
+              8,
+              100,
+              200,
+              44
+            ],
+            "clip": null,
+            "color": null,
+            "context": "PaintOnlyRendererCandidate ScrollView",
+            "fill": "#ffffff",
+            "fontSize": 14,
+            "kind": "rect",
+            "path": [
+              0,
+              0,
+              2
+            ],
+            "radius": 0,
+            "stroke": null,
+            "strokeWidth": 0,
+            "text": null
+          },
+          {
+            "bounds": [
+              12,
+              104,
+              55,
+              34
+            ],
+            "clip": [
+              8,
+              100,
+              200,
+              44
+            ],
+            "color": null,
+            "context": "PaintOnlyRendererCandidate Button",
+            "fill": "#1f2937",
+            "fontSize": 14,
+            "kind": "rect",
+            "path": [
+              0,
+              0,
+              2,
+              0
+            ],
+            "radius": 8,
+            "stroke": "#111827",
+            "strokeWidth": 1,
+            "text": null
+          },
+          {
+            "bounds": [
+              20,
+              115,
+              39,
+              11
+            ],
+            "clip": [
+              8,
+              100,
+              200,
+              44
+            ],
+            "color": "#ffffff",
+            "context": "PaintOnlyRendererCandidate Button",
+            "fill": null,
+            "fontSize": 14,
+            "kind": "text",
+            "path": [
+              0,
+              0,
+              2,
+              0
+            ],
+            "radius": 0,
+            "stroke": null,
+            "strokeWidth": 0,
+            "text": "First"
+          },
+          {
+            "bounds": [
+              12,
+              142,
+              63,
+              34
+            ],
+            "clip": [
+              8,
+              100,
+              200,
+              44
+            ],
+            "color": null,
+            "context": "PaintOnlyRendererCandidate Button",
+            "fill": "#1f2937",
+            "fontSize": 14,
+            "kind": "rect",
+            "path": [
+              0,
+              0,
+              2,
+              1
+            ],
+            "radius": 8,
+            "stroke": "#111827",
+            "strokeWidth": 1,
+            "text": null
+          },
+          {
+            "bounds": [
+              20,
+              153,
+              47,
+              11
+            ],
+            "clip": [
+              8,
+              100,
+              200,
+              44
+            ],
+            "color": "#ffffff",
+            "context": "PaintOnlyRendererCandidate Button",
+            "fill": null,
+            "fontSize": 14,
+            "kind": "text",
+            "path": [
+              0,
+              0,
+              2,
+              1
+            ],
+            "radius": 0,
+            "stroke": null,
+            "strokeWidth": 0,
+            "text": "Second"
+          },
+          {
+            "bounds": [
+              8,
+              150,
+              180,
+              24
+            ],
+            "clip": null,
+            "color": null,
+            "context": "PaintOnlyRendererCandidate Panel",
+            "fill": "#e0f2fe",
+            "fontSize": 14,
+            "kind": "rect",
+            "path": [
+              0,
+              0,
+              3
+            ],
+            "radius": 6,
+            "stroke": "#0369a1",
+            "strokeWidth": 1,
+            "text": null
+          },
+          {
+            "bounds": [
+              11,
+              156,
+              115,
+              11
+            ],
+            "clip": null,
+            "color": "#0f172a",
+            "context": "PaintOnlyRendererCandidate Text",
+            "fill": null,
+            "fontSize": 13,
+            "kind": "text",
+            "path": [
+              0,
+              0,
+              3,
+              0
+            ],
+            "radius": 0,
+            "stroke": null,
+            "strokeWidth": 0,
+            "text": "Capability Panel"
+          },
+          {
+            "bounds": [
+              8,
+              183,
+              65,
+              11
+            ],
+            "clip": null,
+            "color": "#0f172a",
+            "context": "PaintOnlyRendererCandidate Text",
+            "fill": null,
+            "fontSize": 13,
+            "kind": "text",
+            "path": [
+              0,
+              0,
+              4
+            ],
+            "radius": 0,
+            "stroke": null,
+            "strokeWidth": 0,
+            "text": "Echo seed"
+          },
+          {
+            "bounds": [
+              8,
+              206,
+              86,
+              11
+            ],
+            "clip": null,
+            "color": "#0f172a",
+            "context": "PaintOnlyRendererCandidate Text",
+            "fill": null,
+            "fontSize": 13,
+            "kind": "text",
+            "path": [
+              0,
+              0,
+              5
+            ],
+            "radius": 0,
+            "stroke": null,
+            "strokeWidth": 0,
+            "text": "Clicked none"
+          },
+          {
+            "bounds": [
+              8,
+              229,
+              79,
+              11
+            ],
+            "clip": null,
+            "color": "#0f172a",
+            "context": "PaintOnlyRendererCandidate Text",
+            "fill": null,
+            "fontSize": 13,
+            "kind": "text",
+            "path": [
+              0,
+              0,
+              6
+            ],
+            "radius": 0,
+            "stroke": null,
+            "strokeWidth": 0,
+            "text": "Shortcuts 0"
+          }
+        ],
+        "format": "path0-paint-output",
+        "height": 251,
+        "outputHash": "sha256:455f2fdf5eda9b3602cbe4f7d944de2a484ebe6e8887ce2ae7e593af519042a3",
+        "schemaVersion": 1,
+        "width": 220
+      }
+    },
+    "render": {
+      "layoutBoxes": 15,
+      "paintCommands": 18,
+      "pngPath": null
+    },
+    "rendererBackend": "path0-renderer-candidate"
+  },
   "readiness": "ready-for-candidate-comparison",
+  "renderTree": {
+    "errors": [],
+    "format": "render-tree-contract",
+    "stableKeyIds": {
+      "Alpha": true,
+      "Beta": true
+    },
+    "summary": {
+      "artifactTargetNodes": 0,
+      "keyedAfterNodes": 6,
+      "keyedBeforeNodes": 6,
+      "minimalNodes": 15,
+      "showAfterNodes": 3,
+      "showBeforeNodes": 3,
+      "showBranchChanged": true,
+      "stableKeyIds": true,
+      "taskBoardNodes": 31
+    }
+  },
   "renderer": {
     "backend": "recording-renderer-candidate",
     "calls": {
-      "count": 28,
-      "hash": "sha256:fd5dcc906fe84f63c5c37328b732f25e3e92d0849c5a6c45ffb5b07861f29a87",
+      "count": 32,
+      "hash": "sha256:d8892f9f9f2f9a8974ded5badca78f0c95af1db7c65cc3e7c310072f7f65a69e",
       "signature": [
         {
-          "layoutBoxes": 12,
+          "layoutBoxes": 15,
           "paintCommands": 0,
           "phase": "layout",
           "subject": "MountedNode"
         },
         {
-          "layoutBoxes": 12,
-          "paintCommands": 16,
+          "layoutBoxes": 15,
+          "paintCommands": 18,
           "phase": "paint",
           "subject": "ShortcutScope"
         },
         {
-          "layoutBoxes": 12,
-          "paintCommands": 17,
+          "layoutBoxes": 15,
+          "paintCommands": 19,
           "phase": "paint",
           "subject": "ShortcutScope"
         },
         {
-          "layoutBoxes": 12,
+          "layoutBoxes": 15,
           "paintCommands": 0,
           "phase": "layout",
           "subject": "MountedNode"
         },
         {
-          "layoutBoxes": 12,
-          "paintCommands": 17,
+          "layoutBoxes": 15,
+          "paintCommands": 19,
           "phase": "paint",
           "subject": "ShortcutScope"
         },
         {
-          "layoutBoxes": 12,
+          "layoutBoxes": 15,
           "paintCommands": 0,
           "phase": "layout",
           "subject": "MountedNode"
         },
         {
-          "layoutBoxes": 12,
-          "paintCommands": 17,
+          "layoutBoxes": 15,
+          "paintCommands": 19,
           "phase": "paint",
           "subject": "ShortcutScope"
         },
         {
-          "layoutBoxes": 12,
+          "layoutBoxes": 15,
           "paintCommands": 0,
           "phase": "layout",
           "subject": "MountedNode"
         },
         {
-          "layoutBoxes": 12,
-          "paintCommands": 17,
+          "layoutBoxes": 15,
+          "paintCommands": 19,
           "phase": "paint",
           "subject": "ShortcutScope"
         },
         {
-          "layoutBoxes": 12,
+          "layoutBoxes": 15,
           "paintCommands": 0,
           "phase": "layout",
           "subject": "MountedNode"
         },
         {
-          "layoutBoxes": 12,
-          "paintCommands": 17,
+          "layoutBoxes": 15,
+          "paintCommands": 19,
           "phase": "paint",
           "subject": "ShortcutScope"
         },
         {
-          "layoutBoxes": 12,
+          "layoutBoxes": 15,
           "paintCommands": 0,
           "phase": "layout",
           "subject": "MountedNode"
         },
         {
-          "layoutBoxes": 12,
-          "paintCommands": 17,
+          "layoutBoxes": 15,
+          "paintCommands": 19,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 15,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 15,
+          "paintCommands": 19,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 15,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 15,
+          "paintCommands": 19,
           "phase": "paint",
           "subject": "ShortcutScope"
         },
@@ -194,8 +3180,16 @@
               "count": 9
             },
             {
+              "capability": "focus",
+              "count": 6
+            },
+            {
               "capability": "input_text",
               "count": 2
+            },
+            {
+              "capability": "key_down",
+              "count": 3
             },
             {
               "capability": "shortcut",
@@ -206,7 +3200,7 @@
               "count": 2
             }
           ],
-          "count": 15,
+          "count": 24,
           "support": "supported"
         }
       ],
@@ -216,19 +3210,35 @@
             "capabilities": [
               {
                 "capability": "click",
-                "count": 9
+                "count": 10
+              },
+              {
+                "capability": "focus",
+                "count": 7
               },
               {
                 "capability": "input_text",
-                "count": 2
+                "count": 3
+              },
+              {
+                "capability": "key_down",
+                "count": 4
+              },
+              {
+                "capability": "key_input",
+                "count": 1
               },
               {
                 "capability": "shortcut",
-                "count": 2
+                "count": 3
+              },
+              {
+                "capability": "tab_focus",
+                "count": 1
               },
               {
                 "capability": "wheel",
-                "count": 2
+                "count": 3
               }
             ],
             "kind": "input",
@@ -242,11 +3252,19 @@
             "widgets": [
               {
                 "count": 1,
+                "name": "FocusScope"
+              },
+              {
+                "count": 1,
                 "name": "For"
               },
               {
                 "count": 7,
                 "name": "HStack"
+              },
+              {
+                "count": 1,
+                "name": "Panel"
               },
               {
                 "count": 2,
@@ -285,7 +3303,7 @@
             "support": "text",
             "widgets": [
               {
-                "count": 16,
+                "count": 17,
                 "name": "Text"
               }
             ]
@@ -293,20 +3311,24 @@
         ]
       },
       "summary": {
-        "inputBindings": 15,
-        "inputCapabilities": 4,
+        "inputBindings": 24,
+        "inputCapabilities": 8,
         "unsupportedInputs": 0,
         "unsupportedWidgets": 0,
-        "widgetInstances": 43,
-        "widgetTypes": 9
+        "widgetInstances": 46,
+        "widgetTypes": 11
       },
       "unsupportedInputs": [],
       "unsupportedWidgets": [],
       "widgets": [
         {
-          "count": 16,
+          "count": 18,
           "support": "container",
           "widgets": [
+            {
+              "count": 1,
+              "name": "FocusScope"
+            },
             {
               "count": 1,
               "name": "For"
@@ -314,6 +3336,10 @@
             {
               "count": 7,
               "name": "HStack"
+            },
+            {
+              "count": 1,
+              "name": "Panel"
             },
             {
               "count": 2,
@@ -348,11 +3374,11 @@
           ]
         },
         {
-          "count": 16,
+          "count": 17,
           "support": "text",
           "widgets": [
             {
-              "count": 16,
+              "count": 17,
               "name": "Text"
             }
           ]
@@ -368,6 +3394,22 @@
           {
             "count": 1,
             "property": "borderStyle"
+          },
+          {
+            "count": 1,
+            "property": "display"
+          },
+          {
+            "count": 1,
+            "property": "fontWeight"
+          },
+          {
+            "count": 1,
+            "property": "margin"
+          },
+          {
+            "count": 1,
+            "property": "opacity"
           }
         ],
         "status": "html-only"
@@ -378,23 +3420,52 @@
         "capabilities": [
           {
             "capability": "click",
-            "count": 9
+            "count": 10
+          },
+          {
+            "capability": "focus",
+            "count": 7
           },
           {
             "capability": "input_text",
-            "count": 2
+            "count": 3
+          },
+          {
+            "capability": "key_down",
+            "count": 4
+          },
+          {
+            "capability": "key_input",
+            "count": 1
           },
           {
             "capability": "shortcut",
-            "count": 2
+            "count": 3
+          },
+          {
+            "capability": "tab_focus",
+            "count": 1
           },
           {
             "capability": "wheel",
-            "count": 2
+            "count": 3
           }
         ],
         "kind": "input",
         "support": "supported"
+      }
+    ],
+    "rendererBoundaries": [
+      {
+        "boundaries": [
+          {
+            "boundary": "paint"
+          },
+          {
+            "boundary": "renderTreeLayout"
+          }
+        ],
+        "kind": "rendererBoundary"
       }
     ],
     "styles": [
@@ -419,6 +3490,22 @@
           },
           {
             "count": 2,
+            "property": "maxHeight"
+          },
+          {
+            "count": 1,
+            "property": "maxWidth"
+          },
+          {
+            "count": 2,
+            "property": "minHeight"
+          },
+          {
+            "count": 1,
+            "property": "minWidth"
+          },
+          {
+            "count": 3,
             "property": "padding"
           },
           {
@@ -426,7 +3513,7 @@
             "property": "scrollY"
           },
           {
-            "count": 4,
+            "count": 5,
             "property": "width"
           }
         ],
@@ -436,8 +3523,34 @@
         "kind": "apply",
         "properties": [
           {
-            "count": 2,
+            "count": 3,
+            "property": "borderWidth"
+          },
+          {
+            "count": 1,
+            "property": "fontSize"
+          }
+        ],
+        "support": "layout+paint"
+      },
+      {
+        "kind": "apply",
+        "properties": [
+          {
+            "count": 3,
             "property": "background"
+          },
+          {
+            "count": 3,
+            "property": "borderColor"
+          },
+          {
+            "count": 3,
+            "property": "borderRadius"
+          },
+          {
+            "count": 1,
+            "property": "color"
           }
         ],
         "support": "paint"
@@ -450,11 +3563,19 @@
         "widgets": [
           {
             "count": 1,
+            "name": "FocusScope"
+          },
+          {
+            "count": 1,
             "name": "For"
           },
           {
             "count": 7,
             "name": "HStack"
+          },
+          {
+            "count": 1,
+            "name": "Panel"
           },
           {
             "count": 2,
@@ -493,7 +3614,7 @@
         "support": "text",
         "widgets": [
           {
-            "count": 16,
+            "count": 17,
             "name": "Text"
           }
         ]
@@ -506,7 +3627,7 @@
     "capabilityAudit": {
       "applied": [
         {
-          "count": 14,
+          "count": 22,
           "properties": [
             {
               "count": 1,
@@ -526,6 +3647,22 @@
             },
             {
               "count": 2,
+              "property": "maxHeight"
+            },
+            {
+              "count": 1,
+              "property": "maxWidth"
+            },
+            {
+              "count": 2,
+              "property": "minHeight"
+            },
+            {
+              "count": 1,
+              "property": "minWidth"
+            },
+            {
+              "count": 3,
               "property": "padding"
             },
             {
@@ -533,18 +3670,44 @@
               "property": "scrollY"
             },
             {
-              "count": 4,
+              "count": 5,
               "property": "width"
             }
           ],
           "support": "layout"
         },
         {
-          "count": 2,
+          "count": 4,
           "properties": [
             {
-              "count": 2,
+              "count": 3,
+              "property": "borderWidth"
+            },
+            {
+              "count": 1,
+              "property": "fontSize"
+            }
+          ],
+          "support": "layout+paint"
+        },
+        {
+          "count": 10,
+          "properties": [
+            {
+              "count": 3,
               "property": "background"
+            },
+            {
+              "count": 3,
+              "property": "borderColor"
+            },
+            {
+              "count": 3,
+              "property": "borderRadius"
+            },
+            {
+              "count": 1,
+              "property": "color"
             }
           ],
           "support": "paint"
@@ -558,6 +3721,22 @@
             {
               "count": 1,
               "property": "borderStyle"
+            },
+            {
+              "count": 1,
+              "property": "display"
+            },
+            {
+              "count": 1,
+              "property": "fontWeight"
+            },
+            {
+              "count": 1,
+              "property": "margin"
+            },
+            {
+              "count": 1,
+              "property": "opacity"
             }
           ],
           "status": "html-only"
@@ -565,11 +3744,27 @@
       ],
       "omittedByStatus": [
         {
-          "count": 1,
+          "count": 5,
           "properties": [
             {
               "count": 1,
               "property": "borderStyle"
+            },
+            {
+              "count": 1,
+              "property": "display"
+            },
+            {
+              "count": 1,
+              "property": "fontWeight"
+            },
+            {
+              "count": 1,
+              "property": "margin"
+            },
+            {
+              "count": 1,
+              "property": "opacity"
             }
           ],
           "status": "html-only"
@@ -577,11 +3772,27 @@
       ],
       "omittedBySupport": [
         {
-          "count": 1,
+          "count": 5,
           "properties": [
             {
               "count": 1,
               "property": "borderStyle"
+            },
+            {
+              "count": 1,
+              "property": "display"
+            },
+            {
+              "count": 1,
+              "property": "fontWeight"
+            },
+            {
+              "count": 1,
+              "property": "margin"
+            },
+            {
+              "count": 1,
+              "property": "opacity"
             }
           ],
           "support": "ignored"
@@ -609,6 +3820,22 @@
             },
             {
               "count": 2,
+              "property": "maxHeight"
+            },
+            {
+              "count": 1,
+              "property": "maxWidth"
+            },
+            {
+              "count": 2,
+              "property": "minHeight"
+            },
+            {
+              "count": 1,
+              "property": "minWidth"
+            },
+            {
+              "count": 3,
               "property": "padding"
             },
             {
@@ -616,7 +3843,7 @@
               "property": "scrollY"
             },
             {
-              "count": 4,
+              "count": 5,
               "property": "width"
             }
           ],
@@ -626,21 +3853,47 @@
           "kind": "apply",
           "properties": [
             {
-              "count": 2,
+              "count": 3,
+              "property": "borderWidth"
+            },
+            {
+              "count": 1,
+              "property": "fontSize"
+            }
+          ],
+          "support": "layout+paint"
+        },
+        {
+          "kind": "apply",
+          "properties": [
+            {
+              "count": 3,
               "property": "background"
+            },
+            {
+              "count": 3,
+              "property": "borderColor"
+            },
+            {
+              "count": 3,
+              "property": "borderRadius"
+            },
+            {
+              "count": 1,
+              "property": "color"
             }
           ],
           "support": "paint"
         }
       ],
       "summary": {
-        "applied": 16,
-        "omitted": 1,
+        "applied": 36,
+        "omitted": 5,
         "unsupported": 0
       },
       "unsupportedProperties": []
     },
-    "classCount": 5,
+    "classCount": 10,
     "directStyleCount": 1,
     "errors": [],
     "format": "otoe-style-ops",

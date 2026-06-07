@@ -121,12 +121,20 @@ The current backend-candidate acceptance bar has three replay surfaces:
 
 New candidates should reproduce those surfaces before adding backend-specific
 layout, paint, text, GPU, or packaging behavior.
+Use `BACKEND_CANDIDATE_GUIDE.md` as the candidate graduation checklist when an
+experiment needs to move from replay proof to capability profile, build gate,
+and offline bundle packaging.
 `examples/native/backend_candidate_skeleton.py` is the first no-dependency
 starting point for that work: it records a candidate adapter run, provides a
 `HeadlessCandidateBackend`, includes a no-dependency `RecordingRendererCandidate`,
 drives the minimal replay and task board replay through `run_native(...)`, and
 returns small acceptance reports with layout, paint, focus, frame,
-renderer-backend, and visible-text summaries. The
+renderer-backend, and visible-text summaries. The file is now a compatibility
+facade; acceptance orchestration lives in `backend_candidate_acceptance.py` and
+CLI argument handling lives in `backend_candidate_cli.py`, with command
+implementations in `backend_candidate_commands.py`, while the historical import
+path and `python -m examples.native.backend_candidate_skeleton` entrypoint
+remain stable. The
 `run_renderer_candidate_acceptance()` helper runs those same replays through the
 renderer SPI and records `layout`, `paint`, and `write_png` calls. The
 `renderer_contract_snapshot_to_dict(...)` helper and
@@ -142,6 +150,20 @@ replay while preserving Python paint and raster output. The
 `LayoutOnlyRendererCandidate`, `PaintOnlyRendererCandidate`, and
 `RasterOnlyRendererCandidate` into `ComposedNativeRendererBackend`, then runs
 the interactive replays plus a PNG smoke so every capability is exercised.
+Path0 now also exposes the `RenderTreeRendererCandidate` boundary:
+`layout_render_tree(...)` consumes already-resolved `RenderTree` IR directly,
+while `run_path0_render_tree_evidence(...)` can inject any backend that
+implements that boundary. This is the first replaceable backend-candidate path
+that does not need `FakeWidget`, `MountedNode`, or `StyleSheet` as the renderer
+input. Backend readiness records that boundary as `renderTreeBoundary`, and
+`path0RenderTreeEvidence` fails if the layout proof only shows a generic
+layout phase without the `renderTree` boundary marker. It also fails when a
+supplied `styleOps` artifact does not resolve to the same styles already
+embedded in the `RenderTree`, or when Path0/renderTreeLayout proofs do not
+carry the input `renderTreeHash`. The same readiness artifact now emits
+`rendererBoundaries` evidence for `renderTreeLayout` and
+`paint`, and backend coverage treats those as first-class claims with their own
+`evidenceMap` entries.
 `--composed-renderer-contract-json` prints that composed contract, and
 `--composed-renderer-png` chooses the PNG smoke path. Add
 `--compact-contract` to either renderer contract command when the desired
@@ -166,6 +188,16 @@ missing-class flags against the compiled `rules` and `directStyles` sections.
 The same JSON includes `capabilityAudit`, which summarizes applied style
 properties by layout/paint support, declared omissions by status/support,
 unsupported properties, and the support categories a backend must replay.
+`directStyles` entries carry both the legacy widget `path` and a stable
+`nodeId`; backend candidates must use `nodeId` for matching direct widget
+styles and treat `path` as a debug/legacy fallback. Path 0 readiness also checks
+that `styleOps` match the resolved `RenderTree` styles and that layout and
+paint style properties produce observable effects in the candidate output, not
+just that the properties appear in the artifact.
+Known UI-kit dynamic classes are added to plan/build only when the target uses
+the UI kit and the stylesheet already defines a matching portable rule; this
+keeps reactive variants from disappearing in hardware builds without turning
+strict styles into a broad, missing-rule safelist.
 Use `--bundle` to point the candidate at an offline build directory; it runs
 `otoe-run.py --verify`, reads `manifest.json`, and replays the generated style
 artifact. Use `--style-artifact` only when you want to bypass bundle
@@ -231,7 +263,7 @@ entries.
 Backend capability profiles are the build/planning view of that same support
 surface. `native-python` is the current default profile, and `native` remains a
 profile-file alias. `otoe plan --backend native-python` records style, widget,
-and input capabilities in `otoe-plan.json`; `otoe plan/build
+input, and renderer-boundary capabilities in `otoe-plan.json`; `otoe plan/build
 --backend-capability-profile path/to/profile.json` does the same for
 experimental JSON candidate profiles. `otoe build` carries the selected
 capability profile into `manifest.json` and `otoe-styles.json`; and `styleOps`
@@ -244,6 +276,12 @@ feed a backend coverage comparison.
 `otoe backend-coverage --requirements backend-readiness.json --backend-capability-profile
 path/to/profile.json` runs that comparison from core CLI, leaving the skeleton
 focused on generating readiness/replay artifacts.
+Add `--audit` when the candidate needs a human-readable trace of every covered,
+missing, or unproven renderer boundary/widget/input/style back to its source,
+gate, boundary proof, and runtime style proof.
+The requirements path should be a backend-readiness report with executed
+`evidence`; requirements-only JSON is treated as insufficient because declared
+coverage is not proof.
 Profiles can make that comparison a normal plan/build gate with
 `[backend].coverage_requirements = "backend-readiness.json"`, or the same path
 can be passed with `--backend-coverage-requirements`. `otoe plan` embeds the
@@ -257,11 +295,11 @@ That keeps the support matrix, planner, bundle, and candidate contract aligned.
 
 `otoe pack` is the final bundle gate before deployment archives: it runs the
 bundle runner verification, including copied-runtime Style IR drift detection,
-checks declared backend coverage reports, repeats strict Style IR validation,
-requires top-level artifacts to be covered by manifest hash entries, rejects
-invalid plan/dependency/style artifacts or runtime-install drift, and includes
-`otoe-backend-coverage.json` when the manifest declares it before writing the
-`.tar.gz`.
+checks declared backend coverage reports and their per-capability `evidenceMap`
+traceability, repeats strict Style IR validation, requires top-level artifacts
+to be covered by manifest hash entries, rejects invalid plan/dependency/style
+artifacts or runtime-install drift, and includes `otoe-backend-coverage.json`
+when the manifest declares it before writing the `.tar.gz`.
 
 ## run_native
 
@@ -295,9 +333,16 @@ promises.
 
 - Component code stays backend-neutral.
 - Renderer tests should prefer `NativeSurface` or `NativeWindowDriver`.
-- Renderer backend candidates should implement `NativeRendererBackend` and pass
-  through the minimal harness, native task board replay, fake adapter replay,
-  renderer-candidate replay, and `tests/test_native_renderer_backend.py`.
+- Partial renderer candidates may implement `NativeRendererBackend` to replace
+  one mounted-tree capability behind the current Python native path.
+- Externally replaceable backend candidates should implement the Path0
+  `RenderTreeRendererCandidate` boundary and prove they consume resolved
+  `RenderTree` IR rather than `FakeWidget`, `MountedNode`, or raw `StyleSheet`
+  internals.
+- Renderer candidates still need to pass through the minimal harness, native
+  task board replay, fake adapter replay, renderer-candidate replay, and
+  `tests/test_native_renderer_backend.py` while the current mounted-tree SPI
+  remains part of the acceptance surface.
 - Partial renderer candidates should use the layout/paint/raster capability
   split and prove which capability they replace.
 - Layout-only candidates must start with the minimal replay, then static

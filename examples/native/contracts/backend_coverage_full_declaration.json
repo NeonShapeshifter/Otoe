@@ -18,6 +18,10 @@
       "tab_focus",
       "wheel"
     ],
+    "rendererBoundaries": [
+      "paint",
+      "renderTreeLayout"
+    ],
     "styles": [
       "alignItems",
       "background",

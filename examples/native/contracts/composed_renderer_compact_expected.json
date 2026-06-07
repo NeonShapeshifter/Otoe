@@ -1,41 +1,53 @@
 {
   "calls": {
     "layout": {
-      "count": 15,
-      "hash": "sha256:59c3c49ef2c57a9b1e654b9ad9a0c1efe1a644f13aa76b712396c666e133fedb",
+      "count": 17,
+      "hash": "sha256:b7aa1abf7f4b310944f2a8b9a4b927b50486b011f2989ec7fc3410225f716310",
       "signature": [
         {
-          "layoutBoxes": 12,
+          "layoutBoxes": 15,
           "paintCommands": 0,
           "phase": "layout",
           "subject": "MountedNode"
         },
         {
-          "layoutBoxes": 12,
+          "layoutBoxes": 15,
           "paintCommands": 0,
           "phase": "layout",
           "subject": "MountedNode"
         },
         {
-          "layoutBoxes": 12,
+          "layoutBoxes": 15,
           "paintCommands": 0,
           "phase": "layout",
           "subject": "MountedNode"
         },
         {
-          "layoutBoxes": 12,
+          "layoutBoxes": 15,
           "paintCommands": 0,
           "phase": "layout",
           "subject": "MountedNode"
         },
         {
-          "layoutBoxes": 12,
+          "layoutBoxes": 15,
           "paintCommands": 0,
           "phase": "layout",
           "subject": "MountedNode"
         },
         {
-          "layoutBoxes": 12,
+          "layoutBoxes": 15,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 15,
+          "paintCommands": 0,
+          "phase": "layout",
+          "subject": "MountedNode"
+        },
+        {
+          "layoutBoxes": 15,
           "paintCommands": 0,
           "phase": "layout",
           "subject": "MountedNode"
@@ -83,13 +95,13 @@
           "subject": "MountedNode"
         },
         {
-          "layoutBoxes": 12,
+          "layoutBoxes": 15,
           "paintCommands": 0,
           "phase": "layout",
           "subject": "MountedNode"
         },
         {
-          "layoutBoxes": 12,
+          "layoutBoxes": 15,
           "paintCommands": 0,
           "phase": "layout",
           "subject": "MountedNode"
@@ -97,48 +109,60 @@
       ]
     },
     "paint": {
-      "count": 18,
-      "hash": "sha256:8b5e0a8c89956190e67e9a17941da74158725450e184aef20f40270e4508d6d7",
+      "count": 20,
+      "hash": "sha256:e608e230d4456f762251b7b448a3b201a71a0d8d78a66d6cdae7dc27f9572436",
       "signature": [
         {
-          "layoutBoxes": 12,
-          "paintCommands": 16,
+          "layoutBoxes": 15,
+          "paintCommands": 18,
           "phase": "paint",
           "subject": "ShortcutScope"
         },
         {
-          "layoutBoxes": 12,
-          "paintCommands": 17,
+          "layoutBoxes": 15,
+          "paintCommands": 19,
           "phase": "paint",
           "subject": "ShortcutScope"
         },
         {
-          "layoutBoxes": 12,
-          "paintCommands": 17,
+          "layoutBoxes": 15,
+          "paintCommands": 19,
           "phase": "paint",
           "subject": "ShortcutScope"
         },
         {
-          "layoutBoxes": 12,
-          "paintCommands": 17,
+          "layoutBoxes": 15,
+          "paintCommands": 19,
           "phase": "paint",
           "subject": "ShortcutScope"
         },
         {
-          "layoutBoxes": 12,
-          "paintCommands": 17,
+          "layoutBoxes": 15,
+          "paintCommands": 19,
           "phase": "paint",
           "subject": "ShortcutScope"
         },
         {
-          "layoutBoxes": 12,
-          "paintCommands": 17,
+          "layoutBoxes": 15,
+          "paintCommands": 19,
           "phase": "paint",
           "subject": "ShortcutScope"
         },
         {
-          "layoutBoxes": 12,
-          "paintCommands": 17,
+          "layoutBoxes": 15,
+          "paintCommands": 19,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 15,
+          "paintCommands": 19,
+          "phase": "paint",
+          "subject": "ShortcutScope"
+        },
+        {
+          "layoutBoxes": 15,
+          "paintCommands": 19,
           "phase": "paint",
           "subject": "ShortcutScope"
         },
@@ -191,20 +215,20 @@
           "subject": "ShortcutScope"
         },
         {
-          "layoutBoxes": 12,
-          "paintCommands": 16,
+          "layoutBoxes": 15,
+          "paintCommands": 18,
           "phase": "paint",
           "subject": "ShortcutScope"
         },
         {
-          "layoutBoxes": 12,
-          "paintCommands": 17,
+          "layoutBoxes": 15,
+          "paintCommands": 19,
           "phase": "paint",
           "subject": "ShortcutScope"
         },
         {
-          "layoutBoxes": 12,
-          "paintCommands": 17,
+          "layoutBoxes": 15,
+          "paintCommands": 19,
           "phase": "paint",
           "subject": "ShortcutScope"
         }
@@ -212,11 +236,11 @@
     },
     "raster": {
       "count": 1,
-      "hash": "sha256:ce17fe1b6dc5e06daaa5352b9931a08a9e6f8efe072c965cf018c2356574d531",
+      "hash": "sha256:cff46b9c0a940eda395f59d63bef38428bbbee02b745ae3d9c00ba2f7e8c0454",
       "signature": [
         {
           "layoutBoxes": 0,
-          "paintCommands": 17,
+          "paintCommands": 19,
           "phase": "write_png",
           "subject": "composed_renderer_candidate.png"
         }
@@ -237,8 +261,16 @@
             "count": 9
           },
           {
+            "capability": "focus",
+            "count": 6
+          },
+          {
             "capability": "input_text",
             "count": 2
+          },
+          {
+            "capability": "key_down",
+            "count": 3
           },
           {
             "capability": "shortcut",
@@ -249,7 +281,7 @@
             "count": 2
           }
         ],
-        "count": 15,
+        "count": 24,
         "support": "supported"
       }
     ],
@@ -259,19 +291,35 @@
           "capabilities": [
             {
               "capability": "click",
-              "count": 9
+              "count": 10
+            },
+            {
+              "capability": "focus",
+              "count": 7
             },
             {
               "capability": "input_text",
-              "count": 2
+              "count": 3
+            },
+            {
+              "capability": "key_down",
+              "count": 4
+            },
+            {
+              "capability": "key_input",
+              "count": 1
             },
             {
               "capability": "shortcut",
-              "count": 2
+              "count": 3
+            },
+            {
+              "capability": "tab_focus",
+              "count": 1
             },
             {
               "capability": "wheel",
-              "count": 2
+              "count": 3
             }
           ],
           "kind": "input",
@@ -285,11 +333,19 @@
           "widgets": [
             {
               "count": 1,
+              "name": "FocusScope"
+            },
+            {
+              "count": 1,
               "name": "For"
             },
             {
               "count": 7,
               "name": "HStack"
+            },
+            {
+              "count": 1,
+              "name": "Panel"
             },
             {
               "count": 2,
@@ -328,7 +384,7 @@
           "support": "text",
           "widgets": [
             {
-              "count": 16,
+              "count": 17,
               "name": "Text"
             }
           ]
@@ -336,20 +392,24 @@
       ]
     },
     "summary": {
-      "inputBindings": 15,
-      "inputCapabilities": 4,
+      "inputBindings": 24,
+      "inputCapabilities": 8,
       "unsupportedInputs": 0,
       "unsupportedWidgets": 0,
-      "widgetInstances": 43,
-      "widgetTypes": 9
+      "widgetInstances": 46,
+      "widgetTypes": 11
     },
     "unsupportedInputs": [],
     "unsupportedWidgets": [],
     "widgets": [
       {
-        "count": 16,
+        "count": 18,
         "support": "container",
         "widgets": [
+          {
+            "count": 1,
+            "name": "FocusScope"
+          },
           {
             "count": 1,
             "name": "For"
@@ -357,6 +417,10 @@
           {
             "count": 7,
             "name": "HStack"
+          },
+          {
+            "count": 1,
+            "name": "Panel"
           },
           {
             "count": 2,
@@ -391,11 +455,11 @@
         ]
       },
       {
-        "count": 16,
+        "count": 17,
         "support": "text",
         "widgets": [
           {
-            "count": 16,
+            "count": 17,
             "name": "Text"
           }
         ]
@@ -410,13 +474,14 @@
         "clipRects": [
           [
             8,
-            98,
+            100,
             200,
             44
           ]
         ],
         "layoutNames": [
           "ShortcutScope",
+          "FocusScope",
           "VStack",
           "Input",
           "HStack",
@@ -425,6 +490,8 @@
           "ScrollView",
           "Button",
           "Button",
+          "Panel",
+          "Text",
           "Text",
           "Text",
           "Text"
@@ -433,12 +500,14 @@
           {
             "path": [
               0,
+              0,
               0
             ],
             "text": "seed"
           },
           {
             "path": [
+              0,
               0,
               1,
               0
@@ -448,6 +517,7 @@
           {
             "path": [
               0,
+              0,
               1,
               1
             ],
@@ -455,6 +525,7 @@
           },
           {
             "path": [
+              0,
               0,
               2,
               0
@@ -464,6 +535,7 @@
           {
             "path": [
               0,
+              0,
               2,
               1
             ],
@@ -472,21 +544,33 @@
           {
             "path": [
               0,
-              3
+              0,
+              3,
+              0
+            ],
+            "text": "Capability Panel"
+          },
+          {
+            "path": [
+              0,
+              0,
+              4
             ],
             "text": "Echo seed"
           },
           {
             "path": [
               0,
-              4
+              0,
+              5
             ],
             "text": "Clicked none"
           },
           {
             "path": [
               0,
-              5
+              0,
+              6
             ],
             "text": "Shortcuts 0"
           }
@@ -498,15 +582,15 @@
       ],
       "frame": 2,
       "hashes": {
-        "frame": "sha256:0b7fd2b4bc877381532beb823dcf36ed786cea948813114ff5b190b30081d274",
-        "layout": "sha256:e4bda0797cc159a63d8304dcb308edb518425afa708fc1bc9b780b2b0cf840e4",
-        "paint": "sha256:2917e7986a04cdfc5fd21ebd12a028c7a6e5e051877f4b8f2abdf54d6412d8b3",
-        "visibleText": "sha256:8bb81b1ba654dbd0e02038ee17a3d76a02ae6db206cd8e1f5a1d4f97ff07b81a"
+        "frame": "sha256:013286d89395f50df3900a89e218a8abfefcd53affbbaef9a72131e670d38242",
+        "layout": "sha256:8206f2fe81619c204d9189f17319d9e41801382f404286eee0b6425501616fc3",
+        "paint": "sha256:c0f7f8ac76ac00e887f2e776aaeff95df552f368dec28dc61a2405df7f87e82c",
+        "visibleText": "sha256:07a55961cfc092a0abf03e14e065f659009ad8018f8a890cc7188568cb67b45f"
       },
       "label": "png_smoke",
-      "layoutBoxes": 12,
-      "layoutSignature": "sha256:7829cfaa280651d7d91121f2b2d60169cab340bbcf6898b5079b93c373f01a4d",
-      "paintCommands": 17,
+      "layoutBoxes": 15,
+      "layoutSignature": "sha256:a7dbe9e04955ed6c25e6f88082476bc6e2018bacaa329a2c8ca4536c2ca69700",
+      "paintCommands": 19,
       "paintKinds": [
         "rect",
         "rect",
@@ -522,15 +606,17 @@
         "text",
         "rect",
         "text",
+        "rect",
+        "text",
         "text",
         "text",
         "text"
       ],
-      "paintSignature": "sha256:c2800e5879e538a7de171861488d137d6196637d80fbbd5cdec830dea726740f",
+      "paintSignature": "sha256:ee4ebe56e05dd3a6116b68ffdd236b597eee8e1d94e3d5af766f3b66d5f1fa91",
       "rootName": "ShortcutScope",
       "size": [
         220,
-        222
+        251
       ],
       "visibleText": [
         "seed",
@@ -538,6 +624,7 @@
         "Two",
         "First",
         "Second",
+        "Capability Panel",
         "Echo seed",
         "Clicked none",
         "Shortcuts 0"
@@ -553,13 +640,14 @@
           "clipRects": [
             [
               8,
-              98,
+              100,
               200,
               44
             ]
           ],
           "layoutNames": [
             "ShortcutScope",
+            "FocusScope",
             "VStack",
             "Input",
             "HStack",
@@ -568,6 +656,8 @@
             "ScrollView",
             "Button",
             "Button",
+            "Panel",
+            "Text",
             "Text",
             "Text",
             "Text"
@@ -576,12 +666,14 @@
             {
               "path": [
                 0,
+                0,
                 0
               ],
               "text": "alpha"
             },
             {
               "path": [
+                0,
                 0,
                 1,
                 0
@@ -591,6 +683,7 @@
             {
               "path": [
                 0,
+                0,
                 1,
                 1
               ],
@@ -598,6 +691,7 @@
             },
             {
               "path": [
+                0,
                 0,
                 2,
                 0
@@ -607,6 +701,7 @@
             {
               "path": [
                 0,
+                0,
                 2,
                 1
               ],
@@ -615,21 +710,33 @@
             {
               "path": [
                 0,
-                3
+                0,
+                3,
+                0
+              ],
+              "text": "Capability Panel"
+            },
+            {
+              "path": [
+                0,
+                0,
+                4
               ],
               "text": "Echo alpha"
             },
             {
               "path": [
                 0,
-                4
+                0,
+                5
               ],
               "text": "Clicked two"
             },
             {
               "path": [
                 0,
-                5
+                0,
+                6
               ],
               "text": "Shortcuts 1"
             }
@@ -639,17 +746,17 @@
           "Button",
           "Two"
         ],
-        "frame": 6,
+        "frame": 8,
         "hashes": {
-          "frame": "sha256:ac31337e695cd0bfbe225b9ba4be6709882ca9264d1673d662241fa718ad24a4",
-          "layout": "sha256:6c85a0592bee7dce5c190ea283d479116480c09a727f5ab00ec96ae297e791d4",
-          "paint": "sha256:5c47dc7cfcc7533aa8f296038531c890053010c806d76acca11c3eaf51450202",
-          "visibleText": "sha256:d437f5cad52133a0f3532a778c37f1551e57d1696a96f06fdf43b5c4d4cbc75d"
+          "frame": "sha256:1dbacd3064e4a7fa5efdd37cded18502ca6863a96ec834b42f855dd943aab827",
+          "layout": "sha256:3f5358c91d814f141da8afb1a37dc0ed7c513750cfb44a6669f6d2979b69a055",
+          "paint": "sha256:b119700c9cd35f5a9624d2c2aaa19731ab3d317c560639e35bd95f896b22b181",
+          "visibleText": "sha256:253b4caa722b81438f2ba16a5f420e966e5149bf74cb5fc4fc40863ec0ea8d7d"
         },
         "label": "after",
-        "layoutBoxes": 12,
-        "layoutSignature": "sha256:71b0dd9193713b4da182a1f65c2e963038a20e7af7bf1a1ee6446a77c7b4aa16",
-        "paintCommands": 17,
+        "layoutBoxes": 15,
+        "layoutSignature": "sha256:c8ddc7e1a413ee4ebe0c6901445b396caa619ae48cc0322657630e68d91fd4a4",
+        "paintCommands": 19,
         "paintKinds": [
           "rect",
           "rect",
@@ -665,15 +772,17 @@
           "text",
           "rect",
           "text",
+          "rect",
+          "text",
           "text",
           "text",
           "text"
         ],
-        "paintSignature": "sha256:25648fcaa2d03ec571b64cd852575459e16a5885fb88558f6a46687d017960db",
+        "paintSignature": "sha256:6c42a9618ab10d8331d767ee7e1d4bd8f0db763586decf90a4439e65f6131d6f",
         "rootName": "ShortcutScope",
         "size": [
           220,
-          222
+          251
         ],
         "visibleText": [
           "alpha",
@@ -681,6 +790,7 @@
           "Two",
           "First",
           "Second",
+          "Capability Panel",
           "Echo alpha",
           "Clicked two",
           "Shortcuts 1"
@@ -692,13 +802,14 @@
           "clipRects": [
             [
               8,
-              98,
+              100,
               200,
               44
             ]
           ],
           "layoutNames": [
             "ShortcutScope",
+            "FocusScope",
             "VStack",
             "Input",
             "HStack",
@@ -707,6 +818,8 @@
             "ScrollView",
             "Button",
             "Button",
+            "Panel",
+            "Text",
             "Text",
             "Text",
             "Text"
@@ -715,12 +828,14 @@
             {
               "path": [
                 0,
+                0,
                 0
               ],
               "text": "seed"
             },
             {
               "path": [
+                0,
                 0,
                 1,
                 0
@@ -730,6 +845,7 @@
             {
               "path": [
                 0,
+                0,
                 1,
                 1
               ],
@@ -737,6 +853,7 @@
             },
             {
               "path": [
+                0,
                 0,
                 2,
                 0
@@ -746,6 +863,7 @@
             {
               "path": [
                 0,
+                0,
                 2,
                 1
               ],
@@ -754,21 +872,33 @@
             {
               "path": [
                 0,
-                3
+                0,
+                3,
+                0
+              ],
+              "text": "Capability Panel"
+            },
+            {
+              "path": [
+                0,
+                0,
+                4
               ],
               "text": "Echo seed"
             },
             {
               "path": [
                 0,
-                4
+                0,
+                5
               ],
               "text": "Clicked none"
             },
             {
               "path": [
                 0,
-                5
+                0,
+                6
               ],
               "text": "Shortcuts 0"
             }
@@ -780,15 +910,15 @@
         ],
         "frame": 1,
         "hashes": {
-          "frame": "sha256:8166ab64ee1d023913a9e3b3fe1bd0679cadcade88f6c1ae53b3c8a3ac4678b3",
-          "layout": "sha256:e4bda0797cc159a63d8304dcb308edb518425afa708fc1bc9b780b2b0cf840e4",
-          "paint": "sha256:2917e7986a04cdfc5fd21ebd12a028c7a6e5e051877f4b8f2abdf54d6412d8b3",
-          "visibleText": "sha256:8bb81b1ba654dbd0e02038ee17a3d76a02ae6db206cd8e1f5a1d4f97ff07b81a"
+          "frame": "sha256:0da4fc4a2ee416984c79e224024b046ea72cacfec0a5bff6e307ac075f857fe8",
+          "layout": "sha256:8206f2fe81619c204d9189f17319d9e41801382f404286eee0b6425501616fc3",
+          "paint": "sha256:c0f7f8ac76ac00e887f2e776aaeff95df552f368dec28dc61a2405df7f87e82c",
+          "visibleText": "sha256:07a55961cfc092a0abf03e14e065f659009ad8018f8a890cc7188568cb67b45f"
         },
         "label": "before",
-        "layoutBoxes": 12,
-        "layoutSignature": "sha256:7829cfaa280651d7d91121f2b2d60169cab340bbcf6898b5079b93c373f01a4d",
-        "paintCommands": 17,
+        "layoutBoxes": 15,
+        "layoutSignature": "sha256:a7dbe9e04955ed6c25e6f88082476bc6e2018bacaa329a2c8ca4536c2ca69700",
+        "paintCommands": 19,
         "paintKinds": [
           "rect",
           "rect",
@@ -804,15 +934,17 @@
           "text",
           "rect",
           "text",
+          "rect",
+          "text",
           "text",
           "text",
           "text"
         ],
-        "paintSignature": "sha256:c2800e5879e538a7de171861488d137d6196637d80fbbd5cdec830dea726740f",
+        "paintSignature": "sha256:ee4ebe56e05dd3a6116b68ffdd236b597eee8e1d94e3d5af766f3b66d5f1fa91",
         "rootName": "ShortcutScope",
         "size": [
           220,
-          222
+          251
         ],
         "visibleText": [
           "seed",
@@ -820,6 +952,7 @@
           "Two",
           "First",
           "Second",
+          "Capability Panel",
           "Echo seed",
           "Clicked none",
           "Shortcuts 0"

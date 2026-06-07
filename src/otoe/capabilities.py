@@ -17,6 +17,7 @@ class BackendCapabilityProfile:
     style_support: Mapping[str, str]
     widget_support: Mapping[str, str]
     input_support: Mapping[str, str]
+    renderer_boundary_support: Mapping[str, str]
 
     def style(self, name: str) -> str | None:
         return self.style_support.get(name)
@@ -27,6 +28,9 @@ class BackendCapabilityProfile:
     def input(self, name: str) -> str | None:
         return self.input_support.get(name)
 
+    def renderer_boundary(self, name: str) -> str | None:
+        return self.renderer_boundary_support.get(name)
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
@@ -34,6 +38,9 @@ class BackendCapabilityProfile:
             "styles": dict(sorted(self.style_support.items())),
             "widgets": dict(sorted(self.widget_support.items())),
             "inputs": dict(sorted(self.input_support.items())),
+            "rendererBoundaries": dict(
+                sorted(self.renderer_boundary_support.items())
+            ),
         }
 
     def coverage_declaration(self) -> dict[str, Any]:
@@ -62,6 +69,11 @@ class BackendCapabilityProfile:
                     for name, support in self.style_support.items()
                     if support == "ignored"
                 ),
+                "rendererBoundaries": sorted(
+                    name
+                    for name, support in self.renderer_boundary_support.items()
+                    if support == "supported"
+                ),
             },
         }
 
@@ -69,6 +81,7 @@ class BackendCapabilityProfile:
 STYLE_SUPPORT_VALUES = frozenset({"layout", "paint", "layout+paint", "ignored"})
 WIDGET_SUPPORT_VALUES = frozenset({"container", "control", "text"})
 INPUT_SUPPORT_VALUES = frozenset({"supported", "deferred"})
+RENDERER_BOUNDARY_SUPPORT_VALUES = frozenset({"supported", "deferred"})
 
 NATIVE_LAYOUT_STYLE_PROPERTIES = frozenset(
     {
@@ -151,6 +164,10 @@ NATIVE_INPUT_SUPPORT = {
     "text_selection": "deferred",
     "uncontrolled_input": "deferred",
 }
+NATIVE_RENDERER_BOUNDARY_SUPPORT = {
+    "paint": "supported",
+    "renderTreeLayout": "supported",
+}
 
 
 NATIVE_PYTHON_CAPABILITY_PROFILE = BackendCapabilityProfile(
@@ -159,6 +176,7 @@ NATIVE_PYTHON_CAPABILITY_PROFILE = BackendCapabilityProfile(
     style_support=NATIVE_STYLE_SUPPORT,
     widget_support=NATIVE_WIDGET_SUPPORT,
     input_support=NATIVE_INPUT_SUPPORT,
+    renderer_boundary_support=NATIVE_RENDERER_BOUNDARY_SUPPORT,
 )
 
 BACKEND_CAPABILITY_PROFILES = {
@@ -237,6 +255,13 @@ def backend_capability_profile_from_dict(
             values=INPUT_SUPPORT_VALUES,
             source=source,
         ),
+        renderer_boundary_support=_profile_support_map(
+            payload,
+            key="rendererBoundaries",
+            values=RENDERER_BOUNDARY_SUPPORT_VALUES,
+            source=source,
+            required=False,
+        ),
     )
 
 
@@ -263,7 +288,10 @@ def _profile_support_map(
     key: str,
     values: frozenset[str],
     source: str,
+    required: bool = True,
 ) -> dict[str, str]:
+    if key not in payload and not required:
+        return {}
     section = payload.get(key)
     if not isinstance(section, dict):
         raise CapabilityProfileError(f"{source}: {key} must be an object")

@@ -1,6 +1,6 @@
 # ADR-018: Offline Profile Build Planner
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** May 28, 2026
 
 ## Context
@@ -20,6 +20,12 @@ development/build machine before anything is deployed to constrained hardware.
 Introduce an offline profile planner and build path before treating hardware
 deployment as a product workflow.
 
+The first slice of this decision is implemented: plan/deps/build/pack, strict
+bundle verification, hermetic packable paths, Style IR/styleOps artifacts, and
+backend coverage gates exist. The remaining work is turning the renderer
+candidate boundary into a stable external ABI and adding stronger offline
+dependency closure tooling beyond audit-only package checks.
+
 The first diagnostic slice exists as `otoe plan`. The broader command shape is:
 
 ```bash
@@ -34,8 +40,9 @@ otoe pack dist/cage --out dist/cage.tar.gz
 `otoe plan` is implemented as an import/mount/style diagnostic. It supports a
 machine-readable `--json` report, `--out` JSON artifact, and an optional
 `otoe.profile.toml` manifest. `otoe deps` is implemented as an audit-only
-dependency check for profile-declared packages and Otoe extras. It does not
-install packages, touch the network, or write artifacts when run directly.
+dependency check for profile-declared packages, Otoe extras, and static external
+imports found in discovered local runtime files. It does not install packages,
+touch the network, import the app target, or write artifacts when run directly.
 `otoe build` is implemented as a minimal bundle contract that writes
 `otoe-plan.json`, `otoe-deps.json`, `otoe-styles.json`, selected
 `frameworkFiles`, and `manifest.json`, plus a generated `otoe-run.py` runner.
@@ -45,7 +52,8 @@ import discovery.
 `otoe-run.py --verify` checks bundle integrity plus strict Style IR drift
 detection through copied runtime code. `otoe pack` is implemented as a
 verify-before-archive step that repeats strict Style IR validation, then creates
-a portable `.tar.gz` from the generated bundle without local cache directories.
+a portable `.tar.gz` from the generated bundle without local cache directories
+or unmanifested files in packable bundle directories.
 
 The initial profile file shape is:
 
@@ -77,9 +85,13 @@ Asset and runtime file paths must be relative files and must not contain `.` or
 when they do not appear in the first mounted render. Each entry is one class
 name, not a space-separated class list. Explicit CLI flags override the profile
 file. `allow_runtime_installs = true` is invalid for `cage`. Dependency package
-and extra names are explicit build-machine requirements. Missing packages are
-reported by `otoe deps` so the developer can install them manually before
-building or deploying.
+and extra names are explicit build-machine requirements. Missing packages and
+undeclared static external imports are reported by `otoe deps` so the developer
+can install or declare them manually before building or deploying. When package
+metadata maps an import module to a different distribution name, the declared
+dependency should be the distribution package, such as `Pillow` for
+`import PIL`; imports with no installed package metadata are reported without package
+candidates.
 
 Profiles are explicit build targets. A `cage` or hardware profile would declare
 the renderer/backend candidate, allowed style surface, asset policy, optional
@@ -88,10 +100,11 @@ deployment artifact is built.
 
 `otoe build` should emit an offline bundle containing:
 
-- app code/runtime files copied from a simple local target module such as
-  `app.py` for `app:app`, simple same-directory imports such as
-  `import helpers` or `from helpers import view`, plus explicit `[runtime]
-  files` entries for package code, dynamic import edges, and extra files, with
+- app code/runtime files copied from a local target module or package such as
+  `app.py` for `app:app` or `workspace_pkg/app.py` for
+  `workspace_pkg.app:app`, static local imports such as `import helpers`,
+  `from helpers import view`, or `from .views import card`, plus explicit
+  `[runtime] files` entries for dynamic import edges and extra files, with
   `runtimeFiles` manifest entries containing source path, bundle path, byte
   size, and SHA-256
 - selected backend/runtime framework files copied under `framework/` with
@@ -116,7 +129,8 @@ deployment artifact is built.
   target, and drive native layout/paint with bundled styles
 - a deployment archive step, currently `otoe pack`, that runs the generated
   runner in `--verify` mode, repeats strict Style IR validation, preserves
-  declared backend coverage artifacts, writes a top-level bundle `.tar.gz`, and
+  declared backend coverage artifacts, rejects unmanifested packable files under
+  `app/`, `assets/`, and `framework/`, writes a top-level bundle `.tar.gz`, and
   excludes local cache directories such as `__pycache__/` and `.pytest_cache/`
 - assets copied for the profile with manifest entries containing source path,
   bundle path, byte size, and SHA-256
@@ -127,20 +141,30 @@ deployment artifact is built.
   low-level `styleOps` tied to the selected backend capability profile that
   backend candidates can consume without re-parsing CSS on the target device
 - a dependency audit artifact, currently `otoe-deps.json`, proving that
-  profile-declared dependencies passed on the build machine
+  profile-declared dependencies and static external runtime imports passed on
+  the build machine, with `resolution.mode = "audit-only"` and no lockfile or
+  wheel closure claim
 - an optional backend coverage gate, currently declared with
   `[backend].coverage_requirements` or `--backend-coverage-requirements`, that
   compares the selected backend capability profile against a
-  readiness/requirements JSON artifact and writes `otoe-backend-coverage.json`
-  before the bundle manifest is allowed
+  readiness/requirements JSON artifact, validates strict evidence source/gate
+  metadata plus Path 0 runtime style proof for each declared support phase, and
+  writes
+  `otoe-backend-coverage.json` before the bundle manifest is allowed
 - diagnostics for portable, html-only, deferred, and invalid styling
-- lock/manifest metadata for reproducibility
+- manifest/hash metadata for reproducibility; dependency lockfiles and wheel
+  closure remain future work outside the current audit-only gate
 
 No runtime dependency installs are allowed on the hardware target. The current
 contract is audit-only: `otoe deps` shows which declared packages or extras are
-missing from the development/build environment, and the user decides how to
-install them. It should not infer arbitrary imports or install packages on the
-device while the app is running.
+missing from the development/build environment and which static external
+imports are not declared in `[deps] packages`. It also reports visible
+`importlib.import_module(...)` and `__import__(...)` dynamic import calls as
+warnings, including literal module names when they are statically available.
+`otoe-deps.json` records this as `resolution.mode = "audit-only"` with no
+lockfile or wheel closure. The user decides how to install or declare them. It
+should not infer arbitrary dynamic imports, guess unknown distribution names, or
+install packages on the device while the app is running.
 
 ## Style Compilation
 
@@ -150,8 +174,17 @@ The style path should compile before deployment:
 - Resolve tokens and class combinations ahead of runtime when possible.
 - Emit low-level `styleOps` for portable declarations so native and hardware
   backends can apply resolved operations instead of interpreting CSS text.
-- Statically extract literal class tokens from simple local target modules and
-  same-directory imports, including conditional literal branches inside
+  The generated runner currently rehydrates a `StyleSheet` from that primitive
+  stream before calling the Python native renderer; this proves CSS text is not
+  required at bundle runtime. Renderer candidates receive a separate
+  `RenderTree` IR v0 boundary with normalized props/events/state and
+  `ResolvedStyleMap` values rehydrated from `styleOps`; backend readiness
+  replays minimal, task board, keyed reorder, and `Show` branch tree shapes.
+  The artifact-backed path can verify a bundle, load the target from
+  `manifest.json`, and render that target through the same `styleOps` to
+  `ResolvedStyleMap` boundary. That tree is not yet a stable Skia/Taffy/Qt ABI.
+- Statically extract literal class tokens from local target modules/packages and
+  static local imports, including conditional literal branches inside
   `className` expressions.
 - Compile profile safelist classes ahead of runtime so dynamic state classes can
   be selected on-device without parsing arbitrary CSS.

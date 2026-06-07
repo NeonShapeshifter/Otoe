@@ -1,8 +1,15 @@
 import pytest
 
-from otoe import Text, VStack, css, layout_native, mount, render_html
+from otoe import For, HStack, Text, VStack, css, layout_native, mount, render_html
+from otoe import signal, unmount
 from otoe.plan import plan_mounted, plan_to_dict
-from otoe.style import StyleSyntaxError, stylesheet_from_artifact
+from otoe.style import (
+    StyleSyntaxError,
+    resolved_style_map_from_style_ops_artifact,
+    stylesheet_from_artifact,
+    stylesheet_from_style_ops_artifact,
+)
+from otoe.render_ir import render_tree_from_target, walk_render_nodes
 from otoe.style_ir import compiled_styles_to_dict
 from otoe.style_ops import (
     STYLE_IR_SCHEMA_VERSION,
@@ -192,6 +199,47 @@ def test_style_ir_replays_low_level_style_ops_without_source_css():
     )
 
 
+def test_stylesheet_from_style_ops_artifact_uses_primitive_ops_not_rules():
+    stylesheet = css(".shell { color: #111827; padding: 8; }\n")
+    mounted = mount(VStack(Text("Ops"), className="shell"))
+    plan = plan_mounted(mounted, stylesheet=stylesheet)
+    payload = compiled_styles_to_dict(
+        plan,
+        target="app:app",
+        stylesheet=stylesheet,
+    )
+    payload["rules"][0]["declarations"]["color"] = {
+        "type": "literal",
+        "value": "#dc2626",
+    }
+
+    rules_stylesheet = stylesheet_from_artifact(payload, strict=False)
+    style_ops_stylesheet = stylesheet_from_style_ops_artifact(payload, strict=False)
+
+    assert rules_stylesheet.resolve("shell")["color"] == "#dc2626"
+    assert style_ops_stylesheet.resolve("shell")["color"] == "#111827"
+
+
+def test_resolved_style_map_from_style_ops_artifact_uses_primitive_ops_not_rules():
+    stylesheet = css(".shell { color: #111827; padding: 8; }\n")
+    mounted = mount(VStack(Text("Resolved"), className="shell"))
+    plan = plan_mounted(mounted, stylesheet=stylesheet)
+    payload = compiled_styles_to_dict(
+        plan,
+        target="app:app",
+        stylesheet=stylesheet,
+    )
+    payload["rules"][0]["declarations"]["color"] = {
+        "type": "literal",
+        "value": "#dc2626",
+    }
+
+    style_map = resolved_style_map_from_style_ops_artifact(payload, strict=False)
+
+    assert style_map.resolve("shell")["color"] == "#111827"
+    assert style_map.resolve("shell")["padding"] == stylesheet.resolve("shell")["padding"]
+
+
 def test_style_ir_compiles_direct_styles_by_widget_path():
     mounted = mount(
         VStack(
@@ -212,6 +260,10 @@ def test_style_ir_compiles_direct_styles_by_widget_path():
 
     assert payload["directStyleCounts"]["portable"] == 3
     assert [entry["path"] for entry in plan_payload["directStyles"]] == [[], [0]]
+    assert [entry["nodeId"] for entry in plan_payload["directStyles"]] == [
+        "root:VStack",
+        "root:VStack/index:0:Text",
+    ]
     assert plan_payload["directStyles"][0]["declarations"]["gap"] == {
         "type": "literal",
         "value": 4,
@@ -219,6 +271,7 @@ def test_style_ir_compiles_direct_styles_by_widget_path():
     assert direct_styles == [
         {
             "path": [],
+            "nodeId": "root:VStack",
             "widget": "VStack",
             "declarations": {
                 "gap": {"type": "size", "value": 4, "unit": "px"},
@@ -228,6 +281,7 @@ def test_style_ir_compiles_direct_styles_by_widget_path():
         },
         {
             "path": [0],
+            "nodeId": "root:VStack/index:0:Text",
             "widget": "Text",
             "declarations": {
                 "color": {"type": "literal", "value": "#dc2626"},
@@ -238,6 +292,7 @@ def test_style_ir_compiles_direct_styles_by_widget_path():
     assert direct_ops == [
         {
             "path": [],
+            "nodeId": "root:VStack",
             "widget": "VStack",
             "ops": [
                 {
@@ -257,6 +312,7 @@ def test_style_ir_compiles_direct_styles_by_widget_path():
         },
         {
             "path": [0],
+            "nodeId": "root:VStack/index:0:Text",
             "widget": "Text",
             "ops": [
                 {
@@ -277,8 +333,100 @@ def test_style_ir_compiles_direct_styles_by_widget_path():
 
     assert replay.errors == ()
     assert replay.path == ()
+    assert replay.node_id == "root:VStack"
     assert replay.widget == "VStack"
     assert replay.applied_declarations == direct_styles[0]["declarations"]
+
+
+def test_style_ir_direct_styles_keep_stable_node_ids_across_for_reorder():
+    items = signal(
+        [
+            {"id": "alpha", "label": "Alpha"},
+            {"id": "beta", "label": "Beta"},
+        ]
+    )
+    mounted = mount(
+        VStack(
+            For(
+                each=items,
+                key=lambda item: item["id"],
+                children=lambda item: HStack(Text(item["label"], color="#dc2626")),
+            )
+        )
+    )
+
+    try:
+        before = _direct_style_by_key(mounted, "alpha")
+        items.set(
+            [
+                {"id": "beta", "label": "Beta"},
+                {"id": "alpha", "label": "Alpha"},
+            ]
+        )
+        after = _direct_style_by_key(mounted, "alpha")
+    finally:
+        unmount(mounted)
+
+    assert before["nodeId"] == after["nodeId"]
+    assert before["path"] != after["path"]
+    assert before["nodeId"].endswith('/key:"alpha":HStack/index:0:Text')
+
+
+def test_style_ir_direct_style_node_ids_match_render_tree_ids():
+    items = signal(
+        [
+            {"id": "alpha", "label": "Alpha"},
+            {"id": "beta", "label": "Beta"},
+        ]
+    )
+    mounted = mount(
+        VStack(
+            For(
+                each=items,
+                key=lambda item: item["id"],
+                children=lambda item: HStack(Text(item["label"], color="#dc2626")),
+            ),
+            gap=4,
+        )
+    )
+
+    try:
+        plan_payload = plan_to_dict(
+            plan_mounted(mounted, stylesheet=None),
+            target="app:app",
+        )
+        render_tree = render_tree_from_target(mounted)
+    finally:
+        unmount(mounted)
+
+    render_ids_by_path = {
+        node.path: node.node_id
+        for node in walk_render_nodes(render_tree.root)
+    }
+    for direct_style in plan_payload["directStyles"]:
+        assert direct_style["nodeId"] == render_ids_by_path[
+            tuple(direct_style["path"])
+        ]
+
+
+def test_style_ir_runtime_prefers_direct_style_node_id_over_path():
+    mounted = mount(VStack(Text("Node mapped", color="#dc2626")))
+    try:
+        plan = plan_mounted(mounted, stylesheet=None)
+        payload = compiled_styles_to_dict(
+            plan,
+            target="app:app",
+            stylesheet=None,
+        )
+        payload["directStyles"][0]["path"] = [99]
+        payload["styleOps"]["directStyles"][0]["path"] = [99]
+
+        style_map = resolved_style_map_from_style_ops_artifact(payload)
+        tree = render_tree_from_target(mounted, style_map=style_map)
+    finally:
+        unmount(mounted)
+
+    assert tree.root.children[0].style_dict()["color"] == "#dc2626"
 
 
 def test_style_ir_loads_and_applies_artifact_primitives():
@@ -455,6 +603,29 @@ def test_style_ir_validation_rejects_invalid_direct_and_omitted_value_payloads()
     )
 
 
+def test_style_ir_validation_requires_direct_style_node_id():
+    mounted = mount(VStack(Text("Direct node id"), padding=8))
+    plan = plan_mounted(mounted, stylesheet=None)
+    payload = compiled_styles_to_dict(
+        plan,
+        target="app:app",
+        stylesheet=None,
+    )
+    payload["styleOps"]["directStyles"][0].pop("nodeId")
+
+    validation = validate_style_ops(payload)
+
+    assert validation.passed is False
+    assert (
+        "styleOps directStyles nodeId must be a non-empty string"
+        in validation.errors
+    )
+    assert (
+        "styleOps missing directStyles from compiled artifact: 'root:VStack'"
+        in validation.errors
+    )
+
+
 def test_stylesheet_from_artifact_rejects_style_ops_drift_by_default():
     stylesheet = css(".shell { padding: 8; color: #111827; }\n")
     mounted = mount(VStack(Text("Drift"), className="shell"))
@@ -563,4 +734,19 @@ def test_style_ir_replay_reports_invalid_primitive_ops():
     assert (
         "styleOps class 'bad' omitted op 0 must use op='omitStyle'"
         in replay.errors
+    )
+
+
+def _direct_style_by_key(mounted, key):
+    plan = plan_mounted(mounted, stylesheet=None)
+    payload = compiled_styles_to_dict(
+        plan,
+        target="app:app",
+        stylesheet=None,
+    )
+    marker = f'/key:"{key}":'
+    return next(
+        entry
+        for entry in payload["directStyles"]
+        if marker in entry["nodeId"]
     )

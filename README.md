@@ -74,12 +74,28 @@ stable public framework or a production desktop renderer.
 The native path is currently a deterministic headless renderer spike. It can
 layout mounted Otoe trees, emit paint commands, write PNG preview frames, and
 exercise click, focus, keyboard, input, and scroll dispatch through
-`NativeSurface`.
+`NativeSurface`. Backend candidates can now consume `RenderTree` IR v0, which
+normalizes mounted widgets into stable node IDs, serializable props/events/state,
+and `ResolvedStyleMap` values rehydrated from `styleOps` before candidate
+layout runs. Path0 evidence verifies that any supplied `styleOps` artifact
+resolves to the same styles embedded in that `RenderTree` before readiness can
+count the style runtime as proven, and Path0 layout proofs carry the input
+`renderTreeHash` so renderer-boundary evidence cannot be reused against a
+different tree. `validate_render_tree(...)` and
+`assert_render_tree_valid(...)` check that boundary before Path0 layout/paint
+work starts, and
+`render_tree_from_dict(...)` plus `load_render_tree_artifact(...)` load
+serialized `RenderTree` JSON back into the validated IR. Backend readiness also
+includes a `RenderTree` contract fixture for minimal, task board, keyed reorder,
+and `Show` branch shapes, plus artifact-backed paths that can load explicit
+`--render-tree-artifact` JSON files or verify a bundle and load the target from
+`manifest.json`.
 
 This is enough for renderer tests, visual fixtures, and early framework API
 validation. It is not yet a production desktop backend: there is no GPU
 renderer, platform accessibility tree, text shaping engine, retained windowing
-backend, or backend compatibility promise. See
+backend, stable Skia/Taffy/Qt ABI, or production backend compatibility promise.
+See
 `ADR-012-native-backend-boundary.md` for the backend boundary and
 `ADR-013-native-layout-hardening.md` for the current layout-hardening contract.
 `ADR-014-native-overflow-clipping.md` defines the current overflow policy:
@@ -188,6 +204,7 @@ python -m otoe backend-profile native-python
 python -m otoe backend-profile --backend-capability-profile backend-profile.json --json
 python -m otoe backend-profile --backend-capability-profile backend-profile.json --coverage-declaration --out backend-coverage-declaration.json
 python -m otoe backend-coverage --requirements examples/native/contracts/backend_readiness_expected.json --backend native-python
+python -m otoe backend-coverage --requirements examples/native/contracts/backend_readiness_expected.json --backend native-python --audit
 python -m otoe backend-coverage --requirements examples/native/contracts/backend_readiness_expected.json --backend-capability-profile backend-profile.json --out backend-coverage.json
 python -m otoe deps app:app --profile-file otoe.profile.toml --json
 ```
@@ -201,7 +218,27 @@ JSON as the first plan artifact.
 `otoe backend-profile` inspects the built-in `native-python` profile or a
 candidate JSON profile and can emit the matching coverage declaration without
 running a renderer replay. `otoe backend-coverage` compares that profile or an
-explicit coverage declaration against a readiness/requirements JSON artifact.
+explicit coverage declaration against a backend-readiness JSON artifact. This is
+a declaration/evidence report, not proof of a production backend by itself:
+required items must be exercised by readiness evidence, declared support is
+treated as claimed by the profile, and extra claims are reported as unproven
+until a replay artifact exercises them. Requirements-only JSON is not evidence.
+Coverage validates the evidence contract: exercised groups need source/gate
+metadata, their gates must be passing, widget/input proofs must match the
+renderer capability audit, and style evidence must carry runtime Path 0 proof
+from `styleOps` plus layout/paint observations for each property's declared
+support phase. Declared style omissions must stay omitted from runtime
+layout/paint style evidence. Invalid evidence groups do not count as exercised
+coverage, so malformed proof cannot inflate `covered` support counts.
+Each coverage section also carries an `evidenceMap` keyed by capability name so
+audits can trace a covered renderer boundary, widget, input, style, or omission
+back to its source/gate and, for renderer/style entries, boundary proof or
+runtime observation hashes.
+`--audit` prints that traceability as a text report for humans; `--json` and
+`--out` keep writing the machine-readable coverage artifact.
+See `BACKEND_CANDIDATE_GUIDE.md` for the full backend-candidate graduation path
+from `RenderTree`/replay artifacts through capability profiles, build gates,
+and offline bundle packaging.
 When a profile or CLI flag declares backend coverage requirements, `otoe plan`
 embeds a `backendCoverage` report and exits nonzero if the selected backend
 capability profile misses required coverage. `otoe build` writes the same gate
@@ -238,12 +275,19 @@ Explicit CLI flags override the profile file. For example, `--css custom.css`
 replaces the profile `css` list, and `--no-utilities` disables profile-enabled
 utilities.
 
-`otoe deps` audits declared `[deps]` entries against the current build
-environment. It reports installed and missing packages plus known and unknown
-Otoe extras. It does not install anything, download anything, import the app
-target, or write files; missing packages must be installed manually before a
-hardware/cage deployment. During `otoe build`, the same audit is written as
-`otoe-deps.json` and invalid dependency audits stop the build before
+`otoe deps` audits declared `[deps]` entries and static external imports found
+in discovered local runtime files against the current build environment. It
+reports installed and missing packages, known and unknown Otoe extras, and
+undeclared external imports. It reads local Python files but does not install
+anything, download anything, import the app target, or write files; missing
+packages must be installed manually before a hardware/cage deployment. This is
+an audit-only gate, not a lockfile, wheel closure, or reproducible offline
+dependency resolver. When installed package metadata maps an import module to a
+different distribution name, declare the distribution package, for example
+`Pillow` for `import PIL`; imports with no installed package metadata are
+reported as unknown candidates. During `otoe build`, the same audit is written
+as `otoe-deps.json`, including a machine-readable `resolution.mode =
+"audit-only"` contract, and invalid dependency audits stop the build before
 `manifest.json` is written.
 
 Write the first minimal offline bundle contract:
@@ -259,16 +303,19 @@ python -m otoe pack dist/cage --out dist/cage.tar.gz
 coverage requirements are declared, `dist/cage/otoe-backend-coverage.json`.
 It then writes `dist/cage/manifest.json`, copies declared assets under
 `dist/cage/assets/`, copies selected Otoe framework/runtime files under
-`dist/cage/framework/`, copies the simple local target module under
-`dist/cage/app/` when the target is shaped like `app:app`, follows simple
-same-directory imports such as `import helpers` and
-`from helpers import view`, and copies declared extra runtime files under
-`dist/cage/app/`.
+`dist/cage/framework/`, copies the local target module/package under
+`dist/cage/app/`, preserving package paths for targets such as
+`workspace_pkg.app:app`, supports namespace package targets without requiring a
+package `__init__.py`, follows static local imports including package-relative
+imports such as `from .views import card`, and copies declared extra runtime
+files under `dist/cage/app/`.
 It fails when the plan, dependency audit, backend coverage gate, or backend
 selection is invalid, allows warning plans, and does not install dependencies,
-download anything, or auto-discover package modules or arbitrary dynamic
-imports yet. `[runtime] files` remains the explicit place for packages, dynamic
-imports, and extra app files. The manifest
+or download anything. It reports visible `importlib.import_module(...)` and
+`__import__(...)` dynamic import calls as dependency warnings, but does not
+auto-copy arbitrary dynamic imports.
+`[runtime] files` remains the explicit place for dynamic import edges, external
+app files, and anything the static local import scanner cannot see. The manifest
 references `otoe-deps.json`, records copied framework files in `frameworkFiles`,
 and records copied app files in `runtimeFiles`. The style artifact records used
 classes, resolved portable declarations, direct widget style props, omitted
@@ -280,34 +327,47 @@ instead of indexing the JSON shape directly. The same artifact can be inspected
 from the CLI with `otoe style-ir dist/cage/otoe-styles.json --summary` or
 `otoe style-ir dist/cage/otoe-styles.json --json`; add `--strict` to fail when
 `styleOps` drift from compiled `rules` or `directStyles`.
+`directStyles` records include stable `nodeId` values in addition to legacy
+widget paths, so backend candidates can match direct widget styles across keyed
+reorders and use paths only as a fallback/debug view. Path 0 backend readiness
+requires evidence that `styleOps` resolve to the `RenderTree` styles and that
+layout/paint style properties affect rendered output, not just that the
+resolved declarations exist.
 
 The bundle also includes `otoe-run.py`, a minimal generated runner. It adds the
 copied `app/` and `framework/` directories to `sys.path`, loads the manifest
 target, supports `--check` for import/load validation, and supports `--png
-frame.png` for a single headless native PNG frame using the bundled compiled
-styles. It also supports `--verify` to check referenced bundle files, sizes,
-SHA-256 hashes, schema versions, declared backend coverage reports, and strict
-Style IR drift through the copied `otoe.style_ops` runtime module.
+frame.png` for a single headless native PNG frame using styles rehydrated from
+the bundled `styleOps` primitive stream. The current native renderer still
+receives a `StyleSheet` internally; the important runtime boundary is that the
+bundle runner no longer needs source CSS text or workspace styles to reconstruct
+that stylesheet. It also supports `--verify` to check referenced bundle files,
+sizes, SHA-256 hashes, schema versions, declared backend coverage reports,
+backend coverage `evidenceMap` traceability, unmanifested packable files, and
+strict Style IR drift through the copied `otoe.style_ops` runtime module.
 Core bundle artifacts declared through `plan`, `deps`, `styles`, and
 `backendCoverage` must also appear in `artifacts` with size/hash metadata, and
-the runner rejects invalid plan, dependency, or style artifacts even if the
-manifest hash entries were updated after tampering. Hardware bundles also keep
-`runtimeInstallsAllowed = false` as a runner/pack invariant.
+all declared file entries must use safe relative paths, size metadata,
+lowercase SHA-256 hashes, and unique bundle paths. The runner rejects invalid
+plan, dependency, or style artifacts even if the manifest hash entries were
+updated after tampering. Hardware bundles also keep the
+`runtimeInstallsAllowed = false` runner/pack invariant.
 `--layout-check` runs native layout/paint validation without writing a PNG.
 Runtime style rehydration also validates the same contract by default when
 loading `otoe-styles.json`. Pass `otoe build --validate` to run the generated
 runner's `--verify`, `--check`, and `--layout-check` modes after writing the
 bundle; this confirms the copied files are intact, the target loads from the
 bundle instead of only from the workspace, declared backend coverage still
-passes, dependency/style artifacts remain valid, and compiled styles can drive
-native rendering.
+passes with traceable evidence, dependency/style artifacts remain valid, and
+compiled styles can drive native rendering.
 
 `otoe pack` verifies the bundle with `otoe-run.py --verify`, repeats strict
 Style IR drift detection against `otoe-styles.json`, preserves
 `otoe-backend-coverage.json` when the manifest declares it, and writes a
 portable `.tar.gz` archive for deployment. The pack step keeps the bundle rooted
-at the archive top level and excludes local cache directories such as
-`__pycache__/` and `.pytest_cache/`.
+at the archive top level, rejects unmanifested files under packable directories
+such as `app/`, `framework/`, and `assets/`, and excludes local cache
+directories such as `__pycache__/` and `.pytest_cache/`.
 
 Compare JSON contract artifacts:
 
@@ -543,10 +603,10 @@ perform security operations.
 
 ## Status
 
-Current status: v0.1.7 public sync prepared; backend coverage gates, hardware
-bundle verification, and Style IR packaging hardening are staged for the next
-public release. See
-`ROADMAP.md` for the active plan.
+Current status: post-v0.1.7 workshop hardening. Backend coverage gates,
+hardware bundle verification, Style IR packaging hardening, Path0 evidence
+hashing, and renderer-boundary cleanup are in the workshop branch. See
+`ROADMAP.md` for the active plan and the current public-sync baseline.
 
 ## License
 

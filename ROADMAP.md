@@ -1,8 +1,8 @@
 # Otoe Roadmap
 
-**Status:** v0.1.7 public sync prepared; backend capability profile coverage gates and hardware bundle verification
-**Updated:** June 2, 2026
-**Current baseline:** 544 tests passing, 1 skipped when `mypy` is unavailable
+**Status:** post-v0.1.7 workshop hardening; backend capability gates, bundle hermeticity, dependency audit contract, namespace runtime discovery, and RenderTree validation hardening
+**Updated:** June 6, 2026
+**Current baseline:** 675 tests passing, 1 skipped when `mypy` is unavailable
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, utility ops console, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
@@ -45,28 +45,53 @@ The current technical question is no longer whether components, signals, control
 ### Low-Level Build Direction
 
 Otoe should stay CSS-facing for developer ergonomics without becoming
-browser-CSS-powered on constrained targets. `ADR-018` defines the proposed
+browser-CSS-powered on constrained targets. `ADR-018` defines the accepted
 offline profile planner: `otoe plan`, audit-only `otoe deps`, and the first
 `otoe build --profile cage` manifest slice should compile portable styles,
 backend selection, and dependency metadata before hardware deployment. Asset,
-simple local target module, same-directory import, and explicit app runtime file
-copying now exist as the first file policy, and the first native
-framework/runtime file copy policy is recorded in `frameworkFiles`.
+local target module/package, namespace package target, static local import, and
+explicit app runtime file copying now exist as the first file policy. The first
+native framework/runtime file copy policy is recorded in `frameworkFiles`.
 The bundle now includes a generated `otoe-run.py` integrity verify, load/check,
 layout/paint dry-run, and headless PNG entry, plus optional `otoe build
 --validate` runner checks.
 `otoe plan`, `otoe build`, and `otoe-styles.json` now record a backend
 capability profile. The current default is `native-python` (`native` remains an
 alias for existing profile files), and the plan artifact records style, widget,
-and input capability maps so future hardware/backend candidates can declare
-their own support surface instead of inheriting one global native matrix.
+input, and renderer-boundary capability maps so future hardware/backend
+candidates can declare their own support surface instead of inheriting one
+global native matrix.
 Profiles and CLI flags can also attach backend readiness/requirements JSON as a
 coverage gate; `otoe plan` reports `backendCoverage`, and `otoe build` writes
 `otoe-backend-coverage.json` before refusing manifests for incomplete backend
-coverage.
+coverage. Bundle runner verification now rejects backend coverage artifacts
+whose `evidenceMap` no longer traces exercised claims back to source/gate and
+runtime style proof. `otoe backend-coverage --audit` exposes that same
+traceability as a human-readable candidate review report.
 `otoe-styles.json` now records compiled class styles and low-level `styleOps`
-with the selected capability profile so runner PNG output and backend
-candidates can use bundled portable declarations instead of workspace CSS.
+with the selected capability profile. Runner PNG output rehydrates bundled
+styles from that primitive stream instead of workspace CSS, while the current
+Python native renderer still receives a `StyleSheet` internally. `RenderTree`
+IR v0 now gives backend candidates a mounted-tree boundary with stable `For`
+keys, normalized props/events/state, and `ResolvedStyleMap` values rehydrated
+from `styleOps` before the renderer. Path0 candidates now expose
+`RenderTreeRendererCandidate` so `layout_render_tree(...)` can consume that
+resolved IR directly without `FakeWidget`, `MountedNode`, or `StyleSheet` as
+the renderer input, and readiness evidence now requires a traced `renderTree`
+layout boundary call plus `styleOps`/`RenderTree` style match proof before
+`path0RenderTreeEvidence` can pass. It is the first renderer-side IR boundary,
+not yet a stable Skia/Taffy/Qt ABI.
+`validate_render_tree(...)` and
+`assert_render_tree_valid(...)` now reject malformed `RenderTree` IR before
+Path0 layout/paint work starts, including boolean schema/path values and empty
+identity/event strings, and `render_tree_from_dict(...)` makes the same IR
+consumable from serialized JSON artifacts. `load_render_tree_artifact(...)`
+and `--render-tree-artifact` now let Path0/readiness render explicit
+`RenderTree` JSON files without remounting Otoe targets. Backend readiness now
+includes a `RenderTree` replay gate and
+checked-in fixture for minimal, task board, keyed reorder, and `Show` branch
+cases, and `--bundle` can verify the offline bundle, load the manifest target,
+and include an artifact-backed `RenderTree` target in readiness.
 The backend-candidate styleOps replay now also covers the real bundle path:
 `otoe build --validate`, `--bundle dist/...` runner verification, manifest style
 artifact discovery, and styleOps replay from the generated bundle.
@@ -82,8 +107,12 @@ warnings with source file and line numbers so missing safelist edges are visible
 before deployment.
 The generated runner now rejects unsupported artifact schema versions before
 verification, layout checks, PNG rendering, or packing.
-Native bundle verification now enforces the required `frameworkFiles` policy so
-a manifest cannot omit framework runtime files needed by the selected backend.
+Native bundle verification now enforces required manifest metadata: declared
+bundle files need safe relative paths, size, lowercase SHA-256 hashes, unique
+bundle paths, and the required `frameworkFiles` policy. Packable files under
+`app/`, `assets/`, and `framework/` must be declared in the manifest instead of
+leaking from dirty build directories, and a manifest cannot omit framework
+runtime files needed by the selected backend.
 `NATIVE_RENDERER_SPIKE.md` now names the executable native support matrix,
 layout, window, closeout, and backend-candidate replay surfaces that must stay
 aligned before backend replacement work starts.
@@ -143,12 +172,32 @@ requirements from the minimal and task-board frames.
 The backend-candidate skeleton now emits `--backend-readiness-json`, combining
 renderer replay, widget/input audit, StyleOps replay, style capability audit,
 blockers, and replay requirements into one readiness report.
+The skeleton entrypoint is now a compatibility facade over focused acceptance,
+CLI dispatch, and command-handler modules, so backend-candidate tooling can keep
+growing without turning the example entrypoint back into the contract itself.
 The checked-in backend readiness fixture now locks that aggregate report as a
 candidate-comparison gate alongside the renderer and StyleOps contract fixtures.
 Backend candidates can now derive a coverage declaration from a backend
 capability profile and emit `--backend-coverage-json`, so claimed widget,
 input, style, and declared omission support is compared against the aggregate
 readiness requirements without duplicating the support matrix by hand.
+Strict backend-readiness evidence is now validated as part of coverage:
+exercised groups must name their source and gate, gate references must be
+passing, requirements-only JSON no longer counts as exercised evidence,
+widget/input proofs must match the renderer capability audit, and style
+evidence must include Path 0 runtime proof from `styleOps` with
+layout/paint observation hashes for each property's declared support phase;
+declared style omissions must not appear as runtime-applied layout/paint
+evidence. Path 0 evidence must also include a traced `renderTree` layout
+boundary proof, and coverage now has a first-class `rendererBoundaries` section
+that requires `renderTreeLayout` and `paint` boundary proofs before those
+claims count as exercised. `renderTreeLayout` proofs now also carry the input
+`renderTreeHash`, so Path 0 and renderer-boundary evidence must trace to the
+same `RenderTree` artifact before coverage counts the claim. Invalid evidence
+groups no longer count toward
+exercised/covered support totals, and coverage sections now include an
+`evidenceMap` that traces each covered claim back to source/gate metadata,
+renderer boundary proof, and runtime style hashes.
 Candidate-specific JSON capability profiles can run through the same gate
 before they graduate into built-in profiles, and `otoe plan/build` now consume
 those profiles so bundle artifacts use the same support source as coverage.

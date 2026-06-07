@@ -6,11 +6,13 @@ from pathlib import Path
 
 from .plan import PlanDiagnostic
 from .runtime_files import RuntimeFileError, auto_target_runtime_files
+from .ui_safelist import UI_COMPONENT_EXPORTS, UI_DYNAMIC_CLASS_CANDIDATES
 
 
 @dataclass(frozen=True)
 class StaticClassScan:
     class_names: tuple[str, ...]
+    framework_class_candidates: tuple[str, ...]
     diagnostics: tuple[PlanDiagnostic, ...]
 
 
@@ -21,13 +23,16 @@ def static_class_scan_for_target(target: str) -> StaticClassScan:
         raise RuntimeFileError(str(exc)) from exc
 
     class_names: list[str] = []
+    framework_class_candidates: list[str] = []
     diagnostics: list[PlanDiagnostic] = []
     for runtime_file in runtime_files:
         scan = static_class_scan_from_file(runtime_file.source)
         class_names.extend(scan.class_names)
+        framework_class_candidates.extend(scan.framework_class_candidates)
         diagnostics.extend(scan.diagnostics)
     return StaticClassScan(
         class_names=tuple(dict.fromkeys(class_names)),
+        framework_class_candidates=tuple(dict.fromkeys(framework_class_candidates)),
         diagnostics=tuple(dict.fromkeys(diagnostics)),
     )
 
@@ -57,6 +62,9 @@ def static_class_scan_from_file(path: Path) -> StaticClassScan:
                 diagnostics.extend(scan.diagnostics)
     return StaticClassScan(
         class_names=tuple(dict.fromkeys(class_names)),
+        framework_class_candidates=(
+            UI_DYNAMIC_CLASS_CANDIDATES if _uses_ui_kit(tree) else ()
+        ),
         diagnostics=tuple(dict.fromkeys(diagnostics)),
     )
 
@@ -75,6 +83,39 @@ def _static_class_expr_assignments(tree: ast.AST) -> dict[str, tuple[ast.AST, ..
         ):
             assignments.setdefault(node.target.id, []).append(node.value)
     return {name: tuple(values) for name, values in assignments.items()}
+
+
+def _uses_ui_kit(tree: ast.AST) -> bool:
+    ui_exports = set(UI_COMPONENT_EXPORTS)
+    imported_otoe_aliases: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name == "otoe.ui" or alias.name.startswith("otoe.ui."):
+                    return True
+                if alias.name == "otoe":
+                    imported_otoe_aliases.add(alias.asname or "otoe")
+        elif isinstance(node, ast.ImportFrom):
+            if node.module == "otoe.ui" or (
+                isinstance(node.module, str) and node.module.startswith("otoe.ui.")
+            ):
+                return True
+            if node.module == "otoe":
+                for alias in node.names:
+                    if alias.name in ui_exports:
+                        return True
+
+    if not imported_otoe_aliases:
+        return False
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Attribute)
+            and node.attr in ui_exports
+            and isinstance(node.value, ast.Name)
+            and node.value.id in imported_otoe_aliases
+        ):
+            return True
+    return False
 
 
 def _static_class_scan_from_expr(
@@ -165,6 +206,7 @@ def _static_class_scan_from_expr(
     visit(node)
     return StaticClassScan(
         class_names=tuple(dict.fromkeys(class_names)),
+        framework_class_candidates=(),
         diagnostics=tuple(dict.fromkeys(diagnostics)),
     )
 

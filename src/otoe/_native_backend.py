@@ -13,6 +13,8 @@ from .style import StyleSheet
 
 @runtime_checkable
 class NativeLayoutBackend(Protocol):
+    """Internal mounted-tree layout SPI for the current native renderer path."""
+
     name: str
 
     def layout(
@@ -27,6 +29,8 @@ class NativeLayoutBackend(Protocol):
 
 @runtime_checkable
 class NativePaintBackend(Protocol):
+    """Internal paint SPI over Otoe's current NativeLayout output."""
+
     name: str
 
     def paint(
@@ -41,6 +45,8 @@ class NativePaintBackend(Protocol):
 
 @runtime_checkable
 class NativeRasterBackend(Protocol):
+    """Internal raster SPI over Otoe's current NativePaint command stream."""
+
     name: str
 
     def write_png(self, paint: NativePaint, path: str | Path) -> None:
@@ -54,6 +60,8 @@ class NativeRendererBackend(
     NativeRasterBackend,
     Protocol,
 ):
+    """Internal mounted-tree renderer SPI, not the external backend ABI."""
+
     pass
 
 

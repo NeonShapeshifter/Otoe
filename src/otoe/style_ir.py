@@ -226,6 +226,7 @@ def _compiled_direct_styles(
         entries.append(
             {
                 "path": list(entry.path),
+                "nodeId": entry.node_id,
                 "widget": entry.widget,
                 "declarations": {
                     declaration.property: _portable_style_value_to_dict(
@@ -279,6 +280,7 @@ def _compiled_direct_style_ops(
     ]
     return {
         "path": list(entry.path),
+        "nodeId": entry.node_id,
         "widget": entry.widget,
         "ops": ops,
         "omittedOps": omitted_ops,

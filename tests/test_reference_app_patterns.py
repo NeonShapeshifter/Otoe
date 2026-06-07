@@ -24,11 +24,13 @@ def test_reference_app_patterns_tracks_current_phase5_apps():
         "Full-suite baseline after the live preview, static class hardening, "
         "Style IR\npack gate, bundle replay, backend readiness fixture, "
         "backend readiness report,\nbackend coverage declaration, renderer "
-        "capability audit, StyleOps capability\naudit, and primitive value "
+        "capability audit, StyleOps capability\naudit, primitive value "
+        "validation, bundle manifest hardening, namespace runtime\n"
+        "discovery, dependency audit contract metadata, and RenderTree "
         "validation pass:"
         in text
     )
-    assert "`544 passed, 1 skipped`." in text
+    assert "`675 passed, 1 skipped`." in text
 
 
 def test_reference_theme_covers_extracted_ui_helpers():

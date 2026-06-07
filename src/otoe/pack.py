@@ -56,10 +56,12 @@ def pack_bundle(bundle_dir: Path, output_path: Path) -> PackResult:
     bundle_dir = bundle_dir.resolve()
     output_path = output_path.resolve()
     _verify_bundle_input(bundle_dir)
+
+    manifest = _load_manifest(bundle_dir)
+    entries = tuple(_bundle_entries(bundle_dir, output_path=output_path))
+    _reject_unmanifested_entries(entries, manifest, bundle_dir=bundle_dir)
     _run_bundle_verify(bundle_dir)
     _run_style_ir_strict_verify(bundle_dir)
-
-    entries = tuple(_bundle_entries(bundle_dir, output_path=output_path))
     if not entries:
         raise PackError(f"bundle {str(bundle_dir)!r} does not contain packable files")
 
@@ -110,14 +112,7 @@ def _run_bundle_verify(bundle_dir: Path) -> None:
 
 
 def _run_style_ir_strict_verify(bundle_dir: Path) -> None:
-    manifest_path = bundle_dir / BUILD_MANIFEST_FILENAME
-    try:
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        raise PackError(f"{BUILD_MANIFEST_FILENAME} is not valid JSON: {exc}") from exc
-    if not isinstance(manifest, dict):
-        raise PackError(f"{BUILD_MANIFEST_FILENAME} must contain a JSON object")
-
+    manifest = _load_manifest(bundle_dir)
     styles_relative = manifest.get("styles", STYLE_ARTIFACT_FILENAME)
     if not isinstance(styles_relative, str):
         raise PackError(f"{BUILD_MANIFEST_FILENAME}: styles must be a string")
@@ -136,6 +131,17 @@ def _run_style_ir_strict_verify(bundle_dir: Path) -> None:
         return
     details = "; ".join(validation.errors) or "styleOps drift detected"
     raise PackError(f"style-ir strict verification failed: {details}")
+
+
+def _load_manifest(bundle_dir: Path) -> dict:
+    manifest_path = bundle_dir / BUILD_MANIFEST_FILENAME
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise PackError(f"{BUILD_MANIFEST_FILENAME} is not valid JSON: {exc}") from exc
+    if not isinstance(manifest, dict):
+        raise PackError(f"{BUILD_MANIFEST_FILENAME} must contain a JSON object")
+    return manifest
 
 
 def _safe_bundle_path(bundle_dir: Path, relative: str) -> Path:
@@ -161,6 +167,58 @@ def _bundle_entries(bundle_dir: Path, *, output_path: Path) -> list[Path]:
             continue
         entries.append(path)
     return sorted(entries, key=lambda path: path.relative_to(bundle_dir).as_posix())
+
+
+def _reject_unmanifested_entries(
+    entries: tuple[Path, ...],
+    manifest: dict,
+    *,
+    bundle_dir: Path,
+) -> None:
+    allowed = _manifest_pack_paths(manifest, bundle_dir=bundle_dir)
+    for path in entries:
+        relative = path.relative_to(bundle_dir).as_posix()
+        if relative not in allowed:
+            raise PackError(f"unmanifested bundle file {relative!r}")
+
+
+def _manifest_pack_paths(manifest: dict, *, bundle_dir: Path) -> set[str]:
+    paths = {BUILD_MANIFEST_FILENAME}
+    for key in ("plan", "deps", "styles", "backendCoverage"):
+        value = manifest.get(key)
+        _add_manifest_pack_path(paths, value, bundle_dir=bundle_dir)
+    runner = manifest.get("runner")
+    if isinstance(runner, dict):
+        _add_manifest_pack_path(paths, runner.get("path"), bundle_dir=bundle_dir)
+    for artifact in manifest.get("artifacts", []):
+        if isinstance(artifact, dict):
+            _add_manifest_pack_path(
+                paths,
+                artifact.get("path"),
+                bundle_dir=bundle_dir,
+            )
+    for group in ("assets", "frameworkFiles", "runtimeFiles"):
+        for entry in manifest.get(group, []):
+            if not isinstance(entry, dict):
+                continue
+            _add_manifest_pack_path(
+                paths,
+                entry.get("bundlePath"),
+                bundle_dir=bundle_dir,
+            )
+    return paths
+
+
+def _add_manifest_pack_path(
+    paths: set[str],
+    relative: object,
+    *,
+    bundle_dir: Path,
+) -> None:
+    if not isinstance(relative, str):
+        return
+    _safe_bundle_path(bundle_dir, relative)
+    paths.add(relative)
 
 
 def _is_cache_path(relative: Path) -> bool:

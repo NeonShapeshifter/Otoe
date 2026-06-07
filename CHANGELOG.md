@@ -2,7 +2,278 @@
 
 ## Unreleased
 
-- No unreleased changes.
+- Hardened offline bundle manifests so generated runners require safe relative
+  paths, size metadata, lowercase SHA-256 hashes, unique bundle paths, core
+  artifact entries, and backend framework file policy before verification,
+  loading, layout checks, PNG rendering, or packing.
+- Hardened `otoe pack` manifest path handling so declared pack paths are
+  validated before archive construction.
+- Added automatic runtime copying for namespace package targets and imports
+  that do not contain package `__init__.py` files.
+- Added machine-readable dependency audit resolution metadata
+  (`resolution.mode = "audit-only"`) to make clear that `otoe-deps.json` is not
+  a lockfile or wheel-closure artifact.
+- Hardened generated runner verification so tampered dependency audit
+  resolution metadata is rejected even when manifest size/hash entries are
+  refreshed.
+- Hardened `RenderTree` IR validation and parsing to reject boolean
+  schema/path values plus empty identity, event, and state strings.
+- Added audit-only dependency warnings for visible dynamic import calls
+  (`importlib.import_module(...)` and `__import__(...)`), keeping runtime file
+  and dependency declaration manual instead of installing or auto-copying
+  dynamic imports.
+- Split the core `otoe.style_ops` implementation into focused type/value,
+  artifact loading, replay, and validation modules while keeping
+  `otoe.style_ops` as the public facade.
+- Split the core `otoe.render_ir` implementation into focused type,
+  serialization, target-building, and validation modules while keeping
+  `otoe.render_ir` as the public facade.
+- Split dependency import scanning into `deps_imports.py`, leaving `deps.py`
+  focused on audit orchestration and package declaration checks.
+- Split native layout alignment/offset helpers into `_native_layout_align.py`
+  and added that helper to the native backend bundle runtime file set.
+- Hardened backend readiness style evidence by recording observed Path0 style
+  properties and requiring them to cover declared runtime style properties
+  before coverage counts a property as exercised.
+- Hardened Path0 style runtime evidence so supplied `styleOps` artifacts must
+  resolve to the same styles already embedded in the `RenderTree` before
+  readiness or coverage can count the style runtime as proven.
+- Hardened backend readiness widget/input evidence with renderer replay proofs
+  so capability coverage only counts names that were observed by the replay
+  audit.
+- Hardened renderer replay capability proofs so widget/input evidence must
+  match the renderer capability audit hash, item count, and observed names
+  before coverage counts those capabilities as exercised.
+- Hardened Path0 renderer-boundary evidence so layout proofs carry the
+  `renderTreeHash` of the input `RenderTree` and readiness/coverage reject
+  Path0 or renderer layout proofs that do not match that input.
+- Added machine-readable backend readiness `candidateScope` metadata so Path0
+  RenderTree IR fixture evidence is not confused with a stable external backend
+  ABI.
+- Added schema-versioned Path0 layout/paint output payloads with hashes to the
+  RenderTree evidence and backend readiness artifacts, giving backend
+  candidates a neutral output shape to compare without importing native Python
+  layout/paint objects. Readiness evidence now validates those output payload
+  schemas, counts, and hashes while storing only output hash references inside
+  the `evidence.path0` summary.
+- Extracted backend CLI profile/coverage handling into focused internal modules
+  while keeping the public `otoe backend-profile` and `otoe backend-coverage`
+  commands unchanged.
+- Extracted backend readiness evidence validation into a focused internal module
+  while keeping backend coverage report output unchanged.
+- Extracted `otoe compare-contract` and `otoe style-ir` handling into focused
+  internal modules while keeping their public CLI behavior unchanged.
+- Extracted `otoe pack` and `otoe deps` handling into focused internal modules,
+  with shared CLI target/profile helpers kept in `cli_common`.
+- Extracted `otoe dev` and `otoe new` handling into focused internal modules,
+  with shared target loading kept in `cli_common`.
+- Split the backend-candidate skeleton into a compatibility facade plus focused
+  acceptance and CLI modules, keeping the existing
+  `examples.native.backend_candidate_skeleton` import and `python -m` entrypoint
+  stable.
+- Extracted backend-candidate acceptance report payload/formatting helpers into
+  `backend_candidate_acceptance_reports.py`, leaving
+  `backend_candidate_reports.py` as a compatibility facade.
+- Split backend-candidate CLI command handlers into
+  `examples.native.backend_candidate_commands`, leaving
+  `backend_candidate_cli.py` as parser/dispatch and keeping the skeleton
+  entrypoint behavior unchanged.
+- Split backend-candidate command handlers into contract/headless and
+  readiness/coverage modules while keeping `backend_candidate_commands.py` as
+  the CLI compatibility facade.
+- Replaced backend-candidate render-tree source dictionaries with a typed
+  `RenderTreeSource` artifact resolution object so command handlers no longer
+  depend on string-keyed source bundles.
+- Centralized backend-candidate command readiness/render-tree execution helpers
+  so CLI coverage/readiness handlers share the same artifact replay path.
+- Extracted backend-candidate snapshot, compact contract hash, and renderer
+  call serialization helpers into `backend_candidate_report_snapshots.py` while
+  keeping `backend_candidate_reports.py` as the compatibility facade.
+- Extracted backend-candidate renderer contract serialization into
+  `backend_candidate_renderer_reports.py` while keeping facade imports
+  available.
+- Extracted backend-candidate StyleOps replay report construction into
+  `backend_candidate_style_ops_reports.py`, reducing internal dependence on the
+  aggregate reports module.
+- Moved backend-candidate StyleOps contract payload serialization into
+  `backend_candidate_style_ops_reports.py` while preserving facade imports.
+- Moved backend-candidate StyleOps replay error summarization into
+  `backend_candidate_style_ops_reports.py` so readiness reports consume a
+  focused StyleOps summary helper.
+- Extracted backend-candidate StyleOps contract acceptance and style artifact
+  generation into `backend_candidate_style_ops_contracts.py`, keeping
+  `backend_candidate_contracts.py` facade imports available.
+- Extracted backend-candidate RenderTree contract acceptance into
+  `backend_candidate_render_tree_contracts.py`, leaving
+  `backend_candidate_contracts.py` as a compatibility facade.
+- Extracted backend-candidate RenderTree contract helpers into
+  `backend_candidate_render_tree_reports.py` while keeping existing report
+  facade imports available.
+- Extracted renderer/widget/input and StyleOps capability audits into
+  `backend_candidate_capability_audits.py` so contract and readiness reports
+  share the same audit calculations without depending on the aggregate reports
+  module.
+- Split backend-candidate capability audits into renderer, StyleOps, and shared
+  utility modules while keeping `backend_candidate_capability_audits.py` as a
+  compatibility facade.
+- Extracted backend readiness and Path0 evidence payload generation into
+  `backend_candidate_readiness_reports.py`, leaving
+  `backend_candidate_reports.py` as a small compatibility facade.
+- Extracted Path0 readiness evidence serialization and proof validation into
+  `backend_candidate_path0_readiness_reports.py`, leaving backend readiness
+  report generation focused on aggregate readiness payloads.
+- Extracted backend readiness requirement and evidence-map builders into
+  `backend_candidate_readiness_evidence_reports.py` so aggregate readiness
+  reports no longer own proof-map construction.
+- Split backend-candidate dataclass types into replay, renderer, RenderTree,
+  and StyleOps modules while keeping `backend_candidate_types.py` as a
+  compatibility facade.
+- Split backend-candidate raster/PNG writing into
+  `backend_candidate_raster_renderer.py` so the paint candidate only builds
+  paint commands and renderer candidates call the raster phase explicitly.
+- Split backend-candidate style resolution into
+  `backend_candidate_layout_styles.py` so layout rendering consumes already
+  resolved layout style dictionaries.
+- Split Path0 style-property and observation extraction into
+  `backend_candidate_path0_observations.py`, keeping Path0 evidence execution
+  focused on renderer runs and report assembly.
+- Split renderer candidates into recording, phase-only, and Path0 modules while
+  keeping `backend_candidate_renderer_candidates.py` as the compatibility
+  facade for examples and tests.
+- Split backend-candidate layout text/state/box helper functions into
+  `backend_candidate_layout_utils.py`, leaving `backend_candidate_layout_renderer.py`
+  focused on layout flow.
+- Split backend-candidate RenderTree fixture generation into
+  `backend_candidate_render_tree_fixtures.py`, leaving contract acceptance
+  focused on JSON-boundary replay and report validation.
+- Split backend readiness requirement construction into
+  `backend_candidate_readiness_requirements.py`, leaving evidence report
+  helpers focused on runtime proof payloads.
+- Split backend-candidate snapshot payload serialization and compact
+  hash/signature helpers into focused modules while keeping
+  `backend_candidate_report_snapshots.py` as a compatibility facade.
+- Split renderer/headless acceptance runners into
+  `backend_candidate_renderer_acceptance.py` while keeping
+  `backend_candidate_acceptance.py` as the aggregate compatibility module.
+- Added direct runtime-file coverage for dotted local imports and nested
+  package targets so offline bundle copying keeps package import closure
+  behavior under focused tests.
+- Added build coverage for safelisted reactive `otoe.ui` variant classes so
+  framework-generated `is-*` classes can be compiled for hardware/cage bundles
+  before runtime state changes.
+- Retargeted backend-candidate acceptance, command, and skeleton internals to
+  the focused readiness report module while preserving facade imports.
+- Retargeted backend-candidate command and skeleton internals away from the
+  aggregate reports facade so `backend_candidate_reports.py` remains
+  compatibility-only.
+- Split the monolithic backend-candidate test file into focused acceptance,
+  renderer, styleOps, RenderTree, readiness, bundle, and CLI test modules while
+  keeping the facade compatibility test in place.
+- Expanded runtime file discovery so build/plan can auto-copy local package
+  targets and their static local/relative imports while preserving package paths
+  in bundle `runtimeFiles`.
+- Expanded dependency audits to report static external imports from discovered
+  runtime files and reject undeclared external imports before writing a bundle
+  manifest, including import-to-distribution aliases and unknown package
+  metadata in `externalImports`.
+- Hardened backend coverage evidence validation so readiness artifacts must
+  include source/gate metadata and runtime style proof for strict evidence,
+  validate style properties against the declared layout/paint support phase, and
+  report CLI diagnostics when evidence contracts are malformed.
+- Hardened backend coverage so requirements-only JSON no longer counts as
+  exercised evidence; coverage now requires executed readiness evidence before
+  claimed widget, input, style, or omission support can pass.
+- Hardened backend coverage counts so malformed evidence groups no longer count
+  as exercised or covered support while their blockers remain visible.
+- Added per-capability `evidenceMap` entries to backend coverage reports so
+  covered claims trace back to source/gate metadata and runtime style proof.
+- Hardened generated bundle runner verification so backend coverage artifacts
+  must keep coherent per-capability `evidenceMap` traceability after packaging.
+- Added `otoe backend-coverage --audit` to print a human-readable
+  per-capability proof report from backend coverage `evidenceMap` data.
+- Added `validate_render_tree(...)` and `assert_render_tree_valid(...)` so Path0
+  and backend candidates reject malformed `RenderTree` IR before layout/paint
+  work starts.
+- Added the `RenderTreeRendererCandidate` boundary and routed Path0 evidence
+  through `layout_render_tree(...)` so backend candidates can consume resolved
+  `RenderTree` IR without component/mount inputs.
+- Extracted Path0 RenderTree evidence generation into
+  `backend_candidate_path0_evidence.py` while keeping renderer/skeleton facade
+  imports available.
+- Extracted backend-candidate layout rendering and shared renderer helpers into
+  focused modules while keeping `backend_candidate_renderer.py` facade imports
+  available.
+- Extracted backend-candidate paint and PNG raster helpers into
+  `backend_candidate_paint_renderer.py` while preserving renderer candidate
+  behavior.
+- Moved backend-candidate renderer classes into
+  `backend_candidate_renderer_candidates.py`, leaving
+  `backend_candidate_renderer.py` as a compatibility facade.
+- Split backend-candidate RenderTree layout from mounted-widget layout into
+  `backend_candidate_render_tree_layout.py` so Path0 layout uses an IR-focused
+  module.
+- Hardened Path0 backend readiness so `path0RenderTreeEvidence` requires a
+  traced `renderTree` layout boundary call instead of accepting generic
+  layout/paint phase claims.
+- Added `rendererBoundaries` to backend capability profiles, readiness
+  requirements/evidence, coverage reports, coverage audit output, and bundle
+  verification so backend candidates must prove renderer-boundary claims.
+- Traced renderer-boundary proofs to Path0 layout/paint output hashes, and
+  require bundled coverage verification to reject proofs that are not tied to a
+  hashed output artifact.
+- Cross-check strict readiness `rendererBoundaries` proofs against the Path0
+  layout/paint output hashes so evidence cannot point at unrelated artifacts.
+- Require `styleOps.directStyles` entries to carry stable `nodeId` values,
+  keeping widget paths as debug/legacy fallback data instead of the primary
+  runtime identity.
+- Added conditional UI-kit dynamic class candidates for plan/build, so known
+  framework-generated variants are compiled when matching portable rules exist
+  without forcing missing UI classes into strict builds.
+- Made `Node` props and children shallow-immutable at construction time so
+  frozen nodes cannot be mutated through top-level dict/list aliases.
+- Split `otoe check` and `otoe render` command execution into dedicated CLI
+  modules, keeping `cli.py` focused on parser composition.
+- Consolidated shared `otoe plan`/`otoe build` parser options so offline
+  profile flags cannot drift between the two commands.
+- Clarified that `NativeRendererBackend` is the current mounted-tree renderer
+  SPI, while externally replaceable backend candidates must prove the Path0
+  `RenderTreeRendererCandidate` boundary.
+- Added `render_tree_from_dict(...)` and routed backend-candidate RenderTree
+  replays through a serialize/parse boundary so the IR can be consumed as JSON,
+  not only as in-process dataclasses.
+- Added `load_render_tree_artifact(...)`, `--render-tree-artifact`, and direct
+  Path0 artifact evidence so backend readiness can render a serialized
+  `RenderTree` JSON file without remounting Otoe targets.
+- Hardened `otoe pack` and generated `otoe-run.py --verify` so packable files
+  under `app/`, `assets/`, and `framework/` must be declared in `manifest.json`
+  instead of leaking from dirty build directories.
+- Rehydrated bundled runner styles from the low-level `styleOps` primitive
+  stream, while keeping strict drift checks against compiled rules and direct
+  styles.
+- Added backend coverage evidence fields that distinguish claimed support,
+  readiness-exercised support, missing support, and unproven extra claims.
+- Added `RenderTree` IR v0 with stable keyed-list node IDs, normalized
+  props/events/state, resolved style values, and JSON serialization helpers.
+- Added `ResolvedStyleMap` rehydration from `styleOps` so RenderTree/Path 0 can
+  resolve class styles without consulting compiled `rules` or source CSS.
+- Added a backend-candidate `RenderTree` contract fixture and readiness gate
+  covering minimal, task-board, keyed reorder, and `Show` branch tree shapes.
+- Added artifact-backed `RenderTree` contract and readiness paths for
+  `--style-artifact` and verified `--bundle` inputs, including bundle target
+  loading from `manifest.json`.
+- Added `Path0RendererCandidate`, a non-delegating renderer fixture that owns
+  layout, paint, and raster at the current native renderer SPI by consuming
+  `RenderTree` IR and resolved style maps instead of laying out directly from
+  mounted widgets and `StyleSheet` rules.
+- Added `BACKEND_CANDIDATE_GUIDE.md` as the backend-candidate graduation path
+  from replay artifacts through capability profiles, build gates, Style IR
+  validation, and offline bundle packaging.
+- Stabilized `directStyles` matching with `nodeId` in addition to legacy widget
+  paths, so backend candidates can prefer stable identities across keyed
+  reorders while retaining path fallback/debug data.
+- Hardened Path 0 style evidence so backend readiness requires layout and paint
+  properties to produce observable effects, including min/max layout constraint
+  handling in the non-delegating candidate renderer.
 
 ## v0.1.7 - Backend Coverage and Hardware Bundle Gates
 

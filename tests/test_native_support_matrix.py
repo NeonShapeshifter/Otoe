@@ -30,6 +30,7 @@ from otoe._native_shared import (
     NATIVE_INPUT_SUPPORT,
     NATIVE_LAYOUT_STYLE_PROPERTIES,
     NATIVE_PAINT_STYLE_PROPERTIES,
+    NATIVE_RENDERER_BOUNDARY_SUPPORT,
     NATIVE_STYLE_SUPPORT,
     NATIVE_TEXT_WIDGETS,
     NATIVE_WIDGET_SUPPORT,
@@ -111,6 +112,10 @@ EXPECTED_DEFERRED_INPUT = frozenset(
         "uncontrolled_input",
     }
 )
+EXPECTED_RENDERER_BOUNDARIES = {
+    "paint": "supported",
+    "renderTreeLayout": "supported",
+}
 
 
 def test_native_style_support_matrix_is_complete_and_categorized():
@@ -141,9 +146,12 @@ def test_native_python_capability_profile_matches_support_matrices():
     assert profile.style_support == NATIVE_STYLE_SUPPORT
     assert profile.widget_support == NATIVE_WIDGET_SUPPORT
     assert profile.input_support == NATIVE_INPUT_SUPPORT
+    assert NATIVE_RENDERER_BOUNDARY_SUPPORT == EXPECTED_RENDERER_BOUNDARIES
+    assert profile.renderer_boundary_support == EXPECTED_RENDERER_BOUNDARIES
     assert profile.style("padding") == "layout"
     assert profile.widget("Hero") == "fallback-container"
     assert profile.input("wheel") == "supported"
+    assert profile.renderer_boundary("renderTreeLayout") == "supported"
     assert "native-python" in supported_backend_capability_names()
 
 
@@ -173,6 +181,11 @@ def test_backend_capability_profile_from_dict_derives_coverage_declaration():
                 "click": "supported",
                 "gesture": "deferred",
             },
+            "rendererBoundaries": {
+                "paint": "supported",
+                "raster": "deferred",
+                "renderTreeLayout": "supported",
+            },
         }
     )
 
@@ -180,6 +193,7 @@ def test_backend_capability_profile_from_dict_derives_coverage_declaration():
     assert profile.style("padding") == "layout"
     assert profile.widget("Hero") == "fallback-container"
     assert profile.input("gesture") == "deferred"
+    assert profile.renderer_boundary("raster") == "deferred"
     assert profile.coverage_declaration() == {
         "schemaVersion": 1,
         "format": "backend-coverage-declaration",
@@ -191,6 +205,7 @@ def test_backend_capability_profile_from_dict_derives_coverage_declaration():
         "covers": {
             "widgets": ["Button", "Text", "VStack"],
             "inputs": ["click"],
+            "rendererBoundaries": ["paint", "renderTreeLayout"],
             "styles": ["background", "padding"],
             "declaredStyleOmissions": ["borderStyle"],
         },
@@ -217,6 +232,25 @@ def test_load_backend_capability_profile_rejects_invalid_support_value(tmp_path)
         match="styles.padding must be one of",
     ):
         load_backend_capability_profile(profile_path)
+
+
+def test_backend_capability_profile_rejects_null_renderer_boundaries():
+    with pytest.raises(
+        CapabilityProfileError,
+        match="rendererBoundaries must be an object",
+    ):
+        backend_capability_profile_from_dict(
+            {
+                "schemaVersion": 1,
+                "format": "backend-capability-profile",
+                "name": "bad-boundary",
+                "label": "Bad Boundary",
+                "styles": {},
+                "widgets": {},
+                "inputs": {},
+                "rendererBoundaries": None,
+            }
+        )
 
 
 def test_native_style_matrix_matches_layout_acceptance_behavior():
@@ -380,6 +414,7 @@ def test_native_workflows_documents_backend_candidate_replay_bar():
     single_spaced = " ".join(doc.split())
 
     assert "The current backend-candidate acceptance bar has three replay surfaces" in doc
+    assert "BACKEND_CANDIDATE_GUIDE.md" in doc
     assert "the minimal harness in `tests/test_native_backend_contract.py`" in doc
     assert "the app-shaped native task board replay" in doc
     assert "the fake adapter replay through `run_native(...)`" in doc
@@ -418,6 +453,43 @@ def test_native_workflows_documents_backend_candidate_replay_bar():
         "layout, paint, focus, frame, renderer-backend, and visible-text summaries"
         in single_spaced
     )
+
+
+def test_backend_candidate_guide_documents_graduation_path():
+    doc = Path("BACKEND_CANDIDATE_GUIDE.md").read_text(encoding="utf-8")
+    readme = Path("README.md").read_text(encoding="utf-8")
+    single_spaced = " ".join(doc.split())
+
+    assert "## Ground Rules" in doc
+    assert "## Acceptance Path" in doc
+    assert "## Core Commands" in doc
+    assert "## Capability Profile Contract" in doc
+    assert "## Graduation Criteria" in doc
+    assert "Hardware runtimes must not install dependencies" in doc
+    assert "Raw CSS is an authoring/build input" in doc
+    assert "Tk is a local manual smoke adapter only" in doc
+    assert "`backend-profile.json`" in doc
+    assert "`backend-readiness.json`" in doc
+    assert "`otoe-styles.json`" in doc
+    assert "`otoe-backend-coverage.json`" in doc
+    assert "`tests/test_native_backend_contract.py`" in doc
+    assert "app-shaped native task board replay" in doc
+    assert "fake adapter replay through `run_native(...)`" in doc
+    assert "`NativeBackendAdapter`" in doc
+    assert "`NativeWindowDriver`" in doc
+    assert "`tests/test_native_renderer_backend.py`" in doc
+    assert "`--backend-readiness-json`" in doc
+    assert "`--style-ops-contract-json`" in doc
+    assert "`--composed-renderer-contract-json`" in doc
+    assert "python -m otoe backend-profile --backend-capability-profile" in doc
+    assert "python -m otoe backend-coverage --requirements" in doc
+    assert "python -m otoe build app:app --profile cage" in doc
+    assert "python -m otoe style-ir dist/cage/otoe-styles.json --strict" in doc
+    assert "python -m otoe pack dist/cage --out dist/cage.tar.gz" in doc
+    assert '"format": "backend-capability-profile"' in doc
+    assert "`declaredStyleOmissions`" in doc
+    assert "not as a built-in backend profile" in single_spaced
+    assert "BACKEND_CANDIDATE_GUIDE.md" in readme
     assert "python -m examples.native.backend_candidate_skeleton" in doc
     assert "python -m examples.native.backend_candidate_skeleton --json" in doc
     assert (

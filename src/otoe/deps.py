@@ -1,15 +1,21 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import sys
 from importlib import metadata
-from typing import Any, Literal
+from pathlib import Path
 
+from .deps_imports import runtime_file_dynamic_imports, runtime_file_imports
+from .deps_report import deps_to_dict, format_deps
+from .deps_types import (
+    DependencyAudit,
+    DependencyAuditDiagnostic,
+    DependencyAuditDynamicImport,
+    DependencyAuditExternalImport,
+    DependencyAuditExtra,
+    DependencyAuditPackage,
+)
 from .profile_types import PlanProfileConfig
-
-
-DependencyStatus = Literal["installed", "missing"]
-ExtraStatus = Literal["known", "unknown"]
-DiagnosticLevel = Literal["warning", "error"]
+from .runtime_files import build_runtime_files
 
 
 KNOWN_EXTRAS: dict[str, tuple[str, ...]] = {
@@ -18,55 +24,23 @@ KNOWN_EXTRAS: dict[str, tuple[str, ...]] = {
 }
 
 
-@dataclass(frozen=True)
-class DependencyAuditPackage:
-    name: str
-    status: DependencyStatus
-    version: str | None = None
-
-
-@dataclass(frozen=True)
-class DependencyAuditExtra:
-    name: str
-    status: ExtraStatus
-    packages: tuple[DependencyAuditPackage, ...] = ()
-
-
-@dataclass(frozen=True)
-class DependencyAuditDiagnostic:
-    level: DiagnosticLevel
-    message: str
-
-
-@dataclass(frozen=True)
-class DependencyAudit:
-    target: str
-    profile: str
-    runtime_installs_allowed: bool
-    packages: tuple[DependencyAuditPackage, ...]
-    extras: tuple[DependencyAuditExtra, ...]
-    diagnostics: tuple[DependencyAuditDiagnostic, ...]
-
-    @property
-    def has_errors(self) -> bool:
-        return any(diagnostic.level == "error" for diagnostic in self.diagnostics)
-
-    @property
-    def status(self) -> str:
-        if self.has_errors:
-            return "invalid"
-        if self.diagnostics:
-            return "warnings"
-        return "ok"
-
-
 def audit_deps(*, target: str, profile_config: PlanProfileConfig) -> DependencyAudit:
     packages = tuple(
         _audit_package(package) for package in profile_config.dependency_packages
     )
     extras = tuple(_audit_extra(extra) for extra in profile_config.dependency_extras)
+    external_imports = _external_imports_for_target(
+        target,
+        profile_config=profile_config,
+    )
+    dynamic_imports = _dynamic_imports_for_target(
+        target,
+        profile_config=profile_config,
+    )
     diagnostics = list(_diagnostics_for_packages(packages))
     diagnostics.extend(_diagnostics_for_extras(extras))
+    diagnostics.extend(_diagnostics_for_external_imports(external_imports))
+    diagnostics.extend(_diagnostics_for_dynamic_imports(dynamic_imports))
     if profile_config.allow_runtime_installs:
         diagnostics.append(
             DependencyAuditDiagnostic(
@@ -81,59 +55,168 @@ def audit_deps(*, target: str, profile_config: PlanProfileConfig) -> DependencyA
         runtime_installs_allowed=profile_config.allow_runtime_installs,
         packages=packages,
         extras=extras,
+        external_imports=external_imports,
+        dynamic_imports=dynamic_imports,
         diagnostics=tuple(diagnostics),
     )
 
 
-def deps_to_dict(audit: DependencyAudit) -> dict[str, Any]:
-    return {
-        "schemaVersion": 1,
-        "target": audit.target,
-        "profile": audit.profile,
-        "status": audit.status,
-        "hasErrors": audit.has_errors,
-        "runtimeInstallsAllowed": audit.runtime_installs_allowed,
-        "packages": [_package_to_dict(package) for package in audit.packages],
-        "extras": [_extra_to_dict(extra) for extra in audit.extras],
-        "diagnostics": [
-            {"level": diagnostic.level, "message": diagnostic.message}
-            for diagnostic in audit.diagnostics
-        ],
-    }
+def _external_imports_for_target(
+    target: str,
+    *,
+    profile_config: PlanProfileConfig,
+) -> tuple[DependencyAuditExternalImport, ...]:
+    runtime_files = build_runtime_files(target, profile_config.runtime_files)
+    local_modules = _local_module_roots(runtime_files)
+    declared_packages = _declared_dependency_packages(profile_config)
+    package_map = metadata.packages_distributions()
+    external_imports: list[DependencyAuditExternalImport] = []
+    seen = set()
 
-
-def format_deps(audit: DependencyAudit) -> str:
-    installed_packages = _count_packages(audit.packages, "installed")
-    missing_packages = _count_packages(audit.packages, "missing")
-    known_extras = _count_extras(audit.extras, "known")
-    unknown_extras = _count_extras(audit.extras, "unknown")
-    lines = [
-        f"deps {audit.target}: profile {audit.profile}",
-        f"runtime installs: {'allowed' if audit.runtime_installs_allowed else 'forbidden'}",
-        (
-            f"packages: {len(audit.packages)} declared, "
-            f"{installed_packages} installed, {missing_packages} missing"
-        ),
-        (
-            f"extras: {len(audit.extras)} declared, "
-            f"{known_extras} known, {unknown_extras} unknown"
-        ),
-    ]
-    for package in audit.packages:
-        version = f" ({package.version})" if package.version else ""
-        lines.append(f"package {package.name}: {package.status}{version}")
-    for extra in audit.extras:
-        lines.append(f"extra {extra.name}: {extra.status}")
-        for package in extra.packages:
-            version = f" ({package.version})" if package.version else ""
-            lines.append(
-                f"extra {extra.name} package {package.name}: "
-                f"{package.status}{version}"
+    for runtime_file in runtime_files:
+        if not runtime_file.source.is_file():
+            continue
+        for import_ref in runtime_file_imports(runtime_file.source):
+            if _is_internal_import(import_ref.module, local_modules=local_modules):
+                continue
+            packages = tuple(sorted(package_map.get(import_ref.module, ())))
+            declared_by = _external_import_declared_by(
+                import_ref.module,
+                packages=packages,
+                declared_packages=declared_packages,
             )
-    lines.append(f"status: {audit.status}")
-    for diagnostic in audit.diagnostics:
-        lines.append(f"{diagnostic.level}: {diagnostic.message}")
-    return "\n".join(lines)
+            key = (
+                import_ref.module,
+                runtime_file.relative_path.as_posix(),
+                import_ref.line,
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            external_imports.append(
+                DependencyAuditExternalImport(
+                    module=import_ref.module,
+                    source=runtime_file.relative_path.as_posix(),
+                    line=import_ref.line,
+                    packages=packages,
+                    declared=declared_by is not None,
+                    declared_by=declared_by,
+                )
+            )
+    return tuple(external_imports)
+
+
+def _dynamic_imports_for_target(
+    target: str,
+    *,
+    profile_config: PlanProfileConfig,
+) -> tuple[DependencyAuditDynamicImport, ...]:
+    runtime_files = build_runtime_files(target, profile_config.runtime_files)
+    declared_packages = _declared_dependency_packages(profile_config)
+    package_map = metadata.packages_distributions()
+    dynamic_imports: list[DependencyAuditDynamicImport] = []
+    seen = set()
+
+    for runtime_file in runtime_files:
+        if not runtime_file.source.is_file():
+            continue
+        for import_ref in runtime_file_dynamic_imports(runtime_file.source):
+            packages = (
+                tuple(sorted(package_map.get(import_ref.module, ())))
+                if import_ref.module is not None
+                else ()
+            )
+            declared_by = (
+                _external_import_declared_by(
+                    import_ref.module,
+                    packages=packages,
+                    declared_packages=declared_packages,
+                )
+                if import_ref.module is not None
+                else None
+            )
+            key = (
+                import_ref.module,
+                import_ref.mechanism,
+                runtime_file.relative_path.as_posix(),
+                import_ref.line,
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            dynamic_imports.append(
+                DependencyAuditDynamicImport(
+                    module=import_ref.module,
+                    source=runtime_file.relative_path.as_posix(),
+                    line=import_ref.line,
+                    mechanism=import_ref.mechanism,
+                    packages=packages,
+                    declared=declared_by is not None,
+                    declared_by=declared_by,
+                )
+            )
+    return tuple(dynamic_imports)
+
+
+def _local_module_roots(runtime_files) -> set[str]:
+    roots = set()
+    for runtime_file in runtime_files:
+        parts = runtime_file.relative_path.parts
+        if not parts:
+            continue
+        first = parts[0]
+        if first == "__init__.py":
+            continue
+        if first.endswith(".py"):
+            roots.add(Path(first).stem)
+        else:
+            roots.add(first)
+    return roots
+
+
+def _is_internal_import(module: str, *, local_modules: set[str]) -> bool:
+    if module in local_modules:
+        return True
+    if module == "otoe":
+        return True
+    if module in sys.builtin_module_names:
+        return True
+    stdlib_modules = getattr(sys, "stdlib_module_names", frozenset())
+    return module in stdlib_modules
+
+
+def _declared_dependency_packages(profile_config: PlanProfileConfig) -> dict[str, str]:
+    packages = {
+        _normalize_package_name(name): name
+        for name in profile_config.dependency_packages
+    }
+    for extra_name in profile_config.dependency_extras:
+        for package in KNOWN_EXTRAS.get(extra_name, ()):
+            packages.setdefault(_normalize_package_name(package), package)
+    return packages
+
+
+def _external_import_declared_by(
+    module: str,
+    *,
+    packages: tuple[str, ...],
+    declared_packages: dict[str, str],
+) -> str | None:
+    normalized_module = _normalize_package_name(module)
+    if normalized_module in declared_packages:
+        return declared_packages[normalized_module]
+    for package in packages:
+        normalized_package = _normalize_package_name(package)
+        if normalized_package in declared_packages:
+            return declared_packages[normalized_package]
+    return None
+
+def _normalize_package_name(name: str) -> str:
+    return name.replace("_", "-").lower()
+
+
+def _external_import_candidate_text(packages: tuple[str, ...]) -> str:
+    return ", ".join(packages)
 
 
 def _audit_extra(name: str) -> DependencyAuditExtra:
@@ -189,30 +272,70 @@ def _diagnostics_for_extras(
     return tuple(diagnostics)
 
 
-def _package_to_dict(package: DependencyAuditPackage) -> dict[str, Any]:
-    payload: dict[str, Any] = {"name": package.name, "status": package.status}
-    if package.version is not None:
-        payload["version"] = package.version
-    return payload
+def _diagnostics_for_external_imports(
+    external_imports: tuple[DependencyAuditExternalImport, ...],
+) -> tuple[DependencyAuditDiagnostic, ...]:
+    return tuple(
+        DependencyAuditDiagnostic(
+            level="error",
+            message=_external_import_diagnostic_message(external_import),
+        )
+        for external_import in external_imports
+        if not external_import.declared
+    )
 
 
-def _extra_to_dict(extra: DependencyAuditExtra) -> dict[str, Any]:
-    return {
-        "name": extra.name,
-        "status": extra.status,
-        "packages": [_package_to_dict(package) for package in extra.packages],
-    }
+def _diagnostics_for_dynamic_imports(
+    dynamic_imports: tuple[DependencyAuditDynamicImport, ...],
+) -> tuple[DependencyAuditDiagnostic, ...]:
+    return tuple(
+        DependencyAuditDiagnostic(
+            level="warning",
+            message=_dynamic_import_diagnostic_message(dynamic_import),
+        )
+        for dynamic_import in dynamic_imports
+    )
 
 
-def _count_packages(
-    packages: tuple[DependencyAuditPackage, ...],
-    status: DependencyStatus,
-) -> int:
-    return sum(1 for package in packages if package.status == status)
+def _external_import_diagnostic_message(
+    external_import: DependencyAuditExternalImport,
+) -> str:
+    message = (
+        f"external import {external_import.module!r} from "
+        f"{external_import.source}:{external_import.line} is not declared "
+        "in [deps] packages"
+    )
+    candidates = _external_import_candidate_text(external_import.packages)
+    if candidates:
+        return f"{message} (candidate packages: {candidates})"
+    return f"{message} (no installed package metadata found)"
 
 
-def _count_extras(
-    extras: tuple[DependencyAuditExtra, ...],
-    status: ExtraStatus,
-) -> int:
-    return sum(1 for extra in extras if extra.status == status)
+def _dynamic_import_diagnostic_message(
+    dynamic_import: DependencyAuditDynamicImport,
+) -> str:
+    location = f"{dynamic_import.source}:{dynamic_import.line}"
+    manual = "declare required [runtime] files and [deps] packages manually"
+    if dynamic_import.module is None:
+        return (
+            f"dynamic import expression from {location} via "
+            f"{dynamic_import.mechanism} cannot be resolved statically; {manual}"
+        )
+    if dynamic_import.declared_by is not None:
+        return (
+            f"dynamic import {dynamic_import.module!r} from {location} via "
+            f"{dynamic_import.mechanism} is declared by package "
+            f"{dynamic_import.declared_by!r}; {manual}"
+        )
+    candidates = _external_import_candidate_text(dynamic_import.packages)
+    if candidates:
+        return (
+            f"dynamic import {dynamic_import.module!r} from {location} via "
+            f"{dynamic_import.mechanism} is not statically copied; {manual} "
+            f"(candidate packages: {candidates})"
+        )
+    return (
+        f"dynamic import {dynamic_import.module!r} from {location} via "
+        f"{dynamic_import.mechanism} is not statically copied; {manual} "
+        "(no installed package metadata found)"
+    )

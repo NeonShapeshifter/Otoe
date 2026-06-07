@@ -79,10 +79,6 @@
           "type": "literal",
           "value": "#ffffff"
         },
-        "color": {
-          "type": "literal",
-          "value": "#111827"
-        },
         "width": {
           "type": "size",
           "unit": "px",
@@ -96,10 +92,6 @@
           "type": "literal",
           "value": "#ffffff"
         },
-        "color": {
-          "type": "literal",
-          "value": "#111827"
-        },
         "width": {
           "type": "size",
           "unit": "px",
@@ -112,6 +104,28 @@
       "omittedOps": [],
       "passed": true,
       "selector": ".bundle-shell"
+    },
+    {
+      "appliedDeclarations": {
+        "color": {
+          "type": "literal",
+          "value": "#111827"
+        }
+      },
+      "className": "bundle-label",
+      "errors": [],
+      "expectedDeclarations": {
+        "color": {
+          "type": "literal",
+          "value": "#111827"
+        }
+      },
+      "expectedMissing": false,
+      "expectedOmittedOps": [],
+      "missing": false,
+      "omittedOps": [],
+      "passed": true,
+      "selector": ".bundle-label"
     }
   ],
   "directStyles": [
@@ -131,8 +145,10 @@
           "value": 8
         }
       },
+      "expectedNodeId": "root:VStack",
       "expectedOmittedOps": [],
       "expectedWidget": "VStack",
+      "nodeId": "root:VStack",
       "omittedOps": [],
       "passed": true,
       "path": [],

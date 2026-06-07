@@ -3,7 +3,7 @@
   "capabilityAudit": {
     "applied": [
       {
-        "count": 14,
+        "count": 22,
         "properties": [
           {
             "count": 1,
@@ -23,6 +23,22 @@
           },
           {
             "count": 2,
+            "property": "maxHeight"
+          },
+          {
+            "count": 1,
+            "property": "maxWidth"
+          },
+          {
+            "count": 2,
+            "property": "minHeight"
+          },
+          {
+            "count": 1,
+            "property": "minWidth"
+          },
+          {
+            "count": 3,
             "property": "padding"
           },
           {
@@ -30,18 +46,44 @@
             "property": "scrollY"
           },
           {
-            "count": 4,
+            "count": 5,
             "property": "width"
           }
         ],
         "support": "layout"
       },
       {
-        "count": 2,
+        "count": 4,
         "properties": [
           {
-            "count": 2,
+            "count": 3,
+            "property": "borderWidth"
+          },
+          {
+            "count": 1,
+            "property": "fontSize"
+          }
+        ],
+        "support": "layout+paint"
+      },
+      {
+        "count": 10,
+        "properties": [
+          {
+            "count": 3,
             "property": "background"
+          },
+          {
+            "count": 3,
+            "property": "borderColor"
+          },
+          {
+            "count": 3,
+            "property": "borderRadius"
+          },
+          {
+            "count": 1,
+            "property": "color"
           }
         ],
         "support": "paint"
@@ -55,6 +97,22 @@
           {
             "count": 1,
             "property": "borderStyle"
+          },
+          {
+            "count": 1,
+            "property": "display"
+          },
+          {
+            "count": 1,
+            "property": "fontWeight"
+          },
+          {
+            "count": 1,
+            "property": "margin"
+          },
+          {
+            "count": 1,
+            "property": "opacity"
           }
         ],
         "status": "html-only"
@@ -62,11 +120,27 @@
     ],
     "omittedByStatus": [
       {
-        "count": 1,
+        "count": 5,
         "properties": [
           {
             "count": 1,
             "property": "borderStyle"
+          },
+          {
+            "count": 1,
+            "property": "display"
+          },
+          {
+            "count": 1,
+            "property": "fontWeight"
+          },
+          {
+            "count": 1,
+            "property": "margin"
+          },
+          {
+            "count": 1,
+            "property": "opacity"
           }
         ],
         "status": "html-only"
@@ -74,11 +148,27 @@
     ],
     "omittedBySupport": [
       {
-        "count": 1,
+        "count": 5,
         "properties": [
           {
             "count": 1,
             "property": "borderStyle"
+          },
+          {
+            "count": 1,
+            "property": "display"
+          },
+          {
+            "count": 1,
+            "property": "fontWeight"
+          },
+          {
+            "count": 1,
+            "property": "margin"
+          },
+          {
+            "count": 1,
+            "property": "opacity"
           }
         ],
         "support": "ignored"
@@ -106,6 +196,22 @@
           },
           {
             "count": 2,
+            "property": "maxHeight"
+          },
+          {
+            "count": 1,
+            "property": "maxWidth"
+          },
+          {
+            "count": 2,
+            "property": "minHeight"
+          },
+          {
+            "count": 1,
+            "property": "minWidth"
+          },
+          {
+            "count": 3,
             "property": "padding"
           },
           {
@@ -113,7 +219,7 @@
             "property": "scrollY"
           },
           {
-            "count": 4,
+            "count": 5,
             "property": "width"
           }
         ],
@@ -123,16 +229,42 @@
         "kind": "apply",
         "properties": [
           {
-            "count": 2,
+            "count": 3,
+            "property": "borderWidth"
+          },
+          {
+            "count": 1,
+            "property": "fontSize"
+          }
+        ],
+        "support": "layout+paint"
+      },
+      {
+        "kind": "apply",
+        "properties": [
+          {
+            "count": 3,
             "property": "background"
+          },
+          {
+            "count": 3,
+            "property": "borderColor"
+          },
+          {
+            "count": 3,
+            "property": "borderRadius"
+          },
+          {
+            "count": 1,
+            "property": "color"
           }
         ],
         "support": "paint"
       }
     ],
     "summary": {
-      "applied": 16,
-      "omitted": 1,
+      "applied": 36,
+      "omitted": 5,
       "unsupported": 0
     },
     "unsupportedProperties": []
@@ -151,6 +283,52 @@
       "selector": ".ui-shortcut-scope"
     },
     {
+      "appliedDeclarations": {},
+      "className": "ui-focus-scope",
+      "errors": [],
+      "expectedDeclarations": {},
+      "expectedMissing": false,
+      "expectedOmittedOps": [],
+      "missing": false,
+      "omittedOps": [],
+      "passed": true,
+      "selector": ".ui-focus-scope"
+    },
+    {
+      "appliedDeclarations": {
+        "maxHeight": {
+          "type": "size",
+          "unit": "px",
+          "value": 360
+        },
+        "minHeight": {
+          "type": "size",
+          "unit": "px",
+          "value": 200
+        }
+      },
+      "className": "candidate-focus",
+      "errors": [],
+      "expectedDeclarations": {
+        "maxHeight": {
+          "type": "size",
+          "unit": "px",
+          "value": 360
+        },
+        "minHeight": {
+          "type": "size",
+          "unit": "px",
+          "value": 200
+        }
+      },
+      "expectedMissing": false,
+      "expectedOmittedOps": [],
+      "missing": false,
+      "omittedOps": [],
+      "passed": true,
+      "selector": ".candidate-focus"
+    },
+    {
       "appliedDeclarations": {
         "background": {
           "type": "literal",
@@ -160,6 +338,16 @@
           "type": "size",
           "unit": "px",
           "value": 6
+        },
+        "maxWidth": {
+          "type": "size",
+          "unit": "px",
+          "value": 260
+        },
+        "minWidth": {
+          "type": "size",
+          "unit": "px",
+          "value": 200
         },
         "padding": {
           "type": "size",
@@ -184,6 +372,16 @@
           "unit": "px",
           "value": 6
         },
+        "maxWidth": {
+          "type": "size",
+          "unit": "px",
+          "value": 260
+        },
+        "minWidth": {
+          "type": "size",
+          "unit": "px",
+          "value": 200
+        },
         "padding": {
           "type": "size",
           "unit": "px",
@@ -207,6 +405,51 @@
             "type": "literal",
             "value": "solid"
           }
+        },
+        {
+          "message": "property 'display' is accepted but ignored by native",
+          "op": "omitStyle",
+          "property": "display",
+          "status": "html-only",
+          "support": "ignored",
+          "value": {
+            "type": "literal",
+            "value": "flex"
+          }
+        },
+        {
+          "message": "property 'fontWeight' is accepted but ignored by native",
+          "op": "omitStyle",
+          "property": "fontWeight",
+          "status": "html-only",
+          "support": "ignored",
+          "value": {
+            "type": "literal",
+            "value": 700
+          }
+        },
+        {
+          "message": "property 'margin' is accepted but ignored by native",
+          "op": "omitStyle",
+          "property": "margin",
+          "status": "html-only",
+          "support": "ignored",
+          "value": {
+            "type": "size",
+            "unit": "px",
+            "value": 4
+          }
+        },
+        {
+          "message": "property 'opacity' is accepted but ignored by native",
+          "op": "omitStyle",
+          "property": "opacity",
+          "status": "html-only",
+          "support": "ignored",
+          "value": {
+            "type": "literal",
+            "value": 0.96
+          }
         }
       ],
       "missing": false,
@@ -221,6 +464,51 @@
             "type": "literal",
             "value": "solid"
           }
+        },
+        {
+          "message": "property 'display' is accepted but ignored by native",
+          "op": "omitStyle",
+          "property": "display",
+          "status": "html-only",
+          "support": "ignored",
+          "value": {
+            "type": "literal",
+            "value": "flex"
+          }
+        },
+        {
+          "message": "property 'fontWeight' is accepted but ignored by native",
+          "op": "omitStyle",
+          "property": "fontWeight",
+          "status": "html-only",
+          "support": "ignored",
+          "value": {
+            "type": "literal",
+            "value": 700
+          }
+        },
+        {
+          "message": "property 'margin' is accepted but ignored by native",
+          "op": "omitStyle",
+          "property": "margin",
+          "status": "html-only",
+          "support": "ignored",
+          "value": {
+            "type": "size",
+            "unit": "px",
+            "value": 4
+          }
+        },
+        {
+          "message": "property 'opacity' is accepted but ignored by native",
+          "op": "omitStyle",
+          "property": "opacity",
+          "status": "html-only",
+          "support": "ignored",
+          "value": {
+            "type": "literal",
+            "value": 0.96
+          }
         }
       ],
       "passed": true,
@@ -228,6 +516,20 @@
     },
     {
       "appliedDeclarations": {
+        "borderColor": {
+          "type": "literal",
+          "value": "#64748b"
+        },
+        "borderRadius": {
+          "type": "size",
+          "unit": "px",
+          "value": 7
+        },
+        "borderWidth": {
+          "type": "size",
+          "unit": "px",
+          "value": 1
+        },
         "width": {
           "type": "size",
           "unit": "px",
@@ -237,6 +539,20 @@
       "className": "candidate-input",
       "errors": [],
       "expectedDeclarations": {
+        "borderColor": {
+          "type": "literal",
+          "value": "#64748b"
+        },
+        "borderRadius": {
+          "type": "size",
+          "unit": "px",
+          "value": 7
+        },
+        "borderWidth": {
+          "type": "size",
+          "unit": "px",
+          "value": 1
+        },
         "width": {
           "type": "size",
           "unit": "px",
@@ -312,6 +628,48 @@
     },
     {
       "appliedDeclarations": {
+        "borderColor": {
+          "type": "literal",
+          "value": "#1d4ed8"
+        },
+        "borderRadius": {
+          "type": "size",
+          "unit": "px",
+          "value": 8
+        },
+        "borderWidth": {
+          "type": "size",
+          "unit": "px",
+          "value": 1
+        }
+      },
+      "className": "candidate-button",
+      "errors": [],
+      "expectedDeclarations": {
+        "borderColor": {
+          "type": "literal",
+          "value": "#1d4ed8"
+        },
+        "borderRadius": {
+          "type": "size",
+          "unit": "px",
+          "value": 8
+        },
+        "borderWidth": {
+          "type": "size",
+          "unit": "px",
+          "value": 1
+        }
+      },
+      "expectedMissing": false,
+      "expectedOmittedOps": [],
+      "missing": false,
+      "omittedOps": [],
+      "passed": true,
+      "selector": ".candidate-button"
+    },
+    {
+      "appliedDeclarations": {
         "background": {
           "type": "literal",
           "value": "#ffffff"
@@ -371,6 +729,128 @@
       "omittedOps": [],
       "passed": true,
       "selector": ".candidate-list"
+    },
+    {
+      "appliedDeclarations": {
+        "background": {
+          "type": "literal",
+          "value": "#e0f2fe"
+        },
+        "borderColor": {
+          "type": "literal",
+          "value": "#0369a1"
+        },
+        "borderRadius": {
+          "type": "size",
+          "unit": "px",
+          "value": 6
+        },
+        "borderWidth": {
+          "type": "size",
+          "unit": "px",
+          "value": 1
+        },
+        "maxHeight": {
+          "type": "size",
+          "unit": "px",
+          "value": 70
+        },
+        "minHeight": {
+          "type": "size",
+          "unit": "px",
+          "value": 24
+        },
+        "padding": {
+          "type": "size",
+          "unit": "px",
+          "value": 3
+        },
+        "width": {
+          "type": "size",
+          "unit": "px",
+          "value": 180
+        }
+      },
+      "className": "candidate-panel",
+      "errors": [],
+      "expectedDeclarations": {
+        "background": {
+          "type": "literal",
+          "value": "#e0f2fe"
+        },
+        "borderColor": {
+          "type": "literal",
+          "value": "#0369a1"
+        },
+        "borderRadius": {
+          "type": "size",
+          "unit": "px",
+          "value": 6
+        },
+        "borderWidth": {
+          "type": "size",
+          "unit": "px",
+          "value": 1
+        },
+        "maxHeight": {
+          "type": "size",
+          "unit": "px",
+          "value": 70
+        },
+        "minHeight": {
+          "type": "size",
+          "unit": "px",
+          "value": 24
+        },
+        "padding": {
+          "type": "size",
+          "unit": "px",
+          "value": 3
+        },
+        "width": {
+          "type": "size",
+          "unit": "px",
+          "value": 180
+        }
+      },
+      "expectedMissing": false,
+      "expectedOmittedOps": [],
+      "missing": false,
+      "omittedOps": [],
+      "passed": true,
+      "selector": ".candidate-panel"
+    },
+    {
+      "appliedDeclarations": {
+        "color": {
+          "type": "literal",
+          "value": "#0f172a"
+        },
+        "fontSize": {
+          "type": "size",
+          "unit": "px",
+          "value": 13
+        }
+      },
+      "className": "candidate-status",
+      "errors": [],
+      "expectedDeclarations": {
+        "color": {
+          "type": "literal",
+          "value": "#0f172a"
+        },
+        "fontSize": {
+          "type": "size",
+          "unit": "px",
+          "value": 13
+        }
+      },
+      "expectedMissing": false,
+      "expectedOmittedOps": [],
+      "missing": false,
+      "omittedOps": [],
+      "passed": true,
+      "selector": ".candidate-status"
     }
   ],
   "directStyles": [
@@ -390,11 +870,14 @@
           "value": 0
         }
       },
+      "expectedNodeId": "root:ShortcutScope/index:0:FocusScope/index:0:VStack/index:2:ScrollView",
       "expectedOmittedOps": [],
       "expectedWidget": "ScrollView",
+      "nodeId": "root:ShortcutScope/index:0:FocusScope/index:0:VStack/index:2:ScrollView",
       "omittedOps": [],
       "passed": true,
       "path": [
+        0,
         0,
         2
       ],

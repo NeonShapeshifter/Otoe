@@ -3,7 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from otoe.pack import PackError, _run_style_ir_strict_verify, _safe_bundle_path
+from otoe.pack import (
+    PackError,
+    _manifest_pack_paths,
+    _run_style_ir_strict_verify,
+    _safe_bundle_path,
+)
 
 
 def test_safe_bundle_path_rejects_empty_and_current_directory():
@@ -30,6 +35,42 @@ def test_safe_bundle_path_accepts_relative_bundle_file():
     assert _safe_bundle_path(bundle_dir, "styles/otoe-styles.json") == (
         bundle_dir / "styles" / "otoe-styles.json"
     )
+
+
+def test_manifest_pack_paths_rejects_unsafe_declared_paths():
+    bundle_dir = Path("/bundle")
+    manifest = {
+        "plan": "otoe-plan.json",
+        "runtimeFiles": [{"bundlePath": "../app.py"}],
+    }
+
+    with pytest.raises(PackError, match="bundle path '../app.py' is not safe"):
+        _manifest_pack_paths(manifest, bundle_dir=bundle_dir)
+
+
+def test_manifest_pack_paths_validates_declared_pack_surface():
+    bundle_dir = Path("/bundle")
+    manifest = {
+        "plan": "otoe-plan.json",
+        "deps": "otoe-deps.json",
+        "styles": "otoe-styles.json",
+        "runner": {"path": "otoe-run.py"},
+        "artifacts": [{"path": "otoe-plan.json"}],
+        "assets": [{"bundlePath": "assets/logo.png"}],
+        "frameworkFiles": [{"bundlePath": "framework/otoe/__init__.py"}],
+        "runtimeFiles": [{"bundlePath": "app/main.py"}],
+    }
+
+    assert _manifest_pack_paths(manifest, bundle_dir=bundle_dir) == {
+        "manifest.json",
+        "otoe-plan.json",
+        "otoe-deps.json",
+        "otoe-styles.json",
+        "otoe-run.py",
+        "assets/logo.png",
+        "framework/otoe/__init__.py",
+        "app/main.py",
+    }
 
 
 def test_run_style_ir_strict_verify_rejects_style_ops_drift(tmp_path):

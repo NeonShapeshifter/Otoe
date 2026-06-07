@@ -48,9 +48,24 @@ from .native import (
 )
 from .node import Node, Widget
 from .reactive import Computed, Effect, Signal, computed, effect, signal
+from .render_ir import (
+    RENDER_TREE_SCHEMA_VERSION,
+    RenderIRError,
+    RenderNode,
+    RenderTree,
+    assert_render_tree_valid,
+    load_render_tree_artifact,
+    render_node_to_dict,
+    render_tree_from_dict,
+    render_tree_from_target,
+    render_tree_to_dict,
+    validate_render_tree,
+    walk_render_nodes,
+)
 from .scheduler import batch
 from .snapshot import snapshot, snapshot_text
 from .style import (
+    ResolvedStyleMap,
     Size,
     StyleError,
     StyleRule,
@@ -59,6 +74,7 @@ from .style import (
     Token,
     UnknownStyleClassError,
     css,
+    resolved_style_map_from_style_ops_artifact,
 )
 from .template import TemplateError, template
 from .timing import Interval, interval
@@ -180,10 +196,23 @@ __all__ = [
     "PaintCommand",
     "PREVIEW_APIS",
     "PythonNativeRendererBackend",
+    "RENDER_TREE_SCHEMA_VERSION",
     "ReactiveDisposedError",
     "ReactiveMutationError",
+    "ResolvedStyleMap",
+    "RenderIRError",
+    "RenderNode",
+    "RenderTree",
+    "assert_render_tree_valid",
+    "load_render_tree_artifact",
     "render_html",
     "render_native_png",
+    "render_node_to_dict",
+    "render_tree_from_dict",
+    "render_tree_from_target",
+    "render_tree_to_dict",
+    "validate_render_tree",
+    "resolved_style_map_from_style_ops_artifact",
     "RouteView",
     "ScrollView",
     "SectionHeader",
@@ -250,5 +279,6 @@ __all__ = [
     "unmount",
     "utility_css",
     "utility_stylesheet",
+    "walk_render_nodes",
     "write_native_png",
 ]

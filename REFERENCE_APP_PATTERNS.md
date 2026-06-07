@@ -158,8 +158,9 @@ Every reference app should have focused tests for three layers:
 Full-suite baseline after the live preview, static class hardening, Style IR
 pack gate, bundle replay, backend readiness fixture, backend readiness report,
 backend coverage declaration, renderer capability audit, StyleOps capability
-audit, and primitive value validation pass:
-`544 passed, 1 skipped`.
+audit, primitive value validation, bundle manifest hardening, namespace runtime
+discovery, dependency audit contract metadata, and RenderTree validation pass:
+`675 passed, 1 skipped`.
 
 ## Current Decision
 

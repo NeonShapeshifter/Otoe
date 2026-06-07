@@ -7,6 +7,8 @@ import tarfile
 import tomllib
 import zlib
 
+import otoe.deps as deps_module
+from otoe.capabilities import backend_capability_profile
 from otoe.cli import main
 
 
@@ -50,7 +52,7 @@ def test_cli_check_passes_extra_pytest_args(tmp_path, monkeypatch, capsys):
         calls.append(command)
         return Completed()
 
-    monkeypatch.setattr("otoe.cli.subprocess.run", fake_run)
+    monkeypatch.setattr("otoe.cli_check.subprocess.run", fake_run)
 
     result = main(
         [
@@ -557,8 +559,10 @@ def test_cli_backend_profile_outputs_builtin_summary(capsys):
     assert "styles: ignored=5, layout=11, layout+paint=2, paint=4" in captured.out
     assert "widgets: container=8, control=2, text=1" in captured.out
     assert "inputs: deferred=8, supported=8" in captured.out
+    assert "renderer boundaries: supported=2" in captured.out
     assert (
-        "coverage: widgets=11, inputs=8, styles=17, declaredStyleOmissions=5"
+        "coverage: rendererBoundaries=2, widgets=11, inputs=8, styles=17, "
+        "declaredStyleOmissions=5"
         in captured.out
     )
 
@@ -579,6 +583,7 @@ def test_cli_backend_profile_outputs_json_report(capsys):
         "paint": 4,
     }
     assert payload["summary"]["coverage"] == {
+        "rendererBoundaries": 2,
         "widgets": 11,
         "inputs": 8,
         "styles": 17,
@@ -652,6 +657,7 @@ def test_cli_backend_profile_loads_candidate_profile_json(
     assert payload["coverageDeclaration"]["covers"] == {
         "widgets": ["Text"],
         "inputs": ["click"],
+        "rendererBoundaries": [],
         "styles": ["padding"],
         "declaredStyleOmissions": [],
     }
@@ -681,7 +687,7 @@ def test_cli_backend_profile_rejects_name_and_profile_json(
     )
 
 
-def test_cli_backend_coverage_compares_builtin_profile(capsys):
+def test_cli_backend_coverage_accepts_builtin_profile(capsys):
     result = main(
         [
             "backend-coverage",
@@ -701,8 +707,167 @@ def test_cli_backend_coverage_compares_builtin_profile(capsys):
     assert payload["backend"] == "native-python"
     assert payload["passed"] is True
     assert payload["readiness"]["passed"] is True
-    assert payload["coverage"]["widgets"]["extra"] == ["FocusScope", "Panel"]
+    assert payload["readiness"]["strictEvidence"] is True
+    assert payload["blockers"] == []
+    assert payload["coverage"]["widgets"]["extra"] == []
+    assert payload["coverage"]["widgets"]["evidence"]["claimed"] == [
+        "Button",
+        "FocusScope",
+        "For",
+        "HStack",
+        "Input",
+        "Panel",
+        "ScrollView",
+        "ShortcutScope",
+        "Show",
+        "Text",
+        "VStack",
+    ]
+    assert payload["coverage"]["widgets"]["evidence"]["unproven"] == []
+    assert payload["coverage"]["widgets"]["summary"]["unproven"] == 0
+    assert payload["coverage"]["widgets"]["evidenceMap"]["Button"]["sources"][
+        0
+    ]["gate"] == "rendererReplay"
     assert payload["coverage"]["styles"]["missing"] == []
+
+
+def test_cli_backend_coverage_audit_reports_traceable_sources(capsys):
+    result = main(
+        [
+            "backend-coverage",
+            "--requirements",
+            "examples/native/contracts/backend_readiness_expected.json",
+            "--backend",
+            "native-python",
+            "--audit",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 0
+    assert "backend-coverage audit native-python" in captured.out
+    assert (
+        "rendererBoundaries: covered=2/2, missing=0, unproven=0"
+        in captured.out
+    )
+    assert (
+        "rendererBoundaries renderTreeLayout: covered required=yes "
+        "declared=yes exercised=yes"
+    ) in captured.out
+    assert (
+        "rendererBoundaries renderTreeLayout proof[0]: "
+        "source=path0RenderTreeEvidence gate=path0RenderTreeEvidence "
+        "kind=rendererBoundary group=0 count=1 phase=layout "
+        "boundary=renderTree layoutBoxes=15 "
+        "outputHash=sha256:53f705a49cf269a14ea0ca186a11018de87608ef086baa1194f9ae85b792ed4a"
+    ) in captured.out
+    assert (
+        "rendererBoundaries paint proof[0]: "
+        "source=path0RenderTreeEvidence gate=path0RenderTreeEvidence "
+        "kind=rendererBoundary group=0 count=1 phase=paint paintCommands=18 "
+        "outputHash=sha256:455f2fdf5eda9b3602cbe4f7d944de2a484ebe6e8887ce2ae7e593af519042a3"
+    ) in captured.out
+    assert "widgets: covered=11/11, missing=0, unproven=0" in captured.out
+    assert (
+        "widgets Button: covered required=yes declared=yes exercised=yes"
+        in captured.out
+    )
+    assert (
+        "widgets Button proof[0]: source=rendererReplay gate=rendererReplay "
+        "kind=widget support=control group=1 count=9"
+    ) in captured.out
+    assert (
+        "styles borderWidth: covered required=yes declared=yes exercised=yes"
+        in captured.out
+    )
+    assert (
+        "styles borderWidth proof[0]: "
+        "source=styleOpsReplay+path0RenderTreeEvidence "
+        "gate=styleOpsReplay+path0RenderTreeEvidence kind=apply "
+        "support=layout+paint group=1 count=3 "
+        "runtime=path0-renderer-candidate phases=layout+paint"
+    ) in captured.out
+    assert "layoutHash=sha256:" in captured.out
+    assert "paintHash=sha256:" in captured.out
+    assert (
+        "declaredStyleOmissions display proof[0]: "
+        "source=styleOpsReplay+path0RenderTreeEvidence "
+        "gate=styleOpsReplay+path0RenderTreeEvidence kind=omit "
+        "status=html-only group=0 count=1 runtime=path0-renderer-candidate "
+        "phases=layout+paint"
+    ) in captured.out
+    assert "blockers: none" in captured.out
+
+
+def test_cli_backend_coverage_reports_evidence_contract_errors(tmp_path, capsys):
+    requirements = json.loads(
+        open(
+            "examples/native/contracts/backend_readiness_expected.json",
+            encoding="utf-8",
+        ).read()
+    )
+    requirements["evidence"]["widgets"][0].pop("source")
+    requirements_path = tmp_path / "broken-readiness.json"
+    requirements_path.write_text(json.dumps(requirements), encoding="utf-8")
+
+    result = main(
+        [
+            "backend-coverage",
+            "--requirements",
+            str(requirements_path),
+            "--backend",
+            "native-python",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "status: failed" in captured.out
+    assert "widgets: covered=3/11, missing=0, unproven=8" in captured.out
+    assert (
+        "widgets unproven: FocusScope, For, HStack, Panel, ScrollView, "
+        "ShortcutScope, Show, VStack"
+    ) in captured.out
+    assert "evidence errors: 1" in captured.out
+    assert (
+        "evidence error: evidence.widgets[0].source must be a non-empty string"
+        in captured.out
+    )
+    assert "blockers: widgetsEvidence" in captured.out
+
+
+def test_cli_backend_coverage_audit_reports_unproven_claims(tmp_path, capsys):
+    requirements = json.loads(
+        open(
+            "examples/native/contracts/backend_readiness_expected.json",
+            encoding="utf-8",
+        ).read()
+    )
+    requirements["evidence"]["widgets"][0].pop("source")
+    requirements_path = tmp_path / "broken-readiness.json"
+    requirements_path.write_text(json.dumps(requirements), encoding="utf-8")
+
+    result = main(
+        [
+            "backend-coverage",
+            "--requirements",
+            str(requirements_path),
+            "--backend",
+            "native-python",
+            "--audit",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "backend-coverage audit native-python" in captured.out
+    assert (
+        "widgets FocusScope: unproven required=yes declared=yes exercised=no"
+        in captured.out
+    )
+    assert "widgets FocusScope proof: none" in captured.out
+    assert "evidence errors: 1" in captured.out
+    assert "blockers: widgetsEvidence" in captured.out
 
 
 def test_cli_backend_coverage_reports_partial_profile_gaps(capsys):
@@ -720,9 +885,98 @@ def test_cli_backend_coverage_reports_partial_profile_gaps(capsys):
     assert result == 1
     assert "backend-coverage partial-backend-candidate" in captured.out
     assert "status: failed" in captured.out
-    assert "widgets missing: Button" in captured.out
-    assert "styles missing: background" in captured.out
-    assert "blockers: widgetsCoverage, stylesCoverage" in captured.out
+    assert (
+        "rendererBoundaries: covered=0/2, missing=2, unproven=0"
+        in captured.out
+    )
+    assert "rendererBoundaries missing: paint, renderTreeLayout" in captured.out
+    assert "widgets: covered=8/11, missing=3, unproven=0" in captured.out
+    assert "widgets missing: Button, FocusScope, Panel" in captured.out
+    assert "inputs missing: focus, key_down, key_input, tab_focus" in captured.out
+    assert (
+        "styles missing: background, borderColor, borderRadius, borderWidth, "
+        "color, fontSize, maxHeight, maxWidth, minHeight, minWidth"
+        in captured.out
+    )
+    assert (
+        "declaredStyleOmissions missing: display, fontWeight, margin, opacity"
+        in captured.out
+    )
+    assert (
+        "blockers: rendererBoundariesCoverage, widgetsCoverage, inputsCoverage, "
+        "stylesCoverage, declaredStyleOmissionsCoverage"
+        in captured.out
+    )
+
+
+def test_cli_backend_coverage_rejects_requirements_without_evidence(tmp_path, capsys):
+    readiness = json.loads(
+        open(
+            "examples/native/contracts/backend_readiness_expected.json",
+            encoding="utf-8",
+        ).read()
+    )
+    requirements_path = tmp_path / "requirements-only.json"
+    requirements_path.write_text(
+        json.dumps(readiness["requirements"]),
+        encoding="utf-8",
+    )
+
+    result = main(
+        [
+            "backend-coverage",
+            "--requirements",
+            str(requirements_path),
+            "--backend",
+            "native-python",
+            "--json",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 1
+    assert payload["passed"] is False
+    assert payload["readiness"]["strictEvidence"] is True
+    assert payload["readiness"]["evidenceBlockers"] == ["capabilityEvidence"]
+    assert payload["coverage"]["widgets"]["exercised"] == []
+    assert payload["coverage"]["widgets"]["summary"]["unproven"] == 11
+    assert "capabilityEvidence" in payload["blockers"]
+    assert "widgetsEvidence" in payload["blockers"]
+
+
+def test_cli_backend_coverage_rejects_audit_with_json_or_out(tmp_path, capsys):
+    out = tmp_path / "coverage.json"
+
+    json_result = main(
+        [
+            "backend-coverage",
+            "--requirements",
+            "examples/native/contracts/backend_readiness_expected.json",
+            "--backend",
+            "native-python",
+            "--audit",
+            "--json",
+        ]
+    )
+    out_result = main(
+        [
+            "backend-coverage",
+            "--requirements",
+            "examples/native/contracts/backend_readiness_expected.json",
+            "--backend",
+            "native-python",
+            "--audit",
+            "--out",
+            str(out),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert json_result == 1
+    assert out_result == 1
+    assert not out.exists()
+    assert captured.err.count("--audit cannot be combined with --json or --out") == 2
 
 
 def test_cli_backend_coverage_accepts_explicit_declaration(capsys):
@@ -742,6 +996,7 @@ def test_cli_backend_coverage_accepts_explicit_declaration(capsys):
     assert result == 0
     assert payload["backend"] == "native-python"
     assert payload["passed"] is True
+    assert payload["blockers"] == []
     assert payload["declarationErrors"] == []
 
 
@@ -766,6 +1021,7 @@ def test_cli_backend_coverage_writes_report_artifact(tmp_path, capsys):
     assert captured.out == f"backend coverage artifact: {output}\n"
     assert payload["backend"] == "native-python"
     assert payload["passed"] is True
+    assert payload["blockers"] == []
 
 
 def test_cli_backend_coverage_rejects_multiple_coverage_sources(capsys):
@@ -965,6 +1221,92 @@ def test_cli_plan_static_class_scan_ignores_condition_literals(
     assert payload["classes"]["used"] == ["status", "is-light"]
     assert payload["classes"]["static"] == ["is-dark"]
     assert payload["classes"]["planned"] == ["status", "is-light", "is-dark"]
+    assert payload["diagnostics"] == []
+
+
+def test_cli_plan_safelists_matching_ui_dynamic_classes(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "ui_dynamic_class_plan_surface.py"
+    module.write_text(
+        "from otoe import Badge, signal\n"
+        "tone = signal('neutral')\n"
+        "def app():\n"
+        "    return Badge('State', tone=tone)\n",
+        encoding="utf-8",
+    )
+    styles = tmp_path / "styles.css"
+    styles.write_text(
+        ".ui-badge { padding: 4; }\n"
+        ".is-neutral { background: #ffffff; }\n"
+        ".is-success { background: #dcfce7; }\n",
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "plan",
+            "ui_dynamic_class_plan_surface:app",
+            "--css",
+            str(styles),
+            "--json",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["classes"]["used"] == ["ui-badge", "is-neutral"]
+    assert payload["classes"]["static"] == ["is-success"]
+    assert payload["classes"]["safelisted"] == []
+    assert payload["classes"]["planned"] == [
+        "ui-badge",
+        "is-neutral",
+        "is-success",
+    ]
+    assert payload["diagnostics"] == []
+
+
+def test_cli_plan_does_not_safelist_missing_ui_dynamic_rules(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "ui_dynamic_missing_rule_plan_surface.py"
+    module.write_text(
+        "from otoe import Badge, signal\n"
+        "tone = signal('neutral')\n"
+        "def app():\n"
+        "    return Badge('State', tone=tone)\n",
+        encoding="utf-8",
+    )
+    styles = tmp_path / "styles.css"
+    styles.write_text(
+        ".ui-badge { padding: 4; }\n"
+        ".is-neutral { background: #ffffff; }\n",
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "plan",
+            "ui_dynamic_missing_rule_plan_surface:app",
+            "--css",
+            str(styles),
+            "--json",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["classes"]["used"] == ["ui-badge", "is-neutral"]
+    assert payload["classes"]["static"] == []
+    assert payload["classes"]["planned"] == ["ui-badge", "is-neutral"]
     assert payload["diagnostics"] == []
 
 
@@ -1650,6 +1992,16 @@ def test_cli_build_writes_minimal_bundle_manifest(tmp_path, monkeypatch, capsys)
         "size": (output / "framework" / "otoe" / "style_ops.py").stat().st_size,
         "sha256": hashlib.sha256(
             (output / "framework" / "otoe" / "style_ops.py").read_bytes()
+        ).hexdigest(),
+    } in framework_files
+    assert {
+        "source": "otoe/_render_identity.py",
+        "bundlePath": "framework/otoe/_render_identity.py",
+        "size": (
+            output / "framework" / "otoe" / "_render_identity.py"
+        ).stat().st_size,
+        "sha256": hashlib.sha256(
+            (output / "framework" / "otoe" / "_render_identity.py").read_bytes()
         ).hexdigest(),
     } in framework_files
     assert not (output / "framework" / "otoe" / "build.py").exists()
@@ -2599,6 +2951,65 @@ def test_cli_build_compiles_profile_style_safelist(tmp_path, monkeypatch):
     }
 
 
+def test_cli_build_safelists_reactive_ui_variant_classes(tmp_path, monkeypatch):
+    app = tmp_path / "ui_variant_safelist_bundle_app.py"
+    app.write_text(
+        "from otoe import Badge, signal\n"
+        "tone = signal('neutral')\n"
+        "app = Badge('Health', tone=tone)\n",
+        encoding="utf-8",
+    )
+    styles = tmp_path / "styles.css"
+    styles.write_text(
+        ".ui-badge { color: #111827; }\n"
+        ".is-neutral { background: #f8fafc; }\n"
+        ".is-success { background: #dcfce7; }\n",
+        encoding="utf-8",
+    )
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        'css = ["styles.css"]\n'
+        "\n"
+        "[styles]\n"
+        'safelist = ["is-success"]\n'
+        "\n"
+        "[runtime]\n"
+        'files = ["ui_variant_safelist_bundle_app.py"]\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "ui-variant-safelist"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "ui_variant_safelist_bundle_app:app",
+            "--profile-file",
+            str(profile_file),
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+
+    styles_payload = json.loads((output / "otoe-styles.json").read_text("utf-8"))
+    rules = {rule["className"]: rule for rule in styles_payload["rules"]}
+    assert result == 0
+    assert styles_payload["classes"]["used"] == ["ui-badge", "is-neutral"]
+    assert styles_payload["classes"]["static"] == []
+    assert styles_payload["classes"]["safelisted"] == ["is-success"]
+    assert styles_payload["classes"]["planned"] == [
+        "ui-badge",
+        "is-neutral",
+        "is-success",
+    ]
+    assert rules["is-success"]["declarations"]["background"] == {
+        "type": "literal",
+        "value": "#dcfce7",
+    }
+
+
 def test_cli_build_compiles_static_class_names_from_local_target(
     tmp_path,
     monkeypatch,
@@ -2918,6 +3329,77 @@ def test_cli_pack_writes_verified_tarball(tmp_path, monkeypatch, capsys):
     assert "verified: manifest.json" in verify.stdout
 
 
+def test_cli_pack_rejects_unmanifested_packable_files(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    app = tmp_path / "hermetic_pack_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Hermetic pack')\n",
+        encoding="utf-8",
+    )
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[runtime]\n"
+        'files = ["hermetic_pack_app.py"]\n'
+        "\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "hermetic-pack"
+    archive = tmp_path / "dist" / "hermetic-pack.tar.gz"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    assert (
+        main(
+            [
+                "build",
+                "hermetic_pack_app:app",
+                "--profile-file",
+                str(profile_file),
+                "--out",
+                str(output),
+                "--validate",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    extras = (
+        output / "app" / "debug.py",
+        output / "assets" / "secret.txt",
+        output / "framework" / "otoe" / "old_runtime.py",
+    )
+    for extra in extras:
+        extra.parent.mkdir(parents=True, exist_ok=True)
+        extra.write_text("extra\n", encoding="utf-8")
+
+        verify = subprocess.run(
+            [sys.executable, str(output / "otoe-run.py"), "--verify"],
+            capture_output=True,
+            cwd=output,
+            env={**os.environ, "PYTHONPATH": ""},
+            text=True,
+        )
+        result = main(["pack", str(output), "--out", str(archive)])
+
+        captured = capsys.readouterr()
+        assert verify.returncode == 1
+        assert f"unmanifested bundle file '{extra.relative_to(output)}'" in (
+            verify.stderr
+        )
+        assert result == 1
+        assert f"pack: unmanifested bundle file '{extra.relative_to(output)}'" in (
+            captured.err
+        )
+        assert not archive.exists()
+        extra.unlink()
+
+
 def test_cli_pack_includes_backend_coverage_artifact(
     tmp_path,
     monkeypatch,
@@ -3029,14 +3511,132 @@ def test_cli_build_runner_requires_core_artifacts_in_manifest_artifacts(
         env={**os.environ, "PYTHONPATH": ""},
         text=True,
     )
+    check = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--check"],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
     result = main(["pack", str(output), "--out", str(archive)])
 
     captured = capsys.readouterr()
     assert verify.returncode == 1
     assert "manifest.json: artifacts missing 'otoe-plan.json'" in verify.stderr
+    assert check.returncode == 1
+    assert "manifest.json: artifacts missing 'otoe-plan.json'" in check.stderr
     assert result == 1
     assert "pack: runner verification failed:" in captured.err
     assert "artifacts missing 'otoe-plan.json'" in captured.err
+
+
+def test_cli_build_runner_requires_manifest_file_entry_hashes(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    app = tmp_path / "missing_manifest_hash_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Missing manifest hash')\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "missing-manifest-hash"
+    archive = tmp_path / "dist" / "missing-manifest-hash.tar.gz"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    assert (
+        main(
+            [
+                "build",
+                "missing_manifest_hash_app:app",
+                "--out",
+                str(output),
+            ]
+        )
+        == 0
+    )
+    manifest_path = output / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    del manifest["runtimeFiles"][0]["sha256"]
+    manifest_path.write_text(json.dumps(manifest, sort_keys=True), encoding="utf-8")
+
+    verify = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--verify"],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+    result = main(["pack", str(output), "--out", str(archive)])
+
+    captured = capsys.readouterr()
+    assert verify.returncode == 1
+    assert (
+        "manifest.json: runtimeFiles[0].sha256 must be a lowercase sha256 hex digest"
+        in verify.stderr
+    )
+    assert result == 1
+    assert "pack: runner verification failed:" in captured.err
+    assert "runtimeFiles[0].sha256 must be a lowercase sha256 hex digest" in (
+        captured.err
+    )
+    assert not archive.exists()
+
+
+def test_cli_build_runner_rejects_duplicate_manifest_bundle_paths(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    app = tmp_path / "duplicate_manifest_path_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Duplicate manifest path')\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "duplicate-manifest-path"
+    archive = tmp_path / "dist" / "duplicate-manifest-path.tar.gz"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    assert (
+        main(
+            [
+                "build",
+                "duplicate_manifest_path_app:app",
+                "--out",
+                str(output),
+            ]
+        )
+        == 0
+    )
+    manifest_path = output / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["runtimeFiles"].append(dict(manifest["runtimeFiles"][0]))
+    manifest_path.write_text(json.dumps(manifest, sort_keys=True), encoding="utf-8")
+
+    verify = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--verify"],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+    result = main(["pack", str(output), "--out", str(archive)])
+
+    captured = capsys.readouterr()
+    assert verify.returncode == 1
+    assert (
+        "manifest.json: duplicate bundle path "
+        "'app/duplicate_manifest_path_app.py' in runtimeFiles[1].bundlePath; "
+        "already declared by runtimeFiles[0].bundlePath"
+    ) in verify.stderr
+    assert result == 1
+    assert "pack: runner verification failed:" in captured.err
+    assert "duplicate bundle path 'app/duplicate_manifest_path_app.py'" in (
+        captured.err
+    )
+    assert not archive.exists()
 
 
 def test_cli_pack_rejects_tampered_bundle(tmp_path, monkeypatch, capsys):
@@ -3190,6 +3790,58 @@ def test_cli_pack_rejects_invalid_deps_after_hash_update(
     assert not archive.exists()
     assert "pack: runner verification failed:" in captured.err
     assert "otoe-deps.json: dependency audit has errors" in captured.err
+
+
+def test_cli_pack_rejects_dependency_audit_resolution_drift_after_hash_update(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    app = tmp_path / "deps_resolution_drift_pack_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Dependency resolution drift')\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "deps-resolution-drift-pack"
+    archive = tmp_path / "dist" / "deps-resolution-drift-pack.tar.gz"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    assert (
+        main(
+            [
+                "build",
+                "deps_resolution_drift_pack_app:app",
+                "--out",
+                str(output),
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    deps_path = output / "otoe-deps.json"
+    deps = json.loads(deps_path.read_text(encoding="utf-8"))
+    deps["resolution"]["lockfile"] = True
+    deps_path.write_text(json.dumps(deps, sort_keys=True), encoding="utf-8")
+    _refresh_manifest_artifact_hash(output, "otoe-deps.json")
+
+    verify = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--verify"],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+    result = main(["pack", str(output), "--out", str(archive)])
+
+    captured = capsys.readouterr()
+    assert verify.returncode == 1
+    assert "otoe-deps.json: resolution.lockfile must be false" in verify.stderr
+    assert result == 1
+    assert not archive.exists()
+    assert "pack: runner verification failed:" in captured.err
+    assert "otoe-deps.json: resolution.lockfile must be false" in captured.err
 
 
 def test_cli_pack_rejects_invalid_styles_after_hash_update(
@@ -3364,6 +4016,151 @@ def test_cli_pack_rejects_failing_backend_coverage_after_hash_update(
     assert not archive.exists()
     assert "pack: runner verification failed:" in captured.err
     assert "backend coverage failed: widgetsCoverage" in captured.err
+
+
+def test_cli_pack_rejects_backend_coverage_without_traceable_evidence_map(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    app = tmp_path / "backend_coverage_trace_pack_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Backend coverage traceability')\n",
+        encoding="utf-8",
+    )
+    requirements = tmp_path / "backend-requirements.json"
+    _write_backend_coverage_requirements(requirements)
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[runtime]\n"
+        'files = ["backend_coverage_trace_pack_app.py"]\n'
+        "\n"
+        "[backend]\n"
+        'coverage_requirements = "backend-requirements.json"\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "backend-coverage-trace-pack"
+    archive = tmp_path / "dist" / "backend-coverage-trace-pack.tar.gz"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    assert (
+        main(
+            [
+                "build",
+                "backend_coverage_trace_pack_app:app",
+                "--profile-file",
+                str(profile_file),
+                "--out",
+                str(output),
+                "--validate",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    coverage_path = output / "otoe-backend-coverage.json"
+    coverage = json.loads(coverage_path.read_text(encoding="utf-8"))
+    coverage["coverage"]["widgets"]["evidenceMap"]["Text"]["sources"] = []
+    coverage_path.write_text(json.dumps(coverage, sort_keys=True), encoding="utf-8")
+    _refresh_manifest_artifact_hash(output, "otoe-backend-coverage.json")
+
+    verify = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--verify"],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+    result = main(["pack", str(output), "--out", str(archive)])
+
+    captured = capsys.readouterr()
+    assert verify.returncode == 1
+    assert (
+        "otoe-backend-coverage.json: coverage.widgets.evidenceMap.Text.sources "
+        "must not be empty for exercised coverage"
+    ) in verify.stderr
+    assert result == 1
+    assert not archive.exists()
+    assert "pack: runner verification failed:" in captured.err
+    assert "coverage.widgets.evidenceMap.Text.sources" in captured.err
+
+
+def test_cli_pack_rejects_backend_coverage_without_capability_proof_observation(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    app = tmp_path / "backend_coverage_capability_trace_pack_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Backend coverage capability traceability')\n",
+        encoding="utf-8",
+    )
+    requirements = tmp_path / "backend-requirements.json"
+    _write_backend_coverage_requirements(requirements)
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[runtime]\n"
+        'files = ["backend_coverage_capability_trace_pack_app.py"]\n'
+        "\n"
+        "[backend]\n"
+        'coverage_requirements = "backend-requirements.json"\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "backend-coverage-capability-trace-pack"
+    archive = tmp_path / "dist" / "backend-coverage-capability-trace-pack.tar.gz"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    assert (
+        main(
+            [
+                "build",
+                "backend_coverage_capability_trace_pack_app:app",
+                "--profile-file",
+                str(profile_file),
+                "--out",
+                str(output),
+                "--validate",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    coverage_path = output / "otoe-backend-coverage.json"
+    coverage = json.loads(coverage_path.read_text(encoding="utf-8"))
+    text_source = coverage["coverage"]["widgets"]["evidenceMap"]["Text"][
+        "sources"
+    ][0]
+    text_source["capabilityProof"]["observedWidgets"].remove("Text")
+    coverage_path.write_text(json.dumps(coverage, sort_keys=True), encoding="utf-8")
+    _refresh_manifest_artifact_hash(output, "otoe-backend-coverage.json")
+
+    verify = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--verify"],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+    result = main(["pack", str(output), "--out", str(archive)])
+
+    captured = capsys.readouterr()
+    assert verify.returncode == 1
+    assert (
+        "otoe-backend-coverage.json: coverage.widgets.evidenceMap.Text.sources[0]"
+        ".capabilityProof.observedWidgets must include 'Text'"
+    ) in verify.stderr
+    assert result == 1
+    assert not archive.exists()
+    assert "pack: runner verification failed:" in captured.err
+    assert "capabilityProof.observedWidgets must include 'Text'" in captured.err
 
 
 def test_cli_pack_rejects_style_ir_drift_after_hash_update(
@@ -3716,31 +4513,204 @@ def _write_backend_coverage_requirements(
     styles: tuple[str, ...] = ("padding",),
     omitted: tuple[str, ...] = ("borderStyle",),
 ) -> None:
+    declared = backend_capability_profile("native-python").coverage_declaration()[
+        "covers"
+    ]
+    evidenced_widgets = tuple(declared["widgets"])
+    evidenced_inputs = tuple(declared["inputs"])
+    evidenced_styles = tuple(declared["styles"])
+    evidenced_omissions = tuple(declared["declaredStyleOmissions"])
+    evidenced_boundaries = tuple(declared["rendererBoundaries"])
+    path0_output = _backend_coverage_path0_output()
+    path0_render_tree_hash = "sha256:test-render-tree"
+    path0_runtime = {
+        "source": "test:requirements",
+        "rendererBackend": "test-renderer",
+        "styleOpsPresent": True,
+        "styleOpsMatchesRenderTree": True,
+        "styledNodes": 1,
+        "layoutBoxes": 1,
+        "paintCommands": 1,
+        "layoutEvidence": {
+            "observationCount": 1,
+            "observationHash": "sha256:test-layout",
+            "styleProperties": list(evidenced_styles),
+            "observedProperties": list(evidenced_styles),
+        },
+        "paintEvidence": {
+            "observationCount": 1,
+            "observationHash": "sha256:test-paint",
+            "styleProperties": list(evidenced_styles),
+            "observedProperties": list(evidenced_styles),
+        },
+    }
     path.write_text(
         json.dumps(
             {
-                "widgets": [
-                    {
-                        "widgets": [{"name": name} for name in widgets],
-                    }
-                ],
-                "inputs": [
-                    {
-                        "capabilities": [
-                            {"capability": capability} for capability in inputs
-                        ],
-                    }
-                ],
-                "styles": [
-                    {
-                        "properties": [{"property": prop} for prop in styles],
-                    }
-                ],
-                "declaredStyleOmissions": [
-                    {
-                        "properties": [{"property": prop} for prop in omitted],
-                    }
-                ],
+                "schemaVersion": 1,
+                "format": "backend-readiness-report",
+                "passed": True,
+                "blockers": [],
+                "gates": {
+                    "rendererReplay": True,
+                    "styleOpsReplay": True,
+                    "path0RenderTreeEvidence": True,
+                },
+                "path0": {
+                    "input": {
+                        "renderTreeHash": path0_render_tree_hash,
+                    },
+                    "output": path0_output,
+                },
+                "requirements": {
+                    "rendererBoundaries": [
+                        {
+                            "kind": "rendererBoundary",
+                            "boundaries": [
+                                {"boundary": boundary}
+                                for boundary in evidenced_boundaries
+                            ],
+                        }
+                    ],
+                    "widgets": [
+                        {
+                            "widgets": [{"name": name} for name in widgets],
+                        }
+                    ],
+                    "inputs": [
+                        {
+                            "capabilities": [
+                                {"capability": capability} for capability in inputs
+                            ],
+                        }
+                    ],
+                    "styles": [
+                        {
+                            "properties": [{"property": prop} for prop in styles],
+                        }
+                    ],
+                    "declaredStyleOmissions": [
+                        {
+                            "properties": [{"property": prop} for prop in omitted],
+                        }
+                    ],
+                },
+                "evidence": {
+                    "rendererBoundaries": [
+                        {
+                            "kind": "rendererBoundary",
+                            "source": "test:requirements",
+                            "gate": "path0RenderTreeEvidence",
+                            "boundaries": [
+                                {
+                                    "boundary": "paint",
+                                    "count": 1,
+                                    "proof": {
+                                        "phase": "paint",
+                                        "source": "test:requirements",
+                                        "paintCommands": 1,
+                                        "outputHash": path0_output["paint"][
+                                            "outputHash"
+                                        ],
+                                    },
+                                },
+                                {
+                                    "boundary": "renderTreeLayout",
+                                    "count": 1,
+                                    "proof": {
+                                        "phase": "layout",
+                                        "boundary": "renderTree",
+                                        "source": "test:requirements",
+                                        "renderTreeHash": path0_render_tree_hash,
+                                        "layoutBoxes": 1,
+                                        "outputHash": path0_output["layout"][
+                                            "outputHash"
+                                        ],
+                                    },
+                                },
+                            ],
+                        }
+                    ],
+                    "path0": {
+                        "source": "test:requirements",
+                        "gate": "path0RenderTreeEvidence",
+                        "rendererBackend": "test-renderer",
+                        "styleOpsPresent": True,
+                        "styleOpsMatchesRenderTree": True,
+                        "renderTreeHash": path0_render_tree_hash,
+                        "renderTreeBoundary": {
+                            "phase": "layout",
+                            "boundary": "renderTree",
+                            "source": "test:requirements",
+                            "renderTreeHash": path0_render_tree_hash,
+                            "layoutBoxes": 1,
+                            "outputHash": path0_output["layout"]["outputHash"],
+                        },
+                        "styledNodes": 1,
+                        "layoutBoxes": 1,
+                        "paintCommands": 1,
+                        "phases": ["layout", "paint"],
+                        "layoutOutputHash": path0_output["layout"]["outputHash"],
+                        "paintOutputHash": path0_output["paint"]["outputHash"],
+                        "layoutEvidence": path0_runtime["layoutEvidence"],
+                        "paintEvidence": path0_runtime["paintEvidence"],
+                    },
+                    "widgets": [
+                        {
+                            "source": "test:requirements",
+                            "gate": "rendererReplay",
+                            "proof": {
+                                "source": "test:requirements",
+                                "auditHash": "sha256:test-widgets",
+                                "itemCount": len(evidenced_widgets),
+                                "observedWidgets": list(evidenced_widgets),
+                            },
+                            "widgets": [
+                                {"name": name} for name in evidenced_widgets
+                            ],
+                        }
+                    ],
+                    "inputs": [
+                        {
+                            "source": "test:requirements",
+                            "gate": "rendererReplay",
+                            "proof": {
+                                "source": "test:requirements",
+                                "auditHash": "sha256:test-inputs",
+                                "itemCount": len(evidenced_inputs),
+                                "observedCapabilities": list(evidenced_inputs),
+                            },
+                            "capabilities": [
+                                {"capability": capability}
+                                for capability in evidenced_inputs
+                            ],
+                        }
+                    ],
+                    "styles": [
+                        {
+                            "kind": "apply",
+                            "source": "test:requirements",
+                            "gate": "styleOpsReplay+path0RenderTreeEvidence",
+                            "support": "layout+paint",
+                            "properties": [
+                                {"property": prop} for prop in evidenced_styles
+                            ],
+                            "runtime": path0_runtime,
+                        }
+                    ],
+                    "declaredStyleOmissions": [
+                        {
+                            "kind": "omit",
+                            "source": "test:requirements",
+                            "gate": "styleOpsReplay+path0RenderTreeEvidence",
+                            "status": "test-omitted",
+                            "properties": [
+                                {"property": prop} for prop in evidenced_omissions
+                            ],
+                            "runtime": path0_runtime,
+                        }
+                    ],
+                },
             },
             indent=2,
             sort_keys=True,
@@ -3748,6 +4718,66 @@ def _write_backend_coverage_requirements(
         + "\n",
         encoding="utf-8",
     )
+
+
+def _backend_coverage_path0_output() -> dict:
+    layout = {
+        "schemaVersion": 1,
+        "format": "path0-layout-output",
+        "boxCount": 1,
+        "rootPath": [],
+        "boxes": [
+            {
+                "path": [],
+                "name": "Text",
+                "bounds": [0, 0, 10, 10],
+                "id": None,
+                "context": "Text",
+                "text": "Backend coverage",
+                "events": [],
+                "state": [],
+                "style": {},
+                "children": [],
+            }
+        ],
+    }
+    paint = {
+        "schemaVersion": 1,
+        "format": "path0-paint-output",
+        "width": 10,
+        "height": 10,
+        "commandCount": 1,
+        "commands": [
+            {
+                "kind": "rect",
+                "path": [],
+                "bounds": [0, 0, 10, 10],
+                "fill": "#ffffff",
+                "stroke": None,
+                "strokeWidth": 0,
+                "radius": 0,
+                "text": None,
+                "color": None,
+                "fontSize": 14,
+                "clip": None,
+                "context": "test",
+            }
+        ],
+    }
+    return {
+        "layout": {**layout, "outputHash": _backend_coverage_output_hash(layout)},
+        "paint": {**paint, "outputHash": _backend_coverage_output_hash(paint)},
+    }
+
+
+def _backend_coverage_output_hash(payload: dict) -> str:
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
 
 
 def _refresh_manifest_artifact_hash(output, artifact_name: str) -> None:
@@ -3873,37 +4903,144 @@ def test_cli_build_validate_auto_copies_simple_local_imports(
         }
 
 
-def test_cli_build_validate_rejects_package_target_without_runtime_files(
+def test_cli_build_validate_auto_copies_package_target_runtime_files(
     tmp_path,
     monkeypatch,
-    capsys,
 ):
     package = tmp_path / "workspace_pkg"
     package.mkdir()
-    (package / "__init__.py").write_text("", encoding="utf-8")
-    (package / "app.py").write_text(
-        "from otoe import Text\n"
-        "app = Text('Package runtime')\n",
+    (package / "__init__.py").write_text(
+        "from .boot import APP_NAME\n",
         encoding="utf-8",
     )
-    output = tmp_path / "dist" / "package-missing"
+    (package / "boot.py").write_text("APP_NAME = 'Package'\n", encoding="utf-8")
+    (package / "app.py").write_text(
+        "from otoe import Text\n"
+        "from . import views\n"
+        "app = Text(views.view_text(), className='package-shell')\n",
+        encoding="utf-8",
+    )
+    (package / "views.py").write_text(
+        "from .palette import LABEL\n"
+        "from workspace_pkg.tokens import SUFFIX\n"
+        "def view_text():\n"
+        "    return f'{LABEL} {SUFFIX}'\n",
+        encoding="utf-8",
+    )
+    (package / "palette.py").write_text(
+        "LABEL = 'Package runtime'\n",
+        encoding="utf-8",
+    )
+    (package / "tokens.py").write_text(
+        "SUFFIX = 'ready'\n",
+        encoding="utf-8",
+    )
+    styles = tmp_path / "styles.css"
+    styles.write_text(".package-shell { color: #111827; }\n", encoding="utf-8")
+    output = tmp_path / "dist" / "package-auto"
     monkeypatch.syspath_prepend(str(tmp_path))
 
     result = main(
         [
             "build",
             "workspace_pkg.app:app",
+            "--css",
+            str(styles),
             "--out",
             str(output),
             "--validate",
         ]
     )
 
-    captured = capsys.readouterr()
-    assert result == 1
-    assert (output / "manifest.json").is_file()
-    assert "build: runner validation failed:" in captured.err
-    assert "No module named 'workspace_pkg'" in captured.err
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    runtime_files = {entry["bundlePath"]: entry for entry in manifest["runtimeFiles"]}
+    assert result == 0
+    assert sorted(runtime_files) == [
+        "app/workspace_pkg/__init__.py",
+        "app/workspace_pkg/app.py",
+        "app/workspace_pkg/boot.py",
+        "app/workspace_pkg/palette.py",
+        "app/workspace_pkg/tokens.py",
+        "app/workspace_pkg/views.py",
+    ]
+    for source in (
+        package / "__init__.py",
+        package / "app.py",
+        package / "boot.py",
+        package / "views.py",
+        package / "palette.py",
+        package / "tokens.py",
+    ):
+        relative = source.relative_to(tmp_path)
+        bundle_path = f"app/{relative.as_posix()}"
+        data = source.read_bytes()
+        assert (output / bundle_path).read_bytes() == data
+        assert runtime_files[bundle_path] == {
+            "source": relative.as_posix(),
+            "bundlePath": bundle_path,
+            "size": len(data),
+            "sha256": hashlib.sha256(data).hexdigest(),
+        }
+
+
+def test_cli_build_validate_auto_copies_namespace_package_runtime_files(
+    tmp_path,
+    monkeypatch,
+):
+    package = tmp_path / "namespace_pkg"
+    package.mkdir()
+    (package / "app.py").write_text(
+        "from otoe import Text\n"
+        "from namespace_pkg.views import view_text\n"
+        "app = Text(view_text())\n",
+        encoding="utf-8",
+    )
+    (package / "views.py").write_text(
+        "from namespace_pkg.tokens import LABEL\n"
+        "def view_text():\n"
+        "    return LABEL\n",
+        encoding="utf-8",
+    )
+    (package / "tokens.py").write_text(
+        "LABEL = 'Namespace package runtime'\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "namespace-package-auto"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "namespace_pkg.app:app",
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    runtime_files = {entry["bundlePath"]: entry for entry in manifest["runtimeFiles"]}
+    assert result == 0
+    assert sorted(runtime_files) == [
+        "app/namespace_pkg/app.py",
+        "app/namespace_pkg/tokens.py",
+        "app/namespace_pkg/views.py",
+    ]
+    for source in (
+        package / "app.py",
+        package / "views.py",
+        package / "tokens.py",
+    ):
+        relative = source.relative_to(tmp_path)
+        bundle_path = f"app/{relative.as_posix()}"
+        data = source.read_bytes()
+        assert (output / bundle_path).read_bytes() == data
+        assert runtime_files[bundle_path] == {
+            "source": relative.as_posix(),
+            "bundlePath": bundle_path,
+            "size": len(data),
+            "sha256": hashlib.sha256(data).hexdigest(),
+        }
 
 
 def test_cli_build_copies_runtime_files_into_bundle(tmp_path, monkeypatch):
@@ -4258,6 +5395,61 @@ def test_cli_build_fails_for_invalid_dependency_audit_without_manifest(
     )
 
 
+def test_cli_build_rejects_undeclared_external_runtime_import(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "undeclared_external_import_app.py"
+    module.write_text(
+        "import pytest\n"
+        "from otoe import Text\n"
+        "app = Text(pytest.__name__)\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "undeclared-external-import"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "undeclared_external_import_app:app",
+            "--out",
+            str(output),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    deps = json.loads((output / "otoe-deps.json").read_text(encoding="utf-8"))
+    assert result == 1
+    assert deps["status"] == "invalid"
+    assert deps["externalImports"] == [
+        {
+            "module": "pytest",
+            "source": "undeclared_external_import_app.py",
+            "line": 1,
+            "packages": ["pytest"],
+            "declared": False,
+            "declaredBy": None,
+        }
+    ]
+    assert deps["diagnostics"] == [
+        {
+            "level": "error",
+            "message": (
+                "external import 'pytest' from "
+                "undeclared_external_import_app.py:1 is not declared in "
+                "[deps] packages (candidate packages: pytest)"
+            ),
+        }
+    ]
+    assert not (output / "manifest.json").exists()
+    assert (
+        "build: dependency audit invalid; refusing to write build manifest"
+        in captured.err
+    )
+
+
 def test_cli_build_fails_for_invalid_backend_coverage_without_manifest(
     tmp_path,
     monkeypatch,
@@ -4363,6 +5555,7 @@ def test_cli_deps_reports_ok_without_declared_deps(capsys):
     assert result == 0
     assert "deps missing_module:app: profile cage" in captured.out
     assert "runtime installs: forbidden" in captured.out
+    assert "resolution: audit-only; no lockfile; no wheel closure" in captured.out
     assert "packages: 0 declared, 0 installed, 0 missing" in captured.out
     assert "status: ok" in captured.out
 
@@ -4422,10 +5615,299 @@ def test_cli_deps_can_emit_json_report(tmp_path, capsys):
     assert payload["status"] == "ok"
     assert payload["hasErrors"] is False
     assert payload["runtimeInstallsAllowed"] is False
+    assert payload["resolution"] == {
+        "mode": "audit-only",
+        "lockfile": False,
+        "wheelClosure": False,
+        "runtimeInstallsAllowed": False,
+    }
     assert payload["packages"][0]["name"] == "pytest"
     assert payload["packages"][0]["status"] == "installed"
     assert "version" in payload["packages"][0]
     assert payload["extras"] == []
+    assert payload["externalImports"] == []
+
+
+def test_cli_deps_reports_declared_external_runtime_import(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "declared_external_import_app.py"
+    module.write_text(
+        "import pytest\n"
+        "from otoe import Text\n"
+        "app = Text('Declared external')\n",
+        encoding="utf-8",
+    )
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[deps]\n"
+        'packages = ["pytest"]\n',
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "deps",
+            "declared_external_import_app:app",
+            "--profile-file",
+            str(profile_file),
+            "--json",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["status"] == "ok"
+    assert payload["externalImports"] == [
+        {
+            "module": "pytest",
+            "source": "declared_external_import_app.py",
+            "line": 1,
+            "packages": ["pytest"],
+            "declared": True,
+            "declaredBy": "pytest",
+        }
+    ]
+
+
+def test_cli_deps_accepts_external_import_declared_by_distribution_name(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "pillow_alias_import_app.py"
+    module.write_text(
+        "import PIL\n"
+        "from otoe import Text\n"
+        "app = Text('Pillow alias')\n",
+        encoding="utf-8",
+    )
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[deps]\n"
+        'packages = ["Pillow"]\n',
+        encoding="utf-8",
+    )
+    original_version = deps_module.metadata.version
+
+    def fake_version(name):
+        if name == "Pillow":
+            return "10.0.0"
+        return original_version(name)
+
+    monkeypatch.syspath_prepend(str(tmp_path))
+    monkeypatch.setattr(
+        deps_module.metadata,
+        "packages_distributions",
+        lambda: {"PIL": ["Pillow"]},
+    )
+    monkeypatch.setattr(deps_module.metadata, "version", fake_version)
+
+    result = main(
+        [
+            "deps",
+            "pillow_alias_import_app:app",
+            "--profile-file",
+            str(profile_file),
+            "--json",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["packages"] == [
+        {
+            "name": "Pillow",
+            "status": "installed",
+            "version": "10.0.0",
+        }
+    ]
+    assert payload["externalImports"] == [
+        {
+            "module": "PIL",
+            "source": "pillow_alias_import_app.py",
+            "line": 1,
+            "packages": ["Pillow"],
+            "declared": True,
+            "declaredBy": "Pillow",
+        }
+    ]
+
+
+def test_cli_deps_reports_unknown_external_import_metadata(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "unknown_external_import_app.py"
+    module.write_text(
+        "import vendorlib\n"
+        "from otoe import Text\n"
+        "app = Text('Unknown external')\n",
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    monkeypatch.setattr(
+        deps_module.metadata,
+        "packages_distributions",
+        lambda: {},
+    )
+
+    result = main(["deps", "unknown_external_import_app:app"])
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert (
+        "external import vendorlib: undeclared; no installed package metadata "
+        "found at unknown_external_import_app.py:1"
+    ) in captured.out
+    assert (
+        "error: external import 'vendorlib' from unknown_external_import_app.py:1 "
+        "is not declared in [deps] packages (no installed package metadata found)"
+    ) in captured.out
+
+
+def test_cli_deps_ignores_type_checking_only_external_import(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "type_checking_import_app.py"
+    module.write_text(
+        "from typing import TYPE_CHECKING\n"
+        "from otoe import Text\n"
+        "if TYPE_CHECKING:\n"
+        "    import pytest\n"
+        "app = Text('Type checking only')\n",
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(["deps", "type_checking_import_app:app", "--json"])
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["externalImports"] == []
+
+
+def test_cli_deps_reports_dynamic_literal_import_warning(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "dynamic_literal_import_app.py"
+    module.write_text(
+        "import importlib as imports\n"
+        "from otoe import Text\n"
+        "imports.import_module('pytest')\n"
+        "app = Text('Dynamic literal import')\n",
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(["deps", "dynamic_literal_import_app:app", "--json"])
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["status"] == "warnings"
+    assert payload["externalImports"] == []
+    assert payload["dynamicImports"] == [
+        {
+            "module": "pytest",
+            "source": "dynamic_literal_import_app.py",
+            "line": 3,
+            "mechanism": "importlib.import_module",
+            "packages": ["pytest"],
+            "declared": False,
+            "declaredBy": None,
+        }
+    ]
+    assert payload["diagnostics"] == [
+        {
+            "level": "warning",
+            "message": (
+                "dynamic import 'pytest' from dynamic_literal_import_app.py:3 "
+                "via importlib.import_module is not statically copied; declare "
+                "required [runtime] files and [deps] packages manually "
+                "(candidate packages: pytest)"
+            ),
+        }
+    ]
+
+
+def test_cli_deps_reports_unresolved_dynamic_import_expression(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "dynamic_expression_import_app.py"
+    module.write_text(
+        "def load_dynamic(module_name):\n"
+        "    load_module(module_name)\n"
+        "from importlib import import_module as load_module\n"
+        "from otoe import Text\n"
+        "module_name = 'pytest'\n"
+        "__import__(module_name)\n"
+        "app = Text('Dynamic expression import')\n",
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(["deps", "dynamic_expression_import_app:app", "--json"])
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["status"] == "warnings"
+    assert payload["dynamicImports"] == [
+        {
+            "module": None,
+            "source": "dynamic_expression_import_app.py",
+            "line": 2,
+            "mechanism": "importlib.import_module",
+            "packages": [],
+            "declared": False,
+            "declaredBy": None,
+        },
+        {
+            "module": None,
+            "source": "dynamic_expression_import_app.py",
+            "line": 6,
+            "mechanism": "__import__",
+            "packages": [],
+            "declared": False,
+            "declaredBy": None,
+        },
+    ]
+    assert payload["diagnostics"] == [
+        {
+            "level": "warning",
+            "message": (
+                "dynamic import expression from dynamic_expression_import_app.py:2 "
+                "via importlib.import_module cannot be resolved statically; declare "
+                "required [runtime] files and [deps] packages manually"
+            ),
+        },
+        {
+            "level": "warning",
+            "message": (
+                "dynamic import expression from dynamic_expression_import_app.py:6 "
+                "via __import__ cannot be resolved statically; declare required "
+                "[runtime] files and [deps] packages manually"
+            ),
+        },
+    ]
 
 
 def test_cli_deps_rejects_unknown_profile_extra(tmp_path, capsys):
@@ -4494,7 +5976,7 @@ def test_cli_dev_runs_live_preview_for_app_target(tmp_path, monkeypatch):
     def fake_run_live_preview(**kwargs):
         calls.append(kwargs)
 
-    monkeypatch.setattr("otoe.cli.run_live_preview", fake_run_live_preview)
+    monkeypatch.setattr("otoe.cli_dev.run_live_preview", fake_run_live_preview)
 
     result = main(
         [
@@ -4543,7 +6025,7 @@ def test_cli_dev_uses_callable_preview_object_without_calling_it(
     def fake_run_live_preview(**kwargs):
         calls.append(kwargs)
 
-    monkeypatch.setattr("otoe.cli.run_live_preview", fake_run_live_preview)
+    monkeypatch.setattr("otoe.cli_dev.run_live_preview", fake_run_live_preview)
 
     result = main(["dev", "callable_dev_app:app"])
 
@@ -4572,7 +6054,7 @@ def test_cli_dev_runs_live_preview_for_factory_target(tmp_path, monkeypatch):
     def fake_run_live_preview(**kwargs):
         calls.append(kwargs)
 
-    monkeypatch.setattr("otoe.cli.run_live_preview", fake_run_live_preview)
+    monkeypatch.setattr("otoe.cli_dev.run_live_preview", fake_run_live_preview)
 
     result = main(["dev", "dev_app_factory:app"])
 
@@ -4610,7 +6092,7 @@ def test_cli_dev_live_counter_example(monkeypatch):
     def fake_run_live_preview(**kwargs):
         calls.append(kwargs)
 
-    monkeypatch.setattr("otoe.cli.run_live_preview", fake_run_live_preview)
+    monkeypatch.setattr("otoe.cli_dev.run_live_preview", fake_run_live_preview)
 
     result = main(["dev", "examples.live_counter:app"])
 

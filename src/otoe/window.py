@@ -37,6 +37,7 @@ class NativeWindowEvent:
 class NativeWindowDriver:
     def __init__(self, surface: NativeSurface) -> None:
         self.surface = surface
+        self._input_capability_events: list[str] = []
 
     @classmethod
     def from_target(
@@ -75,6 +76,21 @@ class NativeWindowDriver:
         paint = self.surface.paint
         return (paint.width, paint.height)
 
+    @property
+    def input_capability_event_count(self) -> int:
+        return len(self._input_capability_events)
+
+    @property
+    def input_capability_events(self) -> tuple[str, ...]:
+        return tuple(self._input_capability_events)
+
+    @property
+    def input_capabilities(self) -> tuple[str, ...]:
+        return tuple(sorted(set(self._input_capability_events)))
+
+    def input_capabilities_since(self, event_count: int) -> tuple[str, ...]:
+        return tuple(sorted(set(self._input_capability_events[event_count:])))
+
     def dispatch(self, event: NativeWindowEvent) -> Any:
         if event.kind == "click":
             if event.x is None or event.y is None:
@@ -112,10 +128,18 @@ class NativeWindowDriver:
         raise ValueError(f"Unknown native window event kind {event.kind!r}.")
 
     def click(self, x: int, y: int) -> Any:
-        return self.surface.click(x, y)
+        focused_before = self.focused_path
+        result = self.surface.click(x, y)
+        self._record_input_capabilities(
+            "click",
+            *self._focus_capability(focused_before),
+        )
+        return result
 
     def wheel(self, x: int, y: int, delta_y: int) -> Any:
-        return self.surface.scroll(x, y, delta_y)
+        result = self.surface.scroll(x, y, delta_y)
+        self._record_input_capabilities("wheel")
+        return result
 
     def key_down(
         self,
@@ -126,13 +150,22 @@ class NativeWindowDriver:
         meta: bool = False,
         alt: bool = False,
     ) -> Any:
-        return self.surface.key_down(
+        focused_before = self.focused_path
+        result = self.surface.key_down(
             key,
             shift=shift,
             ctrl=ctrl,
             meta=meta,
             alt=alt,
         )
+        capabilities = ["key_down"]
+        if key == "Tab":
+            capabilities.append("tab_focus")
+        if _is_shortcut_key(key, ctrl=ctrl, meta=meta, alt=alt):
+            capabilities.append("shortcut")
+        capabilities.extend(self._focus_capability(focused_before))
+        self._record_input_capabilities(*capabilities)
+        return result
 
     def key_input(
         self,
@@ -144,6 +177,7 @@ class NativeWindowDriver:
         meta: bool = False,
         alt: bool = False,
     ) -> Any:
+        self._record_input_capabilities("key_input")
         try:
             current_value = self.surface.input_value()
         except KeyError:
@@ -163,10 +197,29 @@ class NativeWindowDriver:
         return self.input_text(next_value)
 
     def input_text(self, value: str) -> Any:
-        return self.surface.input_text(value)
+        focused_before = self.focused_path
+        result = self.surface.input_text(value)
+        self._record_input_capabilities(
+            "input_text",
+            *self._focus_capability(focused_before),
+        )
+        return result
 
     def render_png(self, path: str | Path) -> NativePaint:
         return self.surface.render_png(path)
+
+    def _focus_capability(
+        self,
+        focused_before: tuple[int, ...] | None,
+    ) -> tuple[str, ...]:
+        if self.focused_path == focused_before:
+            return ()
+        return ("focus",)
+
+    def _record_input_capabilities(self, *capabilities: str) -> None:
+        self._input_capability_events.extend(
+            capability for capability in capabilities if capability
+        )
 
 
 @runtime_checkable
@@ -464,6 +517,16 @@ def _tk_wheel_delta(event: Any) -> int:
     if delta == 0:
         return 0
     return -int(delta / 4)
+
+
+def _is_shortcut_key(
+    key: str,
+    *,
+    ctrl: bool,
+    meta: bool,
+    alt: bool,
+) -> bool:
+    return bool(ctrl or meta or key == "Escape")
 
 
 def edit_native_input_value(

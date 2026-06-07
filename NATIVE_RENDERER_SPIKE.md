@@ -42,6 +42,10 @@ The default renderer backend is `PythonNativeRendererBackend`, exposed as
 `layout_native(...)`, `paint_native(...)`, and stdlib PNG writer so the existing
 behavior stays unchanged while future layout, paint, or raster candidates attach
 behind the same `NativeRendererBackend` protocol.
+This protocol is the current mounted-tree renderer SPI for Otoe's Python native
+path. It is useful for partial replacement pressure, but it is not the stable
+external backend ABI for Skia/Taffy/Qt-style runtimes; that work must also pass
+the Path0 `RenderTreeRendererCandidate` boundary.
 The renderer SPI is split into capability protocols:
 `NativeLayoutBackend`, `NativePaintBackend`, and `NativeRasterBackend`.
 `ComposedNativeRendererBackend` can route those capabilities to different
@@ -174,6 +178,10 @@ surface/driver/adapter path. The renderer contract snapshot is intentionally
 structural rather than pixel-perfect: it locks down widget paths, bounds, event
 names, visible text, paint command kinds, focus rings, clipping boundaries, and
 the widget/input capability audit.
+Backend candidates that aim to be externally replaceable must also consume the
+resolved `RenderTree` IR through `RenderTreeRendererCandidate`; passing only the
+mounted-tree `NativeRendererBackend` replay validates integration with Otoe's
+current Python renderer, not a stable hardware/backend ABI.
 Backend candidates that consume styles must replay the build-time `styleOps`
 contract and compare it to compiled rules before claiming CSS or primitive
 style support; the CSS parser belongs in build/planning, not in hardware

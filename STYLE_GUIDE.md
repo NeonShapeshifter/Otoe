@@ -163,10 +163,11 @@ Backend capability profile and backend coverage requirement paths are relative
 to the same TOML file. Asset, runtime file, backend capability profile, and
 backend coverage requirement paths must be relative files and must not contain
 `.` or `..`.
-For simple local targets such as `app:app`, `otoe plan` and `otoe build`
-statically extract literal class tokens from `className` expressions in the
-target file and same-directory imports. This covers static literals and
-conditional literal branches, including common `class_names(...)` state classes
+For local targets such as `app:app` or `workspace_pkg.app:app`, `otoe plan` and
+`otoe build` statically extract literal class tokens from `className`
+expressions in the target file and static local imports, including
+package-relative imports such as `from .views import card`. This covers static
+literals and conditional literal branches, including common `class_names(...)` state classes
 inside `computed(...)`. `[styles].safelist` declares extra class names that
 should be compiled when they cannot be extracted or do not appear in the first
 mounted render. Each safelist entry must be one class name, not a
@@ -222,25 +223,32 @@ The mounted first render may still include `status` and `is-idle`, but the
 build cannot infer future values such as `is-ready` or `is-danger` from the
 f-string. `otoe plan` warns on that expression with the source file and line.
 
-`otoe deps` audits `[deps]` against the current build environment without
-installing packages, touching the network, importing the app, or writing
-artifacts. Missing packages are user-managed setup work, not runtime work for a
-hardware/cage target. During `otoe build`, the same audit is written as
+`otoe deps` audits `[deps]` and static external imports found in discovered
+local runtime files against the current build environment without installing
+packages, touching the network, importing the app target, or writing artifacts.
+Missing packages and undeclared external imports are user-managed setup work,
+not runtime work for a hardware/cage target. Declare the installable
+distribution package when package metadata maps an import to a different name,
+such as `Pillow` for `import PIL`; imports with no package metadata are reported
+as unknown candidates. During `otoe build`, the same audit is written as
 `otoe-deps.json` and invalid dependency audits stop the build before
 `manifest.json` is written.
 
 `otoe build` is the first bundle contract. It writes `otoe-plan.json`,
 `otoe-deps.json`, `otoe-styles.json`, and `manifest.json` into the output
 directory, copies selected Otoe framework/runtime files under `framework/`,
-copies declared assets under `assets/`, auto-copies a simple local target module
-such as `app.py` for a target shaped like `app:app`, follows simple
-same-directory imports such as `import helpers` and `from helpers import view`,
-and copies declared extra runtime files under `app/`. Invalid plans, dependency
+copies declared assets under `assets/`, auto-copies local target modules or
+packages while preserving package paths, follows static local imports such as
+`import helpers`, `from helpers import view`, and `from .views import card`, and
+copies declared extra runtime files under `app/`. Invalid plans, dependency
 audits, or backend
 selections stop the build before a manifest is written; warning plans are
-allowed and recorded in the manifest. It does not auto-discover package modules
-or arbitrary dynamic imports yet, so `[runtime] files` remains the explicit
-place for package code and dynamic import edges. Copied framework files are
+allowed and recorded in the manifest. It reports visible
+`importlib.import_module(...)` and `__import__(...)` dynamic import calls as
+dependency warnings, but does not auto-copy arbitrary dynamic imports, so
+`[runtime] files` remains the explicit place for dynamic import edges, external
+app files, and anything the static scanner cannot see.
+Copied framework files are
 recorded in `frameworkFiles`.
 
 The build also writes `otoe-run.py` as the first executable bundle entry. It
@@ -272,7 +280,12 @@ a readiness/requirements JSON artifact to that same capability profile.
 `otoe plan` records the comparison as `backendCoverage` and exits nonzero when
 coverage is incomplete; `otoe build` writes `otoe-backend-coverage.json` and
 refuses to write `manifest.json` if required widget, input, style, or declared
-omission coverage is missing.
+omission coverage is missing. Strict backend-readiness artifacts must include
+source/gate evidence for exercised groups, and style evidence must include
+runtime Path 0 proof from `styleOps` plus layout/paint observations for each
+property's declared support phase; declared style omissions must not appear as
+runtime-applied layout/paint evidence. Malformed evidence is reported as an
+`*Evidence` blocker.
 
 `otoe-styles.json` records used classes, statically extracted classes,
 safelisted classes, resolved portable declarations, direct widget style props,

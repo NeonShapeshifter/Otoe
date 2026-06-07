@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 
@@ -119,6 +119,34 @@ class StyleSheet:
         )
 
 
+@dataclass(frozen=True)
+class ResolvedStyleMap:
+    classes: dict[str, dict[str, Any]]
+    direct_styles: dict[tuple[int, ...], dict[str, Any]] = field(default_factory=dict)
+    direct_styles_by_node_id: dict[str, dict[str, Any]] = field(default_factory=dict)
+
+    def resolve(
+        self,
+        class_name: str | None,
+        *,
+        path: tuple[int, ...] | None = None,
+        node_id: str | None = None,
+        strict: bool = True,
+    ) -> dict[str, Any]:
+        styles: dict[str, Any] = {}
+        for name in _class_names(class_name):
+            if name not in self.classes:
+                if strict:
+                    raise UnknownStyleClassError(f"Unknown style class {name!r}.")
+                continue
+            styles.update(self.classes[name])
+        if node_id is not None and node_id in self.direct_styles_by_node_id:
+            styles.update(self.direct_styles_by_node_id[node_id])
+        elif path is not None and path in self.direct_styles:
+            styles.update(self.direct_styles[path])
+        return styles
+
+
 def style_value_to_dict(value: Any) -> dict[str, Any]:
     if isinstance(value, Size):
         return {"type": "size", "value": value.value, "unit": value.unit}
@@ -158,6 +186,82 @@ def stylesheet_from_artifact(
         for name, value in payload.get("tokens", {}).items()
     }
     return StyleSheet(rules=rules, tokens=tokens)
+
+
+def stylesheet_from_style_ops_artifact(
+    payload: dict[str, Any],
+    *,
+    strict: bool = True,
+) -> StyleSheet:
+    applied = _applied_style_ops_from_artifact(payload, strict=strict)
+
+    rules: dict[str, StyleRule] = {}
+    for replay in applied.classes:
+        if replay.class_name == "<invalid>":
+            continue
+        declarations = {
+            prop: style_value_from_dict(value)
+            for prop, value in replay.applied_declarations.items()
+        }
+        rules[replay.selector] = StyleRule(
+            selector=replay.selector,
+            declarations=declarations,
+        )
+    return StyleSheet(rules=rules, tokens={})
+
+
+def resolved_style_map_from_style_ops_artifact(
+    payload: dict[str, Any],
+    *,
+    strict: bool = True,
+) -> ResolvedStyleMap:
+    applied = _applied_style_ops_from_artifact(payload, strict=strict)
+    return ResolvedStyleMap(
+        classes={
+            replay.class_name: {
+                prop: style_value_from_dict(value)
+                for prop, value in replay.applied_declarations.items()
+            }
+            for replay in applied.classes
+            if replay.class_name != "<invalid>"
+        },
+        direct_styles={
+            replay.path: {
+                prop: style_value_from_dict(value)
+                for prop, value in replay.applied_declarations.items()
+            }
+            for replay in applied.direct_styles
+        },
+        direct_styles_by_node_id={
+            replay.node_id: {
+                prop: style_value_from_dict(value)
+                for prop, value in replay.applied_declarations.items()
+            }
+            for replay in applied.direct_styles
+            if replay.node_id is not None
+        },
+    )
+
+
+def _applied_style_ops_from_artifact(payload: dict[str, Any], *, strict: bool):
+    from .style_ops import (
+        StyleIRError,
+        apply_style_ops,
+        load_style_ir,
+        validate_style_ops,
+    )
+
+    try:
+        style_ir = load_style_ir(payload)
+        if strict:
+            validation = validate_style_ops(style_ir)
+            if not validation.passed:
+                details = "; ".join(validation.errors) or "styleOps drift detected"
+                raise StyleSyntaxError(f"Invalid style artifact: {details}")
+            return validation.applied
+        return apply_style_ops(style_ir)
+    except StyleIRError as exc:
+        raise StyleSyntaxError(f"Invalid style artifact: {exc}") from exc
 
 
 def _validate_stylesheet_artifact(payload: dict[str, Any]) -> None:

@@ -135,6 +135,45 @@ def test_native_window_driver_key_input_keeps_shortcuts_out_of_text():
     ]
 
 
+def test_native_window_driver_records_runtime_input_capabilities():
+    payloads = []
+    clicked = signal(False)
+    value = signal("")
+    driver = NativeWindowDriver.from_target(
+        ShortcutScope(
+            VStack(
+                Input(
+                    value=value,
+                    autoFocus=True,
+                    onChange=lambda next_value: value.set(next_value),
+                    onKeyDown=payloads.append,
+                ),
+                Button("Run", onClick=lambda: clicked.set(True)),
+            ),
+            onKeyDown=payloads.append,
+        )
+    )
+    start = driver.input_capability_event_count
+
+    driver.dispatch(NativeWindowEvent("input_text", text="alpha"))
+    driver.dispatch(NativeWindowEvent("key_input", key="k", text="k", ctrl=True))
+    driver.dispatch(NativeWindowEvent("key_down", key="Tab"))
+    button = driver.surface.box((0, 1))
+    driver.click(button.x + 2, button.y + 2)
+
+    assert clicked.value is True
+    assert driver.input_capabilities_since(start) == (
+        "click",
+        "focus",
+        "input_text",
+        "key_down",
+        "key_input",
+        "shortcut",
+        "tab_focus",
+    )
+    assert driver.input_capabilities == driver.input_capabilities_since(0)
+
+
 def test_edit_native_input_value_handles_simple_text_keys():
     assert edit_native_input_value("ab", key="c", text="c") == "abc"
     assert edit_native_input_value("ab", key="BackSpace") == "a"
