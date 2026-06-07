@@ -2159,6 +2159,14 @@ def test_cli_build_writes_minimal_bundle_manifest(tmp_path, monkeypatch, capsys)
         ).hexdigest(),
     } in framework_files
     assert {
+        "source": "otoe/bundle_deps.py",
+        "bundlePath": "framework/otoe/bundle_deps.py",
+        "size": (output / "framework" / "otoe" / "bundle_deps.py").stat().st_size,
+        "sha256": hashlib.sha256(
+            (output / "framework" / "otoe" / "bundle_deps.py").read_bytes()
+        ).hexdigest(),
+    } in framework_files
+    assert {
         "source": "otoe/_render_identity.py",
         "bundlePath": "framework/otoe/_render_identity.py",
         "size": (

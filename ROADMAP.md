@@ -134,7 +134,9 @@ manifest instead of leaking from dirty build directories, and a manifest cannot
 omit framework runtime files needed by the selected backend. Dependency audits
 also record audit-only runtime policy findings for visible stdlib network and
 process usage; strict hardware profiles can raise those findings to errors
-without pretending Otoe has a Python sandbox.
+without pretending Otoe has a Python sandbox. Generated runners delegate
+dependency audit/runtime policy verification to the copied `otoe.bundle_deps`
+helper instead of carrying that logic inline.
 `NATIVE_RENDERER_SPIKE.md` now names the executable native support matrix,
 layout, window, closeout, and backend-candidate replay surfaces that must stay
 aligned before backend replacement work starts.

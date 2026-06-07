@@ -99,6 +99,9 @@
 - Extracted bundled backend package verification into
   `otoe.bundle_backend_package`, keeping generated runners smaller while still
   verifying packages through copied runtime code.
+- Extracted dependency audit and runtime policy bundle verification into
+  `otoe.bundle_deps`, keeping generated runners focused on orchestration while
+  preserving copied-runtime validation.
 - Added machine-readable backend readiness `candidateScope` metadata so Path0
   RenderTree IR fixture evidence is not confused with a stable external backend
   ABI.
