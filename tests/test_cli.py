@@ -4016,6 +4016,58 @@ def test_cli_pack_rejects_dependency_audit_resolution_drift_after_hash_update(
     assert "otoe-deps.json: resolution.lockfile must be false" in captured.err
 
 
+def test_cli_pack_rejects_dependency_runtime_policy_drift_after_hash_update(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    app = tmp_path / "deps_runtime_policy_drift_pack_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Dependency runtime policy drift')\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "deps-runtime-policy-drift-pack"
+    archive = tmp_path / "dist" / "deps-runtime-policy-drift-pack.tar.gz"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    assert (
+        main(
+            [
+                "build",
+                "deps_runtime_policy_drift_pack_app:app",
+                "--out",
+                str(output),
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    deps_path = output / "otoe-deps.json"
+    deps = json.loads(deps_path.read_text(encoding="utf-8"))
+    deps["runtimePolicy"]["mode"] = "enforced"
+    deps_path.write_text(json.dumps(deps, sort_keys=True), encoding="utf-8")
+    _refresh_manifest_artifact_hash(output, "otoe-deps.json")
+
+    verify = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--verify"],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+    result = main(["pack", str(output), "--out", str(archive)])
+
+    captured = capsys.readouterr()
+    assert verify.returncode == 1
+    assert "otoe-deps.json: runtimePolicy.mode must be 'audit-only'" in verify.stderr
+    assert result == 1
+    assert not archive.exists()
+    assert "pack: runner verification failed:" in captured.err
+    assert "otoe-deps.json: runtimePolicy.mode must be 'audit-only'" in captured.err
+
+
 def test_cli_pack_rejects_invalid_styles_after_hash_update(
     tmp_path,
     monkeypatch,
@@ -5948,6 +6000,12 @@ def test_cli_deps_can_emit_json_report(tmp_path, capsys):
     assert "version" in payload["packages"][0]
     assert payload["extras"] == []
     assert payload["externalImports"] == []
+    assert payload["runtimePolicy"] == {
+        "mode": "audit-only",
+        "network": "warn",
+        "subprocess": "warn",
+        "findings": [],
+    }
 
 
 def test_cli_deps_reports_declared_external_runtime_import(
@@ -6230,6 +6288,196 @@ def test_cli_deps_reports_unresolved_dynamic_import_expression(
             ),
         },
     ]
+
+
+def test_cli_deps_reports_runtime_policy_warnings(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "runtime_policy_warning_app.py"
+    module.write_text(
+        "import os\n"
+        "import socket\n"
+        "from otoe import Text\n"
+        "os.system('echo runtime policy')\n"
+        "app = Text('Runtime policy')\n",
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(["deps", "runtime_policy_warning_app:app", "--json"])
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["status"] == "warnings"
+    assert payload["runtimePolicy"] == {
+        "mode": "audit-only",
+        "network": "warn",
+        "subprocess": "warn",
+        "findings": [
+            {
+                "category": "network",
+                "module": "socket",
+                "source": "runtime_policy_warning_app.py",
+                "line": 2,
+                "mechanism": "import socket",
+                "action": "warning",
+            },
+            {
+                "category": "subprocess",
+                "module": "os",
+                "source": "runtime_policy_warning_app.py",
+                "line": 4,
+                "mechanism": "os.system",
+                "action": "warning",
+            },
+        ],
+    }
+    assert payload["diagnostics"] == [
+        {
+            "level": "warning",
+            "message": (
+                "runtime policy network use from "
+                "runtime_policy_warning_app.py:2 via import socket"
+            ),
+        },
+        {
+            "level": "warning",
+            "message": (
+                "runtime policy subprocess use from "
+                "runtime_policy_warning_app.py:4 via os.system"
+            ),
+        },
+    ]
+
+
+def test_cli_deps_runtime_policy_error_can_block_hardware_profile(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "runtime_policy_error_app.py"
+    module.write_text(
+        "import subprocess\n"
+        "from otoe import Text\n"
+        "app = Text('Runtime policy error')\n",
+        encoding="utf-8",
+    )
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[runtime.policy]\n"
+        'subprocess = "error"\n',
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "deps",
+            "runtime_policy_error_app:app",
+            "--profile-file",
+            str(profile_file),
+            "--json",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 1
+    assert payload["status"] == "invalid"
+    assert payload["runtimePolicy"]["subprocess"] == "error"
+    assert payload["runtimePolicy"]["findings"] == [
+        {
+            "category": "subprocess",
+            "module": "subprocess",
+            "source": "runtime_policy_error_app.py",
+            "line": 1,
+            "mechanism": "import subprocess",
+            "action": "error",
+        }
+    ]
+    assert payload["diagnostics"] == [
+        {
+            "level": "error",
+            "message": (
+                "runtime policy subprocess use from "
+                "runtime_policy_error_app.py:1 via import subprocess"
+            ),
+        }
+    ]
+
+
+def test_cli_deps_rejects_invalid_runtime_policy_action(tmp_path, capsys):
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[runtime.policy]\n"
+        'network = "forbidden"\n',
+        encoding="utf-8",
+    )
+
+    result = main(
+        [
+            "deps",
+            "app:app",
+            "--profile-file",
+            str(profile_file),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert (
+        "deps: [runtime.policy] key 'network' must be one of "
+        "'allow', 'error', 'warn'"
+    ) in captured.err
+
+
+def test_cli_build_rejects_runtime_policy_error(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "runtime_policy_build_error_app.py"
+    module.write_text(
+        "from subprocess import run\n"
+        "from otoe import Text\n"
+        "app = Text('Runtime policy build error')\n",
+        encoding="utf-8",
+    )
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[runtime.policy]\n"
+        'subprocess = "error"\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "runtime-policy-build-error"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "runtime_policy_build_error_app:app",
+            "--profile-file",
+            str(profile_file),
+            "--out",
+            str(output),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    deps = json.loads((output / "otoe-deps.json").read_text(encoding="utf-8"))
+    assert result == 1
+    assert deps["status"] == "invalid"
+    assert not (output / "manifest.json").exists()
+    assert "build: dependency audit invalid" in captured.err
 
 
 def test_cli_deps_rejects_unknown_profile_extra(tmp_path, capsys):

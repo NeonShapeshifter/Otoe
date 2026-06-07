@@ -2,7 +2,7 @@
 
 **Status:** post-v0.1.7 workshop hardening; backend capability gates, bundle hermeticity, dependency audit contract, namespace runtime discovery, RenderTree validation hardening, experimental external Path0 JSON runner, and first backend package manifest
 **Updated:** June 7, 2026
-**Current baseline:** 700 tests passing, 1 skipped when `mypy` is unavailable
+**Current baseline:** 705 tests passing, 1 skipped when `mypy` is unavailable
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, utility ops console, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
@@ -124,9 +124,12 @@ verification, layout checks, PNG rendering, or packing.
 Native bundle verification now enforces required manifest metadata: declared
 bundle files need safe relative paths, size, lowercase SHA-256 hashes, unique
 bundle paths, and the required `frameworkFiles` policy. Packable files under
-`app/`, `assets/`, and `framework/` must be declared in the manifest instead of
-leaking from dirty build directories, and a manifest cannot omit framework
-runtime files needed by the selected backend.
+`app/`, `assets/`, `backend/`, and `framework/` must be declared in the
+manifest instead of leaking from dirty build directories, and a manifest cannot
+omit framework runtime files needed by the selected backend. Dependency audits
+also record audit-only runtime policy findings for visible stdlib network and
+process usage; strict hardware profiles can raise those findings to errors
+without pretending Otoe has a Python sandbox.
 `NATIVE_RENDERER_SPIKE.md` now names the executable native support matrix,
 layout, window, closeout, and backend-candidate replay surfaces that must stay
 aligned before backend replacement work starts.
@@ -679,8 +682,7 @@ Remaining:
 2. Expand the first offline profile/build planner slice from `ADR-018`: keep
    `otoe plan --json/--out`, audit-only `otoe deps`, and `otoe.profile.toml` as
    build inputs, keep `otoe build` manifest-first, and harden the native
-   `frameworkFiles` policy while preserving the no runtime dependency installs
-   rule for hardware targets.
+   `frameworkFiles` policy plus runtime policy audit while preserving the no runtime dependency installs rule for hardware targets.
 3. Keep `NATIVE_RENDERER_SPIKE.md` aligned with the executable support matrices
    and backend-candidate replay surfaces before any backend implementation
    claims parity.

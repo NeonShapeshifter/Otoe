@@ -13,9 +13,12 @@
 - Added machine-readable dependency audit resolution metadata
   (`resolution.mode = "audit-only"`) to make clear that `otoe-deps.json` is not
   a lockfile or wheel-closure artifact.
+- Added audit-only runtime policy checks for visible stdlib network and
+  subprocess/process usage, configurable with `[runtime.policy]` as `allow`,
+  `warn`, or `error`.
 - Hardened generated runner verification so tampered dependency audit
-  resolution metadata is rejected even when manifest size/hash entries are
-  refreshed.
+  resolution and runtime policy metadata are rejected even when manifest
+  size/hash entries are refreshed.
 - Hardened `RenderTree` IR validation and parsing to reject boolean
   schema/path values plus empty identity, event, and state strings.
 - Added audit-only dependency warnings for visible dynamic import calls

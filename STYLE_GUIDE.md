@@ -147,6 +147,10 @@ safelist = ["is-danger", "bg-alert"]
 allow_runtime_installs = false
 files = ["app.py"]
 
+[runtime.policy]
+network = "warn"
+subprocess = "warn"
+
 [backend]
 name = "native"
 capability = "native-python"
@@ -172,7 +176,10 @@ inside `computed(...)`. `[styles].safelist` declares extra class names that
 should be compiled when they cannot be extracted or do not appear in the first
 mounted render. Each safelist entry must be one class name, not a
 space-separated class list. Explicit CLI flags override the profile file.
-`allow_runtime_installs = true` is invalid for `cage`.
+`allow_runtime_installs = true` is invalid for `cage`. `[runtime.policy]`
+uses `allow`, `warn`, or `error` for visible stdlib `network` and
+`subprocess`/process-spawning usage. This is static audit, not a runtime
+sandbox.
 
 ### Dynamic Class Extraction Examples
 
@@ -230,7 +237,9 @@ Missing packages and undeclared external imports are user-managed setup work,
 not runtime work for a hardware/cage target. Declare the installable
 distribution package when package metadata maps an import to a different name,
 such as `Pillow` for `import PIL`; imports with no package metadata are reported
-as unknown candidates. During `otoe build`, the same audit is written as
+as unknown candidates. The same audit records `runtimePolicy` findings for
+visible stdlib network/process usage and can raise them to errors through
+`[runtime.policy]`. During `otoe build`, the same audit is written as
 `otoe-deps.json` and invalid dependency audits stop the build before
 `manifest.json` is written.
 
@@ -247,7 +256,9 @@ allowed and recorded in the manifest. It reports visible
 `importlib.import_module(...)` and `__import__(...)` dynamic import calls as
 dependency warnings, but does not auto-copy arbitrary dynamic imports, so
 `[runtime] files` remains the explicit place for dynamic import edges, external
-app files, and anything the static scanner cannot see.
+app files, and anything the static scanner cannot see. It also reports visible
+stdlib network imports and process-spawning APIs such as `socket`, `urllib`,
+`subprocess`, and `os.system(...)` through audit-only runtime policy findings.
 Copied framework files are
 recorded in `frameworkFiles`.
 
@@ -385,7 +396,8 @@ unbundled, or renderer-invalid files are caught before deployment.
 preserves `otoe-backend-coverage.json` when the manifest declares
 `backendCoverage`, writes a `.tar.gz` with the bundle contents at archive root,
 rejects invalid core artifacts or runtime-install drift, and excludes local
-cache directories such as `__pycache__/` and `.pytest_cache/`.
+cache directories such as `__pycache__/` and `.pytest_cache/`. Generated runner
+verification also rejects malformed `runtimePolicy` metadata after hash updates.
 
 ## Supported Parsed Properties
 

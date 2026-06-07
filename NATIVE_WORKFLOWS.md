@@ -340,8 +340,11 @@ bundle runner verification, including copied-runtime Style IR drift detection,
 checks declared backend coverage reports and their per-capability `evidenceMap`
 traceability, repeats strict Style IR validation, requires top-level artifacts
 to be covered by manifest hash entries, rejects invalid plan/dependency/style
-artifacts or runtime-install drift, and includes `otoe-backend-coverage.json`
-when the manifest declares it before writing the `.tar.gz`.
+artifacts or runtime-install/runtime-policy drift, and includes
+`otoe-backend-coverage.json` when the manifest declares it before writing the
+`.tar.gz`. Runtime policy remains static audit: set `[runtime.policy]` entries
+to `error` for hardware profiles that must fail on visible stdlib network or
+process-spawning usage.
 
 ## run_native
 

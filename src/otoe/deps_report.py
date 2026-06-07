@@ -8,6 +8,7 @@ from .deps_types import (
     DependencyAuditExternalImport,
     DependencyAuditExtra,
     DependencyAuditPackage,
+    DependencyAuditRuntimePolicyFinding,
     DependencyStatus,
     ExtraStatus,
 )
@@ -42,6 +43,15 @@ def deps_to_dict(audit: DependencyAudit) -> dict[str, Any]:
             _dynamic_import_to_dict(dynamic_import)
             for dynamic_import in audit.dynamic_imports
         ],
+        "runtimePolicy": {
+            "mode": "audit-only",
+            "network": audit.runtime_policy.network,
+            "subprocess": audit.runtime_policy.subprocess,
+            "findings": [
+                _runtime_policy_finding_to_dict(finding)
+                for finding in audit.runtime_policy_findings
+            ],
+        },
         "diagnostics": [
             {"level": diagnostic.level, "message": diagnostic.message}
             for diagnostic in audit.diagnostics
@@ -68,6 +78,12 @@ def format_deps(audit: DependencyAudit) -> str:
         ),
         f"external imports: {len(audit.external_imports)} detected",
         f"dynamic imports: {len(audit.dynamic_imports)} detected",
+        (
+            "runtime policy: "
+            f"network {audit.runtime_policy.network}, "
+            f"subprocess {audit.runtime_policy.subprocess}; "
+            f"{len(audit.runtime_policy_findings)} findings"
+        ),
     ]
     for package in audit.packages:
         version = f" ({package.version})" if package.version else ""
@@ -84,6 +100,8 @@ def format_deps(audit: DependencyAudit) -> str:
         lines.append(_format_external_import(external_import))
     for dynamic_import in audit.dynamic_imports:
         lines.append(_format_dynamic_import(dynamic_import))
+    for finding in audit.runtime_policy_findings:
+        lines.append(_format_runtime_policy_finding(finding))
     lines.append(f"status: {audit.status}")
     for diagnostic in audit.diagnostics:
         lines.append(f"{diagnostic.level}: {diagnostic.message}")
@@ -137,6 +155,16 @@ def _format_dynamic_import(dynamic_import: DependencyAuditDynamicImport) -> str:
     )
 
 
+def _format_runtime_policy_finding(
+    finding: DependencyAuditRuntimePolicyFinding,
+) -> str:
+    location = f"{finding.source}:{finding.line}"
+    return (
+        f"runtime policy {finding.category}: {finding.action} via "
+        f"{finding.mechanism} at {location}"
+    )
+
+
 def _external_import_candidate_text(packages: tuple[str, ...]) -> str:
     return ", ".join(packages)
 
@@ -180,6 +208,19 @@ def _dynamic_import_to_dict(
         "packages": list(dynamic_import.packages),
         "declared": dynamic_import.declared,
         "declaredBy": dynamic_import.declared_by,
+    }
+
+
+def _runtime_policy_finding_to_dict(
+    finding: DependencyAuditRuntimePolicyFinding,
+) -> dict[str, Any]:
+    return {
+        "category": finding.category,
+        "module": finding.module,
+        "source": finding.source,
+        "line": finding.line,
+        "mechanism": finding.mechanism,
+        "action": finding.action,
     }
 
 

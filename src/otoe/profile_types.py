@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
+
+
+RuntimePolicyAction = Literal["allow", "warn", "error"]
 
 
 @dataclass(frozen=True)
@@ -17,6 +21,12 @@ class ProfileRuntimeFile:
 
 
 @dataclass(frozen=True)
+class RuntimePolicyConfig:
+    network: RuntimePolicyAction = "warn"
+    subprocess: RuntimePolicyAction = "warn"
+
+
+@dataclass(frozen=True)
 class PlanProfileConfig:
     profile: str = "cage"
     utilities: bool = False
@@ -25,6 +35,7 @@ class PlanProfileConfig:
     assets: tuple[ProfileAsset, ...] = ()
     runtime_files: tuple[ProfileRuntimeFile, ...] = ()
     allow_runtime_installs: bool = False
+    runtime_policy: RuntimePolicyConfig = RuntimePolicyConfig()
     backend_name: str | None = None
     backend_capability: str | None = None
     backend_capability_profile: Path | None = None

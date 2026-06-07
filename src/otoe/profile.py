@@ -2,14 +2,21 @@ from __future__ import annotations
 
 import tomllib
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from .capabilities import CapabilityProfileError, backend_capability_profile
 from .plan import SUPPORTED_PLAN_PROFILES
-from .profile_types import PlanProfileConfig, ProfileAsset, ProfileRuntimeFile
+from .profile_types import (
+    PlanProfileConfig,
+    ProfileAsset,
+    ProfileRuntimeFile,
+    RuntimePolicyAction,
+    RuntimePolicyConfig,
+)
 
 
 DEFAULT_PROFILE_FILENAME = "otoe.profile.toml"
+RUNTIME_POLICY_ACTIONS = frozenset({"allow", "warn", "error"})
 
 
 class ProfileError(ValueError):
@@ -59,7 +66,7 @@ def load_plan_profile(path: str | Path) -> PlanProfileConfig:
     assets = _assets(data.get("assets"), base=profile_path.parent)
 
     runtime = _table_value(data, "runtime", context="profile file")
-    _reject_unknown(runtime, "[runtime]", {"allow_runtime_installs", "files"})
+    _reject_unknown(runtime, "[runtime]", {"allow_runtime_installs", "files", "policy"})
     allow_runtime_installs = _bool_value(
         runtime,
         "allow_runtime_installs",
@@ -69,6 +76,7 @@ def load_plan_profile(path: str | Path) -> PlanProfileConfig:
     if profile == "cage" and allow_runtime_installs:
         raise ProfileError("profile 'cage' forbids runtime installs")
     runtime_files = _runtime_files(runtime.get("files"), base=profile_path.parent)
+    runtime_policy = _runtime_policy(runtime.get("policy"))
 
     backend = _table_value(data, "backend", context="profile file")
     _reject_unknown(
@@ -129,6 +137,7 @@ def load_plan_profile(path: str | Path) -> PlanProfileConfig:
         assets=assets,
         runtime_files=runtime_files,
         allow_runtime_installs=allow_runtime_installs,
+        runtime_policy=runtime_policy,
         backend_name=backend_name,
         backend_capability=backend_capability,
         backend_capability_profile=backend_capability_profile_path,
@@ -190,6 +199,33 @@ def _runtime_files(value: Any, *, base: Path) -> tuple[ProfileRuntimeFile, ...]:
         _validate_relative_file_path(relative, key=f"runtime.files[{index}]")
         files.append(ProfileRuntimeFile(source=base / relative, relative_path=relative))
     return tuple(files)
+
+
+def _runtime_policy(value: Any) -> RuntimePolicyConfig:
+    if value is None:
+        return RuntimePolicyConfig()
+    if not isinstance(value, dict):
+        raise ProfileError("[runtime] key 'policy' must be a table")
+    _reject_unknown(value, "[runtime.policy]", {"network", "subprocess"})
+    return RuntimePolicyConfig(
+        network=_runtime_policy_action(value, "network"),
+        subprocess=_runtime_policy_action(value, "subprocess"),
+    )
+
+
+def _runtime_policy_action(
+    data: dict[str, Any],
+    key: str,
+) -> RuntimePolicyAction:
+    value = _optional_string(data, key, context="[runtime.policy]")
+    if value is None:
+        return "warn"
+    if value not in RUNTIME_POLICY_ACTIONS:
+        supported = ", ".join(repr(action) for action in sorted(RUNTIME_POLICY_ACTIONS))
+        raise ProfileError(
+            f"[runtime.policy] key {key!r} must be one of {supported}"
+        )
+    return cast(RuntimePolicyAction, value)
 
 
 def _optional_backend_profile_path(

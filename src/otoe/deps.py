@@ -4,7 +4,11 @@ import sys
 from importlib import metadata
 from pathlib import Path
 
-from .deps_imports import runtime_file_dynamic_imports, runtime_file_imports
+from .deps_imports import (
+    runtime_file_dynamic_imports,
+    runtime_file_imports,
+    runtime_file_policy_refs,
+)
 from .deps_report import deps_to_dict, format_deps
 from .deps_types import (
     DependencyAudit,
@@ -13,6 +17,7 @@ from .deps_types import (
     DependencyAuditExternalImport,
     DependencyAuditExtra,
     DependencyAuditPackage,
+    DependencyAuditRuntimePolicyFinding,
 )
 from .profile_types import PlanProfileConfig
 from .runtime_files import build_runtime_files
@@ -37,10 +42,15 @@ def audit_deps(*, target: str, profile_config: PlanProfileConfig) -> DependencyA
         target,
         profile_config=profile_config,
     )
+    runtime_policy_findings = _runtime_policy_findings_for_target(
+        target,
+        profile_config=profile_config,
+    )
     diagnostics = list(_diagnostics_for_packages(packages))
     diagnostics.extend(_diagnostics_for_extras(extras))
     diagnostics.extend(_diagnostics_for_external_imports(external_imports))
     diagnostics.extend(_diagnostics_for_dynamic_imports(dynamic_imports))
+    diagnostics.extend(_diagnostics_for_runtime_policy(runtime_policy_findings))
     if profile_config.allow_runtime_installs:
         diagnostics.append(
             DependencyAuditDiagnostic(
@@ -57,6 +67,8 @@ def audit_deps(*, target: str, profile_config: PlanProfileConfig) -> DependencyA
         extras=extras,
         external_imports=external_imports,
         dynamic_imports=dynamic_imports,
+        runtime_policy=profile_config.runtime_policy,
+        runtime_policy_findings=runtime_policy_findings,
         diagnostics=tuple(diagnostics),
     )
 
@@ -156,6 +168,45 @@ def _dynamic_imports_for_target(
                 )
             )
     return tuple(dynamic_imports)
+
+
+def _runtime_policy_findings_for_target(
+    target: str,
+    *,
+    profile_config: PlanProfileConfig,
+) -> tuple[DependencyAuditRuntimePolicyFinding, ...]:
+    runtime_files = build_runtime_files(target, profile_config.runtime_files)
+    findings: list[DependencyAuditRuntimePolicyFinding] = []
+    seen = set()
+
+    for runtime_file in runtime_files:
+        if not runtime_file.source.is_file():
+            continue
+        for policy_ref in runtime_file_policy_refs(runtime_file.source):
+            action = getattr(profile_config.runtime_policy, policy_ref.category)
+            if action == "allow":
+                continue
+            key = (
+                policy_ref.category,
+                policy_ref.module,
+                policy_ref.mechanism,
+                runtime_file.relative_path.as_posix(),
+                policy_ref.line,
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            findings.append(
+                DependencyAuditRuntimePolicyFinding(
+                    category=policy_ref.category,
+                    module=policy_ref.module,
+                    source=runtime_file.relative_path.as_posix(),
+                    line=policy_ref.line,
+                    mechanism=policy_ref.mechanism,
+                    action="warning" if action == "warn" else "error",
+                )
+            )
+    return tuple(findings)
 
 
 def _local_module_roots(runtime_files) -> set[str]:
@@ -297,6 +348,18 @@ def _diagnostics_for_dynamic_imports(
     )
 
 
+def _diagnostics_for_runtime_policy(
+    findings: tuple[DependencyAuditRuntimePolicyFinding, ...],
+) -> tuple[DependencyAuditDiagnostic, ...]:
+    return tuple(
+        DependencyAuditDiagnostic(
+            level=finding.action,
+            message=_runtime_policy_diagnostic_message(finding),
+        )
+        for finding in findings
+    )
+
+
 def _external_import_diagnostic_message(
     external_import: DependencyAuditExternalImport,
 ) -> str:
@@ -338,4 +401,13 @@ def _dynamic_import_diagnostic_message(
         f"dynamic import {dynamic_import.module!r} from {location} via "
         f"{dynamic_import.mechanism} is not statically copied; {manual} "
         "(no installed package metadata found)"
+    )
+
+
+def _runtime_policy_diagnostic_message(
+    finding: DependencyAuditRuntimePolicyFinding,
+) -> str:
+    return (
+        f"runtime policy {finding.category} use from "
+        f"{finding.source}:{finding.line} via {finding.mechanism}"
     )

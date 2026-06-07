@@ -290,6 +290,11 @@ assets = ["static/logo.png"]
 allow_runtime_installs = false
 files = ["app.py"]
 
+[runtime.policy]
+# Audit-only source checks for hardware/cage surfaces: allow, warn, or error.
+network = "warn"
+subprocess = "warn"
+
 [backend]
 name = "native"
 capability = "native-python"
@@ -321,10 +326,14 @@ an audit-only gate, not a lockfile, wheel closure, or reproducible offline
 dependency resolver. When installed package metadata maps an import module to a
 different distribution name, declare the distribution package, for example
 `Pillow` for `import PIL`; imports with no installed package metadata are
-reported as unknown candidates. During `otoe build`, the same audit is written
-as `otoe-deps.json`, including a machine-readable `resolution.mode =
-"audit-only"` contract, and invalid dependency audits stop the build before
-`manifest.json` is written.
+reported as unknown candidates. It also reports visible stdlib network and
+subprocess/process usage under `runtimePolicy`; `[runtime.policy]` can keep
+those findings as warnings or raise them to errors for stricter hardware
+profiles. This is still static source audit, not a Python sandbox. During
+`otoe build`, the same audit is written as `otoe-deps.json`, including
+machine-readable `resolution.mode = "audit-only"` and
+`runtimePolicy.mode = "audit-only"` contracts, and invalid dependency audits
+stop the build before `manifest.json` is written.
 
 Write the first minimal offline bundle contract:
 
@@ -352,7 +361,9 @@ It fails when the plan, dependency audit, backend coverage gate, or backend
 selection is invalid, allows warning plans, and does not install dependencies,
 or download anything. It reports visible `importlib.import_module(...)` and
 `__import__(...)` dynamic import calls as dependency warnings, but does not
-auto-copy arbitrary dynamic imports.
+auto-copy arbitrary dynamic imports. It reports visible stdlib network imports
+and process-spawning APIs such as `socket`, `urllib`, `subprocess`, and
+`os.system(...)` through the audit-only runtime policy.
 `[runtime] files` remains the explicit place for dynamic import edges, external
 app files, and anything the static local import scanner cannot see. The manifest
 references `otoe-deps.json`, records copied framework files in `frameworkFiles`,

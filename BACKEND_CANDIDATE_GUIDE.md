@@ -297,3 +297,5 @@ built-in backend profile.
   current task board, Style IR, or renderer contract.
 - The offline bundle passes on the development machine but requires network,
   package installation, or untracked files on hardware.
+- `[runtime.policy]` is left at warning level for a hardware profile that should
+  fail on visible stdlib network or process-spawning usage.

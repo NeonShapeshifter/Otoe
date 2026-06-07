@@ -43,6 +43,9 @@ machine-readable `--json` report, `--out` JSON artifact, and an optional
 dependency check for profile-declared packages, Otoe extras, and static external
 imports found in discovered local runtime files. It does not install packages,
 touch the network, import the app target, or write artifacts when run directly.
+It also records audit-only runtime policy findings for visible stdlib network
+and process-spawning usage; the policy can warn by default or fail stricter
+hardware profiles.
 `otoe build` is implemented as a minimal bundle contract that writes
 `otoe-plan.json`, `otoe-deps.json`, `otoe-styles.json`, selected
 `frameworkFiles`, and `manifest.json`, plus a generated `otoe-run.py` runner.
@@ -70,6 +73,10 @@ safelist = ["is-danger", "bg-alert"]
 allow_runtime_installs = false
 files = ["app.py"]
 
+[runtime.policy]
+network = "warn"
+subprocess = "warn"
+
 [backend]
 name = "native"
 capability = "native-python"
@@ -91,7 +98,8 @@ can install or declare them manually before building or deploying. When package
 metadata maps an import module to a different distribution name, the declared
 dependency should be the distribution package, such as `Pillow` for
 `import PIL`; imports with no installed package metadata are reported without package
-candidates.
+candidates. `[runtime.policy]` uses `allow`, `warn`, or `error` for `network`
+and `subprocess`; it is static source audit, not a runtime sandbox.
 
 Profiles are explicit build targets. A `cage` or hardware profile would declare
 the renderer/backend candidate, allowed style surface, asset policy, optional
@@ -121,8 +129,9 @@ deployment artifact is built.
   a `native` bundle must declare and include the expected `frameworkFiles` set.
   Core top-level artifacts must be listed in `manifest.json` `artifacts` with
   size/hash metadata, invalid plan/dependency/style artifact status is rejected
-  even after hash updates, and `runtimeInstallsAllowed = false` remains a
-  runner/pack invariant for hardware bundles.
+  even after hash updates, `runtimePolicy.mode = "audit-only"` is verified, and
+  `runtimeInstallsAllowed = false` remains a runner/pack invariant for hardware
+  bundles.
 - optional bundle validation through `otoe build --validate`, which runs the
   generated runner in `--verify`, `--check`, and `--layout-check` modes after
   writing artifacts so the copied bundle must be intact, load the manifest
@@ -162,9 +171,11 @@ imports are not declared in `[deps] packages`. It also reports visible
 `importlib.import_module(...)` and `__import__(...)` dynamic import calls as
 warnings, including literal module names when they are statically available.
 `otoe-deps.json` records this as `resolution.mode = "audit-only"` with no
-lockfile or wheel closure. The user decides how to install or declare them. It
-should not infer arbitrary dynamic imports, guess unknown distribution names, or
-install packages on the device while the app is running.
+lockfile or wheel closure, and records runtime policy as
+`runtimePolicy.mode = "audit-only"`. The user decides how to install or declare
+them. It should not infer arbitrary dynamic imports, guess unknown distribution
+names, sandbox arbitrary Python execution, or install packages on the device
+while the app is running.
 
 ## Style Compilation
 
