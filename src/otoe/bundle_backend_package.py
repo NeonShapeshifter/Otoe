@@ -126,9 +126,24 @@ def verify_backend_package_render_tree(
     executable: str | None = None,
     timeout: int = 10,
 ) -> None:
+    run_backend_package_render_tree_report(
+        manifest,
+        root=root,
+        executable=executable,
+        timeout=timeout,
+    )
+
+
+def run_backend_package_render_tree_report(
+    manifest: dict[str, Any],
+    *,
+    root: str | Path,
+    executable: str | None = None,
+    timeout: int = 10,
+) -> dict[str, Any] | None:
     package = manifest.get("backendPackage")
     if package is None:
-        return
+        return None
     if not isinstance(package, dict):
         raise ValueError("manifest.json: backendPackage must be an object")
 
@@ -186,6 +201,59 @@ def verify_backend_package_render_tree(
             expected_render_tree=render_tree_payload,
             expected_styles=styles_payload,
         )
+        return report
+
+
+def verify_backend_package_report(
+    manifest: dict[str, Any],
+    *,
+    root: str | Path,
+) -> None:
+    package = manifest.get("backendPackage")
+    if package is None:
+        return
+    report_relative = manifest.get("externalBackendReport")
+    if report_relative is None:
+        return
+    if not isinstance(report_relative, str) or not report_relative:
+        raise ValueError(
+            "manifest.json: externalBackendReport must be a non-empty string"
+        )
+    if not isinstance(package, dict):
+        raise ValueError("manifest.json: backendPackage must be an object")
+
+    verify_backend_package(manifest, root=root)
+    render_tree_relative = manifest.get("renderTree")
+    if not isinstance(render_tree_relative, str) or not render_tree_relative:
+        raise ValueError("manifest.json: renderTree must be a non-empty string")
+    styles_relative = manifest.get("styles")
+    if not isinstance(styles_relative, str) or not styles_relative:
+        raise ValueError("manifest.json: styles must be a non-empty string")
+    render_tree_payload = _load_json_bundle_file(root, render_tree_relative)
+    styles_payload = _load_json_bundle_file(root, styles_relative)
+    report = _load_json_bundle_file(root, report_relative)
+    if report.get("format") != "path0-external-backend-report":
+        raise ValueError(
+            f"{report_relative}: format must be 'path0-external-backend-report'"
+        )
+    output = report.get("output")
+    if not isinstance(output, dict):
+        raise ValueError(f"{report_relative}: output must be an object")
+    layout = output.get("layout")
+    paint = output.get("paint")
+    if not isinstance(layout, dict):
+        raise ValueError(f"{report_relative}: output.layout must be an object")
+    if not isinstance(paint, dict):
+        raise ValueError(f"{report_relative}: output.paint must be an object")
+    _verify_path0_external_smoke_output(
+        package=package,
+        layout=layout,
+        paint=paint,
+        report=report,
+        expected_source=f"bundle:{render_tree_relative}",
+        expected_render_tree=render_tree_payload,
+        expected_styles=styles_payload,
+    )
 
 
 def _run_backend_package_command(
@@ -275,12 +343,16 @@ def _verify_path0_external_smoke_output(
         raise ValueError("backend package layout output must contain boxes")
     if not _is_sha256_uri(layout.get("outputHash")):
         raise ValueError("backend package layout outputHash must be a sha256 string")
+    if layout.get("outputHash") != _output_hash(layout):
+        raise ValueError("backend package layout outputHash must match payload")
     if paint.get("format") != "path0-paint-output":
         raise ValueError("backend package paint output format mismatch")
     if not _positive_number(paint.get("commandCount")):
         raise ValueError("backend package paint output must contain commands")
     if not _is_sha256_uri(paint.get("outputHash")):
         raise ValueError("backend package paint outputHash must be a sha256 string")
+    if paint.get("outputHash") != _output_hash(paint):
+        raise ValueError("backend package paint outputHash must match payload")
     if report.get("format") != "path0-external-backend-report":
         raise ValueError("backend package report format mismatch")
     if report.get("backend") != package["name"]:
@@ -413,6 +485,12 @@ def _contract_hash(payload: Any) -> str:
         sort_keys=True,
     ).encode("utf-8")
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
+
+
+def _output_hash(payload: dict[str, Any]) -> str:
+    return _contract_hash(
+        {key: value for key, value in payload.items() if key != "outputHash"}
+    )
 
 
 def _positive_number(value: Any) -> bool:

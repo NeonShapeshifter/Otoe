@@ -256,10 +256,83 @@ def test_cli_build_copies_profile_backend_package_as_declared_artifacts(
         "external backend checked: "
         "backend/path0-external-json-backend/backend-package.json"
     ) in external_check.stdout
+    assert manifest["externalBackendReport"] == "otoe-path0-external-backend.json"
+    assert "otoe-path0-external-backend.json" in artifact_paths
+    report = json.loads(
+        (output / "otoe-path0-external-backend.json").read_text(encoding="utf-8")
+    )
+    assert report["format"] == "path0-external-backend-report"
+    assert report["backend"] == "path0-external-json-backend"
+    assert report["source"] == "bundle:otoe-render-tree.json"
+    assert report["input"]["renderTreeHash"].startswith("sha256:")
+    assert report["input"]["styleOps"]["present"] is True
     assert "backend package: backend/path0-external-json-backend/backend-package.json" in (
         captured.out
     )
+    assert f"external backend artifact: {output / 'otoe-path0-external-backend.json'}" in (
+        captured.out
+    )
     assert archive.files > 0
+
+
+def test_cli_build_backend_package_verify_rejects_external_report_drift(
+    tmp_path,
+    monkeypatch,
+):
+    module = tmp_path / "backend_package_report_tamper_surface.py"
+    module.write_text(
+        "from otoe import Text\n"
+        "app = Text('Backend package report tamper')\n",
+        encoding="utf-8",
+    )
+    package_manifest = tmp_path / PACKAGE_MANIFEST.name
+    package_runner = tmp_path / "path0_external_backend.py"
+    shutil.copyfile(PACKAGE_MANIFEST, package_manifest)
+    shutil.copyfile(
+        Path("examples/native/path0_external_backend.py"),
+        package_runner,
+    )
+    profile = tmp_path / "otoe.profile.toml"
+    profile.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[backend.package]\n"
+        f'manifest = "{package_manifest.name}"\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "backend-package-report-tamper"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    assert (
+        otoe_cli_main(
+            [
+                "build",
+                "backend_package_report_tamper_surface:app",
+                "--profile-file",
+                str(profile),
+                "--out",
+                str(output),
+            ]
+        )
+        == 0
+    )
+
+    report_path = output / "otoe-path0-external-backend.json"
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report["source"] = "bundle:wrong-render-tree.json"
+    report_path.write_text(json.dumps(report, sort_keys=True), encoding="utf-8")
+    _refresh_manifest_artifact_hash(output, "otoe-path0-external-backend.json")
+
+    verify = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--verify"],
+        capture_output=True,
+        cwd=output,
+        env={"PYTHONPATH": ""},
+        text=True,
+    )
+
+    assert verify.returncode == 1
+    assert "backend package report source mismatch" in verify.stderr
 
 
 def test_cli_build_backend_package_verify_rejects_descriptor_file_hash_drift(

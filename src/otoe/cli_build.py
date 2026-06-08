@@ -10,6 +10,7 @@ from .build import (
     BACKEND_COVERAGE_ARTIFACT_FILENAME,
     BUILD_MANIFEST_FILENAME,
     DEPS_ARTIFACT_FILENAME,
+    PATH0_EXTERNAL_BACKEND_ARTIFACT_FILENAME,
     PLAN_ARTIFACT_FILENAME,
     RENDER_TREE_ARTIFACT_FILENAME,
     RUNNER_FILENAME,
@@ -23,6 +24,7 @@ from .build import (
     copy_runtime_files,
     write_runner,
 )
+from .bundle_backend_package import run_backend_package_render_tree_report
 from .cli_common import CliError, write_json_artifact
 from .cli_plan import resolve_plan_request_details
 from .deps import audit_deps, deps_to_dict
@@ -96,6 +98,26 @@ def run_build(args: argparse.Namespace) -> int:
         if backend_package_artifacts is not None:
             backend_package_manifest = backend_package_artifacts.summary
             artifact_manifest.extend(backend_package_artifacts.artifacts)
+        external_backend_report = None
+        external_backend_report_path = None
+        if backend_package_manifest is not None:
+            external_backend_report = run_backend_package_render_tree_report(
+                {
+                    "backendPackage": backend_package_manifest,
+                    "renderTree": RENDER_TREE_ARTIFACT_FILENAME,
+                    "styles": STYLE_ARTIFACT_FILENAME,
+                    "artifacts": artifact_manifest,
+                },
+                root=output,
+                executable=sys.executable,
+            )
+            external_backend_report_path = (
+                output / PATH0_EXTERNAL_BACKEND_ARTIFACT_FILENAME
+            )
+            write_json_artifact(external_backend_report_path, external_backend_report)
+            artifact_manifest.append(
+                bundle_artifact(external_backend_report_path, output_dir=output)
+            )
         framework_file_manifest = copy_framework_files(
             profile_config,
             output_dir=output,
@@ -115,6 +137,7 @@ def run_build(args: argparse.Namespace) -> int:
             artifacts=artifact_manifest,
             backend_coverage=backend_coverage,
             backend_package=backend_package_manifest,
+            external_backend_report=external_backend_report,
             framework_files=framework_file_manifest,
             runner=runner_manifest,
             runtime_files=runtime_file_manifest,
@@ -133,6 +156,8 @@ def run_build(args: argparse.Namespace) -> int:
         print(f"backend coverage artifact: {backend_coverage_path}")
     if backend_package_manifest is not None:
         print(f"backend package: {backend_package_manifest['path']}")
+    if external_backend_report_path is not None:
+        print(f"external backend artifact: {external_backend_report_path}")
     print(f"deps artifact: {deps_path}")
     print(f"styles artifact: {style_path}")
     print(f"render tree artifact: {render_tree_path}")

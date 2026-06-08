@@ -110,7 +110,10 @@ check the package descriptor's internal file hashes and run a minimal
 Builds now also write `otoe-render-tree.json`, and packaged Path0 external
 backends can be checked against the app-shaped bundled RenderTree and
 `otoe-styles.json` through `--external-backend-check`; `--verify` runs that
-check when a backend package is present. That verification lives in copied
+check when a backend package is present. Builds with a backend package also
+persist that app-shaped run as `otoe-path0-external-backend.json`, and generated
+runners verify the report against package identity, RenderTree hash, StyleOps
+hash, source binding, and output hashes. That verification lives in copied
 runtime helper code instead of expanding the generated runner template further.
 It is still an experimental Path0 runner rather than the final external backend
 ABI.

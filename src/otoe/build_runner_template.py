@@ -19,6 +19,7 @@ PACK_TOP_LEVEL_FILES = frozenset(
     {
         "manifest.json",
         "otoe-backend-coverage.json",
+        "otoe-path0-external-backend.json",
         "otoe-plan.json",
         "otoe-deps.json",
         "otoe-render-tree.json",
@@ -200,6 +201,16 @@ def _verify_manifest_file_entry_contracts(manifest: dict[str, Any]) -> None:
         if not isinstance(backend_coverage, str) or not backend_coverage:
             raise ValueError("manifest.json: backendCoverage must be a non-empty string")
         _bundle_path(backend_coverage)
+    if "externalBackendReport" in manifest:
+        external_backend_report = manifest.get("externalBackendReport")
+        if (
+            not isinstance(external_backend_report, str)
+            or not external_backend_report
+        ):
+            raise ValueError(
+                "manifest.json: externalBackendReport must be a non-empty string"
+            )
+        _bundle_path(external_backend_report)
     backend_package = manifest.get("backendPackage")
     if isinstance(backend_package, dict):
         path = backend_package.get("path")
@@ -258,6 +269,8 @@ def _verify_manifest_artifact_references(manifest: dict[str, Any]) -> None:
         _require_artifact_entry(manifest, manifest[key])
     if "backendCoverage" in manifest:
         _require_artifact_entry(manifest, manifest["backendCoverage"])
+    if "externalBackendReport" in manifest:
+        _require_artifact_entry(manifest, manifest["externalBackendReport"])
     backend_package = manifest.get("backendPackage")
     if isinstance(backend_package, dict):
         _require_artifact_entry(manifest, backend_package.get("path"))
@@ -280,7 +293,14 @@ def _reject_unmanifested_bundle_files(manifest: dict[str, Any]) -> None:
 
 def _manifest_pack_paths(manifest: dict[str, Any]) -> set[str]:
     paths = {"manifest.json"}
-    for key in ("plan", "deps", "styles", "renderTree", "backendCoverage"):
+    for key in (
+        "plan",
+        "deps",
+        "styles",
+        "renderTree",
+        "backendCoverage",
+        "externalBackendReport",
+    ):
         value = manifest.get(key)
         if isinstance(value, str):
             paths.add(value)
@@ -359,6 +379,8 @@ def _verify_artifact_schemas(manifest: dict[str, Any]) -> None:
         _verify_backend_coverage(backend_coverage)
     if manifest.get("backendPackage") is not None:
         _verify_backend_package(manifest)
+    if manifest.get("externalBackendReport") is not None:
+        _verify_backend_package_report(manifest)
 
 
 def _verify_manifest_backend_package_contract(package: Any) -> None:
@@ -401,6 +423,12 @@ def _verify_backend_package_render_tree(manifest: dict[str, Any]) -> None:
     from otoe.bundle_backend_package import verify_backend_package_render_tree
 
     verify_backend_package_render_tree(manifest, root=ROOT, executable=sys.executable)
+
+
+def _verify_backend_package_report(manifest: dict[str, Any]) -> None:
+    from otoe.bundle_backend_package import verify_backend_package_report
+
+    verify_backend_package_report(manifest, root=ROOT)
 
 
 def _verify_dependency_audit_contract(payload: dict[str, Any], label: str) -> None:

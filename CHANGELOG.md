@@ -105,6 +105,10 @@
   `otoe-render-tree.json` plus `otoe-styles.json`. The app-shaped check is
   available as `otoe-run.py --external-backend-check` and also runs during
   `--verify`.
+- Added `otoe-path0-external-backend.json` as a backend-package build artifact
+  that records the app-shaped Path0 external backend report. Generated runners
+  verify that report against the package descriptor, RenderTree hash, StyleOps
+  artifact hash, source binding, and layout/paint output hashes.
 - Extracted dependency audit and runtime policy bundle verification into
   `otoe.bundle_deps`, keeping generated runners focused on orchestration while
   preserving copied-runtime validation.

@@ -74,6 +74,11 @@ A candidate should be able to produce or consume these artifacts:
   bundle-contained Path0 JSON-in/JSON-out smoke, and can run
   `--external-backend-check` against the bundled app-shaped
   `otoe-render-tree.json` plus `otoe-styles.json`.
+- `otoe-path0-external-backend.json`: the hash-covered build report generated
+  when a backend package is declared. It records the packaged backend's
+  app-shaped Path0 run and is verified against the backend package descriptor,
+  `otoe-render-tree.json`, `otoe-styles.json`, and output hashes by generated
+  bundle runners.
 - `otoe-backend-coverage.json`: the plan/build gate proving the selected
   backend profile covers the readiness requirements.
 - `manifest.json` and `.tar.gz` bundle output: the final offline deployment

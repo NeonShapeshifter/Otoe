@@ -20,6 +20,7 @@ PLAN_ARTIFACT_FILENAME = "otoe-plan.json"
 DEPS_ARTIFACT_FILENAME = "otoe-deps.json"
 STYLE_ARTIFACT_FILENAME = "otoe-styles.json"
 RENDER_TREE_ARTIFACT_FILENAME = "otoe-render-tree.json"
+PATH0_EXTERNAL_BACKEND_ARTIFACT_FILENAME = "otoe-path0-external-backend.json"
 BACKEND_COVERAGE_ARTIFACT_FILENAME = "otoe-backend-coverage.json"
 BUILD_MANIFEST_FILENAME = "manifest.json"
 RUNNER_FILENAME = "otoe-run.py"
@@ -119,6 +120,7 @@ def build_manifest(
     artifacts: list[dict[str, Any]] | None = None,
     backend_coverage: dict[str, Any] | None = None,
     backend_package: dict[str, Any] | None = None,
+    external_backend_report: dict[str, Any] | None = None,
     framework_files: list[dict[str, Any]] | None = None,
     runner: dict[str, Any] | None = None,
     runtime_files: list[dict[str, Any]] | None = None,
@@ -151,6 +153,8 @@ def build_manifest(
         manifest["backendCoverage"] = BACKEND_COVERAGE_ARTIFACT_FILENAME
     if backend_package is not None:
         manifest["backendPackage"] = backend_package
+    if external_backend_report is not None:
+        manifest["externalBackendReport"] = PATH0_EXTERNAL_BACKEND_ARTIFACT_FILENAME
     return manifest
 
 
