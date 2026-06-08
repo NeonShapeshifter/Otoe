@@ -211,7 +211,21 @@ def test_cli_build_copies_profile_backend_package_as_declared_artifacts(
         env={"PYTHONPATH": ""},
         text=True,
     )
+    external_check = subprocess.run(
+        [
+            sys.executable,
+            str(output / "otoe-run.py"),
+            "--external-backend-check",
+        ],
+        capture_output=True,
+        cwd=output,
+        env={"PYTHONPATH": ""},
+        text=True,
+    )
     archive = pack_bundle(output, tmp_path / "bundle.otoe.tar.gz")
+    render_tree = json.loads(
+        (output / "otoe-render-tree.json").read_text(encoding="utf-8")
+    )
 
     assert result == 0
     assert package["name"] == "path0-external-json-backend"
@@ -223,15 +237,25 @@ def test_cli_build_copies_profile_backend_package_as_declared_artifacts(
     )
     assert package["path"] in artifact_paths
     assert package["entrypoint"] in artifact_paths
+    assert "otoe-render-tree.json" in artifact_paths
     assert descriptor["packageHash"] == package["packageHash"]
     assert backend_package_payload_errors(descriptor) == []
     assert (output / package["entrypoint"]).is_file()
     assert "backend-package-check" in manifest["runner"]["modes"]
+    assert "external-backend-check" in manifest["runner"]["modes"]
+    assert manifest["renderTree"] == "otoe-render-tree.json"
+    assert render_tree["format"] == "otoe-render-tree"
+    assert render_tree["nodeCount"] == 1
     assert backend_check.returncode == 0
     assert (
         "backend package checked: "
         "backend/path0-external-json-backend/backend-package.json"
     ) in backend_check.stdout
+    assert external_check.returncode == 0
+    assert (
+        "external backend checked: "
+        "backend/path0-external-json-backend/backend-package.json"
+    ) in external_check.stdout
     assert "backend package: backend/path0-external-json-backend/backend-package.json" in (
         captured.out
     )

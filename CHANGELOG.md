@@ -99,6 +99,12 @@
 - Extracted bundled backend package verification into
   `otoe.bundle_backend_package`, keeping generated runners smaller while still
   verifying packages through copied runtime code.
+- Added `otoe-render-tree.json` as a build artifact and bundle manifest entry.
+  Generated runners now validate that artifact and, when a backend package is
+  declared, run the packaged Path0 external backend against the bundled
+  `otoe-render-tree.json` plus `otoe-styles.json`. The app-shaped check is
+  available as `otoe-run.py --external-backend-check` and also runs during
+  `--verify`.
 - Extracted dependency audit and runtime policy bundle verification into
   `otoe.bundle_deps`, keeping generated runners focused on orchestration while
   preserving copied-runtime validation.

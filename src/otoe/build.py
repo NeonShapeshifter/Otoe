@@ -19,6 +19,7 @@ from .profile_types import PlanProfileConfig, ProfileAsset, ProfileRuntimeFile
 PLAN_ARTIFACT_FILENAME = "otoe-plan.json"
 DEPS_ARTIFACT_FILENAME = "otoe-deps.json"
 STYLE_ARTIFACT_FILENAME = "otoe-styles.json"
+RENDER_TREE_ARTIFACT_FILENAME = "otoe-render-tree.json"
 BACKEND_COVERAGE_ARTIFACT_FILENAME = "otoe-backend-coverage.json"
 BUILD_MANIFEST_FILENAME = "manifest.json"
 RUNNER_FILENAME = "otoe-run.py"
@@ -138,6 +139,7 @@ def build_manifest(
         "plan": PLAN_ARTIFACT_FILENAME,
         "deps": DEPS_ARTIFACT_FILENAME,
         "styles": STYLE_ARTIFACT_FILENAME,
+        "renderTree": RENDER_TREE_ARTIFACT_FILENAME,
         "artifacts": artifacts or [],
         "assets": assets or [],
         "frameworkFiles": framework_files or [],
@@ -245,7 +247,14 @@ def write_runner(*, output_dir: Path) -> dict[str, Any]:
     return {
         "path": RUNNER_FILENAME,
         "pythonPath": list(RUNNER_PYTHON_PATH),
-        "modes": ["backend-package-check", "check", "layout-check", "png", "verify"],
+        "modes": [
+            "backend-package-check",
+            "check",
+            "external-backend-check",
+            "layout-check",
+            "png",
+            "verify",
+        ],
         "size": len(data),
         "sha256": hashlib.sha256(data).hexdigest(),
     }

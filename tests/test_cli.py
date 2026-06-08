@@ -2088,6 +2088,7 @@ def test_cli_build_writes_minimal_bundle_manifest(tmp_path, monkeypatch, capsys)
     assert f"build build_surface:app: {output}" in captured.out
     assert f"deps artifact: {output / 'otoe-deps.json'}" in captured.out
     assert f"styles artifact: {output / 'otoe-styles.json'}" in captured.out
+    assert f"render tree artifact: {output / 'otoe-render-tree.json'}" in captured.out
     assert plan["status"] == "ok"
     assert deps["status"] == "ok"
     artifacts = manifest.pop("artifacts")
@@ -2113,6 +2114,13 @@ def test_cli_build_writes_minimal_bundle_manifest(tmp_path, monkeypatch, capsys)
             "size": (output / "otoe-styles.json").stat().st_size,
             "sha256": hashlib.sha256(
                 (output / "otoe-styles.json").read_bytes()
+            ).hexdigest(),
+        },
+        {
+            "path": "otoe-render-tree.json",
+            "size": (output / "otoe-render-tree.json").stat().st_size,
+            "sha256": hashlib.sha256(
+                (output / "otoe-render-tree.json").read_bytes()
             ).hexdigest(),
         },
     ]
@@ -2190,7 +2198,14 @@ def test_cli_build_writes_minimal_bundle_manifest(tmp_path, monkeypatch, capsys)
     assert runner == {
         "path": "otoe-run.py",
         "pythonPath": ["app", "framework"],
-        "modes": ["backend-package-check", "check", "layout-check", "png", "verify"],
+        "modes": [
+            "backend-package-check",
+            "check",
+            "external-backend-check",
+            "layout-check",
+            "png",
+            "verify",
+        ],
         "size": (output / "otoe-run.py").stat().st_size,
         "sha256": hashlib.sha256((output / "otoe-run.py").read_bytes()).hexdigest(),
     }
@@ -2204,6 +2219,7 @@ def test_cli_build_writes_minimal_bundle_manifest(tmp_path, monkeypatch, capsys)
         "plan": "otoe-plan.json",
         "deps": "otoe-deps.json",
         "styles": "otoe-styles.json",
+        "renderTree": "otoe-render-tree.json",
         "assets": [],
         "runtimeFiles": [
             {

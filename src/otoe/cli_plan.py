@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -26,12 +26,23 @@ from .cli_common import (
 )
 from .cli_styles import load_plan_stylesheet
 from .cli_targets import coerce_render_target
+from .mount import MountedNode
 from .plan import OtoePlan, PlanError, plan_mounted
 from .plan_artifacts import format_plan, plan_to_dict
 from .profile_types import PlanProfileConfig
 from .runtime_files import RuntimeFileError
 from .static_classes import static_class_scan_for_target
 from .style import StyleSheet
+
+
+@dataclass(frozen=True)
+class ResolvedPlanRequest:
+    profile_config: PlanProfileConfig
+    mounted: MountedNode
+    plan: OtoePlan
+    plan_dict: dict[str, Any]
+    stylesheet: StyleSheet | None
+    backend_coverage: dict[str, Any] | None
 
 
 def run_plan(args: argparse.Namespace) -> int:
@@ -63,6 +74,17 @@ def resolve_plan_request(
     StyleSheet | None,
     dict[str, Any] | None,
 ]:
+    resolved = resolve_plan_request_details(args)
+    return (
+        resolved.profile_config,
+        resolved.plan,
+        resolved.plan_dict,
+        resolved.stylesheet,
+        resolved.backend_coverage,
+    )
+
+
+def resolve_plan_request_details(args: argparse.Namespace) -> ResolvedPlanRequest:
     target = load_target(args.target)
     mounted = coerce_render_target(target)
     profile_config = load_plan_profile_config(args.profile_file)
@@ -120,7 +142,14 @@ def resolve_plan_request(
     backend_coverage = plan_backend_coverage_report(profile_config, plan)
     if backend_coverage is not None:
         plan_dict["backendCoverage"] = backend_coverage
-    return profile_config, plan, plan_dict, stylesheet, backend_coverage
+    return ResolvedPlanRequest(
+        profile_config=profile_config,
+        mounted=mounted,
+        plan=plan,
+        plan_dict=plan_dict,
+        stylesheet=stylesheet,
+        backend_coverage=backend_coverage,
+    )
 
 
 def framework_classes_with_rules(

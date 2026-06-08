@@ -11,6 +11,7 @@ from .build import (
     BUILD_MANIFEST_FILENAME,
     DEPS_ARTIFACT_FILENAME,
     PLAN_ARTIFACT_FILENAME,
+    RENDER_TREE_ARTIFACT_FILENAME,
     RUNNER_FILENAME,
     STYLE_ARTIFACT_FILENAME,
     BuildError,
@@ -23,22 +24,23 @@ from .build import (
     write_runner,
 )
 from .cli_common import CliError, write_json_artifact
-from .cli_plan import resolve_plan_request
+from .cli_plan import resolve_plan_request_details
 from .deps import audit_deps, deps_to_dict
 from .plan import PlanError
 from .plan_artifacts import compiled_styles_to_dict
+from .render_ir import render_tree_from_target, render_tree_to_dict
 from .runtime_files import RuntimeFileError, build_runtime_files
+from .style import resolved_style_map_from_style_ops_artifact
 
 
 def run_build(args: argparse.Namespace) -> int:
     try:
-        (
-            profile_config,
-            plan,
-            plan_dict,
-            stylesheet,
-            backend_coverage,
-        ) = resolve_plan_request(args)
+        resolved = resolve_plan_request_details(args)
+        profile_config = resolved.profile_config
+        plan = resolved.plan
+        plan_dict = resolved.plan_dict
+        stylesheet = resolved.stylesheet
+        backend_coverage = resolved.backend_coverage
         output = Path(args.out)
         output.mkdir(parents=True, exist_ok=True)
         plan_path = output / PLAN_ARTIFACT_FILENAME
@@ -62,18 +64,25 @@ def run_build(args: argparse.Namespace) -> int:
                 "dependency audit invalid; refusing to write build manifest"
             )
         style_path = output / STYLE_ARTIFACT_FILENAME
-        write_json_artifact(
-            style_path,
-            compiled_styles_to_dict(
-                plan,
-                target=args.target,
-                stylesheet=stylesheet,
-            ),
+        style_artifact = compiled_styles_to_dict(
+            plan,
+            target=args.target,
+            stylesheet=stylesheet,
         )
+        write_json_artifact(style_path, style_artifact)
+        render_tree_path = output / RENDER_TREE_ARTIFACT_FILENAME
+        render_tree_artifact = render_tree_to_dict(
+            render_tree_from_target(
+                resolved.mounted,
+                style_map=resolved_style_map_from_style_ops_artifact(style_artifact),
+            )
+        )
+        write_json_artifact(render_tree_path, render_tree_artifact)
         artifact_manifest = [
             bundle_artifact(plan_path, output_dir=output),
             bundle_artifact(deps_path, output_dir=output),
             bundle_artifact(style_path, output_dir=output),
+            bundle_artifact(render_tree_path, output_dir=output),
         ]
         if backend_coverage_path is not None:
             artifact_manifest.append(
@@ -126,6 +135,7 @@ def run_build(args: argparse.Namespace) -> int:
         print(f"backend package: {backend_package_manifest['path']}")
     print(f"deps artifact: {deps_path}")
     print(f"styles artifact: {style_path}")
+    print(f"render tree artifact: {render_tree_path}")
     print(f"manifest: {manifest_path}")
     if args.validate:
         print("validation: ok")

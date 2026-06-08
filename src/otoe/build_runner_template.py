@@ -21,6 +21,7 @@ PACK_TOP_LEVEL_FILES = frozenset(
         "otoe-backend-coverage.json",
         "otoe-plan.json",
         "otoe-deps.json",
+        "otoe-render-tree.json",
         "otoe-styles.json",
         "otoe-run.py",
     }
@@ -44,6 +45,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="run the bundled backend package smoke check",
     )
+    mode.add_argument(
+        "--external-backend-check",
+        action="store_true",
+        help="run the bundled backend package against bundled app artifacts",
+    )
     parser.add_argument("--background", default="#ffffff", help="PNG background")
     args = parser.parse_args(argv)
 
@@ -63,6 +69,14 @@ def main(argv: list[str] | None = None) -> int:
             print(f"backend package checked: {package['path']}")
         else:
             print("backend package checked: none")
+        return 0
+    if args.external_backend_check:
+        _verify_backend_package_render_tree(manifest)
+        package = manifest.get("backendPackage")
+        if isinstance(package, dict):
+            print(f"external backend checked: {package['path']}")
+        else:
+            print("external backend checked: none")
         return 0
 
     mounted = _coerce_target(_load_target(manifest["target"]))
@@ -113,6 +127,7 @@ def _verify_manifest_contract(manifest: dict[str, Any]) -> None:
         "backendCapability",
         "plan",
         "deps",
+        "renderTree",
         "styles",
     ):
         _require_manifest_string(manifest, key)
@@ -155,7 +170,7 @@ def _load_stylesheet(manifest: dict[str, Any]):
 def _verify_bundle(manifest: dict[str, Any]) -> None:
     _verify_artifact_schemas(manifest)
     _verify_framework_policy(manifest)
-    for key in ("plan", "deps", "styles"):
+    for key in ("plan", "deps", "styles", "renderTree"):
         _require_bundle_file(manifest[key])
     for index, artifact in enumerate(manifest.get("artifacts", [])):
         _verify_manifest_file(
@@ -174,10 +189,11 @@ def _verify_bundle(manifest: dict[str, Any]) -> None:
             )
     _reject_unmanifested_bundle_files(manifest)
     _verify_backend_package_smoke(manifest)
+    _verify_backend_package_render_tree(manifest)
 
 
 def _verify_manifest_file_entry_contracts(manifest: dict[str, Any]) -> None:
-    for key in ("plan", "deps", "styles"):
+    for key in ("plan", "deps", "styles", "renderTree"):
         _bundle_path(_require_manifest_string(manifest, key))
     if "backendCoverage" in manifest:
         backend_coverage = manifest.get("backendCoverage")
@@ -238,7 +254,7 @@ def _record_manifest_bundle_path(
 
 
 def _verify_manifest_artifact_references(manifest: dict[str, Any]) -> None:
-    for key in ("plan", "deps", "styles"):
+    for key in ("plan", "deps", "styles", "renderTree"):
         _require_artifact_entry(manifest, manifest[key])
     if "backendCoverage" in manifest:
         _require_artifact_entry(manifest, manifest["backendCoverage"])
@@ -264,7 +280,7 @@ def _reject_unmanifested_bundle_files(manifest: dict[str, Any]) -> None:
 
 def _manifest_pack_paths(manifest: dict[str, Any]) -> set[str]:
     paths = {"manifest.json"}
-    for key in ("plan", "deps", "styles", "backendCoverage"):
+    for key in ("plan", "deps", "styles", "renderTree", "backendCoverage"):
         value = manifest.get(key)
         if isinstance(value, str):
             paths.add(value)
@@ -336,6 +352,8 @@ def _verify_artifact_schemas(manifest: dict[str, Any]) -> None:
     styles = _load_json_bundle_file(manifest["styles"], style_artifact=True)
     if styles.get("status") == "invalid":
         raise ValueError(f"{manifest['styles']}: style artifact is invalid")
+    render_tree = _load_json_bundle_file(manifest["renderTree"])
+    _verify_render_tree_schema(render_tree, manifest["renderTree"])
     backend_coverage = manifest.get("backendCoverage")
     if backend_coverage is not None:
         _verify_backend_coverage(backend_coverage)
@@ -377,6 +395,12 @@ def _verify_backend_package_smoke(manifest: dict[str, Any]) -> None:
     from otoe.bundle_backend_package import verify_backend_package_smoke
 
     verify_backend_package_smoke(manifest, root=ROOT, executable=sys.executable)
+
+
+def _verify_backend_package_render_tree(manifest: dict[str, Any]) -> None:
+    from otoe.bundle_backend_package import verify_backend_package_render_tree
+
+    verify_backend_package_render_tree(manifest, root=ROOT, executable=sys.executable)
 
 
 def _verify_dependency_audit_contract(payload: dict[str, Any], label: str) -> None:
@@ -435,6 +459,15 @@ def _verify_style_ops_schema(payload: dict[str, Any], label: str) -> None:
         return
     details = "; ".join(validation.errors) or "styleOps drift detected"
     raise ValueError(f"{label}: styleOps validation failed: {details}")
+
+
+def _verify_render_tree_schema(payload: dict[str, Any], label: str) -> None:
+    from otoe.render_ir import RenderIRError, render_tree_from_dict
+
+    try:
+        render_tree_from_dict(payload)
+    except RenderIRError as exc:
+        raise ValueError(f"{label}: {exc}") from exc
 
 
 def _verify_schema_version(payload: Any, label: str) -> None:

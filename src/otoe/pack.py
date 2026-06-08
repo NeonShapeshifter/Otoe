@@ -19,6 +19,7 @@ from .build import (
     DEPS_ARTIFACT_FILENAME,
     FRAMEWORK_OUTPUT_DIR,
     PLAN_ARTIFACT_FILENAME,
+    RENDER_TREE_ARTIFACT_FILENAME,
     RUNTIME_OUTPUT_DIR,
     RUNNER_FILENAME,
     STYLE_ARTIFACT_FILENAME,
@@ -35,6 +36,7 @@ PACK_TOP_LEVEL_FILES = frozenset(
         PLAN_ARTIFACT_FILENAME,
         DEPS_ARTIFACT_FILENAME,
         STYLE_ARTIFACT_FILENAME,
+        RENDER_TREE_ARTIFACT_FILENAME,
         RUNNER_FILENAME,
     }
 )
@@ -192,7 +194,7 @@ def _reject_unmanifested_entries(
 
 def _manifest_pack_paths(manifest: dict, *, bundle_dir: Path) -> set[str]:
     paths = {BUILD_MANIFEST_FILENAME}
-    for key in ("plan", "deps", "styles", "backendCoverage"):
+    for key in ("plan", "deps", "styles", "renderTree", "backendCoverage"):
         value = manifest.get(key)
         _add_manifest_pack_path(paths, value, bundle_dir=bundle_dir)
     runner = manifest.get("runner")

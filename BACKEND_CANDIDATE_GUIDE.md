@@ -70,8 +70,10 @@ A candidate should be able to produce or consume these artifacts:
   `otoe.profile.toml` can declare `[backend.package].manifest` so `otoe build`
   copies that package under `backend/<name>/` and declares the descriptor plus
   package files as bundle artifacts. Generated bundle runners verify the
-  descriptor file hashes and can run `--backend-package-check` for a
-  bundle-contained Path0 JSON-in/JSON-out smoke.
+  descriptor file hashes, can run `--backend-package-check` for a
+  bundle-contained Path0 JSON-in/JSON-out smoke, and can run
+  `--external-backend-check` against the bundled app-shaped
+  `otoe-render-tree.json` plus `otoe-styles.json`.
 - `otoe-backend-coverage.json`: the plan/build gate proving the selected
   backend profile covers the readiness requirements.
 - `manifest.json` and `.tar.gz` bundle output: the final offline deployment

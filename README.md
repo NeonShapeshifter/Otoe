@@ -399,12 +399,16 @@ the manifest declares `backendPackage`, `--verify` also checks the package
 descriptor file hashes against the copied files and runs a Path0 JSON-in/JSON-out
 smoke through the backend package entrypoint. Use
 `otoe-run.py --backend-package-check` to run only that bundled package smoke.
-Core bundle artifacts declared through `plan`, `deps`, `styles`, and
-`backendCoverage` must also appear in `artifacts` with size/hash metadata, and
-all declared file entries must use safe relative paths, size metadata,
-lowercase SHA-256 hashes, and unique bundle paths. The runner rejects invalid
-plan, dependency, or style artifacts even if the manifest hash entries were
-updated after tampering. Hardware bundles also keep the
+Builds also emit `otoe-render-tree.json`; when a backend package is declared,
+`--verify` runs that package against the bundled `otoe-render-tree.json` and
+`otoe-styles.json`, and `otoe-run.py --external-backend-check` runs just that
+app-shaped JSON-in/JSON-out backend check. Core bundle artifacts declared
+through `plan`, `deps`, `styles`, `renderTree`, and `backendCoverage` must also
+appear in `artifacts` with size/hash metadata, and all declared file entries
+must use safe relative paths, size metadata, lowercase SHA-256 hashes, and
+unique bundle paths. The runner rejects invalid plan, dependency, style, or
+RenderTree artifacts even if the manifest hash entries were updated after
+tampering. Hardware bundles also keep the
 `runtimeInstallsAllowed = false` runner/pack invariant.
 `--layout-check` runs native layout/paint validation without writing a PNG.
 Runtime style rehydration also validates the same contract by default when
