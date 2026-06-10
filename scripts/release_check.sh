@@ -9,6 +9,7 @@ cd "$ROOT"
 rm -rf build dist dist-wheel-smoke src/*.egg-info ./*.egg-info
 
 "$PYTHON_BIN" -m pip install -e ".[dev,release,native-text]" "setuptools>=68" wheel
+"$PYTHON_BIN" scripts/update_portable_core_docs.py --check
 "$PYTHON_BIN" -m compileall -q src examples tests
 "$PYTHON_BIN" -m pytest -q
 "$PYTHON_BIN" -m build

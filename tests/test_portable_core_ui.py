@@ -33,6 +33,7 @@ from examples.portable_core_ui import PORTABLE_CORE_EXAMPLES
 ROOT = Path(__file__).resolve().parents[1]
 MATRIX_PATH = ROOT / "docs" / "portable-core-ui-v0.json"
 DOC_PATH = ROOT / "docs" / "portable-core-ui-v0.md"
+UPDATE_DOCS_SCRIPT = ROOT / "scripts" / "update_portable_core_docs.py"
 PORTABLE_STYLES_PATH = ROOT / "preview" / "portable_core_ui.css"
 
 
@@ -131,6 +132,18 @@ def test_portable_core_ui_matrix_contract_is_machine_readable():
 
 def test_portable_core_ui_packaged_matrix_matches_docs_json():
     assert portable_core_ui_v0_matrix() == _matrix()
+
+
+def test_portable_core_ui_generated_docs_are_current():
+    result = subprocess.run(
+        [sys.executable, str(UPDATE_DOCS_SCRIPT), "--check"],
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "portable core docs: ok" in result.stdout
 
 
 def test_portable_core_ui_formatter_exposes_matrix_sections():

@@ -2,7 +2,7 @@
 
 **Status:** post-v0.1.7 workshop hardening; backend capability gates, bundle hermeticity, dependency audit contract, namespace runtime discovery, RenderTree validation hardening, experimental external Path0 JSON runner, first backend package manifest, and productized Portable Core UI/native layout boundaries
 **Updated:** June 10, 2026
-**Current baseline:** 752 tests passing, 3 skipped when optional `mypy`/Pillow dependencies are unavailable
+**Current baseline:** 753 tests passing, 3 skipped when optional `mypy`/Pillow dependencies are unavailable
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, utility ops console, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---

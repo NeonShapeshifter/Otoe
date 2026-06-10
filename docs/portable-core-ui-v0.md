@@ -7,11 +7,12 @@ headless native rendering, and native-window driver input.
 This matrix is intentionally conservative. It should shrink ambiguity before
 more primitives are added.
 
-The machine-readable source for this table is
-[`docs/portable-core-ui-v0.json`](portable-core-ui-v0.json). Tests validate that
-the packaged matrix, JSON, Markdown table, example targets, exported symbols,
-outside-v0 classifications, native capability profile, and sample render paths
-stay aligned.
+The canonical source for this table is
+[`src/otoe/portable_core.py`](../src/otoe/portable_core.py). Run
+`python scripts/update_portable_core_docs.py` to regenerate the JSON and
+Markdown tables. Tests validate that the packaged matrix, generated JSON,
+Markdown table, example targets, exported symbols, outside-v0 classifications,
+native capability profile, and sample render paths stay aligned.
 
 Inspect the packaged support matrix from any installed or editable checkout:
 
@@ -21,6 +22,7 @@ otoe portable-core --examples --outside
 otoe portable-core --json
 ```
 
+<!-- portable-core-ui-v0:matrix:start -->
 | Primitive | HTML | Live HTML | Native Headless | Native Window Driver | Status |
 | --- | --- | --- | --- | --- | --- |
 | `Text` | yes | n/a | yes | n/a | core preview |
@@ -38,6 +40,7 @@ otoe portable-core --json
 | `ListRow` | yes | n/a | through composed widgets/styles | n/a | product preview |
 | `MetricTile` | yes | n/a | through composed widgets/styles | n/a | product preview |
 | `AppFrame` | yes | n/a | app-shaped layout smoke | n/a | product preview |
+<!-- portable-core-ui-v0:matrix:end -->
 
 `Dialog` is listed because it is already a common UI primitive and has partial
 HTML/live/native coverage, but it is not counted as Portable Core UI v0 until
@@ -66,6 +69,7 @@ PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo --pillow --scal
 
 Each matrix row has a single import target:
 
+<!-- portable-core-ui-v0:examples:start -->
 | Primitive | Example Target |
 | --- | --- |
 | `Text` | `examples.portable_core_ui:text_example` |
@@ -83,6 +87,7 @@ Each matrix row has a single import target:
 | `ListRow` | `examples.portable_core_ui:list_row_example` |
 | `MetricTile` | `examples.portable_core_ui:metric_tile_example` |
 | `AppFrame` | `examples.portable_core_ui:app_frame_example` |
+<!-- portable-core-ui-v0:examples:end -->
 
 Use top-level imports for core widgets:
 
@@ -98,9 +103,10 @@ from otoe.ui import ActionButton, AppFrame, Badge, Card, ListRow, MetricTile
 
 ## Outside Portable Core v0
 
-The JSON source also classifies every product-preview `otoe.ui` symbol that is
-not counted as a v0 primitive.
+The generated JSON also classifies every product-preview `otoe.ui` symbol that
+is not counted as a v0 primitive.
 
+<!-- portable-core-ui-v0:outside:start -->
 | Group | Classification | Symbols |
 | --- | --- | --- |
 | `app-shell-navigation` | product-preview-app-shell | `AppShell`, `NavItem`, `NavRoute`, `RouteView`, `SidebarNav` |
@@ -110,6 +116,7 @@ not counted as a v0 primitive.
 | `transient-feedback` | product-preview-composite | `FeedbackToast`, `Toast` |
 | `interactive-overlays` | interactive-preview | `CommandPalette`, `FocusScope`, `Menu`, `Select`, `ShortcutScope` |
 | `ui-models-and-helpers` | support-model | `Command`, `CommandRegistry`, `MenuItem`, `SelectOption`, `TableColumn`, `UI_EVENT_SIGNATURES`, `class_names` |
+<!-- portable-core-ui-v0:outside:end -->
 
 Those symbols remain public product-preview APIs. They are outside v0 because
 their native, focus, overlay, keyboard, table, timing, or app-shell contracts

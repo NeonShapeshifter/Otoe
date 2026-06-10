@@ -7,8 +7,15 @@ scripts/release_check.sh
 ```
 
 The script removes stale local build artifacts, installs local dev/release plus
-`native-text` extras, compiles source files, runs tests, builds distributions,
-runs `twine check`, and runs the installed-wheel smoke.
+`native-text` extras, verifies generated Portable Core UI docs, compiles source
+files, runs tests, builds distributions, runs `twine check`, and runs the
+installed-wheel smoke.
+
+If the Portable Core UI matrix changes, regenerate the docs before release:
+
+```bash
+python scripts/update_portable_core_docs.py
+```
 
 ## Installed-Wheel Smoke
 

@@ -45,6 +45,9 @@
   be inspected as text or JSON outside a source checkout.
 - Extended the installed-wheel smoke to verify `otoe portable-core` text and
   JSON output from the packaged CLI.
+- Added `scripts/update_portable_core_docs.py` so `src/otoe/portable_core.py`
+  is the canonical Portable Core UI v0 matrix source and generated docs are
+  checked during release.
 - Hardened offline bundle manifests so generated runners require safe relative
   paths, size metadata, lowercase SHA-256 hashes, unique bundle paths, core
   artifact entries, and backend framework file policy before verification,
