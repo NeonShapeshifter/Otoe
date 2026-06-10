@@ -88,6 +88,39 @@ def test_cli_check_passes_extra_pytest_args(tmp_path, monkeypatch, capsys):
     assert "pytest:" in captured.out
 
 
+def test_cli_portable_core_prints_support_matrix(capsys):
+    result = main(["portable-core"])
+
+    captured = capsys.readouterr()
+    assert result == 0
+    assert "Portable Core UI v0" in captured.out
+    assert "`Button`" in captured.out
+    assert "Native Window" in captured.out
+    assert "Outside Portable Core v0" not in captured.out
+
+
+def test_cli_portable_core_can_include_examples_and_outside_groups(capsys):
+    result = main(["portable-core", "--examples", "--outside"])
+
+    captured = capsys.readouterr()
+    assert result == 0
+    assert "Example Targets" in captured.out
+    assert "examples.portable_core_ui:button_example" in captured.out
+    assert "Outside Portable Core v0" in captured.out
+    assert "app-shell-navigation" in captured.out
+
+
+def test_cli_portable_core_can_write_json(capsys):
+    result = main(["portable-core", "--json"])
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["format"] == "otoe-portable-core-ui-v0"
+    assert payload["entries"][0]["id"] == "text"
+    assert payload["outsidePortableCore"][0]["id"] == "app-shell-navigation"
+
+
 def test_cli_render_writes_html_from_node_target(tmp_path, monkeypatch, capsys):
     module = tmp_path / "surface.py"
     module.write_text(

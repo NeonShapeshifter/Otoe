@@ -16,6 +16,7 @@ from .cli_dev import run_dev
 from .cli_new import run_new
 from .cli_pack import run_pack
 from .cli_plan import run_plan
+from .cli_portable_core import run_portable_core
 from .cli_style_ir import run_style_ir
 from .cli_render import run_render
 from .plan_artifacts import compiled_styles_to_dict
@@ -55,6 +56,27 @@ def _build_parser() -> argparse.ArgumentParser:
         help="pytest arguments after --",
     )
     check.set_defaults(func=run_check)
+
+    portable_core = subcommands.add_parser(
+        "portable-core",
+        help="inspect the Portable Core UI v0 support matrix",
+    )
+    portable_core.add_argument(
+        "--json",
+        action="store_true",
+        help="write the machine-readable Portable Core UI v0 matrix",
+    )
+    portable_core.add_argument(
+        "--outside",
+        action="store_true",
+        help="include public UI APIs outside Portable Core UI v0 in text output",
+    )
+    portable_core.add_argument(
+        "--examples",
+        action="store_true",
+        help="include source-checkout example import targets in text output",
+    )
+    portable_core.set_defaults(func=run_portable_core)
 
     render = subcommands.add_parser("render", help="render an Otoe target")
     render.add_argument("target", help="import target in MODULE:OBJECT form")

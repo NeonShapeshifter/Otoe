@@ -9,9 +9,17 @@ more primitives are added.
 
 The machine-readable source for this table is
 [`docs/portable-core-ui-v0.json`](portable-core-ui-v0.json). Tests validate that
-the JSON, Markdown table, example targets, exported symbols, outside-v0
-classifications, native capability profile, and sample render paths stay
-aligned.
+the packaged matrix, JSON, Markdown table, example targets, exported symbols,
+outside-v0 classifications, native capability profile, and sample render paths
+stay aligned.
+
+Inspect the packaged support matrix from any installed or editable checkout:
+
+```bash
+otoe portable-core
+otoe portable-core --examples --outside
+otoe portable-core --json
+```
 
 | Primitive | HTML | Live HTML | Native Headless | Native Window Driver | Status |
 | --- | --- | --- | --- | --- | --- |

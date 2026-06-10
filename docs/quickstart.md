@@ -99,6 +99,16 @@ otoe pack dist/cage --out dist/cage.tar.gz
 
 `otoe pack` verifies the bundle again before writing the archive.
 
+## Portable UI Matrix
+
+Inspect the packaged Portable Core UI v0 contract before depending on a
+primitive across HTML, native PNG, and native-window paths:
+
+```bash
+otoe portable-core
+otoe portable-core --json
+```
+
 ## Source Checkout Examples
 
 Repository examples are available only from a source checkout because they are

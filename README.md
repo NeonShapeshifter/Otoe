@@ -112,7 +112,9 @@ apps. The strongest current niche is Python-first operational software:
 
 The backend and evidence tooling is intentionally advanced and experimental.
 New app authors should start with `otoe new`, HTML/native render, and the
-portable UI subset before reaching for backend-candidate commands.
+portable UI subset before reaching for backend-candidate commands. Use
+`otoe portable-core` to inspect the current Portable Core UI v0 support matrix
+from the installed package.
 The Phase 5 professional reference apps are documented in
 [REFERENCE_APP_PATTERNS.md](REFERENCE_APP_PATTERNS.md) and validated through the
 hardware, admin, data workflow, utility, SaaS, and UI examples.
@@ -151,7 +153,7 @@ hardware, admin, data workflow, utility, SaaS, and UI examples.
 
 ## Status
 
-Current status: post-v0.1.7 workshop hardening. The test baseline is 747
+Current status: post-v0.1.7 workshop hardening. The test baseline is 752
 passing tests with optional typing/Pillow tests skipped when those dependencies
 are unavailable.
 See [ROADMAP.md](ROADMAP.md) for the active phase plan.

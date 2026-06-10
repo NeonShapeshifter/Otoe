@@ -21,6 +21,10 @@ from otoe import (
 )
 from otoe._native_shared import native_widget_support
 from otoe.cli import main
+from otoe.portable_core import (
+    format_portable_core_ui_v0,
+    portable_core_ui_v0_matrix,
+)
 from otoe.ui import ActionButton, ListRow, TabButton, Tabs
 from otoe.experimental.native import NativeSurface, layout_native, paint_native
 from examples.portable_core_ui import PORTABLE_CORE_EXAMPLES
@@ -123,6 +127,23 @@ def test_portable_core_ui_matrix_contract_is_machine_readable():
     ]
     for entry in entries:
         assert entry["exampleTarget"].startswith("examples.portable_core_ui:")
+
+
+def test_portable_core_ui_packaged_matrix_matches_docs_json():
+    assert portable_core_ui_v0_matrix() == _matrix()
+
+
+def test_portable_core_ui_formatter_exposes_matrix_sections():
+    report = format_portable_core_ui_v0(include_outside=True, include_examples=True)
+
+    assert "Portable Core UI v0" in report
+    assert "14 portable primitives" in report
+    assert "`Button`" in report
+    assert "Native Window" in report
+    assert "Example Targets" in report
+    assert "examples.portable_core_ui:button_example" in report
+    assert "Outside Portable Core v0" in report
+    assert "app-shell-navigation" in report
 
 
 def test_portable_core_examples_cover_core_entries():

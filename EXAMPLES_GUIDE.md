@@ -43,6 +43,8 @@ The support matrix and outside-v0 classifications live in
 `docs/portable-core-ui-v0.md` and `docs/portable-core-ui-v0.json`.
 `preview/portable_core_ui.css` is the strict portable stylesheet used by the
 CLI render, native PNG, plan, and build smoke tests.
+Use `otoe portable-core --examples --outside` to inspect the packaged matrix
+and source-checkout example targets.
 
 ## Live Counter
 
