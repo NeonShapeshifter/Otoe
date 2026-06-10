@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- Fixed `otoe build --validate` when `--out` is a relative path by executing
+  the generated runner through an absolute script path while keeping the bundle
+  directory as the runner working directory.
+- Reworked the README around installed-package onboarding with `otoe new` and
+  moved product, API tier, native status, offline build, backend-candidate, and
+  release guidance into focused `docs/` pages.
+- Added an installed-wheel smoke script and CI/publish workflow coverage for
+  `otoe new`, HTML render, native PNG render, and `otoe build --validate` from
+  a clean virtual environment.
+- Accepted `ADR-019`, choosing Pillow/FreeType as the first optional real native
+  text backend while keeping deterministic marker text as the default baseline.
+- Added the optional `native-text` extra, `PillowNativeRendererBackend`, and
+  `otoe render --native-text pillow [--font path.ttf]` for readable native PNG
+  text without changing the dependency-free marker renderer default.
+- Added `[native.text] renderer = "pillow"` profile support so offline builds
+  copy an explicit font into the bundle manifest and generated runners use it
+  for native layout checks and PNG rendering.
 - Hardened offline bundle manifests so generated runners require safe relative
   paths, size metadata, lowercase SHA-256 hashes, unique bundle paths, core
   artifact entries, and backend framework file policy before verification,

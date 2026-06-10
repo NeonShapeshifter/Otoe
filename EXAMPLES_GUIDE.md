@@ -4,6 +4,11 @@ Otoe examples are validation surfaces. They should stay framework-neutral where
 possible and case-study-shaped where useful. Use this guide to pick the smallest
 example that proves the behavior you want to inspect.
 
+Repository examples are source-checkout surfaces. They are not installed into
+the PyPI wheel. Use `otoe new` for installed-package onboarding, and run these
+examples from a checkout with `PYTHONPATH=src:.` unless the package is already
+installed in editable mode.
+
 The Phase 5 reference app extraction rules live in
 `REFERENCE_APP_PATTERNS.md`. Use that document before adding another broad
 example or moving repeated markup into `otoe.ui`.
@@ -15,8 +20,8 @@ Path: `examples/quickstart.py`
 Use this when you need the smallest static render target for the CLI.
 
 ```bash
-otoe render examples.quickstart:app --out preview.html --pretty
-otoe render examples.quickstart:app --out preview.png --native
+PYTHONPATH=src:. python -m otoe render examples.quickstart:app --out preview.html --pretty
+PYTHONPATH=src:. python -m otoe render examples.quickstart:app --out preview.png --native
 ```
 
 This example proves import-target rendering. It does not prove live events.
@@ -215,6 +220,9 @@ Paths:
 Use this as the first Phase 5 reference app: a professional Python/hardware
 surface that is framework-neutral but shaped like something that could later
 read serial, USB, GPIO, SQLite, or a local service adapter.
+This is the current recommended non-Wraith product demo because it matches
+Otoe's strongest niche: local operational UI with deterministic providers,
+safe actions, and offline-testable state.
 
 - device status and connection state
 - telemetry cards and table
