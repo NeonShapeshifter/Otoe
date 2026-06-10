@@ -46,7 +46,7 @@
           "layoutEvidence": {
             "layoutBoxes": 15,
             "observationCount": 13,
-            "observationHash": "sha256:772d13914d42926d186d0f6bca52f03d228fe58f314b9321fdf93c8d7713aeb5",
+            "observationHash": "sha256:04c88c0b7eb3971aa3d57e32641a757d7524cceb32d8624f2829bec13dfbede2",
             "observedProperties": [
               "alignItems",
               "borderWidth",
@@ -80,15 +80,18 @@
           },
           "paintCommands": 18,
           "paintEvidence": {
-            "observationCount": 6,
-            "observationHash": "sha256:ee7b5a1b11167ce565ebb949c26d1f6e77c1e2c34b03fa82cfb8061899c0116a",
+            "observationCount": 9,
+            "observationHash": "sha256:c3572d90f11c2f357e86d8516eca2e14cecf162866bc63b01f0de4ed14fad120",
             "observedProperties": [
               "background",
               "borderColor",
               "borderRadius",
               "borderWidth",
               "color",
-              "fontSize"
+              "fontSize",
+              "overflow",
+              "textOverflow",
+              "whiteSpace"
             ],
             "paintCommands": 18,
             "styleProperties": [
@@ -97,7 +100,10 @@
               "borderRadius",
               "borderWidth",
               "color",
-              "fontSize"
+              "fontSize",
+              "overflow",
+              "textOverflow",
+              "whiteSpace"
             ]
           },
           "rasterEvidence": {
@@ -179,7 +185,7 @@
       "layoutEvidence": {
         "layoutBoxes": 15,
         "observationCount": 13,
-        "observationHash": "sha256:772d13914d42926d186d0f6bca52f03d228fe58f314b9321fdf93c8d7713aeb5",
+        "observationHash": "sha256:04c88c0b7eb3971aa3d57e32641a757d7524cceb32d8624f2829bec13dfbede2",
         "observedProperties": [
           "alignItems",
           "borderWidth",
@@ -211,19 +217,22 @@
           "width"
         ]
       },
-      "layoutOutputHash": "sha256:53f705a49cf269a14ea0ca186a11018de87608ef086baa1194f9ae85b792ed4a",
+      "layoutOutputHash": "sha256:c0f4d392a48e8631addc5e80cf0872e846076da018c92f3769ffa28b7799bc57",
       "nodeCount": 15,
       "paintCommands": 18,
       "paintEvidence": {
-        "observationCount": 6,
-        "observationHash": "sha256:ee7b5a1b11167ce565ebb949c26d1f6e77c1e2c34b03fa82cfb8061899c0116a",
+        "observationCount": 9,
+        "observationHash": "sha256:c3572d90f11c2f357e86d8516eca2e14cecf162866bc63b01f0de4ed14fad120",
         "observedProperties": [
           "background",
           "borderColor",
           "borderRadius",
           "borderWidth",
           "color",
-          "fontSize"
+          "fontSize",
+          "overflow",
+          "textOverflow",
+          "whiteSpace"
         ],
         "paintCommands": 18,
         "styleProperties": [
@@ -232,10 +241,13 @@
           "borderRadius",
           "borderWidth",
           "color",
-          "fontSize"
+          "fontSize",
+          "overflow",
+          "textOverflow",
+          "whiteSpace"
         ]
       },
-      "paintOutputHash": "sha256:455f2fdf5eda9b3602cbe4f7d944de2a484ebe6e8887ce2ae7e593af519042a3",
+      "paintOutputHash": "sha256:47cd28b2411e2c648a6c8b8129f77384c33ea7517156f69805b1701a9a6c0bf2",
       "phases": [
         "layout",
         "paint"
@@ -249,12 +261,12 @@
       "renderTreeBoundary": {
         "boundary": "renderTree",
         "layoutBoxes": 15,
-        "outputHash": "sha256:53f705a49cf269a14ea0ca186a11018de87608ef086baa1194f9ae85b792ed4a",
+        "outputHash": "sha256:c0f4d392a48e8631addc5e80cf0872e846076da018c92f3769ffa28b7799bc57",
         "phase": "layout",
-        "renderTreeHash": "sha256:375fff3777ac1a88f42c2dd3628da4d540598bb3861419afead1bd421e843dfd",
+        "renderTreeHash": "sha256:74747a1efee9288a21dafec52f8010b681027106e7e90e9127948f9b193d1012",
         "source": "contract:minimal"
       },
-      "renderTreeHash": "sha256:375fff3777ac1a88f42c2dd3628da4d540598bb3861419afead1bd421e843dfd",
+      "renderTreeHash": "sha256:74747a1efee9288a21dafec52f8010b681027106e7e90e9127948f9b193d1012",
       "rendererBackend": "path0-renderer-candidate",
       "source": "contract:minimal",
       "styleOpsMatchesRenderTree": true,
@@ -270,9 +282,9 @@
             "proof": {
               "boundary": "renderTree",
               "layoutBoxes": 15,
-              "outputHash": "sha256:53f705a49cf269a14ea0ca186a11018de87608ef086baa1194f9ae85b792ed4a",
+              "outputHash": "sha256:c0f4d392a48e8631addc5e80cf0872e846076da018c92f3769ffa28b7799bc57",
               "phase": "layout",
-              "renderTreeHash": "sha256:375fff3777ac1a88f42c2dd3628da4d540598bb3861419afead1bd421e843dfd",
+              "renderTreeHash": "sha256:74747a1efee9288a21dafec52f8010b681027106e7e90e9127948f9b193d1012",
               "source": "contract:minimal"
             }
           },
@@ -280,7 +292,7 @@
             "boundary": "paint",
             "count": 1,
             "proof": {
-              "outputHash": "sha256:455f2fdf5eda9b3602cbe4f7d944de2a484ebe6e8887ce2ae7e593af519042a3",
+              "outputHash": "sha256:47cd28b2411e2c648a6c8b8129f77384c33ea7517156f69805b1701a9a6c0bf2",
               "paintCommands": 18,
               "phase": "paint",
               "source": "contract:minimal"
@@ -338,7 +350,7 @@
             "property": "scrollY"
           },
           {
-            "count": 5,
+            "count": 6,
             "property": "width"
           }
         ],
@@ -347,7 +359,7 @@
           "layoutEvidence": {
             "layoutBoxes": 15,
             "observationCount": 13,
-            "observationHash": "sha256:772d13914d42926d186d0f6bca52f03d228fe58f314b9321fdf93c8d7713aeb5",
+            "observationHash": "sha256:04c88c0b7eb3971aa3d57e32641a757d7524cceb32d8624f2829bec13dfbede2",
             "observedProperties": [
               "alignItems",
               "borderWidth",
@@ -381,15 +393,18 @@
           },
           "paintCommands": 18,
           "paintEvidence": {
-            "observationCount": 6,
-            "observationHash": "sha256:ee7b5a1b11167ce565ebb949c26d1f6e77c1e2c34b03fa82cfb8061899c0116a",
+            "observationCount": 9,
+            "observationHash": "sha256:c3572d90f11c2f357e86d8516eca2e14cecf162866bc63b01f0de4ed14fad120",
             "observedProperties": [
               "background",
               "borderColor",
               "borderRadius",
               "borderWidth",
               "color",
-              "fontSize"
+              "fontSize",
+              "overflow",
+              "textOverflow",
+              "whiteSpace"
             ],
             "paintCommands": 18,
             "styleProperties": [
@@ -398,7 +413,10 @@
               "borderRadius",
               "borderWidth",
               "color",
-              "fontSize"
+              "fontSize",
+              "overflow",
+              "textOverflow",
+              "whiteSpace"
             ]
           },
           "rasterEvidence": {
@@ -434,7 +452,7 @@
           "layoutEvidence": {
             "layoutBoxes": 15,
             "observationCount": 13,
-            "observationHash": "sha256:772d13914d42926d186d0f6bca52f03d228fe58f314b9321fdf93c8d7713aeb5",
+            "observationHash": "sha256:04c88c0b7eb3971aa3d57e32641a757d7524cceb32d8624f2829bec13dfbede2",
             "observedProperties": [
               "alignItems",
               "borderWidth",
@@ -468,15 +486,18 @@
           },
           "paintCommands": 18,
           "paintEvidence": {
-            "observationCount": 6,
-            "observationHash": "sha256:ee7b5a1b11167ce565ebb949c26d1f6e77c1e2c34b03fa82cfb8061899c0116a",
+            "observationCount": 9,
+            "observationHash": "sha256:c3572d90f11c2f357e86d8516eca2e14cecf162866bc63b01f0de4ed14fad120",
             "observedProperties": [
               "background",
               "borderColor",
               "borderRadius",
               "borderWidth",
               "color",
-              "fontSize"
+              "fontSize",
+              "overflow",
+              "textOverflow",
+              "whiteSpace"
             ],
             "paintCommands": 18,
             "styleProperties": [
@@ -485,7 +506,10 @@
               "borderRadius",
               "borderWidth",
               "color",
-              "fontSize"
+              "fontSize",
+              "overflow",
+              "textOverflow",
+              "whiteSpace"
             ]
           },
           "rasterEvidence": {
@@ -522,6 +546,18 @@
           {
             "count": 1,
             "property": "color"
+          },
+          {
+            "count": 1,
+            "property": "overflow"
+          },
+          {
+            "count": 1,
+            "property": "textOverflow"
+          },
+          {
+            "count": 1,
+            "property": "whiteSpace"
           }
         ],
         "runtime": {
@@ -529,7 +565,7 @@
           "layoutEvidence": {
             "layoutBoxes": 15,
             "observationCount": 13,
-            "observationHash": "sha256:772d13914d42926d186d0f6bca52f03d228fe58f314b9321fdf93c8d7713aeb5",
+            "observationHash": "sha256:04c88c0b7eb3971aa3d57e32641a757d7524cceb32d8624f2829bec13dfbede2",
             "observedProperties": [
               "alignItems",
               "borderWidth",
@@ -563,15 +599,18 @@
           },
           "paintCommands": 18,
           "paintEvidence": {
-            "observationCount": 6,
-            "observationHash": "sha256:ee7b5a1b11167ce565ebb949c26d1f6e77c1e2c34b03fa82cfb8061899c0116a",
+            "observationCount": 9,
+            "observationHash": "sha256:c3572d90f11c2f357e86d8516eca2e14cecf162866bc63b01f0de4ed14fad120",
             "observedProperties": [
               "background",
               "borderColor",
               "borderRadius",
               "borderWidth",
               "color",
-              "fontSize"
+              "fontSize",
+              "overflow",
+              "textOverflow",
+              "whiteSpace"
             ],
             "paintCommands": 18,
             "styleProperties": [
@@ -580,7 +619,10 @@
               "borderRadius",
               "borderWidth",
               "color",
-              "fontSize"
+              "fontSize",
+              "overflow",
+              "textOverflow",
+              "whiteSpace"
             ]
           },
           "rasterEvidence": {
@@ -1452,7 +1494,7 @@
             ]
           },
           {
-            "count": 5,
+            "count": 6,
             "property": "width",
             "samples": [
               {
@@ -1821,6 +1863,153 @@
                 }
               }
             ]
+          },
+          {
+            "count": 1,
+            "property": "overflow",
+            "samples": [
+              {
+                "commandCount": 1,
+                "commands": [
+                  {
+                    "bounds": [
+                      8,
+                      183,
+                      96,
+                      11
+                    ],
+                    "clip": [
+                      8,
+                      180,
+                      96,
+                      17
+                    ],
+                    "color": "#0f172a",
+                    "fill": null,
+                    "fontSize": 13,
+                    "kind": "text",
+                    "path": [
+                      0,
+                      0,
+                      4
+                    ],
+                    "radius": 0,
+                    "stroke": null,
+                    "strokeWidth": 0,
+                    "text": "Echo seed"
+                  }
+                ],
+                "name": "Text",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0,
+                  4
+                ],
+                "value": {
+                  "type": "literal",
+                  "value": "hidden"
+                }
+              }
+            ]
+          },
+          {
+            "count": 1,
+            "property": "textOverflow",
+            "samples": [
+              {
+                "commandCount": 1,
+                "commands": [
+                  {
+                    "bounds": [
+                      8,
+                      183,
+                      96,
+                      11
+                    ],
+                    "clip": [
+                      8,
+                      180,
+                      96,
+                      17
+                    ],
+                    "color": "#0f172a",
+                    "fill": null,
+                    "fontSize": 13,
+                    "kind": "text",
+                    "path": [
+                      0,
+                      0,
+                      4
+                    ],
+                    "radius": 0,
+                    "stroke": null,
+                    "strokeWidth": 0,
+                    "text": "Echo seed"
+                  }
+                ],
+                "name": "Text",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0,
+                  4
+                ],
+                "value": {
+                  "type": "literal",
+                  "value": "ellipsis"
+                }
+              }
+            ]
+          },
+          {
+            "count": 1,
+            "property": "whiteSpace",
+            "samples": [
+              {
+                "commandCount": 1,
+                "commands": [
+                  {
+                    "bounds": [
+                      8,
+                      183,
+                      96,
+                      11
+                    ],
+                    "clip": [
+                      8,
+                      180,
+                      96,
+                      17
+                    ],
+                    "color": "#0f172a",
+                    "fill": null,
+                    "fontSize": 13,
+                    "kind": "text",
+                    "path": [
+                      0,
+                      0,
+                      4
+                    ],
+                    "radius": 0,
+                    "stroke": null,
+                    "strokeWidth": 0,
+                    "text": "Echo seed"
+                  }
+                ],
+                "name": "Text",
+                "nodeId": null,
+                "path": [
+                  0,
+                  0,
+                  4
+                ],
+                "value": {
+                  "type": "literal",
+                  "value": "nowrap"
+                }
+              }
+            ]
           }
         ],
         "paintCommands": 18,
@@ -1830,7 +2019,10 @@
           "borderRadius",
           "borderWidth",
           "color",
-          "fontSize"
+          "fontSize",
+          "overflow",
+          "textOverflow",
+          "whiteSpace"
         ]
       },
       "raster": {
@@ -1843,7 +2035,7 @@
     "input": {
       "format": "otoe-render-tree",
       "nodeCount": 15,
-      "renderTreeHash": "sha256:375fff3777ac1a88f42c2dd3628da4d540598bb3861419afead1bd421e843dfd",
+      "renderTreeHash": "sha256:74747a1efee9288a21dafec52f8010b681027106e7e90e9127948f9b193d1012",
       "source": "contract:minimal",
       "styleOps": {
         "format": "otoe-style-ops",
@@ -2405,7 +2597,7 @@
             "bounds": [
               8,
               180,
-              65,
+              96,
               17
             ],
             "children": [],
@@ -2428,6 +2620,23 @@
                 "type": "size",
                 "unit": "px",
                 "value": 13
+              },
+              "overflow": {
+                "type": "literal",
+                "value": "hidden"
+              },
+              "textOverflow": {
+                "type": "literal",
+                "value": "ellipsis"
+              },
+              "whiteSpace": {
+                "type": "literal",
+                "value": "nowrap"
+              },
+              "width": {
+                "type": "size",
+                "unit": "px",
+                "value": 96
               }
             },
             "text": "Echo seed"
@@ -2496,7 +2705,7 @@
           }
         ],
         "format": "path0-layout-output",
-        "outputHash": "sha256:53f705a49cf269a14ea0ca186a11018de87608ef086baa1194f9ae85b792ed4a",
+        "outputHash": "sha256:c0f4d392a48e8631addc5e80cf0872e846076da018c92f3769ffa28b7799bc57",
         "rootPath": [],
         "schemaVersion": 1
       },
@@ -2876,10 +3085,15 @@
             "bounds": [
               8,
               183,
-              65,
+              96,
               11
             ],
-            "clip": null,
+            "clip": [
+              8,
+              180,
+              96,
+              17
+            ],
             "color": "#0f172a",
             "context": "PaintOnlyRendererCandidate Text",
             "fill": null,
@@ -2944,7 +3158,7 @@
         ],
         "format": "path0-paint-output",
         "height": 251,
-        "outputHash": "sha256:455f2fdf5eda9b3602cbe4f7d944de2a484ebe6e8887ce2ae7e593af519042a3",
+        "outputHash": "sha256:47cd28b2411e2c648a6c8b8129f77384c33ea7517156f69805b1701a9a6c0bf2",
         "schemaVersion": 1,
         "width": 220
       }
@@ -3522,7 +3736,7 @@
             "property": "scrollY"
           },
           {
-            "count": 5,
+            "count": 6,
             "property": "width"
           }
         ],
@@ -3560,6 +3774,18 @@
           {
             "count": 1,
             "property": "color"
+          },
+          {
+            "count": 1,
+            "property": "overflow"
+          },
+          {
+            "count": 1,
+            "property": "textOverflow"
+          },
+          {
+            "count": 1,
+            "property": "whiteSpace"
           }
         ],
         "support": "paint"
@@ -3636,7 +3862,7 @@
     "capabilityAudit": {
       "applied": [
         {
-          "count": 22,
+          "count": 23,
           "properties": [
             {
               "count": 1,
@@ -3679,7 +3905,7 @@
               "property": "scrollY"
             },
             {
-              "count": 5,
+              "count": 6,
               "property": "width"
             }
           ],
@@ -3700,7 +3926,7 @@
           "support": "layout+paint"
         },
         {
-          "count": 10,
+          "count": 13,
           "properties": [
             {
               "count": 3,
@@ -3717,6 +3943,18 @@
             {
               "count": 1,
               "property": "color"
+            },
+            {
+              "count": 1,
+              "property": "overflow"
+            },
+            {
+              "count": 1,
+              "property": "textOverflow"
+            },
+            {
+              "count": 1,
+              "property": "whiteSpace"
             }
           ],
           "support": "paint"
@@ -3852,7 +4090,7 @@
               "property": "scrollY"
             },
             {
-              "count": 5,
+              "count": 6,
               "property": "width"
             }
           ],
@@ -3890,19 +4128,31 @@
             {
               "count": 1,
               "property": "color"
+            },
+            {
+              "count": 1,
+              "property": "overflow"
+            },
+            {
+              "count": 1,
+              "property": "textOverflow"
+            },
+            {
+              "count": 1,
+              "property": "whiteSpace"
             }
           ],
           "support": "paint"
         }
       ],
       "summary": {
-        "applied": 36,
+        "applied": 40,
         "omitted": 5,
         "unsupported": 0
       },
       "unsupportedProperties": []
     },
-    "classCount": 10,
+    "classCount": 11,
     "directStyleCount": 1,
     "errors": [],
     "format": "otoe-style-ops",

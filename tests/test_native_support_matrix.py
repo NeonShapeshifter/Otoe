@@ -62,6 +62,9 @@ EXPECTED_PAINT_ONLY_STYLES = frozenset(
         "borderColor",
         "borderRadius",
         "color",
+        "overflow",
+        "textOverflow",
+        "whiteSpace",
     }
 )
 EXPECTED_LAYOUT_AND_PAINT_STYLES = frozenset({"borderWidth", "fontSize"})

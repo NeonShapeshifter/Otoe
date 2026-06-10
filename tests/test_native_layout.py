@@ -147,6 +147,7 @@ def test_native_style_support_matrix_covers_css_properties():
     assert native_style_support("background") == "paint"
     assert native_style_support("borderWidth") == "layout+paint"
     assert native_style_support("borderStyle") == "ignored"
+    assert native_style_support("textOverflow") == "paint"
     assert native_style_support("margin") == "ignored"
     assert native_style_support("lineHeight") is None
 

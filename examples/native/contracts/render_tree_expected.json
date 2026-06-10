@@ -620,7 +620,7 @@
                   },
                   {
                     "children": [],
-                    "className": "candidate-status",
+                    "className": "candidate-status candidate-truncate",
                     "context": "CandidateApp > ShortcutScope > FocusScope > Text",
                     "events": [],
                     "id": "root:ShortcutScope/index:0:FocusScope/index:0:VStack/index:4:Text",
@@ -632,7 +632,7 @@
                       4
                     ],
                     "props": {
-                      "className": "candidate-status",
+                      "className": "candidate-status candidate-truncate",
                       "content": "Echo seed"
                     },
                     "state": [],
@@ -645,6 +645,23 @@
                         "type": "size",
                         "unit": "px",
                         "value": 13
+                      },
+                      "overflow": {
+                        "type": "literal",
+                        "value": "hidden"
+                      },
+                      "textOverflow": {
+                        "type": "literal",
+                        "value": "ellipsis"
+                      },
+                      "whiteSpace": {
+                        "type": "literal",
+                        "value": "nowrap"
+                      },
+                      "width": {
+                        "type": "size",
+                        "unit": "px",
+                        "value": 96
                       }
                     },
                     "widgetId": null

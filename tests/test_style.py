@@ -51,6 +51,27 @@ def test_css_generates_html_inline_styles_with_tokens():
     )
 
 
+def test_css_parses_portable_text_overflow_styles():
+    sheet = css(
+        """
+        .truncate {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        """
+    )
+
+    assert sheet.resolve("truncate") == {
+        "overflow": "hidden",
+        "textOverflow": "ellipsis",
+        "whiteSpace": "nowrap",
+    }
+    assert sheet.inline_style("truncate") == (
+        "overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+    )
+
+
 def test_css_rejects_unknown_properties_and_selectors():
     with pytest.raises(StyleSyntaxError, match="Unknown style property"):
         css(".card { unknown-prop: 1; }")

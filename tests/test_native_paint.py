@@ -292,6 +292,31 @@ def test_native_paint_clips_scrollview_descendant_commands():
     assert clipped_rect.clip == clip
 
 
+def test_native_paint_applies_text_overflow_ellipsis_and_clip():
+    sheet = css(
+        """
+        .label {
+          width: 48;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        """
+    )
+    mounted = mount(Text("Long overflowing label", className="label"))
+
+    layout = layout_native(mounted, stylesheet=sheet)
+    paint = paint_native(layout)
+    text = next(command for command in paint.by_path(()) if command.kind == "text")
+
+    assert layout.root.text == "Long overflowing label"
+    assert layout.root.width == 48
+    assert text.text != "Long overflowing label"
+    assert text.text.endswith("...")
+    assert text.width == 48
+    assert text.clip == (0, 0, 48, layout.root.height)
+
+
 def test_native_paint_commands_follow_tree_painter_order():
     sheet = css(".row { background: #f8fafc; }")
     mounted = mount(

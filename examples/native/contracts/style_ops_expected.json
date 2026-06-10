@@ -3,7 +3,7 @@
   "capabilityAudit": {
     "applied": [
       {
-        "count": 22,
+        "count": 23,
         "properties": [
           {
             "count": 1,
@@ -46,7 +46,7 @@
             "property": "scrollY"
           },
           {
-            "count": 5,
+            "count": 6,
             "property": "width"
           }
         ],
@@ -67,7 +67,7 @@
         "support": "layout+paint"
       },
       {
-        "count": 10,
+        "count": 13,
         "properties": [
           {
             "count": 3,
@@ -84,6 +84,18 @@
           {
             "count": 1,
             "property": "color"
+          },
+          {
+            "count": 1,
+            "property": "overflow"
+          },
+          {
+            "count": 1,
+            "property": "textOverflow"
+          },
+          {
+            "count": 1,
+            "property": "whiteSpace"
           }
         ],
         "support": "paint"
@@ -219,7 +231,7 @@
             "property": "scrollY"
           },
           {
-            "count": 5,
+            "count": 6,
             "property": "width"
           }
         ],
@@ -257,13 +269,25 @@
           {
             "count": 1,
             "property": "color"
+          },
+          {
+            "count": 1,
+            "property": "overflow"
+          },
+          {
+            "count": 1,
+            "property": "textOverflow"
+          },
+          {
+            "count": 1,
+            "property": "whiteSpace"
           }
         ],
         "support": "paint"
       }
     ],
     "summary": {
-      "applied": 36,
+      "applied": 40,
       "omitted": 5,
       "unsupported": 0
     },
@@ -851,6 +875,54 @@
       "omittedOps": [],
       "passed": true,
       "selector": ".candidate-status"
+    },
+    {
+      "appliedDeclarations": {
+        "overflow": {
+          "type": "literal",
+          "value": "hidden"
+        },
+        "textOverflow": {
+          "type": "literal",
+          "value": "ellipsis"
+        },
+        "whiteSpace": {
+          "type": "literal",
+          "value": "nowrap"
+        },
+        "width": {
+          "type": "size",
+          "unit": "px",
+          "value": 96
+        }
+      },
+      "className": "candidate-truncate",
+      "errors": [],
+      "expectedDeclarations": {
+        "overflow": {
+          "type": "literal",
+          "value": "hidden"
+        },
+        "textOverflow": {
+          "type": "literal",
+          "value": "ellipsis"
+        },
+        "whiteSpace": {
+          "type": "literal",
+          "value": "nowrap"
+        },
+        "width": {
+          "type": "size",
+          "unit": "px",
+          "value": 96
+        }
+      },
+      "expectedMissing": false,
+      "expectedOmittedOps": [],
+      "missing": false,
+      "omittedOps": [],
+      "passed": true,
+      "selector": ".candidate-truncate"
     }
   ],
   "directStyles": [

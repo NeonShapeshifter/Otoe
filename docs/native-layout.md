@@ -46,6 +46,10 @@ Some Otoe Style properties such as `display`, `font-weight`, `border-style`,
 `margin`, and `opacity` may be accepted for HTML or artifact compatibility but
 are ignored by the current native layout or paint path. Treat accepted but
 ignored properties as documentation pressure, not product layout features.
+The native painter supports the narrow text truncation subset used by
+`truncate`: `overflow: hidden`, `text-overflow: ellipsis`, and
+`white-space: nowrap`. That clips and ellipsizes the text command only; it does
+not add general container clipping, wrapping, or flexbox behavior.
 
 ## Product Guidance
 

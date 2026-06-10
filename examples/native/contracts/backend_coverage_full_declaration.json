@@ -37,8 +37,11 @@
       "maxWidth",
       "minHeight",
       "minWidth",
+      "overflow",
       "padding",
       "scrollY",
+      "textOverflow",
+      "whiteSpace",
       "width"
     ],
     "widgets": [

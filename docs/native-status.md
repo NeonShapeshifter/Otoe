@@ -16,6 +16,8 @@ text path is available as an optional Pillow-backed renderer.
 - Keyboard and text input through `NativeSurface` and `NativeWindowDriver`.
 - Controlled `ScrollView(scrollY=..., onScroll=...)` with clipped paint and
   clipped hit testing.
+- Native text paint honors the portable `truncate` shape through
+  `overflow: hidden`, `text-overflow: ellipsis`, and `white-space: nowrap`.
 - Lazy `NativeSurface` refresh when reactive state changes outside direct
   surface events.
 - Optional Tk wrapper for manual local window experiments.

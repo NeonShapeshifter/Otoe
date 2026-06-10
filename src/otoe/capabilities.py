@@ -108,6 +108,9 @@ NATIVE_PAINT_STYLE_PROPERTIES = frozenset(
         "borderWidth",
         "color",
         "fontSize",
+        "overflow",
+        "textOverflow",
+        "whiteSpace",
     }
 )
 NATIVE_IGNORED_STYLE_PROPERTIES = frozenset(

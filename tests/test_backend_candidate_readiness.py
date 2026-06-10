@@ -144,7 +144,7 @@ def test_backend_readiness_report_combines_renderer_and_style_audits():
     }
     assert payload["styleOps"]["backend"] == "native-python"
     assert payload["styleOps"]["capabilityAudit"]["summary"] == {
-        "applied": 36,
+        "applied": 40,
         "omitted": 5,
         "unsupported": 0,
     }
@@ -1017,7 +1017,7 @@ def test_backend_coverage_rejects_style_evidence_without_runtime_proof():
         "evidence.styles[0].runtime.styleOpsPresent must be true"
     ) in evidence_messages
     assert payload["coverage"]["styles"]["exercised"] == []
-    assert payload["coverage"]["styles"]["summary"]["unproven"] == 17
+    assert payload["coverage"]["styles"]["summary"]["unproven"] == 20
     assert payload["blockers"] == ["stylesEvidence"]
 
 
@@ -1052,7 +1052,7 @@ def test_backend_coverage_rejects_style_missing_layout_phase_property():
     ) in evidence_messages
     assert "width" not in payload["coverage"]["styles"]["exercised"]
     assert payload["coverage"]["styles"]["evidence"]["unproven"] == ["width"]
-    assert payload["coverage"]["styles"]["summary"]["covered"] == 16
+    assert payload["coverage"]["styles"]["summary"]["covered"] == 19
     width_evidence = payload["coverage"]["styles"]["evidenceMap"]["width"]
     assert width_evidence["exercised"] is False
     assert width_evidence["unproven"] is True
@@ -1122,7 +1122,7 @@ def test_backend_coverage_rejects_layout_paint_style_missing_paint_phase():
     assert payload["coverage"]["styles"]["evidence"]["unproven"] == [
         "borderWidth"
     ]
-    assert payload["coverage"]["styles"]["summary"]["covered"] == 16
+    assert payload["coverage"]["styles"]["summary"]["covered"] == 19
     assert payload["blockers"] == ["stylesEvidence"]
 
 
@@ -1260,7 +1260,7 @@ def test_backend_coverage_rejects_requirements_without_executed_evidence():
     assert payload["coverage"]["widgets"]["exercised"] == []
     assert payload["coverage"]["widgets"]["summary"]["covered"] == 0
     assert payload["coverage"]["widgets"]["summary"]["unproven"] == 11
-    assert payload["coverage"]["styles"]["summary"]["unproven"] == 17
+    assert payload["coverage"]["styles"]["summary"]["unproven"] == 20
     assert payload["blockers"] == [
         "capabilityEvidence",
         "rendererBoundariesEvidence",
@@ -1399,6 +1399,9 @@ def test_backend_candidate_skeleton_main_reports_custom_profile_gaps(capsys):
         "maxWidth",
         "minHeight",
         "minWidth",
+        "overflow",
+        "textOverflow",
+        "whiteSpace",
     ]
 
 def test_backend_readiness_contract_fixture_matches_generated_report(tmp_path, capsys):

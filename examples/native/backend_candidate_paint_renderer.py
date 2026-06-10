@@ -157,18 +157,72 @@ def _paint_candidate_text(
     font_size = _candidate_style_dimension(style, "fontSize", default=14)
     padding = _candidate_text_padding(box)
     height = max(8, int(font_size * 0.85))
+    width = max(1, box.width - (padding * 2))
+    text = _candidate_text_for_width(
+        box.text or "",
+        width=width,
+        font_size=font_size,
+        style=style,
+    )
     return PaintCommand(
         kind="text",
         path=box.path,
         x=box.x + padding,
         y=box.y + max(0, (box.height - height) // 2),
-        width=max(1, box.width - (padding * 2)),
+        width=width,
         height=height,
-        text=box.text or "",
+        text=text,
         color=_paint_candidate_text_color(box, style),
         font_size=font_size,
-        clip=clip,
+        clip=_candidate_text_clip(box, style, padding=padding, clip=clip),
         context=f"PaintOnlyRendererCandidate {box.name}",
+    )
+
+
+def _candidate_text_for_width(
+    text: str,
+    *,
+    width: int,
+    font_size: int,
+    style: dict[str, Any],
+) -> str:
+    if style.get("textOverflow") != "ellipsis":
+        return text
+    if _candidate_text_width(text, font_size=font_size) <= width:
+        return text
+    ellipsis = "..."
+    if _candidate_text_width(ellipsis, font_size=font_size) > width:
+        return ""
+    candidate = text
+    while candidate:
+        candidate = candidate[:-1]
+        rendered = candidate.rstrip() + ellipsis
+        if _candidate_text_width(rendered, font_size=font_size) <= width:
+            return rendered
+    return ellipsis
+
+
+def _candidate_text_width(text: str, *, font_size: int) -> int:
+    return max(1, int(len(text) * font_size * 0.55))
+
+
+def _candidate_text_clip(
+    box: Any,
+    style: dict[str, Any],
+    *,
+    padding: int,
+    clip: tuple[int, int, int, int] | None,
+) -> tuple[int, int, int, int] | None:
+    if style.get("overflow") != "hidden":
+        return clip
+    return _candidate_intersect_rects(
+        clip,
+        (
+            box.x + padding,
+            box.y + padding,
+            max(1, box.width - padding * 2),
+            max(1, box.height - padding * 2),
+        ),
     )
 
 

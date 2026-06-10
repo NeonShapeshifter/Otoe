@@ -708,12 +708,12 @@ def test_cli_backend_profile_outputs_builtin_summary(capsys):
     assert result == 0
     assert "backend-profile native-python" in captured.out
     assert "label: Python native renderer" in captured.out
-    assert "styles: ignored=5, layout=11, layout+paint=2, paint=4" in captured.out
+    assert "styles: ignored=5, layout=11, layout+paint=2, paint=7" in captured.out
     assert "widgets: container=8, control=2, text=1" in captured.out
     assert "inputs: deferred=8, supported=8" in captured.out
     assert "renderer boundaries: supported=2" in captured.out
     assert (
-        "coverage: rendererBoundaries=2, widgets=11, inputs=8, styles=17, "
+        "coverage: rendererBoundaries=2, widgets=11, inputs=8, styles=20, "
         "declaredStyleOmissions=5"
         in captured.out
     )
@@ -732,13 +732,13 @@ def test_cli_backend_profile_outputs_json_report(capsys):
         "ignored": 5,
         "layout": 11,
         "layout+paint": 2,
-        "paint": 4,
+        "paint": 7,
     }
     assert payload["summary"]["coverage"] == {
         "rendererBoundaries": 2,
         "widgets": 11,
         "inputs": 8,
-        "styles": 17,
+        "styles": 20,
         "declaredStyleOmissions": 5,
     }
     assert payload["coverageDeclaration"]["format"] == "backend-coverage-declaration"
@@ -916,13 +916,13 @@ def test_cli_backend_coverage_audit_reports_traceable_sources(capsys):
         "source=path0RenderTreeEvidence gate=path0RenderTreeEvidence "
         "kind=rendererBoundary group=0 count=1 phase=layout "
         "boundary=renderTree layoutBoxes=15 "
-        "outputHash=sha256:53f705a49cf269a14ea0ca186a11018de87608ef086baa1194f9ae85b792ed4a"
+        "outputHash=sha256:c0f4d392a48e8631addc5e80cf0872e846076da018c92f3769ffa28b7799bc57"
     ) in captured.out
     assert (
         "rendererBoundaries paint proof[0]: "
         "source=path0RenderTreeEvidence gate=path0RenderTreeEvidence "
         "kind=rendererBoundary group=0 count=1 phase=paint paintCommands=18 "
-        "outputHash=sha256:455f2fdf5eda9b3602cbe4f7d944de2a484ebe6e8887ce2ae7e593af519042a3"
+        "outputHash=sha256:47cd28b2411e2c648a6c8b8129f77384c33ea7517156f69805b1701a9a6c0bf2"
     ) in captured.out
     assert "widgets: covered=11/11, missing=0, unproven=0" in captured.out
     assert (

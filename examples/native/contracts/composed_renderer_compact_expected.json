@@ -477,6 +477,12 @@
             100,
             200,
             44
+          ],
+          [
+            8,
+            180,
+            96,
+            17
           ]
         ],
         "layoutNames": [
@@ -582,14 +588,14 @@
       ],
       "frame": 2,
       "hashes": {
-        "frame": "sha256:013286d89395f50df3900a89e218a8abfefcd53affbbaef9a72131e670d38242",
-        "layout": "sha256:8206f2fe81619c204d9189f17319d9e41801382f404286eee0b6425501616fc3",
-        "paint": "sha256:c0f7f8ac76ac00e887f2e776aaeff95df552f368dec28dc61a2405df7f87e82c",
+        "frame": "sha256:da947fe85c829b7fbc0d28f2b42bd5d17e81b080e5fa4fc5a441c66b03ba44bf",
+        "layout": "sha256:030df59eefd9d00c4be8cba8e255cd880fdddf516a78b273e3b4e01e822853dd",
+        "paint": "sha256:2985cc02bee10c860a8303bddc71c3e17a374cc73588e2489d6db097713f0b55",
         "visibleText": "sha256:07a55961cfc092a0abf03e14e065f659009ad8018f8a890cc7188568cb67b45f"
       },
       "label": "png_smoke",
       "layoutBoxes": 15,
-      "layoutSignature": "sha256:a7dbe9e04955ed6c25e6f88082476bc6e2018bacaa329a2c8ca4536c2ca69700",
+      "layoutSignature": "sha256:648925b9e891d07a0d1e5abab88d55f708af057af8b4d22922e62a851850ff63",
       "paintCommands": 19,
       "paintKinds": [
         "rect",
@@ -612,7 +618,7 @@
         "text",
         "text"
       ],
-      "paintSignature": "sha256:ee4ebe56e05dd3a6116b68ffdd236b597eee8e1d94e3d5af766f3b66d5f1fa91",
+      "paintSignature": "sha256:1e8367b358f05ff78ec7651a7e7e972f5e068dd4b2c96f456b85af0055002da6",
       "rootName": "ShortcutScope",
       "size": [
         220,
@@ -643,6 +649,12 @@
               100,
               200,
               44
+            ],
+            [
+              8,
+              180,
+              96,
+              17
             ]
           ],
           "layoutNames": [
@@ -748,14 +760,14 @@
         ],
         "frame": 8,
         "hashes": {
-          "frame": "sha256:1dbacd3064e4a7fa5efdd37cded18502ca6863a96ec834b42f855dd943aab827",
-          "layout": "sha256:3f5358c91d814f141da8afb1a37dc0ed7c513750cfb44a6669f6d2979b69a055",
-          "paint": "sha256:b119700c9cd35f5a9624d2c2aaa19731ab3d317c560639e35bd95f896b22b181",
+          "frame": "sha256:b4527d5ccc4ed4e456f02b1f6d32859fe2b0ac246d61138826c688a7ea605c37",
+          "layout": "sha256:c881f4259e55ac20f9e0e999c0b70e1c3f8eb493e9cd4e68009242760c3a9569",
+          "paint": "sha256:7b3f85985c86c5c949b7c732e0b95d655992a519168d0ae224b35df0483fd217",
           "visibleText": "sha256:253b4caa722b81438f2ba16a5f420e966e5149bf74cb5fc4fc40863ec0ea8d7d"
         },
         "label": "after",
         "layoutBoxes": 15,
-        "layoutSignature": "sha256:c8ddc7e1a413ee4ebe0c6901445b396caa619ae48cc0322657630e68d91fd4a4",
+        "layoutSignature": "sha256:0a75e76aed9d57b06814aed856d11ee641f11905decc2df0be4754c08f62b411",
         "paintCommands": 19,
         "paintKinds": [
           "rect",
@@ -778,7 +790,7 @@
           "text",
           "text"
         ],
-        "paintSignature": "sha256:6c42a9618ab10d8331d767ee7e1d4bd8f0db763586decf90a4439e65f6131d6f",
+        "paintSignature": "sha256:081308f90a299a520f593a90f8e081e939de30c186cc50391b3a5e420c1b0dbf",
         "rootName": "ShortcutScope",
         "size": [
           220,
@@ -805,6 +817,12 @@
               100,
               200,
               44
+            ],
+            [
+              8,
+              180,
+              96,
+              17
             ]
           ],
           "layoutNames": [
@@ -910,14 +928,14 @@
         ],
         "frame": 1,
         "hashes": {
-          "frame": "sha256:0da4fc4a2ee416984c79e224024b046ea72cacfec0a5bff6e307ac075f857fe8",
-          "layout": "sha256:8206f2fe81619c204d9189f17319d9e41801382f404286eee0b6425501616fc3",
-          "paint": "sha256:c0f7f8ac76ac00e887f2e776aaeff95df552f368dec28dc61a2405df7f87e82c",
+          "frame": "sha256:dc519b2302f269c765c4e54d311d37225b12e1f4583cb072bc196d5d5e7862cc",
+          "layout": "sha256:030df59eefd9d00c4be8cba8e255cd880fdddf516a78b273e3b4e01e822853dd",
+          "paint": "sha256:2985cc02bee10c860a8303bddc71c3e17a374cc73588e2489d6db097713f0b55",
           "visibleText": "sha256:07a55961cfc092a0abf03e14e065f659009ad8018f8a890cc7188568cb67b45f"
         },
         "label": "before",
         "layoutBoxes": 15,
-        "layoutSignature": "sha256:a7dbe9e04955ed6c25e6f88082476bc6e2018bacaa329a2c8ca4536c2ca69700",
+        "layoutSignature": "sha256:648925b9e891d07a0d1e5abab88d55f708af057af8b4d22922e62a851850ff63",
         "paintCommands": 19,
         "paintKinds": [
           "rect",
@@ -940,7 +958,7 @@
           "text",
           "text"
         ],
-        "paintSignature": "sha256:ee4ebe56e05dd3a6116b68ffdd236b597eee8e1d94e3d5af766f3b66d5f1fa91",
+        "paintSignature": "sha256:1e8367b358f05ff78ec7651a7e7e972f5e068dd4b2c96f456b85af0055002da6",
         "rootName": "ShortcutScope",
         "size": [
           220,

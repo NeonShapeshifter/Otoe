@@ -76,7 +76,7 @@ def backend_candidate_app():
                     ),
                     Text(
                         computed(lambda: f"Echo {query.value}"),
-                        className="candidate-status",
+                        className="candidate-status candidate-truncate",
                     ),
                     Text(
                         computed(lambda: f"Clicked {clicked.value}"),
@@ -157,6 +157,12 @@ BACKEND_CANDIDATE_STYLES = css(
     .candidate-status {
       color: #0f172a;
       font-size: 13;
+    }
+    .candidate-truncate {
+      width: 96;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     """
 )

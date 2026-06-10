@@ -336,6 +336,10 @@ that box. `ScrollView` is the only current clipping boundary: descendant paint
 commands receive the scroll viewport clip, and hit testing ignores descendants
 outside the scroll viewport. `ADR-014-native-overflow-clipping.md` documents this
 overflow policy.
+Text paint has one narrow exception for visual credibility: when a text box uses
+`overflow: hidden` with `text-overflow: ellipsis`, the native painter clips the
+text command to the text content box and paints a fitted ASCII ellipsis. This
+does not add general container clipping or wrapping behavior.
 
 Each `LayoutBox` carries a `context` string when it comes from a component tree,
 for example `TaskList > VStack`. Native layout and paint diagnostics use that
@@ -392,6 +396,9 @@ Native paint-only style keys currently are:
 - `borderColor`
 - `borderRadius`
 - `color`
+- `overflow`
+- `textOverflow`
+- `whiteSpace`
 
 Native layout-and-paint style keys currently are:
 
@@ -425,6 +432,8 @@ The current painter supports:
 - Box strokes from `border-color` and `border-width`.
 - Rounded rect masking from `border-radius`.
 - Text marker output from box text, `color`, and `font-size`.
+- Text clipping and fitted ASCII ellipsis for `overflow: hidden` plus
+  `text-overflow: ellipsis`.
 - Default button and input colors when styles are not provided.
 - Disabled button and input paint defaults.
 - Focus ring commands for focused buttons and inputs through

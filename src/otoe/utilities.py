@@ -84,7 +84,10 @@ _STYLE_PROPERTY_MAP = {
     "min-height": "minHeight",
     "min-width": "minWidth",
     "opacity": "opacity",
+    "overflow": "overflow",
     "padding": "padding",
+    "text-overflow": "textOverflow",
+    "white-space": "whiteSpace",
     "width": "width",
 }
 _DIMENSION_PROPS = {

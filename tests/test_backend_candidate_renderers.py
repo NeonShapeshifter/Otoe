@@ -723,7 +723,7 @@ def test_renderer_candidate_contract_snapshot_is_stable_json():
         ((0, 0, 2, 1), "Button", (12, 106, 63, 34), "Second", ("onClick",)),
         ((0, 0, 3), "Panel", (8, 150, 180, 24), None, ()),
         ((0, 0, 3, 0), "Text", (11, 153, 115, 17), "Capability Panel", ()),
-        ((0, 0, 4), "Text", (8, 180, 72, 17), "Echo alpha", ()),
+        ((0, 0, 4), "Text", (8, 180, 96, 17), "Echo alpha", ()),
         ((0, 0, 5), "Text", (8, 203, 79, 17), "Clicked two", ()),
         ((0, 0, 6), "Text", (8, 226, 79, 17), "Shortcuts 1", ()),
     ]
@@ -867,7 +867,7 @@ def test_compact_renderer_contract_snapshot_uses_signatures_and_hashes():
     assert minimal_after["layoutSignature"].startswith("sha256:")
     assert minimal_after["paintSignature"].startswith("sha256:")
     assert minimal_after["anchors"]["layoutNames"][0] == "ShortcutScope"
-    assert minimal_after["anchors"]["clipRects"] == [[8, 100, 200, 44]]
+    assert minimal_after["anchors"]["clipRects"] == [[8, 100, 200, 44], [8, 180, 96, 17]]
     assert minimal_after["hashes"]["layout"].startswith("sha256:")
     assert minimal_after["hashes"]["paint"].startswith("sha256:")
 

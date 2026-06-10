@@ -58,7 +58,10 @@ def test_utility_stylesheet_keeps_html_only_utilities_strict_checkable():
     styles = utility_stylesheet(tokens={"panel": "#fafafa"})
 
     assert styles.resolve("flex flex-col flex-1 mx-auto px-4 shadow-sm truncate", strict=True) == {
-        "display": "flex"
+        "display": "flex",
+        "overflow": "hidden",
+        "textOverflow": "ellipsis",
+        "whiteSpace": "nowrap",
     }
     assert styles.resolve("w-80 max-w-7xl", strict=True) == {
         "width": Size(320),

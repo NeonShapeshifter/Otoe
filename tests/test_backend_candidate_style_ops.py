@@ -122,14 +122,14 @@ def test_style_ops_candidate_acceptance_replays_default_artifact():
     }
     assert payload["capabilityAudit"]["backend"] == "native-python"
     assert payload["capabilityAudit"]["summary"] == {
-        "applied": 36,
+        "applied": 40,
         "omitted": 5,
         "unsupported": 0,
     }
     assert payload["capabilityAudit"]["applied"] == [
         {
             "support": "layout",
-            "count": 22,
+            "count": 23,
             "properties": [
                 {"property": "alignItems", "count": 1},
                 {"property": "gap", "count": 3},
@@ -141,7 +141,7 @@ def test_style_ops_candidate_acceptance_replays_default_artifact():
                 {"property": "minWidth", "count": 1},
                 {"property": "padding", "count": 3},
                 {"property": "scrollY", "count": 1},
-                {"property": "width", "count": 5},
+                {"property": "width", "count": 6},
             ],
         },
         {
@@ -154,12 +154,15 @@ def test_style_ops_candidate_acceptance_replays_default_artifact():
         },
         {
             "support": "paint",
-            "count": 10,
+            "count": 13,
             "properties": [
                 {"property": "background", "count": 3},
                 {"property": "borderColor", "count": 3},
                 {"property": "borderRadius", "count": 3},
                 {"property": "color", "count": 1},
+                {"property": "overflow", "count": 1},
+                {"property": "textOverflow", "count": 1},
+                {"property": "whiteSpace", "count": 1},
             ],
         },
     ]
@@ -383,7 +386,7 @@ def test_backend_candidate_skeleton_main_outputs_style_ops_contract_json(capsys)
     assert payload["passed"] is True
     assert payload["styleOps"]["schemaVersion"] == 1
     assert payload["capabilityAudit"]["summary"] == {
-        "applied": 36,
+        "applied": 40,
         "omitted": 5,
         "unsupported": 0,
     }

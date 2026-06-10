@@ -25,7 +25,10 @@ SUPPORTED_PROPERTIES = {
     "min-height": "minHeight",
     "min-width": "minWidth",
     "opacity": "opacity",
+    "overflow": "overflow",
     "padding": "padding",
+    "text-overflow": "textOverflow",
+    "white-space": "whiteSpace",
     "width": "width",
 }
 
@@ -58,11 +61,14 @@ RAW_KEYWORDS = {
     "initial",
     "inline",
     "inline-flex",
+    "ellipsis",
     "none",
     "normal",
+    "nowrap",
     "row",
     "solid",
     "transparent",
+    "visible",
 }
 
 

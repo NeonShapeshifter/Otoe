@@ -166,8 +166,17 @@ def _text_command(
     context = box_context(box)
     font_size = dimension(style, "fontSize", default=14, context=context)
     padding = _text_padding(box, style)
-    metrics = text_measure(box.text or "", font_size=font_size)
+    text = box.text or ""
     available_width = max(1, box.width - (padding * 2))
+    text = _text_for_available_width(
+        text,
+        available_width=available_width,
+        font_size=font_size,
+        style=style,
+        text_measure=text_measure,
+    )
+    metrics = text_measure(text, font_size=font_size)
+    command_clip = _text_clip(box, style, padding=padding, clip=clip)
     return PaintCommand(
         kind="text",
         path=box.path,
@@ -175,16 +184,58 @@ def _text_command(
         y=box.y + max(padding, (box.height - metrics.height) // 2),
         width=available_width,
         height=metrics.height,
-        text=box.text or "",
+        text=text,
         color=color_value(
             style.get("color"),
             default=_default_text_color(box),
             context=context,
         ),
         font_size=font_size,
-        clip=clip,
+        clip=command_clip,
         context=context,
     )
+
+
+def _text_for_available_width(
+    text: str,
+    *,
+    available_width: int,
+    font_size: int,
+    style: dict[str, Any],
+    text_measure: NativeTextMeasurer,
+) -> str:
+    if style.get("textOverflow") != "ellipsis":
+        return text
+    if text_measure(text, font_size=font_size).width <= available_width:
+        return text
+    ellipsis = "..."
+    if text_measure(ellipsis, font_size=font_size).width > available_width:
+        return ""
+    candidate = text
+    while candidate:
+        candidate = candidate[:-1]
+        rendered = candidate.rstrip() + ellipsis
+        if text_measure(rendered, font_size=font_size).width <= available_width:
+            return rendered
+    return ellipsis
+
+
+def _text_clip(
+    box: LayoutBox,
+    style: dict[str, Any],
+    *,
+    padding: int,
+    clip: tuple[int, int, int, int] | None,
+) -> tuple[int, int, int, int] | None:
+    if style.get("overflow") != "hidden":
+        return clip
+    text_bounds = (
+        box.x + padding,
+        box.y + padding,
+        max(1, box.width - padding * 2),
+        max(1, box.height - padding * 2),
+    )
+    return intersect_rects(clip, text_bounds)
 
 
 def _box_fill(box: LayoutBox, style: dict[str, Any]) -> str | None:

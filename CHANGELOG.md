@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.1.8 - Product Surface and Native Text Credibility
+
 - Fixed `otoe build --validate` when `--out` is a relative path by executing
   the generated runner through an absolute script path while keeping the bundle
   directory as the runner working directory.
@@ -39,6 +41,10 @@
 - Added native PNG raster scaling through `--native-scale` and
   `render_native_png(..., scale=...)`, keeping layout units unchanged while
   writing higher-density deterministic frames.
+- Added narrow native text truncation support for `overflow: hidden`,
+  `text-overflow: ellipsis`, and `white-space: nowrap`, including utility
+  stylesheet parity, clipped native paint commands, Path0 candidate replay, and
+  backend coverage evidence.
 - Accepted `ADR-020` and added native layout v0/v1 guidance documenting the
   stack-first layout contract, explicit non-goals, and layout v1 acceptance bar.
 - Added the packaged `otoe portable-core` CLI report so Portable Core UI v0 can
