@@ -7,6 +7,11 @@ headless native rendering, and native-window driver input.
 This matrix is intentionally conservative. It should shrink ambiguity before
 more primitives are added.
 
+The machine-readable source for this table is
+[`docs/portable-core-ui-v0.json`](portable-core-ui-v0.json). Tests validate that
+the JSON, Markdown table, exported symbols, native capability profile, and
+sample render paths stay aligned.
+
 | Primitive | HTML | Live HTML | Native Headless | Native Window Driver | Status |
 | --- | --- | --- | --- | --- | --- |
 | `Text` | yes | n/a | yes | n/a | core preview |
@@ -24,6 +29,10 @@ more primitives are added.
 | `ListRow` | yes | n/a | through composed widgets/styles | n/a | product preview |
 | `MetricTile` | yes | n/a | through composed widgets/styles | n/a | product preview |
 | `AppFrame` | yes | n/a | app-shaped layout smoke | n/a | product preview |
+
+`Dialog` is listed because it is already a common UI primitive and has partial
+HTML/live/native coverage, but it is not counted as Portable Core UI v0 until
+focus behavior and native parity are tightened.
 
 ## Acceptance Bar
 

@@ -19,6 +19,10 @@
 - Added `[native.text] renderer = "pillow"` profile support so offline builds
   copy an explicit font into the bundle manifest and generated runners use it
   for native layout checks and PNG rendering.
+- Added a machine-readable Portable Core UI v0 matrix plus regression coverage
+  that keeps the JSON matrix, Markdown table, exported symbols, native widget
+  support, HTML samples, native layout/paint samples, and input dispatch samples
+  aligned.
 - Hardened offline bundle manifests so generated runners require safe relative
   paths, size metadata, lowercase SHA-256 hashes, unique bundle paths, core
   artifact entries, and backend framework file policy before verification,
