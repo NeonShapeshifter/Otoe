@@ -1,4 +1,7 @@
 import json
+import os
+import subprocess
+import sys
 from importlib import import_module
 from pathlib import Path
 
@@ -17,13 +20,16 @@ from otoe import (
     root_widget,
 )
 from otoe._native_shared import native_widget_support
+from otoe.cli import main
 from otoe.ui import ActionButton, ListRow, TabButton, Tabs
 from otoe.experimental.native import NativeSurface, layout_native, paint_native
 from examples.portable_core_ui import PORTABLE_CORE_EXAMPLES
 
 
-MATRIX_PATH = Path("docs/portable-core-ui-v0.json")
-DOC_PATH = Path("docs/portable-core-ui-v0.md")
+ROOT = Path(__file__).resolve().parents[1]
+MATRIX_PATH = ROOT / "docs" / "portable-core-ui-v0.json"
+DOC_PATH = ROOT / "docs" / "portable-core-ui-v0.md"
+PORTABLE_STYLES_PATH = ROOT / "preview" / "portable_core_ui.css"
 
 
 def _matrix():
@@ -215,6 +221,87 @@ def test_portable_core_ui_samples_layout_and_paint_native():
         assert paint.width >= 1
         assert paint.height >= 1
         assert paint.commands
+
+
+def test_portable_core_ui_gallery_cli_renders_html_and_native_png(tmp_path):
+    html_output = tmp_path / "portable-core-ui.html"
+    png_output = tmp_path / "portable-core-ui.png"
+
+    html_result = main(
+        [
+            "render",
+            "examples.portable_core_ui:app",
+            "--out",
+            str(html_output),
+            "--css",
+            str(PORTABLE_STYLES_PATH),
+            "--pretty",
+        ]
+    )
+    native_result = main(
+        [
+            "render",
+            "examples.portable_core_ui:app",
+            "--out",
+            str(png_output),
+            "--native",
+            "--css",
+            str(PORTABLE_STYLES_PATH),
+        ]
+    )
+
+    html = html_output.read_text(encoding="utf-8")
+    assert html_result == 0
+    assert native_result == 0
+    assert "Portable Core UI v0" in html
+    assert "Latency" in html
+    assert 'style="' in html
+    assert png_output.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+
+
+def test_portable_core_ui_gallery_build_validates_offline_bundle(
+    tmp_path,
+    capsys,
+):
+    output = tmp_path / "portable-core-ui-cage"
+    frame = tmp_path / "portable-core-ui-frame.png"
+
+    result = main(
+        [
+            "build",
+            "examples.portable_core_ui:app",
+            "--out",
+            str(output),
+            "--css",
+            str(PORTABLE_STYLES_PATH),
+            "--validate",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    plan = json.loads((output / "otoe-plan.json").read_text(encoding="utf-8"))
+    styles = json.loads((output / "otoe-styles.json").read_text(encoding="utf-8"))
+    runtime_paths = sorted(entry["bundlePath"] for entry in manifest["runtimeFiles"])
+    planned_classes = {entry["className"] for entry in styles["styleOps"]["classes"]}
+    png = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--png", str(frame)],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+
+    assert result == 0
+    assert "validation: ok" in captured.out
+    assert manifest["target"] == "examples.portable_core_ui:app"
+    assert manifest["status"] == "warnings"
+    assert plan["status"] == "warnings"
+    assert plan["hasErrors"] is False
+    assert runtime_paths == ["app/examples/portable_core_ui.py"]
+    assert {"portable-title", "ui-card", "ui-frame"} <= planned_classes
+    assert png.returncode == 0, png.stderr
+    assert frame.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
 
 
 def test_portable_core_native_input_controls_dispatch_events():

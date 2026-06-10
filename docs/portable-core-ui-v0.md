@@ -41,9 +41,13 @@ The examples for this matrix live in `examples/portable_core_ui.py`. Render the
 whole portable gallery from a source checkout:
 
 ```bash
-PYTHONPATH=src:. python -m otoe render examples.portable_core_ui:app --out preview/portable_core_ui.html --pretty
-PYTHONPATH=src:. python -m otoe render examples.portable_core_ui:app --out preview/portable_core_ui.png --native
+PYTHONPATH=src:. python -m otoe render examples.portable_core_ui:app --out preview/portable_core_ui.html --css preview/portable_core_ui.css --pretty
+PYTHONPATH=src:. python -m otoe render examples.portable_core_ui:app --out preview/portable_core_ui.png --native --css preview/portable_core_ui.css
+PYTHONPATH=src:. python -m otoe build examples.portable_core_ui:app --out dist/portable_core_ui_cage --css preview/portable_core_ui.css --validate
 ```
+
+`preview/portable_core_ui.css` is the strict Otoe Style subset used by CLI
+render, native PNG, plan, and build smoke tests for the gallery.
 
 Each matrix row has a single import target:
 

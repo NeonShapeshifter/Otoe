@@ -34,12 +34,15 @@ Use this when you need runnable examples for every Primitive in Portable Core
 UI v0. The module exports one target per matrix row plus a gallery target.
 
 ```bash
-PYTHONPATH=src:. python -m otoe render examples.portable_core_ui:app --out preview/portable_core_ui.html --pretty
-PYTHONPATH=src:. python -m otoe render examples.portable_core_ui:app --out preview/portable_core_ui.png --native
+PYTHONPATH=src:. python -m otoe render examples.portable_core_ui:app --out preview/portable_core_ui.html --css preview/portable_core_ui.css --pretty
+PYTHONPATH=src:. python -m otoe render examples.portable_core_ui:app --out preview/portable_core_ui.png --native --css preview/portable_core_ui.css
+PYTHONPATH=src:. python -m otoe build examples.portable_core_ui:app --out dist/portable_core_ui_cage --css preview/portable_core_ui.css --validate
 ```
 
 The support matrix and outside-v0 classifications live in
 `docs/portable-core-ui-v0.md` and `docs/portable-core-ui-v0.json`.
+`preview/portable_core_ui.css` is the strict portable stylesheet used by the
+CLI render, native PNG, plan, and build smoke tests.
 
 ## Live Counter
 

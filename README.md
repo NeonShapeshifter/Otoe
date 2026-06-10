@@ -146,7 +146,7 @@ hardware, admin, data workflow, utility, SaaS, and UI examples.
 
 ## Status
 
-Current status: post-v0.1.7 workshop hardening. The test baseline is 732
+Current status: post-v0.1.7 workshop hardening. The test baseline is 734
 passing tests with optional typing/Pillow tests skipped when those dependencies
 are unavailable.
 See [ROADMAP.md](ROADMAP.md) for the active phase plan.

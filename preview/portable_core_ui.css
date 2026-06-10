@@ -1,0 +1,354 @@
+/* Portable Otoe Style subset for examples.portable_core_ui:app. */
+
+.otoe-stack {
+  gap: 0;
+  padding: 0;
+}
+
+.otoe-vstack {
+  display: flex;
+}
+
+.otoe-hstack {
+  display: flex;
+  align-items: center;
+}
+
+.otoe-text {
+  min-width: 0;
+  color: #152033;
+  font-size: 14px;
+}
+
+.otoe-button {
+  min-height: 36px;
+  padding: 9px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #c8d2df;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #152033;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.otoe-input {
+  width: 180px;
+  min-height: 36px;
+  padding: 9px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #c8d2df;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #152033;
+  font-size: 14px;
+}
+
+.otoe-panel {
+  min-width: 0;
+  padding: 12px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #d9e1ea;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.otoe-panel-title {
+  color: #152033;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.otoe-scroll {
+  width: 220px;
+  height: 86px;
+  padding: 8px;
+  gap: 6px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #d9e1ea;
+  border-radius: 8px;
+  background: #f6f8fb;
+}
+
+.otoe-fragment {
+  display: block;
+}
+
+.otoe-show {
+  display: block;
+}
+
+.portable-title {
+  color: #111827;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.ui-card {
+  background: #ffffff;
+}
+
+.ui-card-body {
+  padding: 8px;
+  gap: 4px;
+}
+
+.ui-badge {
+  min-height: 26px;
+  padding: 7px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: transparent;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ui-status-pill {
+  min-height: 26px;
+}
+
+.ui-button {
+  min-height: 36px;
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.ui-tabs {
+  padding: 4px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #d9e1ea;
+  border-radius: 8px;
+  background: #eef3f8;
+}
+
+.ui-tab {
+  min-height: 32px;
+  background: transparent;
+  color: #506174;
+}
+
+.ui-list-row {
+  width: 520px;
+  min-height: 58px;
+}
+
+.ui-stat-card {
+  width: 220px;
+}
+
+.ui-metric-tile {
+  width: 220px;
+}
+
+.ui-stat-body {
+  padding: 12px;
+  gap: 4px;
+}
+
+.ui-stat-label {
+  color: #506174;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ui-stat-value {
+  color: #111827;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.ui-stat-detail {
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.ui-frame {
+  width: 1040px;
+  min-height: 520px;
+  padding: 16px;
+}
+
+.ui-frame-shell {
+  width: 960px;
+  align-items: flex-start;
+}
+
+.ui-frame-content {
+  min-width: 0;
+  width: 720px;
+}
+
+.is-default {
+  background: #ffffff;
+  color: #152033;
+}
+
+.is-primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.is-ghost {
+  background: #ffffff;
+  border-color: #c8d2df;
+  color: #152033;
+}
+
+.is-md {
+  min-height: 36px;
+  font-size: 14px;
+}
+
+.is-sm {
+  min-height: 32px;
+  font-size: 13px;
+}
+
+.is-active {
+  background: #ffffff;
+  color: #2563eb;
+}
+
+.is-horizontal {
+  display: flex;
+}
+
+.is-success {
+  background: #e7f7ed;
+  border-color: #1a7f55;
+  color: #1a7f55;
+}
+
+.is-neutral {
+  background: #edf2f7;
+  border-color: #c8d2df;
+  color: #506174;
+}
+
+.bg-bg {
+  background: #f4f7fb;
+}
+
+.bg-panel {
+  background: #ffffff;
+}
+
+.bg-panel-soft {
+  background: #f6f8fb;
+}
+
+.bg-success-soft {
+  background: #e7f7ed;
+}
+
+.border {
+  border-width: 1px;
+  border-style: solid;
+}
+
+.border-line {
+  border-color: #d9e1ea;
+}
+
+.border-success {
+  border-color: #1a7f55;
+}
+
+.text-ink {
+  color: #111827;
+}
+
+.text-muted {
+  color: #506174;
+}
+
+.text-sm {
+  font-size: 13px;
+}
+
+.font-semibold {
+  font-weight: 760;
+}
+
+.font-bold {
+  font-weight: 850;
+}
+
+.flex-1 {
+  min-width: 0;
+}
+
+.min-w-0 {
+  min-width: 0;
+}
+
+.max-w-7xl {
+  max-width: 960px;
+}
+
+.mx-auto {
+  margin: 0;
+}
+
+.w-full {
+  width: 960px;
+}
+
+.p-3 {
+  padding: 12px;
+}
+
+.p-6 {
+  padding: 24px;
+}
+
+.gap-3 {
+  gap: 12px;
+}
+
+.gap-4 {
+  gap: 16px;
+}
+
+.rounded-lg {
+  border-radius: 8px;
+}
+
+.rounded-xl {
+  border-radius: 8px;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.items-start {
+  align-items: flex-start;
+}
+
+.flex-wrap {
+  display: flex;
+}
+
+.shrink-0 {
+  min-width: 0;
+}
+
+.shadow-sm {
+  border-width: 1px;
+}
+
+.truncate {
+  max-width: 320px;
+}
+
+.min-h-screen {
+  min-height: 520px;
+}
