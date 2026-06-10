@@ -1,0 +1,76 @@
+"""Experimental native/window API aliases.
+
+Prefer this module for new code that intentionally depends on Otoe's current
+native renderer or manual-window spike. Top-level imports remain available for
+compatibility during pre-alpha.
+"""
+
+from ..native import (
+    ComposedNativeRendererBackend,
+    LayoutBox,
+    NativeLayout,
+    NativeLayoutBackend,
+    NativeLayoutError,
+    NativePaint,
+    NativePaintBackend,
+    NativePaintError,
+    NativeRasterBackend,
+    NativeRendererBackend,
+    NativeSurface,
+    PYTHON_NATIVE_RENDERER_BACKEND,
+    PaintCommand,
+    PillowNativeRendererBackend,
+    PythonNativeRendererBackend,
+    dispatch_native_click,
+    hit_test_native,
+    layout_native,
+    paint_native,
+    render_native_png,
+    write_native_png,
+    write_pillow_native_png,
+)
+from ..window import (
+    NativeBackendAdapter,
+    NativeWindowDriver,
+    NativeWindowEvent,
+    TkNativeBackendAdapter,
+    TkNativeWindow,
+    edit_native_input_value,
+    native_backend_adapter,
+    native_backend_names,
+    run_native,
+)
+
+__all__ = [
+    "ComposedNativeRendererBackend",
+    "LayoutBox",
+    "NativeBackendAdapter",
+    "NativeLayout",
+    "NativeLayoutBackend",
+    "NativeLayoutError",
+    "NativePaint",
+    "NativePaintBackend",
+    "NativePaintError",
+    "NativeRasterBackend",
+    "NativeRendererBackend",
+    "NativeSurface",
+    "NativeWindowDriver",
+    "NativeWindowEvent",
+    "PYTHON_NATIVE_RENDERER_BACKEND",
+    "PaintCommand",
+    "PillowNativeRendererBackend",
+    "PythonNativeRendererBackend",
+    "TkNativeBackendAdapter",
+    "TkNativeWindow",
+    "dispatch_native_click",
+    "edit_native_input_value",
+    "hit_test_native",
+    "layout_native",
+    "native_backend_adapter",
+    "native_backend_names",
+    "paint_native",
+    "render_native_png",
+    "run_native",
+    "write_native_png",
+    "write_pillow_native_png",
+]

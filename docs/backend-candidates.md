@@ -20,6 +20,15 @@ The current replacement boundary centers on:
 
 Path0 is a proof surface, not a stable external backend ABI.
 
+New code that intentionally uses RenderTree/style evidence helpers should use
+the experimental facade:
+
+```python
+from otoe.experimental.backend import RenderTree, render_tree_from_target
+```
+
+Top-level aliases remain for compatibility while Otoe is pre-alpha.
+
 ## Useful Commands
 
 Inspect a backend profile:

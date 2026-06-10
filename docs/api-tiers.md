@@ -1,11 +1,22 @@
 # API Tiers
 
-Otoe is pre-alpha, but the public surface should be described in tiers so app
-authors do not treat backend evidence internals as product API.
+Otoe is pre-alpha, but the public surface is described in tiers so app authors
+do not treat backend evidence internals as product API.
+
+The tier registry is available at runtime:
+
+```python
+from otoe import API_TIERS, api_status
+
+assert "core-preview" in API_TIERS
+assert api_status("Card").tier == "product-preview-ui"
+assert api_status("Card").preferred_import == "otoe.ui"
+```
 
 ## Core Preview
 
-This is the first app-authoring surface to document and protect.
+This is the first app-authoring surface to document and protect. Its preferred
+import path is the top-level `otoe` package.
 
 - `component`, `on_mount`, `on_cleanup`
 - `signal`, `computed`, `effect`, `batch`
@@ -18,6 +29,8 @@ This is the first app-authoring surface to document and protect.
 - event signature helpers and developer-facing errors
 
 These APIs are still preview APIs, but they are the core programming model.
+Programmatically, they report `category == "preview"` and
+`tier == "core-preview"`.
 
 ## Product Preview UI
 
@@ -42,10 +55,32 @@ from otoe.ui import Card, MetricTile, Surface
 Top-level aliases may remain for compatibility, but docs should steer users to
 `otoe.ui` for UI-kit primitives.
 
+Programmatically, these APIs report `category == "preview"`,
+`tier == "product-preview-ui"`, and `preferred_import == "otoe.ui"`.
+
+## Preview Support
+
+These APIs are useful for app authors and examples, but they sit outside the
+smallest core model:
+
+- `LiveHtmlRenderer`, `LiveEvent`
+- `MountedNode`, `FakeWidget`
+- `Interval`, `interval`
+- `TemplateError`, `template`
+- `DEFAULT_UTILITY_TOKENS`, `utility_css`, `utility_stylesheet`
+
+Programmatically, they report `category == "preview"` and
+`tier == "preview-support"`.
+
 ## Experimental Native
 
 Native-facing APIs are available for tests, examples, and backend experiments,
-not as production desktop promises.
+not as production desktop promises. Prefer the explicit experimental import
+path for new code:
+
+```python
+from otoe.experimental.native import NativeSurface, render_native_png
+```
 
 - `NativeSurface`
 - `NativeWindowDriver`
@@ -60,11 +95,20 @@ The current status is exposed programmatically:
 from otoe import api_status
 
 assert api_status("NativeSurface").category == "experimental-native"
+assert api_status("NativeSurface").tier == "experimental-native"
+assert api_status("NativeSurface").preferred_import == "otoe.experimental.native"
 ```
 
 ## Experimental Backend Evidence
 
-These are advanced backend-candidate and bundle-verification surfaces:
+These are advanced backend-candidate and bundle-verification surfaces. Prefer
+the explicit experimental import path for new code:
+
+```python
+from otoe.experimental.backend import RenderTree, render_tree_from_target
+```
+
+Examples:
 
 - `RenderTree` IR helpers
 - `styleOps` helpers and artifacts
@@ -76,6 +120,10 @@ These are advanced backend-candidate and bundle-verification surfaces:
 
 They are important to Otoe's architecture, but they should be presented as
 advanced renderer-authoring tools, not as the primary app-authoring API.
+
+Programmatically, top-level backend-evidence aliases report
+`category == "experimental-backend"`, `tier == "experimental-backend"`, and
+`preferred_import == "otoe.experimental.backend"`.
 
 ## Compatibility Policy For Now
 

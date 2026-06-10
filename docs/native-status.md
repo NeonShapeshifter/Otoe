@@ -69,7 +69,7 @@ The generated bundle runner verifies the copied font and uses
 Use `NativeSurface` for direct tests:
 
 ```python
-from otoe import NativeSurface
+from otoe.experimental.native import NativeSurface
 
 surface = NativeSurface(App(), stylesheet=styles)
 surface.click(24, 32)

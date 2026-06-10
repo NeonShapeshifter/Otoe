@@ -26,6 +26,9 @@
 - Promoted the hardware control panel into a product-shaped source demo with a
   public `examples.hardware.control_panel:app` target, portable demo stylesheet,
   CLI HTML/native render coverage, offline build validation, and docs.
+- Split the API status registry into explicit tiers for core preview,
+  product-preview UI, preview support, experimental native, and experimental
+  backend surfaces, with preferred imports exposed through `api_status(...)`.
 - Hardened offline bundle manifests so generated runners require safe relative
   paths, size metadata, lowercase SHA-256 hashes, unique bundle paths, core
   artifact entries, and backend framework file policy before verification,
