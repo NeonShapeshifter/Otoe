@@ -45,17 +45,18 @@ Use Python 3.11 or newer.
 python -m pip install otoe
 otoe new hello_otoe
 cd hello_otoe
+otoe dev app:app --css styles.css
 otoe render app:app --out preview.html --css styles.css --pretty
 otoe render app:app --out preview.png --native --css styles.css
 otoe render app:app --out preview@2x.png --native --native-scale 2 --css styles.css
 otoe build app:app --out dist/cage --css styles.css --validate
 ```
 
-`otoe new` writes a small renderable app plus `styles.css`. The HTML render is
-the fastest visual check; the native PNG render exercises the current headless
-native spike; `--native-scale` writes higher-density deterministic PNGs without
-changing layout units; the build command writes and validates a minimal offline
-bundle.
+`otoe new` writes a small renderable app plus `styles.css`. `otoe dev` serves
+the scaffold as a local live HTML preview; the HTML render is the fastest static
+visual check; the native PNG render exercises the current headless native spike;
+`--native-scale` writes higher-density deterministic PNGs without changing
+layout units; the build command writes and validates a minimal offline bundle.
 For readable native PNG text during local previews, install `otoe[native-text]`
 and render with `--native-text pillow`; deterministic offline bundles declare
 their font through `[native.text]` in `otoe.profile.toml`.
@@ -153,7 +154,7 @@ hardware, admin, data workflow, utility, SaaS, and UI examples.
 
 ## Status
 
-Current status: post-v0.1.8 workshop hardening. The test baseline is 755
+Current status: post-v0.1.8 workshop hardening. The test baseline is 758
 passing tests with optional typing/Pillow tests skipped when those dependencies
 are unavailable.
 See [ROADMAP.md](ROADMAP.md) for the active phase plan.

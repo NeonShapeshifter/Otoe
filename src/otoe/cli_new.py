@@ -76,6 +76,7 @@ def _readme_template(app_name: str, *, include_css: bool) -> str:
         "Render the app from this directory:\n"
         "\n"
         "```bash\n"
+        f"otoe dev app:app{css_arg}\n"
         f"otoe render app:app --out preview.html{css_arg} --pretty\n"
         f"otoe render app:app --out preview.png --native{css_arg}\n"
         "```\n"

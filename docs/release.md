@@ -9,7 +9,7 @@ scripts/release_check.sh
 The script removes stale local build artifacts, installs local dev/release plus
 `native-text` extras, verifies generated Portable Core UI docs, compiles source
 files, runs tests, builds distributions, runs `twine check`, and runs the
-installed-wheel smoke.
+sdist and installed-wheel smokes.
 
 If the Portable Core UI matrix changes, regenerate the docs before release:
 
@@ -40,6 +40,24 @@ otoe portable-core --json
 The `portable-core` checks prove that the installed wheel exposes the packaged
 Portable Core UI v0 support matrix as both text and JSON, not only from a source
 checkout.
+
+The smoke also verifies that the generated app works with `otoe check --tests`
+outside the Otoe source checkout, that `otoe dev app:app --css styles.css`
+starts a local health endpoint, and that `otoe portable-core --format json`
+matches the legacy `--json` output.
+
+## Source Distribution Smoke
+
+The source distribution smoke can be run independently after `python -m build`:
+
+```bash
+scripts/sdist_smoke.sh
+```
+
+It extracts the built `.tar.gz`, verifies that `src/`, `tests/`, `examples/`,
+and `docs/` are present, compiles `src examples tests`, and runs focused tests
+that import source-checkout examples and backend package fixtures. This keeps
+the sdist auditable without duplicating the full test suite in release checks.
 
 By default, `wheel_smoke.sh` allows normal build isolation. In CI or release
 environments where modern build tooling is already installed, use:

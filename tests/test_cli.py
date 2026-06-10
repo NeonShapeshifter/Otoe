@@ -88,6 +88,24 @@ def test_cli_check_passes_extra_pytest_args(tmp_path, monkeypatch, capsys):
     assert "pytest:" in captured.out
 
 
+def test_cli_check_defaults_to_app_py_outside_source_checkout(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    app = tmp_path / "app.py"
+    app.write_text("value = 1\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+
+    result = main(["check", "--tests"])
+
+    captured = capsys.readouterr()
+    assert result == 0
+    assert "compile app.py: ok" in captured.out
+    assert "pytest: skipped (tests directory missing)" in captured.out
+    assert "compile src: missing" not in captured.err
+
+
 def test_cli_portable_core_prints_support_matrix(capsys):
     result = main(["portable-core"])
 
@@ -119,6 +137,15 @@ def test_cli_portable_core_can_write_json(capsys):
     assert payload["format"] == "otoe-portable-core-ui-v0"
     assert payload["entries"][0]["id"] == "text"
     assert payload["outsidePortableCore"][0]["id"] == "app-shell-navigation"
+
+
+def test_cli_portable_core_accepts_format_json_alias(capsys):
+    result = main(["portable-core", "--format", "json"])
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert result == 0
+    assert payload["format"] == "otoe-portable-core-ui-v0"
 
 
 def test_cli_render_writes_html_from_node_target(tmp_path, monkeypatch, capsys):
@@ -7024,6 +7051,43 @@ def test_cli_dev_runs_live_preview_for_factory_target(tmp_path, monkeypatch):
     assert module_obj.calls == 1
 
 
+def test_cli_dev_runs_live_preview_for_renderable_scaffold_target(
+    tmp_path,
+    monkeypatch,
+):
+    module = tmp_path / "scaffold_dev_app.py"
+    module.write_text(
+        "from otoe import Button, Text, VStack, computed, signal\n"
+        "count = signal(0)\n"
+        "def app():\n"
+        "    label = computed(lambda: f'Count: {count.value}')\n"
+        "    return VStack(\n"
+        "        Text(label),\n"
+        "        Button('Increment', onClick=lambda: count.set(count.value + 1)),\n"
+        "    )\n",
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    calls = []
+
+    def fake_run_live_preview(**kwargs):
+        calls.append(kwargs)
+
+    monkeypatch.setattr("otoe.cli_dev.run_live_preview", fake_run_live_preview)
+
+    result = main(["dev", "scaffold_dev_app:app"])
+
+    assert result == 0
+    app = calls[0]["app_factory"]()
+    assert "Count: 0" in app.render_fragment()
+    increment_event = next(
+        event.id
+        for event in app.renderer.events.values()
+        if getattr(event.handler, "__name__", "") == "<lambda>"
+    )
+    assert "Count: 1" in app.dispatch_event(increment_event)
+
+
 def test_cli_dev_rejects_missing_css_file(tmp_path, monkeypatch, capsys):
     module = tmp_path / "dev_app.py"
     module.write_text(
@@ -7076,6 +7140,7 @@ def test_cli_dev_rejects_invalid_app_target(tmp_path, monkeypatch, capsys):
     captured = capsys.readouterr()
     assert result == 1
     assert "dev target must expose render_fragment()" in captured.err
+    assert "or be a Node, MountedNode" in captured.err
 
 
 def test_cli_new_scaffolds_renderable_app(tmp_path, monkeypatch, capsys):
@@ -7087,6 +7152,9 @@ def test_cli_new_scaffolds_renderable_app(tmp_path, monkeypatch, capsys):
     assert result == 0
     assert f"new Hello Otoe: {project}" in captured.out
     assert "def app():" in (project / "app.py").read_text(encoding="utf-8")
+    assert "otoe dev app:app --css styles.css" in (
+        project / "README.md"
+    ).read_text(encoding="utf-8")
     assert (project / "styles.css").is_file()
     assert "otoe render app:app --out preview.html --css styles.css" in (
         project / "README.md"

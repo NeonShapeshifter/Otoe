@@ -29,6 +29,15 @@ The scaffold contains:
 - `styles.css` - portable Otoe style declarations.
 - `README.md` - render commands for the generated app.
 
+## Run A Live Preview
+
+```bash
+otoe dev app:app --css styles.css
+```
+
+This serves the generated app through the live HTML preview adapter. Use it for
+quick interaction checks while editing the app.
+
 ## Render HTML
 
 ```bash
@@ -107,6 +116,7 @@ primitive across HTML, native PNG, and native-window paths:
 ```bash
 otoe portable-core
 otoe portable-core --json
+otoe portable-core --format json
 ```
 
 ## Source Checkout Examples

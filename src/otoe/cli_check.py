@@ -10,24 +10,35 @@ DEFAULT_CHECK_PATHS = ("src", "examples", "tests")
 
 
 def run_check(args: argparse.Namespace) -> int:
-    paths = tuple(args.paths or DEFAULT_CHECK_PATHS)
+    paths = tuple(args.paths) if args.paths else _default_check_paths()
     ok = True
     for path in paths:
         ok = _compile_path(path) and ok
     if not ok:
         return 1
     if args.tests:
+        pytest_args = [*args.pytest_arg, *_pytest_args(args.pytest_args)]
+        if not pytest_args and not Path("tests").exists():
+            print("pytest: skipped (tests directory missing)")
+            return 0
         command = [
             sys.executable,
             "-m",
             "pytest",
             "-q",
-            *args.pytest_arg,
-            *_pytest_args(args.pytest_args),
+            *pytest_args,
         ]
         print(f"pytest: {' '.join(command)}")
         return subprocess.run(command).returncode
     return 0
+
+
+def _default_check_paths() -> tuple[str, ...]:
+    if all(Path(path).exists() for path in DEFAULT_CHECK_PATHS):
+        return DEFAULT_CHECK_PATHS
+    if Path("app.py").is_file():
+        return ("app.py",)
+    return (".",)
 
 
 def _compile_path(path: str) -> bool:

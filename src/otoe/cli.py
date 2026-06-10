@@ -61,10 +61,16 @@ def _build_parser() -> argparse.ArgumentParser:
         "portable-core",
         help="inspect the Portable Core UI v0 support matrix",
     )
-    portable_core.add_argument(
+    portable_core_output = portable_core.add_mutually_exclusive_group()
+    portable_core_output.add_argument(
         "--json",
         action="store_true",
         help="write the machine-readable Portable Core UI v0 matrix",
+    )
+    portable_core_output.add_argument(
+        "--format",
+        choices=("text", "json"),
+        help="output format; defaults to text",
     )
     portable_core.add_argument(
         "--outside",

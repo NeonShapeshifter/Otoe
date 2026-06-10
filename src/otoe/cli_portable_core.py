@@ -8,7 +8,7 @@ from .portable_core import format_portable_core_ui_v0, portable_core_ui_v0_matri
 
 def run_portable_core(args: argparse.Namespace) -> int:
     payload = portable_core_ui_v0_matrix()
-    if args.json:
+    if args.json or getattr(args, "format", None) == "json":
         print(json.dumps(payload, indent=2, sort_keys=True))
         return 0
     print(

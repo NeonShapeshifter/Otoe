@@ -1,0 +1,16 @@
+include README.md
+include CHANGELOG.md
+include LICENSE
+include *.md
+include ADR-*.md
+recursive-include docs *.md *.json
+recursive-include examples *.py *.json *.toml *.txt
+recursive-include preview *.md *.css *.html
+recursive-include scripts *.py *.sh
+recursive-include tests *.py
+global-exclude *.py[cod]
+global-exclude __pycache__
+global-exclude .DS_Store
+prune build
+prune dist
+prune dist-wheel-smoke

@@ -155,14 +155,16 @@ Every reference app should have focused tests for three layers:
 - provider: happy path, blocked path, and state invariants
 - live preview: event ID lookup, dispatch, and rerendered content
 
-Full-suite baseline after the live preview, static class hardening, Style IR
-pack gate, bundle replay, backend readiness fixture, backend readiness report,
-backend coverage declaration, renderer capability audit, StyleOps capability
-audit, primitive value validation, bundle manifest hardening, namespace runtime
-discovery, dependency audit contract metadata, RenderTree validation, and
-backend coverage trace plus Path0 output semantic contract and external Path0
-JSON runner/readiness evidence plus backend package manifest pass:
-`706 passed, 1 skipped`.
+Full-suite release validation after the live preview, static class hardening,
+Style IR pack gate, bundle replay, backend readiness fixture, backend readiness
+report, backend coverage declaration, renderer capability audit, StyleOps
+capability audit, primitive value validation, bundle manifest hardening,
+namespace runtime discovery, dependency audit contract metadata, RenderTree
+validation, backend coverage trace, Path0 output semantic contract, external
+Path0 JSON runner/readiness evidence, backend package manifest, Portable Core
+UI productization, native text truncation, and installed-package smoke passes.
+The current numeric baseline is tracked in `README.md` and `ROADMAP.md`, not
+frozen in this reference-app pattern note.
 
 ## Current Decision
 

@@ -20,19 +20,11 @@ def test_reference_app_patterns_tracks_current_phase5_apps():
     assert "AppFrame" in text
     assert "MetricTile" in text
     assert "ListRow" in text
-    assert (
-        "Full-suite baseline after the live preview, static class hardening, "
-        "Style IR\npack gate, bundle replay, backend readiness fixture, "
-        "backend readiness report,\nbackend coverage declaration, renderer "
-        "capability audit, StyleOps capability\naudit, primitive value "
-        "validation, bundle manifest hardening, namespace runtime\n"
-        "discovery, dependency audit contract metadata, RenderTree validation, "
-        "and\nbackend coverage trace plus Path0 output semantic contract and "
-        "external Path0\nJSON runner/readiness evidence plus backend package "
-        "manifest pass:"
-        in text
-    )
-    assert "`706 passed, 1 skipped`." in text
+    assert "Full-suite release validation" in text
+    assert "Path0 JSON runner/readiness evidence" in text
+    assert "Portable Core\nUI productization" in text
+    assert "installed-package smoke passes" in text
+    assert "The current numeric baseline is tracked in `README.md`" in text
 
 
 def test_reference_theme_covers_extracted_ui_helpers():
