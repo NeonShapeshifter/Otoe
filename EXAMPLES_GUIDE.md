@@ -134,7 +134,7 @@ plus an optional Pillow readable-text frame when requested or available.
 ```bash
 PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo
 PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo --marker-only
-PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo --pillow
+PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo --pillow --scale 2
 ```
 
 ## Native Window Demo

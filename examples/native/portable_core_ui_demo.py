@@ -9,9 +9,10 @@ from examples.portable_core_ui import app
 from otoe import (
     NativePaintError,
     NativeRendererBackend,
-    NativeSurface,
     PillowNativeRendererBackend,
     css,
+    mount,
+    render_native_png,
 )
 
 
@@ -29,6 +30,7 @@ def render_demo_frames(
     directory: str | Path,
     *,
     include_pillow: bool | None = None,
+    scale: int = 1,
     styles_path: str | Path = PORTABLE_STYLES_PATH,
 ) -> tuple[Path, ...]:
     output_dir = Path(directory)
@@ -40,6 +42,7 @@ def render_demo_frames(
             output_dir / MARKER_FRAME,
             stylesheet=stylesheet,
             renderer_backend=None,
+            scale=scale,
         )
     ]
     if include_pillow is None:
@@ -50,6 +53,7 @@ def render_demo_frames(
                 output_dir / PILLOW_FRAME,
                 stylesheet=stylesheet,
                 renderer_backend=PillowNativeRendererBackend(),
+                scale=scale,
             )
         )
     return tuple(frames)
@@ -63,6 +67,12 @@ def main(argv: list[str] | None = None) -> int:
         "--out",
         default=str(Path("preview") / "native"),
         help="directory to write native demo PNG frames",
+    )
+    parser.add_argument(
+        "--scale",
+        type=int,
+        default=1,
+        help="integer PNG raster scale; layout units stay unchanged",
     )
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
@@ -84,7 +94,11 @@ def main(argv: list[str] | None = None) -> int:
         include_pillow = False
 
     try:
-        frames = render_demo_frames(args.out, include_pillow=include_pillow)
+        frames = render_demo_frames(
+            args.out,
+            include_pillow=include_pillow,
+            scale=args.scale,
+        )
     except NativePaintError as exc:
         print(f"native portable core ui demo: {exc}", file=sys.stderr)
         return 1
@@ -99,13 +113,15 @@ def _render_frame(
     *,
     stylesheet,
     renderer_backend: NativeRendererBackend | None,
+    scale: int,
 ) -> Path:
-    surface = NativeSurface(
-        app(),
+    render_native_png(
+        mount(app()),
+        path,
         stylesheet=stylesheet,
         renderer_backend=renderer_backend,
+        scale=scale,
     )
-    surface.render_png(path)
     return path
 
 

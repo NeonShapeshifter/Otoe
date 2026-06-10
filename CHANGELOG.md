@@ -36,6 +36,9 @@
   `examples.portable_core_ui:app`.
 - Added a native Portable Core UI visual demo that renders the portable gallery
   with deterministic marker text and optional Pillow readable text frames.
+- Added native PNG raster scaling through `--native-scale` and
+  `render_native_png(..., scale=...)`, keeping layout units unchanged while
+  writing higher-density deterministic frames.
 - Hardened offline bundle manifests so generated runners require safe relative
   paths, size metadata, lowercase SHA-256 hashes, unique bundle paths, core
   artifact entries, and backend framework file policy before verification,

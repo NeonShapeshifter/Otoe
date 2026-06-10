@@ -265,6 +265,7 @@ def test_portable_core_ui_gallery_build_validates_offline_bundle(
 ):
     output = tmp_path / "portable-core-ui-cage"
     frame = tmp_path / "portable-core-ui-frame.png"
+    scaled_frame = tmp_path / "portable-core-ui-frame@2x.png"
 
     result = main(
         [
@@ -291,6 +292,20 @@ def test_portable_core_ui_gallery_build_validates_offline_bundle(
         env={**os.environ, "PYTHONPATH": ""},
         text=True,
     )
+    scaled_png = subprocess.run(
+        [
+            sys.executable,
+            str(output / "otoe-run.py"),
+            "--png",
+            str(scaled_frame),
+            "--scale",
+            "2",
+        ],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
 
     assert result == 0
     assert "validation: ok" in captured.out
@@ -301,7 +316,11 @@ def test_portable_core_ui_gallery_build_validates_offline_bundle(
     assert runtime_paths == ["app/examples/portable_core_ui.py"]
     assert {"portable-title", "ui-card", "ui-frame"} <= planned_classes
     assert png.returncode == 0, png.stderr
+    assert scaled_png.returncode == 0, scaled_png.stderr
     assert frame.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+    width, height = _png_size(frame.read_bytes())
+    scaled_width, scaled_height = _png_size(scaled_frame.read_bytes())
+    assert (scaled_width, scaled_height) == (width * 2, height * 2)
 
 
 def test_portable_core_native_input_controls_dispatch_events():
@@ -365,3 +384,11 @@ def test_portable_product_controls_keep_click_contracts():
     root.children[2].children[-1].trigger("onClick")
 
     assert clicked == ["action", "tab", "row"]
+
+
+def _png_size(data: bytes) -> tuple[int, int]:
+    assert data.startswith(b"\x89PNG\r\n\x1a\n")
+    return (
+        int.from_bytes(data[16:20], "big"),
+        int.from_bytes(data[20:24], "big"),
+    )

@@ -52,6 +52,12 @@ def main(argv: list[str] | None = None) -> int:
         help="run the bundled backend package against bundled app artifacts",
     )
     parser.add_argument("--background", default="#ffffff", help="PNG background")
+    parser.add_argument(
+        "--scale",
+        type=int,
+        default=1,
+        help="integer PNG raster scale for --png; layout units stay unchanged",
+    )
     args = parser.parse_args(argv)
 
     manifest = _load_manifest()
@@ -108,6 +114,7 @@ def main(argv: list[str] | None = None) -> int:
             stylesheet=stylesheet,
             background=args.background,
             renderer_backend=renderer_backend,
+            scale=args.scale,
         )
         print(f"png: {output}")
         return 0

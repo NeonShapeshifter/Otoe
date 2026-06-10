@@ -92,6 +92,12 @@ def _build_parser() -> argparse.ArgumentParser:
         "--font",
         help="TrueType/OpenType font path for --native-text pillow",
     )
+    render.add_argument(
+        "--native-scale",
+        type=int,
+        default=1,
+        help="integer PNG raster scale for --native output; layout units stay unchanged",
+    )
     render.set_defaults(func=run_render)
 
     plan = subcommands.add_parser(

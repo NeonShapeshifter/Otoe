@@ -53,7 +53,7 @@ For native visual evidence over the same product-facing subset:
 
 ```bash
 PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo --marker-only
-PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo --pillow
+PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo --pillow --scale 2
 ```
 
 Each matrix row has a single import target:

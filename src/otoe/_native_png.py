@@ -16,19 +16,25 @@ if TYPE_CHECKING:
     from ._native_backend import NativeRendererBackend
 
 
-def write_native_png(paint: NativePaint, path: str | Path) -> None:
-    image = _new_image(paint.width, paint.height)
-    for command in paint.commands:
+def write_native_png(
+    paint: NativePaint,
+    path: str | Path,
+    *,
+    scale: int = 1,
+) -> None:
+    raster_paint = _scale_paint(paint, scale=scale)
+    image = _new_image(raster_paint.width, raster_paint.height)
+    for command in raster_paint.commands:
         if command.kind == "rect":
-            _draw_rounded_rect(image, paint.width, paint.height, command)
+            _draw_rounded_rect(image, raster_paint.width, raster_paint.height, command)
         elif command.kind == "text":
-            _draw_text_marker(image, paint.width, paint.height, command)
+            _draw_text_marker(image, raster_paint.width, raster_paint.height, command)
         else:
             raise NativePaintError(
                 f"Unknown paint command kind {command.kind!r}"
                 f"{_command_location(command)}."
             )
-    Path(path).write_bytes(_encode_png(image, paint.width, paint.height))
+    Path(path).write_bytes(_encode_png(image, raster_paint.width, raster_paint.height))
 
 
 def render_native_png(
@@ -40,7 +46,9 @@ def render_native_png(
     background: str = "#ffffff",
     focused_path: tuple[int, ...] | None = None,
     renderer_backend: NativeRendererBackend | None = None,
+    scale: int = 1,
 ) -> NativePaint:
+    _validate_scale(scale)
     if renderer_backend is not None:
         layout = (
             target
@@ -56,7 +64,7 @@ def render_native_png(
             background=background,
             focused_path=focused_path,
         )
-        renderer_backend.write_png(paint, path)
+        renderer_backend.write_png(_scale_paint(paint, scale=scale), path)
         return paint
 
     layout = (
@@ -65,8 +73,49 @@ def render_native_png(
         else layout_native(target, stylesheet=stylesheet, strict_styles=strict_styles)
     )
     paint = paint_native(layout, background=background, focused_path=focused_path)
-    write_native_png(paint, path)
+    write_native_png(paint, path, scale=scale)
     return paint
+
+
+def _scale_paint(paint: NativePaint, *, scale: int) -> NativePaint:
+    _validate_scale(scale)
+    if scale == 1:
+        return paint
+    return NativePaint(
+        width=paint.width * scale,
+        height=paint.height * scale,
+        commands=tuple(_scale_command(command, scale=scale) for command in paint.commands),
+    )
+
+
+def _scale_command(command: PaintCommand, *, scale: int) -> PaintCommand:
+    clip = command.clip
+    if clip is not None:
+        clip = tuple(value * scale for value in clip)
+    return PaintCommand(
+        kind=command.kind,
+        path=command.path,
+        x=command.x * scale,
+        y=command.y * scale,
+        width=command.width * scale,
+        height=command.height * scale,
+        fill=command.fill,
+        stroke=command.stroke,
+        stroke_width=command.stroke_width * scale,
+        radius=command.radius * scale,
+        text=command.text,
+        color=command.color,
+        font_size=command.font_size * scale,
+        clip=clip,
+        context=command.context,
+    )
+
+
+def _validate_scale(scale: int) -> None:
+    if isinstance(scale, bool) or not isinstance(scale, int) or scale < 1:
+        raise NativePaintError(
+            f"Native PNG scale must be a positive integer; got {scale!r}."
+        )
 
 
 def _new_image(width: int, height: int) -> bytearray:

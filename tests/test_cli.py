@@ -213,6 +213,58 @@ def test_cli_render_writes_native_png(tmp_path):
     assert output.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
 
 
+def test_cli_render_writes_scaled_native_png(tmp_path):
+    one_x = tmp_path / "quickstart-1x.png"
+    two_x = tmp_path / "quickstart-2x.png"
+
+    first_result = main(
+        [
+            "render",
+            "examples.quickstart:app",
+            "--out",
+            str(one_x),
+            "--native",
+        ]
+    )
+    second_result = main(
+        [
+            "render",
+            "examples.quickstart:app",
+            "--out",
+            str(two_x),
+            "--native",
+            "--native-scale",
+            "2",
+        ]
+    )
+
+    one_width, one_height = _png_size(one_x.read_bytes())
+    two_width, two_height = _png_size(two_x.read_bytes())
+    assert first_result == 0
+    assert second_result == 0
+    assert (two_width, two_height) == (one_width * 2, one_height * 2)
+
+
+def test_cli_render_native_scale_requires_native(tmp_path, capsys):
+    output = tmp_path / "preview.html"
+
+    result = main(
+        [
+            "render",
+            "examples.quickstart:app",
+            "--out",
+            str(output),
+            "--native-scale",
+            "2",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "--native-scale requires --native" in captured.err
+    assert not output.exists()
+
+
 def test_cli_render_writes_native_png_with_css(tmp_path, monkeypatch):
     module = tmp_path / "native_styled_surface.py"
     module.write_text(
@@ -7054,3 +7106,11 @@ def test_cli_new_refuses_existing_scaffold_file_without_force(
     assert result == 1
     assert "already exists; pass --force to overwrite" in captured.err
     assert (project / "app.py").read_text(encoding="utf-8") == "# keep me\n"
+
+
+def _png_size(data: bytes) -> tuple[int, int]:
+    assert data.startswith(b"\x89PNG\r\n\x1a\n")
+    return (
+        int.from_bytes(data[16:20], "big"),
+        int.from_bytes(data[20:24], "big"),
+    )

@@ -125,6 +125,15 @@ The font path must be relative to the profile file. `otoe build` copies it into
 `otoe-run.py` uses it for `--layout-check` and `--png`. Do not also list that
 same font in `assets`; duplicate bundle paths are rejected during verification.
 
+The generated runner also accepts raster scaling for native PNG evidence:
+
+```bash
+dist/cage/otoe-run.py --png preview@2x.png --scale 2
+```
+
+The scale multiplies the written PNG dimensions while keeping layout units,
+hit testing, and bundled style evidence in logical coordinates.
+
 ## Advanced Gates
 
 Backend coverage requirements and backend package manifests are advanced

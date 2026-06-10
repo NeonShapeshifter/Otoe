@@ -69,8 +69,15 @@ layout check inside the bundle directory.
 
 ## Optional Readable Native Text
 
-The default native PNG renderer is dependency-free and deterministic. For local
-screenshots with readable text, install the optional text extra:
+The default native PNG renderer is dependency-free and deterministic. Use
+`--native-scale` for higher-density deterministic PNGs without changing layout
+units:
+
+```bash
+otoe render app:app --out preview@2x.png --native --native-scale 2 --css styles.css
+```
+
+For local screenshots with readable text, install the optional text extra:
 
 ```bash
 python -m pip install "otoe[native-text]"

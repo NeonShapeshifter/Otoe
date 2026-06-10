@@ -178,6 +178,24 @@ def test_native_png_writer_creates_non_empty_png(tmp_path):
     assert len(data) > 100
 
 
+def test_native_png_writer_scales_raster_without_changing_logical_paint(tmp_path):
+    mounted = mount(VStack(Text("Scale"), padding=4))
+    output = tmp_path / "native-2x.png"
+
+    paint = render_native_png(mounted, output, scale=2)
+
+    assert paint.width > 0
+    assert paint.height > 0
+    assert _png_size(output.read_bytes()) == (paint.width * 2, paint.height * 2)
+
+
+def test_native_png_writer_rejects_invalid_scale(tmp_path):
+    paint = NativePaint(width=8, height=8, commands=())
+
+    with pytest.raises(NativePaintError, match="scale must be a positive integer"):
+        write_native_png(paint, tmp_path / "invalid-scale.png", scale=0)
+
+
 def test_native_png_changes_when_reactive_text_changes(tmp_path):
     label = signal("A")
     mounted = mount(VStack(Text(label), padding=4))
@@ -441,3 +459,11 @@ def _png_pixels(
         row = raw[start + 1 : start + 1 + stride]
         rows.append([tuple(row[index : index + 4]) for index in range(0, len(row), 4)])
     return rows
+
+
+def _png_size(data: bytes) -> tuple[int, int]:
+    assert data.startswith(b"\x89PNG\r\n\x1a\n")
+    return (
+        int.from_bytes(data[16:20], "big"),
+        int.from_bytes(data[20:24], "big"),
+    )

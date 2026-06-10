@@ -39,7 +39,12 @@ Use the native path for evidence and testability:
 
 ```bash
 otoe render app:app --out preview.png --native --css styles.css
+otoe render app:app --out preview@2x.png --native --native-scale 2 --css styles.css
 ```
+
+`--native-scale` is a raster-scale contract: layout, hit testing, and paint
+coordinates stay in logical units, while the written PNG dimensions are
+multiplied by the positive integer scale.
 
 Use the optional Pillow path when a local native PNG should be readable:
 
@@ -86,7 +91,7 @@ surface against the native renderer:
 ```bash
 PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo
 PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo --marker-only
-PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo --pillow
+PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo --pillow --scale 2
 ```
 
 The demo writes `preview/native/portable_core_ui_marker.png` every time. The
