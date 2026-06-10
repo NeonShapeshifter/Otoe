@@ -21,6 +21,7 @@ from .build import (
     copy_assets,
     copy_backend_package_artifacts,
     copy_framework_files,
+    copy_native_text_font,
     copy_runtime_files,
     write_runner,
 )
@@ -122,6 +123,10 @@ def run_build(args: argparse.Namespace) -> int:
             profile_config,
             output_dir=output,
         )
+        native_text_manifest = copy_native_text_font(
+            profile_config,
+            output_dir=output,
+        )
         asset_manifest = copy_assets(profile_config.assets, output_dir=output)
         runtime_file_manifest = copy_runtime_files(
             build_runtime_files(args.target, profile_config.runtime_files),
@@ -139,6 +144,7 @@ def run_build(args: argparse.Namespace) -> int:
             backend_package=backend_package_manifest,
             external_backend_report=external_backend_report,
             framework_files=framework_file_manifest,
+            native_text=native_text_manifest,
             runner=runner_manifest,
             runtime_files=runtime_file_manifest,
         )
@@ -174,7 +180,7 @@ def validate_build_runner(output: Path) -> None:
 
 
 def run_build_runner(output: Path, mode: str, *, label: str) -> None:
-    command = [sys.executable, str(output / RUNNER_FILENAME), mode]
+    command = [sys.executable, str((output / RUNNER_FILENAME).resolve()), mode]
     result = subprocess.run(
         command,
         capture_output=True,

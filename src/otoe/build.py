@@ -86,6 +86,7 @@ BACKEND_RUNTIME_FILES = {
         "_native_layout.py",
         "_native_layout_align.py",
         "_native_paint.py",
+        "_native_pillow.py",
         "_native_png.py",
         "_native_shared.py",
         "_native_surface.py",
@@ -122,6 +123,7 @@ def build_manifest(
     backend_package: dict[str, Any] | None = None,
     external_backend_report: dict[str, Any] | None = None,
     framework_files: list[dict[str, Any]] | None = None,
+    native_text: dict[str, Any] | None = None,
     runner: dict[str, Any] | None = None,
     runtime_files: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
@@ -149,6 +151,8 @@ def build_manifest(
         "runtimeFiles": runtime_files or [],
         "status": _combined_status(plan["status"], deps["status"]),
     }
+    if native_text is not None:
+        manifest["nativeText"] = native_text
     if backend_coverage is not None:
         manifest["backendCoverage"] = BACKEND_COVERAGE_ARTIFACT_FILENAME
     if backend_package is not None:
@@ -195,6 +199,29 @@ def copy_framework_files(
         bundle_dir=FRAMEWORK_OUTPUT_DIR,
         missing_label="framework file",
     )
+
+
+def copy_native_text_font(
+    profile_config: PlanProfileConfig,
+    *,
+    output_dir: Path,
+) -> dict[str, Any] | None:
+    if profile_config.native_text.renderer == "marker":
+        return None
+    font = profile_config.native_text.font
+    relative_path = profile_config.native_text.font_relative_path
+    if font is None or relative_path is None:
+        raise BuildError("native text renderer 'pillow' requires a font file")
+    copied = _copy_manifest_files(
+        (ProfileAsset(source=font, relative_path=relative_path),),
+        output_dir=output_dir,
+        bundle_dir=ASSET_OUTPUT_DIR,
+        missing_label="native text font file",
+    )
+    return {
+        "renderer": profile_config.native_text.renderer,
+        "font": copied[0],
+    }
 
 
 def copy_backend_package_artifacts(

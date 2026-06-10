@@ -33,6 +33,7 @@ otoe = "otoe.cli:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "mypy>=1.10"]
+native-text = ["Pillow>=10"]
 release = ["build>=1.2", "twine>=6"]
 
 [tool.setuptools.packages.find]

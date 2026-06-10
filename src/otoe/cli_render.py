@@ -8,7 +8,7 @@ from .cli_common import CliError, load_target
 from .cli_styles import load_stylesheet
 from .cli_targets import coerce_render_target
 from .html import render_html
-from .native import render_native_png
+from .native import PillowNativeRendererBackend, render_native_png
 from .style import StyleError
 
 
@@ -17,6 +17,7 @@ def run_render(args: argparse.Namespace) -> int:
         target = load_target(args.target)
         mounted = coerce_render_target(target)
         stylesheet = load_stylesheet(args.css)
+        renderer_backend = _native_renderer_backend(args)
     except CliError as exc:
         print(f"render: {exc}", file=sys.stderr)
         return 1
@@ -31,6 +32,7 @@ def run_render(args: argparse.Namespace) -> int:
                 stylesheet=stylesheet,
                 strict_styles=args.strict_styles,
                 background=args.background,
+                renderer_backend=renderer_backend,
             )
             print(f"render native {args.target}: {output}")
             return 0
@@ -50,3 +52,19 @@ def run_render(args: argparse.Namespace) -> int:
         return 1
     print(f"render {args.target}: {output}")
     return 0
+
+
+def _native_renderer_backend(args: argparse.Namespace):
+    native_text = getattr(args, "native_text", "marker")
+    font = getattr(args, "font", None)
+    if not args.native:
+        if native_text != "marker":
+            raise CliError("--native-text requires --native")
+        if font is not None:
+            raise CliError("--font requires --native --native-text pillow")
+        return None
+    if font is not None and native_text != "pillow":
+        raise CliError("--font requires --native-text pillow")
+    if native_text == "pillow":
+        return PillowNativeRendererBackend(font_path=font)
+    return None

@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from otoe import (
     Button,
     ComposedNativeRendererBackend,
@@ -12,6 +14,7 @@ from otoe import (
     NativeSurface,
     NativeWindowDriver,
     PYTHON_NATIVE_RENDERER_BACKEND,
+    PillowNativeRendererBackend,
     PythonNativeRendererBackend,
     Text,
     VStack,
@@ -168,6 +171,27 @@ def test_render_native_png_accepts_renderer_backend(tmp_path):
     assert backend.paint_calls == 1
     assert backend.write_png_calls == 1
     assert output.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+
+
+def test_pillow_native_renderer_backend_writes_readable_png_when_available(tmp_path):
+    pytest.importorskip("PIL")
+    mounted = mount(VStack(Text("Readable text"), padding=4))
+    marker_output = tmp_path / "marker.png"
+    pillow_output = tmp_path / "pillow.png"
+
+    marker_paint = render_native_png(mounted, marker_output)
+    pillow_backend = PillowNativeRendererBackend()
+    pillow_paint = render_native_png(
+        mounted,
+        pillow_output,
+        renderer_backend=pillow_backend,
+    )
+
+    assert pillow_paint.commands
+    assert marker_paint.width != pillow_paint.width or marker_output.read_bytes() != (
+        pillow_output.read_bytes()
+    )
+    assert pillow_output.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
 
 
 def test_run_native_uses_renderer_backend_when_creating_driver():

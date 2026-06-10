@@ -6,6 +6,7 @@ from typing import Literal
 
 
 RuntimePolicyAction = Literal["allow", "warn", "error"]
+NativeTextRenderer = Literal["marker", "pillow"]
 
 
 @dataclass(frozen=True)
@@ -27,6 +28,13 @@ class RuntimePolicyConfig:
 
 
 @dataclass(frozen=True)
+class NativeTextConfig:
+    renderer: NativeTextRenderer = "marker"
+    font: Path | None = None
+    font_relative_path: Path | None = None
+
+
+@dataclass(frozen=True)
 class PlanProfileConfig:
     profile: str = "cage"
     utilities: bool = False
@@ -36,6 +44,7 @@ class PlanProfileConfig:
     runtime_files: tuple[ProfileRuntimeFile, ...] = ()
     allow_runtime_installs: bool = False
     runtime_policy: RuntimePolicyConfig = RuntimePolicyConfig()
+    native_text: NativeTextConfig = NativeTextConfig()
     backend_name: str | None = None
     backend_capability: str | None = None
     backend_capability_profile: Path | None = None

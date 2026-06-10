@@ -82,11 +82,16 @@ def main(argv: list[str] | None = None) -> int:
 
     mounted = _coerce_target(_load_target(manifest["target"]))
     if args.layout_check:
-        from otoe import layout_native, paint_native
-
         stylesheet = _load_stylesheet(manifest)
-        layout = layout_native(mounted, stylesheet=stylesheet)
-        paint_native(layout, background=args.background)
+        renderer_backend = _native_renderer_backend(manifest)
+        if renderer_backend is None:
+            from otoe import layout_native, paint_native
+
+            layout = layout_native(mounted, stylesheet=stylesheet)
+            paint_native(layout, background=args.background)
+        else:
+            layout = renderer_backend.layout(mounted, stylesheet=stylesheet)
+            renderer_backend.paint(layout, background=args.background)
         print(f"layout checked: {manifest['target']}")
         return 0
 
@@ -96,11 +101,13 @@ def main(argv: list[str] | None = None) -> int:
         output = Path(args.png)
         output.parent.mkdir(parents=True, exist_ok=True)
         stylesheet = _load_stylesheet(manifest)
+        renderer_backend = _native_renderer_backend(manifest)
         render_native_png(
             mounted,
             output,
             stylesheet=stylesheet,
             background=args.background,
+            renderer_backend=renderer_backend,
         )
         print(f"png: {output}")
         return 0
@@ -144,6 +151,9 @@ def _verify_manifest_contract(manifest: dict[str, Any]) -> None:
     backend_package = manifest.get("backendPackage")
     if backend_package is not None:
         _verify_manifest_backend_package_contract(backend_package)
+    native_text = manifest.get("nativeText")
+    if native_text is not None:
+        _verify_manifest_native_text_contract(native_text)
     for group in ("assets", "frameworkFiles", "runtimeFiles"):
         if not isinstance(manifest.get(group), list):
             raise ValueError(f"manifest.json: {group} must be a list")
@@ -188,6 +198,13 @@ def _verify_bundle(manifest: dict[str, Any]) -> None:
                 path_key="bundlePath",
                 label=f"{group}[{index}]",
             )
+    native_text = manifest.get("nativeText")
+    if isinstance(native_text, dict) and native_text.get("renderer") == "pillow":
+        _verify_manifest_file(
+            native_text.get("font"),
+            path_key="bundlePath",
+            label="nativeText.font",
+        )
     _reject_unmanifested_bundle_files(manifest)
     _verify_backend_package_smoke(manifest)
     _verify_backend_package_render_tree(manifest)
@@ -225,6 +242,18 @@ def _verify_manifest_file_entry_contracts(manifest: dict[str, Any]) -> None:
         label="runner",
     )
     _record_manifest_bundle_path(declared, runner_path, "runner.path")
+    native_text = manifest.get("nativeText")
+    if isinstance(native_text, dict) and native_text.get("renderer") == "pillow":
+        relative = _verify_manifest_file_entry(
+            native_text.get("font"),
+            path_key="bundlePath",
+            label="nativeText.font",
+        )
+        _record_manifest_bundle_path(
+            declared,
+            relative,
+            "nativeText.font.bundlePath",
+        )
     for index, artifact in enumerate(manifest.get("artifacts", [])):
         relative = _verify_manifest_file_entry(
             artifact,
@@ -320,6 +349,13 @@ def _manifest_pack_paths(manifest: dict[str, Any]) -> set[str]:
                 value = entry.get("bundlePath")
                 if isinstance(value, str):
                     paths.add(value)
+    native_text = manifest.get("nativeText")
+    if isinstance(native_text, dict):
+        font = native_text.get("font")
+        if isinstance(font, dict):
+            value = font.get("bundlePath")
+            if isinstance(value, str):
+                paths.add(value)
     return paths
 
 
@@ -405,6 +441,51 @@ def _verify_manifest_backend_package_contract(package: Any) -> None:
                 "must be a non-empty string"
             )
         _bundle_path(relative)
+
+
+def _verify_manifest_native_text_contract(native_text: Any) -> None:
+    if not isinstance(native_text, dict):
+        raise ValueError("manifest.json: nativeText must be an object")
+    renderer = native_text.get("renderer")
+    if renderer not in {"marker", "pillow"}:
+        raise ValueError(
+            "manifest.json.nativeText.renderer must be one of 'marker', 'pillow'"
+        )
+    font = native_text.get("font")
+    if renderer == "marker":
+        if font is not None:
+            raise ValueError("manifest.json.nativeText.font requires renderer 'pillow'")
+        return
+    _verify_manifest_file_entry(
+        font,
+        path_key="bundlePath",
+        label="nativeText.font",
+    )
+
+
+def _native_renderer_backend(manifest: dict[str, Any]):
+    native_text = manifest.get("nativeText")
+    if not isinstance(native_text, dict):
+        return None
+    renderer = native_text.get("renderer")
+    if renderer == "marker":
+        return None
+    if renderer != "pillow":
+        raise ValueError(
+            "manifest.json.nativeText.renderer must be one of 'marker', 'pillow'"
+        )
+    font = native_text.get("font")
+    if not isinstance(font, dict):
+        raise ValueError("manifest.json: nativeText.font must be an object")
+    bundle_path = font.get("bundlePath")
+    if not isinstance(bundle_path, str) or not bundle_path:
+        raise ValueError(
+            "manifest.json: nativeText.font.bundlePath must be a non-empty string"
+        )
+    font_path = _require_bundle_file(bundle_path)
+    from otoe import PillowNativeRendererBackend
+
+    return PillowNativeRendererBackend(font_path=font_path)
 
 
 def _verify_backend_package(manifest: dict[str, Any]) -> None:

@@ -151,6 +151,7 @@ EXPERIMENTAL_NATIVE_APIS = frozenset(
         "NativeWindowEvent",
         "PYTHON_NATIVE_RENDERER_BACKEND",
         "PaintCommand",
+        "PillowNativeRendererBackend",
         "PythonNativeRendererBackend",
         "RENDER_TREE_SCHEMA_VERSION",
         "ResolvedStyleMap",
@@ -177,6 +178,7 @@ EXPERIMENTAL_NATIVE_APIS = frozenset(
         "run_native",
         "validate_render_tree",
         "walk_render_nodes",
+        "write_pillow_native_png",
         "write_native_png",
     }
 )

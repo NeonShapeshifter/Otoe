@@ -7,6 +7,8 @@ from typing import Any, cast
 from .capabilities import CapabilityProfileError, backend_capability_profile
 from .plan import SUPPORTED_PLAN_PROFILES
 from .profile_types import (
+    NativeTextConfig,
+    NativeTextRenderer,
     PlanProfileConfig,
     ProfileAsset,
     ProfileRuntimeFile,
@@ -43,6 +45,7 @@ def load_plan_profile(path: str | Path) -> PlanProfileConfig:
             "styles",
             "assets",
             "runtime",
+            "native",
             "backend",
             "deps",
         },
@@ -77,6 +80,12 @@ def load_plan_profile(path: str | Path) -> PlanProfileConfig:
         raise ProfileError("profile 'cage' forbids runtime installs")
     runtime_files = _runtime_files(runtime.get("files"), base=profile_path.parent)
     runtime_policy = _runtime_policy(runtime.get("policy"))
+    native = _table_value(data, "native", context="profile file")
+    _reject_unknown(native, "[native]", {"text"})
+    native_text = _native_text_config(
+        _table_value(native, "text", context="[native]"),
+        base=profile_path.parent,
+    )
 
     backend = _table_value(data, "backend", context="profile file")
     _reject_unknown(
@@ -138,6 +147,7 @@ def load_plan_profile(path: str | Path) -> PlanProfileConfig:
         runtime_files=runtime_files,
         allow_runtime_installs=allow_runtime_installs,
         runtime_policy=runtime_policy,
+        native_text=native_text,
         backend_name=backend_name,
         backend_capability=backend_capability,
         backend_capability_profile=backend_capability_profile_path,
@@ -145,6 +155,35 @@ def load_plan_profile(path: str | Path) -> PlanProfileConfig:
         backend_package_manifest=backend_package_manifest_path,
         dependency_packages=dependency_packages,
         dependency_extras=dependency_extras,
+    )
+
+
+def _native_text_config(
+    data: dict[str, Any],
+    *,
+    base: Path,
+) -> NativeTextConfig:
+    _reject_unknown(data, "[native.text]", {"renderer", "font"})
+    renderer = _optional_string(data, "renderer", context="[native.text]") or "marker"
+    if renderer not in {"marker", "pillow"}:
+        raise ProfileError(
+            "[native.text] key 'renderer' must be one of 'marker', 'pillow'"
+        )
+    font_value = _optional_string(data, "font", context="[native.text]")
+    font = None
+    relative = None
+    if font_value is not None:
+        relative = Path(font_value)
+        _validate_relative_file_path(relative, key="native.text.font")
+        font = base / relative
+    if renderer == "marker" and font is not None:
+        raise ProfileError("[native.text] font requires renderer = 'pillow'")
+    if renderer == "pillow" and font is None:
+        raise ProfileError("[native.text] renderer = 'pillow' requires font")
+    return NativeTextConfig(
+        renderer=cast(NativeTextRenderer, renderer),
+        font=font,
+        font_relative_path=relative,
     )
 
 

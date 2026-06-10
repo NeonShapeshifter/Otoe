@@ -38,12 +38,14 @@ from .native import (
     NativeSurface,
     PYTHON_NATIVE_RENDERER_BACKEND,
     PaintCommand,
+    PillowNativeRendererBackend,
     PythonNativeRendererBackend,
     dispatch_native_click,
     hit_test_native,
     layout_native,
     paint_native,
     render_native_png,
+    write_pillow_native_png,
     write_native_png,
 )
 from .node import Node, Widget
@@ -194,6 +196,7 @@ __all__ = [
     "PYTHON_NATIVE_RENDERER_BACKEND",
     "Panel",
     "PaintCommand",
+    "PillowNativeRendererBackend",
     "PREVIEW_APIS",
     "PythonNativeRendererBackend",
     "RENDER_TREE_SCHEMA_VERSION",
@@ -280,5 +283,6 @@ __all__ = [
     "utility_css",
     "utility_stylesheet",
     "walk_render_nodes",
+    "write_pillow_native_png",
     "write_native_png",
 ]

@@ -1,4 +1,5 @@
 import hashlib
+import importlib.util
 import json
 import os
 import subprocess
@@ -6,6 +7,9 @@ import sys
 import tarfile
 import tomllib
 import zlib
+from pathlib import Path
+
+import pytest
 
 import otoe.deps as deps_module
 from otoe.capabilities import backend_capability_profile
@@ -235,6 +239,69 @@ def test_cli_render_writes_native_png_with_css(tmp_path, monkeypatch):
 
     assert result == 0
     assert output.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+
+
+def test_cli_render_pillow_native_text_requires_optional_dependency(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    if importlib.util.find_spec("PIL") is not None:
+        pytest.skip("Pillow is installed")
+    module = tmp_path / "pillow_text_surface.py"
+    module.write_text(
+        "from otoe import Text\n"
+        "app = Text('Readable')\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "preview.png"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "render",
+            "pillow_text_surface:app",
+            "--out",
+            str(output),
+            "--native",
+            "--native-text",
+            "pillow",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "Pillow native text backend requires Pillow" in captured.err
+    assert not output.exists()
+
+
+def test_cli_render_font_requires_pillow_native_text(tmp_path, monkeypatch, capsys):
+    module = tmp_path / "font_surface.py"
+    module.write_text(
+        "from otoe import Text\n"
+        "app = Text('Font')\n",
+        encoding="utf-8",
+    )
+    font = tmp_path / "font.ttf"
+    font.write_bytes(b"not-a-real-font")
+    output = tmp_path / "preview.png"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "render",
+            "font_surface:app",
+            "--out",
+            str(output),
+            "--native",
+            "--font",
+            str(font),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "--font requires --native-text pillow" in captured.err
 
 
 def test_cli_native_png_render_is_stable_across_runs(tmp_path):
@@ -2473,6 +2540,187 @@ def test_cli_build_writes_runner_that_loads_copied_runtime_target(
     assert "sha256 mismatch" in tampered.stderr
     assert missing.returncode == 1
     assert "bundle file 'app/bundled_runner_app.py' does not exist" in missing.stderr
+
+
+def test_cli_build_validate_accepts_relative_output_path(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    app = tmp_path / "relative_build_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Relative build')\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "relative_build_app:app",
+            "--out",
+            "dist/cage",
+            "--validate",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 0
+    assert "validation: ok" in captured.out
+    assert (tmp_path / "dist" / "cage" / "otoe-run.py").exists()
+    assert (tmp_path / "dist" / "cage" / "manifest.json").exists()
+
+
+def test_cli_build_rejects_pillow_native_text_without_font(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    app = tmp_path / "pillow_profile_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Pillow profile')\n",
+        encoding="utf-8",
+    )
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[native.text]\n"
+        'renderer = "pillow"\n',
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "pillow_profile_app:app",
+            "--profile-file",
+            str(profile_file),
+            "--out",
+            str(tmp_path / "dist" / "pillow-profile"),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "[native.text] renderer = 'pillow' requires font" in captured.err
+
+
+def test_cli_build_rejects_native_text_font_with_marker_renderer(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    app = tmp_path / "marker_font_profile_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Marker profile')\n",
+        encoding="utf-8",
+    )
+    fonts_dir = tmp_path / "fonts"
+    fonts_dir.mkdir()
+    (fonts_dir / "font.ttf").write_bytes(b"not-a-real-font")
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[native.text]\n"
+        'font = "fonts/font.ttf"\n',
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "marker_font_profile_app:app",
+            "--profile-file",
+            str(profile_file),
+            "--out",
+            str(tmp_path / "dist" / "marker-font-profile"),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "[native.text] font requires renderer = 'pillow'" in captured.err
+
+
+def test_cli_build_runner_uses_profile_pillow_native_text_font(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    pytest.importorskip("PIL")
+    source_font = _system_test_font()
+    app = tmp_path / "pillow_bundle_app.py"
+    app.write_text(
+        "from otoe import Text, VStack\n"
+        "app = VStack(Text('Readable bundle'), padding=10)\n",
+        encoding="utf-8",
+    )
+    fonts_dir = tmp_path / "fonts"
+    fonts_dir.mkdir()
+    font = fonts_dir / source_font.name
+    font.write_bytes(source_font.read_bytes())
+    profile_file = tmp_path / "otoe.profile.toml"
+    profile_file.write_text(
+        'profile = "cage"\n'
+        "\n"
+        "[native.text]\n"
+        'renderer = "pillow"\n'
+        f'font = "fonts/{source_font.name}"\n'
+        "\n"
+        "[runtime]\n"
+        'files = ["pillow_bundle_app.py"]\n'
+        "\n"
+        "[deps]\n"
+        'packages = ["Pillow"]\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "pillow-runner"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "pillow_bundle_app:app",
+            "--profile-file",
+            str(profile_file),
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    native_text_font = manifest["nativeText"]["font"]
+    frame = output / "pillow.png"
+    png = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--png", str(frame)],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+
+    assert result == 0
+    assert "validation: ok" in captured.out
+    assert manifest["nativeText"]["renderer"] == "pillow"
+    assert native_text_font == {
+        "source": f"fonts/{source_font.name}",
+        "bundlePath": f"assets/fonts/{source_font.name}",
+        "size": font.stat().st_size,
+        "sha256": hashlib.sha256(font.read_bytes()).hexdigest(),
+    }
+    assert (output / native_text_font["bundlePath"]).is_file()
+    assert png.returncode == 0, png.stderr
+    assert frame.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
 
 
 def test_cli_build_runner_rejects_manifest_schema_version(
@@ -5132,6 +5380,18 @@ def _write_backend_coverage_requirements(
         + "\n",
         encoding="utf-8",
     )
+
+
+def _system_test_font() -> Path:
+    for candidate in (
+        Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
+        Path("/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf"),
+        Path("/Library/Fonts/Arial.ttf"),
+        Path("/System/Library/Fonts/Supplemental/Arial.ttf"),
+    ):
+        if candidate.is_file():
+            return candidate
+    pytest.skip("no TrueType system font available for Pillow native text smoke")
 
 
 def _backend_coverage_path0_output() -> dict:

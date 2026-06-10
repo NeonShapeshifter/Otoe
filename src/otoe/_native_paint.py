@@ -10,7 +10,7 @@ from ._native_shared import (
     dimension,
     intersect_rects,
 )
-from ._native_text import measure_native_text
+from ._native_text import NativeTextMeasurer, measure_native_text
 
 
 def paint_native(
@@ -18,6 +18,7 @@ def paint_native(
     *,
     background: str = "#ffffff",
     focused_path: tuple[int, ...] | None = None,
+    text_measure: NativeTextMeasurer = measure_native_text,
 ) -> NativePaint:
     surface_fill = color_value(background, context="NativePaint surface")
     commands = [
@@ -32,7 +33,13 @@ def paint_native(
             context="NativePaint surface",
         )
     ]
-    commands.extend(_paint_box(layout.root, focused_path=focused_path))
+    commands.extend(
+        _paint_box(
+            layout.root,
+            focused_path=focused_path,
+            text_measure=text_measure,
+        )
+    )
     return NativePaint(
         width=max(layout.root.width, 1),
         height=max(layout.root.height, 1),
@@ -45,6 +52,7 @@ def _paint_box(
     *,
     clip: tuple[int, int, int, int] | None = None,
     focused_path: tuple[int, ...] | None = None,
+    text_measure: NativeTextMeasurer,
 ) -> list[PaintCommand]:
     style = dict(box.style)
     commands: list[PaintCommand] = []
@@ -56,7 +64,7 @@ def _paint_box(
         commands.append(focus_ring)
 
     if box.text:
-        commands.append(_text_command(box, style, clip=clip))
+        commands.append(_text_command(box, style, clip=clip, text_measure=text_measure))
 
     child_clip = (
         intersect_rects(clip, box_rect(box))
@@ -64,7 +72,14 @@ def _paint_box(
         else clip
     )
     for child in box.children:
-        commands.extend(_paint_box(child, clip=child_clip, focused_path=focused_path))
+        commands.extend(
+            _paint_box(
+                child,
+                clip=child_clip,
+                focused_path=focused_path,
+                text_measure=text_measure,
+            )
+        )
     return commands
 
 
@@ -146,11 +161,12 @@ def _text_command(
     style: dict[str, Any],
     *,
     clip: tuple[int, int, int, int] | None,
+    text_measure: NativeTextMeasurer,
 ) -> PaintCommand:
     context = box_context(box)
     font_size = dimension(style, "fontSize", default=14, context=context)
     padding = _text_padding(box, style)
-    metrics = measure_native_text(box.text or "", font_size=font_size)
+    metrics = text_measure(box.text or "", font_size=font_size)
     available_width = max(1, box.width - (padding * 2))
     return PaintCommand(
         kind="text",

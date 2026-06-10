@@ -20,7 +20,7 @@ from ._native_shared import (
     style_items,
     widget_context,
 )
-from ._native_text import measure_native_text
+from ._native_text import NativeTextMeasurer, measure_native_text
 from .mount import FakeWidget, MountedNode, root_widget
 from .style import StyleSheet
 
@@ -29,6 +29,7 @@ def layout_native(
     *,
     stylesheet: StyleSheet | None = None,
     strict_styles: bool = True,
+    text_measure: NativeTextMeasurer = measure_native_text,
 ) -> NativeLayout:
     widget = root_widget(target) if isinstance(target, MountedNode) else target
     root = _layout_widget(
@@ -38,6 +39,7 @@ def layout_native(
         y=0,
         stylesheet=stylesheet,
         strict_styles=strict_styles,
+        text_measure=text_measure,
     )
     return NativeLayout(root=root, boxes=tuple(flatten(root)))
 
@@ -50,6 +52,7 @@ def _layout_widget(
     y: int,
     stylesheet: StyleSheet | None,
     strict_styles: bool,
+    text_measure: NativeTextMeasurer,
 ) -> LayoutBox:
     style = resolve_style(widget, stylesheet, strict_styles)
     name = widget.name
@@ -65,6 +68,7 @@ def _layout_widget(
             style=style,
             context=context,
             text=str(widget.props.get("content", "")),
+            text_measure=text_measure,
         )
     if name == "Button":
         if widget.children:
@@ -78,6 +82,7 @@ def _layout_widget(
                 direction="column",
                 stylesheet=stylesheet,
                 strict_styles=strict_styles,
+                text_measure=text_measure,
                 default_padding=8,
             )
         return _leaf_box(
@@ -88,6 +93,7 @@ def _layout_widget(
             style=style,
             context=context,
             text=str(widget.props.get("label", "")),
+            text_measure=text_measure,
             default_padding=8,
         )
     if name == "Input":
@@ -99,6 +105,7 @@ def _layout_widget(
             style=style,
             context=context,
             text=str(widget.props.get("value") or widget.props.get("placeholder") or ""),
+            text_measure=text_measure,
             default_padding=8,
             default_width=180,
         )
@@ -114,6 +121,7 @@ def _layout_widget(
             direction=direction,
             stylesheet=stylesheet,
             strict_styles=strict_styles,
+            text_measure=text_measure,
         )
     return _container_box(
         widget,
@@ -125,6 +133,7 @@ def _layout_widget(
         direction="column",
         stylesheet=stylesheet,
         strict_styles=strict_styles,
+        text_measure=text_measure,
     )
 
 
@@ -139,6 +148,7 @@ def _container_box(
     direction: str,
     stylesheet: StyleSheet | None,
     strict_styles: bool,
+    text_measure: NativeTextMeasurer,
     default_padding: int = 0,
 ) -> LayoutBox:
     padding = dimension(style, "padding", default=default_padding, context=context)
@@ -170,6 +180,7 @@ def _container_box(
             y=cursor_y,
             stylesheet=stylesheet,
             strict_styles=strict_styles,
+            text_measure=text_measure,
         )
         children.append(child_box)
 
@@ -234,13 +245,14 @@ def _leaf_box(
     style: dict[str, Any],
     context: str,
     text: str,
+    text_measure: NativeTextMeasurer,
     default_padding: int = 0,
     default_width: int | None = None,
 ) -> LayoutBox:
     padding = dimension(style, "padding", default=default_padding, context=context)
     border_width = dimension(style, "borderWidth", default=0, context=context)
     font_size = dimension(style, "fontSize", default=14, context=context)
-    text_metrics = measure_native_text(text, font_size=font_size)
+    text_metrics = text_measure(text, font_size=font_size)
 
     width = text_metrics.width + padding * 2 + border_width * 2
     height = text_metrics.height + padding * 2 + border_width * 2
