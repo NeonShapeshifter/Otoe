@@ -80,6 +80,20 @@ surface.render_png("frame.png")
 Use `NativeWindowDriver` when a test should speak in window-shaped events
 instead of surface calls.
 
+Use the Portable Core UI native visual demo when checking the current product
+surface against the native renderer:
+
+```bash
+PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo
+PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo --marker-only
+PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo --pillow
+```
+
+The demo writes `preview/native/portable_core_ui_marker.png` every time. The
+default mode also writes `preview/native/portable_core_ui_pillow.png` when
+Pillow is installed; `--pillow` forces that readable-text path and reports the
+install hint if Pillow is missing.
+
 ## Chosen Next Step
 
 The next native product milestone is not more widgets. It is visual

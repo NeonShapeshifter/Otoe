@@ -122,6 +122,21 @@ PYTHONPATH=src:. python -m examples.native.task_board_demo
 
 This is the main native app-shaped example without Wraith or SaaS coupling.
 
+## Native Portable Core UI
+
+Path: `examples/native/portable_core_ui_demo.py`
+
+Use this when checking the product-facing portable UI subset against native PNG
+output. It renders `examples.portable_core_ui:app` with
+`preview/portable_core_ui.css` and writes a deterministic marker-text frame,
+plus an optional Pillow readable-text frame when requested or available.
+
+```bash
+PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo
+PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo --marker-only
+PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo --pillow
+```
+
 ## Native Window Demo
 
 Path: `examples/native/window_demo.py`
@@ -419,6 +434,7 @@ assumptions into the runtime.
 | Minimal live preview app | `examples.live_counter:app` |
 | Minimal native PNG smoke | `examples.native.counter_demo` |
 | App-shaped native renderer surface | `examples.native.task_board_demo` |
+| Portable UI native visual smoke | `examples.native.portable_core_ui_demo` |
 | Window-driver or Tk smoke | `examples.native.window_demo` |
 | Shared UI primitive regression | `examples.ui.kitchen_sink` |
 | Product-dashboard case study | `examples.saas.overview` |

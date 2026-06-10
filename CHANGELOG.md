@@ -34,6 +34,8 @@
 - Added a strict Portable Core UI gallery stylesheet plus CLI HTML/native render
   and offline `otoe build --validate` smoke coverage for
   `examples.portable_core_ui:app`.
+- Added a native Portable Core UI visual demo that renders the portable gallery
+  with deterministic marker text and optional Pillow readable text frames.
 - Hardened offline bundle manifests so generated runners require safe relative
   paths, size metadata, lowercase SHA-256 hashes, unique bundle paths, core
   artifact entries, and backend framework file policy before verification,

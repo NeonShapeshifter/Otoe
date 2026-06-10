@@ -49,6 +49,13 @@ PYTHONPATH=src:. python -m otoe build examples.portable_core_ui:app --out dist/p
 `preview/portable_core_ui.css` is the strict Otoe Style subset used by CLI
 render, native PNG, plan, and build smoke tests for the gallery.
 
+For native visual evidence over the same product-facing subset:
+
+```bash
+PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo --marker-only
+PYTHONPATH=src:. python -m examples.native.portable_core_ui_demo --pillow
+```
+
 Each matrix row has a single import target:
 
 | Primitive | Example Target |
