@@ -26,7 +26,13 @@ otoe new app
 otoe render app:app --out preview.html --css styles.css --pretty
 otoe render app:app --out preview.png --native --css styles.css
 otoe build app:app --out dist/cage --css styles.css --validate
+otoe portable-core
+otoe portable-core --json
 ```
+
+The `portable-core` checks prove that the installed wheel exposes the packaged
+Portable Core UI v0 support matrix as both text and JSON, not only from a source
+checkout.
 
 By default, `wheel_smoke.sh` allows normal build isolation. In CI or release
 environments where modern build tooling is already installed, use:
