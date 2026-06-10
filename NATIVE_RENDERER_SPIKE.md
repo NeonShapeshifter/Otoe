@@ -1,7 +1,7 @@
 # Native Renderer Spike
 
 **Status:** experimental headless spike with optional local window wrapper
-**Updated:** May 29, 2026
+**Updated:** June 10, 2026
 
 This document describes the renderer boundary that exists today. It is not a
 production desktop backend yet. The goal is to keep the contract precise while
@@ -9,22 +9,26 @@ Otoe proves that a mounted component tree can produce layout boxes, paint
 commands, PNG pixels, hit-tested input, and rerendered state without using the
 HTML preview backend.
 
-The `examples.native.counter_demo`, `examples.native.task_board_demo`, and
-`examples.native.window_demo` modules are the current framework-neutral
-validation surfaces. The task board demo is intentionally app-shaped: shell,
-search, filtered rows, empty state, modal state, shortcuts, controlled input,
-controlled scroll, and multi-frame PNG output. The window demo drives that same
-app-shaped surface through `NativeWindowDriver` and can optionally open a Tk
-window for manual experiments.
+The `examples.native.counter_demo`, `examples.native.task_board_demo`,
+`examples.native.portable_core_ui_demo`, and `examples.native.window_demo`
+modules are the current framework-neutral validation surfaces. The task board
+demo is intentionally app-shaped: shell, search, filtered rows, empty state,
+modal state, shortcuts, controlled input, controlled scroll, and multi-frame PNG
+output. The Portable Core UI demo renders the product-facing portable subset as
+native marker/Pillow PNG evidence. The window demo drives the same app-shaped
+surface through `NativeWindowDriver` and can optionally open a Tk window for
+manual experiments.
 
 The task board also has behavior-parity coverage against the HTML render path:
 after native input, click, Escape, and shortcut dispatch, the native layout text
 and controlled input values must match the same mounted tree rendered through
 `render_html(...)`.
 
-For day-to-day usage decisions, see `NATIVE_WORKFLOWS.md`. For test-surface
-selection, see `TESTING_GUIDE.md`. For style parser and native style behavior,
-see `STYLE_GUIDE.md`.
+For day-to-day usage decisions, see `NATIVE_WORKFLOWS.md`. For native layout
+scope, see `docs/native-layout.md` and
+`ADR-020-native-layout-v0-v1-decision.md`. For test-surface selection, see
+`TESTING_GUIDE.md`. For style parser and native style behavior, see
+`STYLE_GUIDE.md`.
 
 ## Current Pipeline
 
@@ -112,6 +116,11 @@ window backend:
 - `tests/test_native_layout.py` anchors deterministic stack layout, stylesheet
   dimensions, component-aware diagnostics, ignored style behavior, fallback
   containers, reactive prop updates, and `ScrollView` bounds/scroll clamping.
+- `tests/test_native_layout_hardening.py` locks the layout v0 contract and
+  explicit non-goals: no wrapping, no flex grow/shrink, no margin geometry,
+  no percentages/`auto`, and no browser grid or positioning properties.
+- `tests/test_native_layout_docs.py` keeps `ADR-020`, `docs/native-layout.md`,
+  `docs/native-status.md`, and README links aligned.
 - `tests/test_native_backend_contract.py` is the backend-candidate acceptance
   bar. It contains the minimal backend harness, the app-shaped native task board
   replay, and the fake adapter replay through `run_native(...)`.

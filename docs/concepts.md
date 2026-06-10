@@ -67,6 +67,11 @@ Use HTML/live preview for normal app iteration. Use native surfaces and drivers
 to test the native contract. Use backend-candidate tooling only when working on
 renderer replacement or coverage evidence.
 
+Native layout v0 is stack-first: use `VStack`, `HStack`, explicit dimensions,
+alignment, and `ScrollView` for portable native geometry. Full flexbox, grid,
+wrapping, absolute positioning, percentages, and `auto` dimensions are not v0
+features. See [Native Layout](native-layout.md).
+
 ## Style Layer
 
 `css(...)` is a portable Otoe style subset, not full browser CSS. It supports

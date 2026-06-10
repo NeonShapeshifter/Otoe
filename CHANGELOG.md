@@ -39,6 +39,8 @@
 - Added native PNG raster scaling through `--native-scale` and
   `render_native_png(..., scale=...)`, keeping layout units unchanged while
   writing higher-density deterministic frames.
+- Accepted `ADR-020` and added native layout v0/v1 guidance documenting the
+  stack-first layout contract, explicit non-goals, and layout v1 acceptance bar.
 - Hardened offline bundle manifests so generated runners require safe relative
   paths, size metadata, lowercase SHA-256 hashes, unique bundle paths, core
   artifact entries, and backend framework file policy before verification,

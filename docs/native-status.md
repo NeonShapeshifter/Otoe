@@ -29,7 +29,9 @@ text path is available as an optional Pillow-backed renderer.
 - No platform accessibility tree.
 - No real text shaping or font fallback in deterministic PNG output.
 - No stable Skia, Taffy, Qt, Tk, or other backend ABI.
-- Layout is still primarily stack-oriented.
+- Layout v0 is intentionally stack-oriented; see
+  [`native-layout.md`](native-layout.md) and
+  [`ADR-020`](../ADR-020-native-layout-v0-v1-decision.md).
 - The Tk wrapper is a smoke/manual adapter, not the final desktop backend.
 - The portable style subset is intentionally smaller than browser CSS.
 
@@ -115,12 +117,12 @@ That milestone now:
 
 The remaining native decisions stay separate:
 
-- define the DPI/scaling story
-- decide whether stack layout is enough for v0 or whether a layout engine is
-  needed later
+- decide whether layout v1 extends Python stack layout or adopts a layout
+  engine behind the renderer/backend boundary
 - keep backend candidates behind the current small adapter and evidence
   contracts
 
 Pango/PangoCairo remains the likely future path for complex shaping and font
 fallback on Linux appliances. Skia remains a future candidate for a fuller paint
-and raster backend.
+and raster backend. Taffy/Yoga-style layout remains a future layout v1 decision,
+not a v0 dependency.

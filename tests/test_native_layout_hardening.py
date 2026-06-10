@@ -5,6 +5,7 @@ from otoe import (
     HStack,
     NativeLayoutError,
     ScrollView,
+    StyleSyntaxError,
     Text,
     VStack,
     css,
@@ -361,3 +362,63 @@ def test_native_layout_alignment_rejects_non_stack_widgets():
 
     with pytest.raises(NativeLayoutError, match="only on HStack and VStack"):
         layout_native(mount(Text("Title", className="title")), stylesheet=sheet)
+
+
+def test_native_layout_v0_does_not_wrap_hstack_children():
+    sheet = css(".row { width: 52; padding: 4; gap: 4; }")
+
+    layout = layout_native(
+        mount(
+            HStack(
+                Text("Alpha"),
+                Text("Bravo"),
+                Text("Charlie"),
+                className="row",
+            )
+        ),
+        stylesheet=sheet,
+    )
+    children = [layout.by_path((index,)) for index in range(3)]
+
+    assert {child.y for child in children} == {4}
+    assert children[-1].x + children[-1].width > layout.root.x + layout.root.width
+
+
+def test_native_layout_v0_does_not_flex_grow_children_to_fill_width():
+    sheet = css(".row { width: 160; padding: 10; } .grow { min-width: 0; }")
+
+    layout = layout_native(
+        mount(HStack(Text("A", className="grow"), Text("B"), className="row")),
+        stylesheet=sheet,
+    )
+    first = layout.by_path((0,))
+    second = layout.by_path((1,))
+
+    assert layout.root.width == 160
+    assert first.width < 40
+    assert second.x == first.x + first.width
+
+
+def test_native_layout_v0_ignores_margin_for_geometry():
+    sheet = css(".item { margin: 20; }")
+
+    layout = layout_native(
+        mount(VStack(Text("A", className="item"), Text("B"), gap=0)),
+        stylesheet=sheet,
+    )
+    first = layout.by_path((0,))
+    second = layout.by_path((1,))
+
+    assert dict(first.style)["margin"].value == 20
+    assert second.y == first.y + first.height
+
+
+def test_native_layout_v0_rejects_browser_layout_properties_in_otoe_style():
+    for source in [
+        ".box { flex-grow: 1; }",
+        ".box { flex-wrap: wrap; }",
+        ".box { position: absolute; }",
+        ".box { grid-template-columns: 1fr 1fr; }",
+    ]:
+        with pytest.raises(StyleSyntaxError, match="Unknown style property"):
+            css(source)

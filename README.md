@@ -124,6 +124,7 @@ hardware, admin, data workflow, utility, SaaS, and UI examples.
 - [API Tiers](docs/api-tiers.md)
 - [Portable Core UI v0](docs/portable-core-ui-v0.md)
 - [Hardware Control Panel Demo](docs/hardware-control-panel.md)
+- [Native Layout](docs/native-layout.md)
 - [Native Status](docs/native-status.md)
 - [Offline Build](docs/build-offline.md)
 - [Backend Candidates](docs/backend-candidates.md)
@@ -145,11 +146,12 @@ hardware, admin, data workflow, utility, SaaS, and UI examples.
 - `docs/` - product-facing guides and support matrices.
 - `ADR-*.md` - design decisions.
   `ADR-019-native-pillow-text-backend.md` records the first real native text
-  backend choice.
+  backend choice, and `ADR-020-native-layout-v0-v1-decision.md` records the
+  stack-first native layout v0/v1 boundary.
 
 ## Status
 
-Current status: post-v0.1.7 workshop hardening. The test baseline is 742
+Current status: post-v0.1.7 workshop hardening. The test baseline is 747
 passing tests with optional typing/Pillow tests skipped when those dependencies
 are unavailable.
 See [ROADMAP.md](ROADMAP.md) for the active phase plan.

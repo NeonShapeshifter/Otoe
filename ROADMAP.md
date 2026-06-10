@@ -1,8 +1,8 @@
 # Otoe Roadmap
 
-**Status:** post-v0.1.7 workshop hardening; backend capability gates, bundle hermeticity, dependency audit contract, namespace runtime discovery, RenderTree validation hardening, experimental external Path0 JSON runner, and first backend package manifest
-**Updated:** June 7, 2026
-**Current baseline:** 706 tests passing, 1 skipped when `mypy` is unavailable
+**Status:** post-v0.1.7 workshop hardening; backend capability gates, bundle hermeticity, dependency audit contract, namespace runtime discovery, RenderTree validation hardening, experimental external Path0 JSON runner, first backend package manifest, and productized Portable Core UI/native layout boundaries
+**Updated:** June 10, 2026
+**Current baseline:** 747 tests passing, 3 skipped when optional `mypy`/Pillow dependencies are unavailable
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, utility ops console, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
@@ -466,6 +466,12 @@ This track is the closed `v0.1.1` baseline for future backend work. New backend 
     `center`, `end`, `flex-end`, `space-between`, `space-around`, and
     `space-evenly`
   - unsupported values and alignment on non-stack widgets still fail clearly
+- Define the native layout v0/v1 product boundary. **Done in ADR-020:**
+  - layout v0 remains Python stack layout
+  - flex grow/shrink, wrapping, grid, absolute positioning, percentages, `auto`,
+    and margin geometry remain outside the v0 contract
+  - layout v1 requires a new decision plus compatibility and feature acceptance
+    tests before adding or advertising a layout engine
 - Add native layout dimension guardrails. **Done:**
   - negative `width`, `height`, `padding`, `gap`, and `fontSize` fail with
     component-aware `NativeLayoutError`
@@ -493,7 +499,7 @@ Closed:
 
 - Native renderer internals are split into focused modules while preserving the public imports.
 - The support matrix is executable and documented for current widget, style, layout, input, and overflow behavior.
-- ADR-008, ADR-009, ADR-012, ADR-013, ADR-014, ADR-015, ADR-016, and ADR-017 define text, accessibility, backend, layout, overflow, adapter, Tk Canvas proof, and stack-alignment boundaries.
+- ADR-008, ADR-009, ADR-012, ADR-013, ADR-014, ADR-015, ADR-016, ADR-017, and ADR-020 define text, accessibility, backend, layout, overflow, adapter, Tk Canvas proof, stack-alignment, and layout v0/v1 boundaries.
 - Layout hardening has deterministic min/max constraints and a stack-only
   alignment subset covering start, center, end, stretch, space-between,
   space-around, and space-evenly.
