@@ -9,8 +9,9 @@ more primitives are added.
 
 The machine-readable source for this table is
 [`docs/portable-core-ui-v0.json`](portable-core-ui-v0.json). Tests validate that
-the JSON, Markdown table, exported symbols, native capability profile, and
-sample render paths stay aligned.
+the JSON, Markdown table, example targets, exported symbols, outside-v0
+classifications, native capability profile, and sample render paths stay
+aligned.
 
 | Primitive | HTML | Live HTML | Native Headless | Native Window Driver | Status |
 | --- | --- | --- | --- | --- | --- |
@@ -33,6 +34,67 @@ sample render paths stay aligned.
 `Dialog` is listed because it is already a common UI primitive and has partial
 HTML/live/native coverage, but it is not counted as Portable Core UI v0 until
 focus behavior and native parity are tightened.
+
+## Runnable Examples
+
+The examples for this matrix live in `examples/portable_core_ui.py`. Render the
+whole portable gallery from a source checkout:
+
+```bash
+PYTHONPATH=src:. python -m otoe render examples.portable_core_ui:app --out preview/portable_core_ui.html --pretty
+PYTHONPATH=src:. python -m otoe render examples.portable_core_ui:app --out preview/portable_core_ui.png --native
+```
+
+Each matrix row has a single import target:
+
+| Primitive | Example Target |
+| --- | --- |
+| `Text` | `examples.portable_core_ui:text_example` |
+| `Button` | `examples.portable_core_ui:button_example` |
+| `Input` | `examples.portable_core_ui:input_example` |
+| `VStack` | `examples.portable_core_ui:vstack_example` |
+| `HStack` | `examples.portable_core_ui:hstack_example` |
+| `Panel` | `examples.portable_core_ui:panel_example` |
+| `ScrollView` | `examples.portable_core_ui:scrollview_example` |
+| `Card` | `examples.portable_core_ui:card_example` |
+| `Badge` | `examples.portable_core_ui:badge_example` |
+| `ActionButton` | `examples.portable_core_ui:action_button_example` |
+| `Tabs`/`TabButton` | `examples.portable_core_ui:tabs_example` |
+| `Dialog` | `examples.portable_core_ui:dialog_example` |
+| `ListRow` | `examples.portable_core_ui:list_row_example` |
+| `MetricTile` | `examples.portable_core_ui:metric_tile_example` |
+| `AppFrame` | `examples.portable_core_ui:app_frame_example` |
+
+Use top-level imports for core widgets:
+
+```python
+from otoe import Button, HStack, Input, Panel, ScrollView, Text, VStack
+```
+
+Use `otoe.ui` for product-preview UI:
+
+```python
+from otoe.ui import ActionButton, AppFrame, Badge, Card, ListRow, MetricTile
+```
+
+## Outside Portable Core v0
+
+The JSON source also classifies every product-preview `otoe.ui` symbol that is
+not counted as a v0 primitive.
+
+| Group | Classification | Symbols |
+| --- | --- | --- |
+| `app-shell-navigation` | product-preview-app-shell | `AppShell`, `NavItem`, `NavRoute`, `RouteView`, `SidebarNav` |
+| `app-shell-presets` | product-preview-app-shell | `SidebarFrame`, `SidebarItem`, `TopBar` |
+| `surface-composites` | product-preview-composite | `EmptyState`, `MetricGrid`, `SectionHeader`, `StatCard`, `StatusPill`, `Surface`, `Toolbar` |
+| `data-table` | product-preview-composite | `DataTable` |
+| `transient-feedback` | product-preview-composite | `FeedbackToast`, `Toast` |
+| `interactive-overlays` | interactive-preview | `CommandPalette`, `FocusScope`, `Menu`, `Select`, `ShortcutScope` |
+| `ui-models-and-helpers` | support-model | `Command`, `CommandRegistry`, `MenuItem`, `SelectOption`, `TableColumn`, `UI_EVENT_SIGNATURES`, `class_names` |
+
+Those symbols remain public product-preview APIs. They are outside v0 because
+their native, focus, overlay, keyboard, table, timing, or app-shell contracts
+need narrower acceptance tests before they can be treated as portable core.
 
 ## Acceptance Bar
 

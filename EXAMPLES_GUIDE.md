@@ -26,6 +26,21 @@ PYTHONPATH=src:. python -m otoe render examples.quickstart:app --out preview.png
 
 This example proves import-target rendering. It does not prove live events.
 
+## Portable Core UI
+
+Path: `examples/portable_core_ui.py`
+
+Use this when you need runnable examples for every Primitive in Portable Core
+UI v0. The module exports one target per matrix row plus a gallery target.
+
+```bash
+PYTHONPATH=src:. python -m otoe render examples.portable_core_ui:app --out preview/portable_core_ui.html --pretty
+PYTHONPATH=src:. python -m otoe render examples.portable_core_ui:app --out preview/portable_core_ui.png --native
+```
+
+The support matrix and outside-v0 classifications live in
+`docs/portable-core-ui-v0.md` and `docs/portable-core-ui-v0.json`.
+
 ## Live Counter
 
 Path: `examples/live_counter.py`
@@ -397,6 +412,7 @@ assumptions into the runtime.
 | Need | Start With |
 | --- | --- |
 | Static CLI render target | `examples.quickstart:app` |
+| Portable primitive examples | `examples.portable_core_ui:app` |
 | Minimal live preview app | `examples.live_counter:app` |
 | Minimal native PNG smoke | `examples.native.counter_demo` |
 | App-shaped native renderer surface | `examples.native.task_board_demo` |

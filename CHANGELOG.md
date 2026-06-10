@@ -29,6 +29,8 @@
 - Split the API status registry into explicit tiers for core preview,
   product-preview UI, preview support, experimental native, and experimental
   backend surfaces, with preferred imports exposed through `api_status(...)`.
+- Added runnable Portable Core UI v0 examples plus JSON-backed outside-v0
+  classifications for the remaining public `otoe.ui` product-preview surface.
 - Hardened offline bundle manifests so generated runners require safe relative
   paths, size metadata, lowercase SHA-256 hashes, unique bundle paths, core
   artifact entries, and backend framework file policy before verification,

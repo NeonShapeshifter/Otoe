@@ -1,34 +1,25 @@
 import json
+from importlib import import_module
 from pathlib import Path
 
 import otoe
 from otoe import (
-    ActionButton,
-    AppFrame,
-    Badge,
     Button,
-    Card,
-    Dialog,
-    HStack,
     Input,
-    ListRow,
-    MetricTile,
-    NativeSurface,
-    Panel,
+    PRODUCT_PREVIEW_UI_APIS,
     ScrollView,
-    TabButton,
-    Tabs,
     Text,
     VStack,
     api_status,
     css,
-    layout_native,
     mount,
-    paint_native,
     render_html,
     root_widget,
 )
 from otoe._native_shared import native_widget_support
+from otoe.ui import ActionButton, ListRow, TabButton, Tabs
+from otoe.experimental.native import NativeSurface, layout_native, paint_native
+from examples.portable_core_ui import PORTABLE_CORE_EXAMPLES
 
 
 MATRIX_PATH = Path("docs/portable-core-ui-v0.json")
@@ -43,65 +34,19 @@ def _entries():
     return _matrix()["entries"]
 
 
+def _outside_portable_core():
+    return _matrix()["outsidePortableCore"]
+
+
+def _load_target(target: str):
+    module_name, _, object_name = target.partition(":")
+    assert module_name and object_name
+    return getattr(import_module(module_name), object_name)
+
+
 def _sample(entry_id: str):
-    if entry_id == "text":
-        return Text("Portable text")
-    if entry_id == "button":
-        return Button("Run", onClick=lambda: None)
-    if entry_id == "input":
-        return Input(value="A", placeholder="Name", onChange=lambda value: None)
-    if entry_id == "vstack":
-        return VStack(Text("One"), Text("Two"), gap=4)
-    if entry_id == "hstack":
-        return HStack(Text("Left"), Text("Right"), gap=4)
-    if entry_id == "panel":
-        return Panel(Text("Panel body"), title="Panel")
-    if entry_id == "scrollview":
-        return ScrollView(
-            Button("First", onClick=lambda: None),
-            Button("Second", onClick=lambda: None),
-            onScroll=lambda next_scroll_y: None,
-        )
-    if entry_id == "card":
-        return Card(Text("Card body"), padding=8, gap=4)
-    if entry_id == "badge":
-        return Badge("Ready", tone="success")
-    if entry_id == "action-button":
-        return ActionButton("Execute", onClick=lambda: None)
-    if entry_id == "tabs":
-        return Tabs(
-            TabButton("Overview", active=True, onClick=lambda: None),
-            TabButton("Logs"),
-        )
-    if entry_id == "dialog":
-        return Dialog(
-            Text("Dialog body"),
-            open=True,
-            title="Confirm",
-            description="Proceed safely.",
-        )
-    if entry_id == "list-row":
-        return ListRow(
-            title="Job",
-            detail="Queued",
-            badge="Ready",
-            action_label="Open",
-            on_action=lambda: None,
-        )
-    if entry_id == "metric-tile":
-        return MetricTile(
-            label="Latency",
-            value="31 ms",
-            detail="p95",
-            tone="success",
-        )
-    if entry_id == "app-frame":
-        return AppFrame(
-            sidebar=VStack(Text("Navigation")),
-            topbar=Text("Top bar"),
-            content=VStack(Text("Workspace")),
-        )
-    raise AssertionError(f"missing portable core sample for {entry_id!r}")
+    entry = next(item for item in _entries() if item["id"] == entry_id)
+    return _load_target(entry["exampleTarget"])()
 
 
 def _sample_text(entry_id: str) -> str:
@@ -170,6 +115,19 @@ def test_portable_core_ui_matrix_contract_is_machine_readable():
     assert [entry["id"] for entry in entries if not entry["portableCore"]] == [
         "dialog"
     ]
+    for entry in entries:
+        assert entry["exampleTarget"].startswith("examples.portable_core_ui:")
+
+
+def test_portable_core_examples_cover_core_entries():
+    assert set(PORTABLE_CORE_EXAMPLES) == {
+        entry["id"] for entry in _entries() if entry["portableCore"]
+    }
+
+    for entry_id, example in PORTABLE_CORE_EXAMPLES.items():
+        assert example is _load_target(
+            next(entry["exampleTarget"] for entry in _entries() if entry["id"] == entry_id)
+        )
 
 
 def test_portable_core_ui_markdown_table_matches_json_matrix():
@@ -188,11 +146,46 @@ def test_portable_core_ui_markdown_table_matches_json_matrix():
     assert _markdown_matrix_rows() == expected
 
 
+def test_portable_core_examples_and_non_core_groups_are_documented():
+    doc = DOC_PATH.read_text(encoding="utf-8")
+
+    for entry in _entries():
+        assert entry["exampleTarget"] in doc
+    for item in _outside_portable_core():
+        assert item["id"] in doc
+        assert item["classification"] in doc
+        for symbol in item["symbols"]:
+            assert f"`{symbol}`" in doc
+
+
 def test_portable_core_ui_symbols_are_exported_and_statused():
     for entry in _entries():
         for symbol in entry["symbols"]:
             assert hasattr(otoe, symbol)
             assert api_status(symbol).category == "preview"
+
+
+def test_product_preview_ui_surface_is_fully_classified():
+    matrix_symbols = {
+        symbol for entry in _entries() for symbol in entry["symbols"]
+    }
+    outside_symbols = {
+        symbol for item in _outside_portable_core() for symbol in item["symbols"]
+    }
+    classifications = {item["classification"] for item in _outside_portable_core()}
+
+    assert PRODUCT_PREVIEW_UI_APIS <= matrix_symbols | outside_symbols
+    assert not matrix_symbols & outside_symbols
+    assert classifications == {
+        "interactive-preview",
+        "product-preview-app-shell",
+        "product-preview-composite",
+        "support-model",
+    }
+    for item in _outside_portable_core():
+        assert item["id"]
+        assert item["reason"].endswith(".")
+        assert item["symbols"]
 
 
 def test_portable_core_ui_native_widgets_are_declared_supported():
