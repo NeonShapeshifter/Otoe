@@ -1,4 +1,9 @@
+import json
+import os
 import re
+import subprocess
+import sys
+from pathlib import Path
 
 from examples.hardware.control_panel import (
     FakeHardwareProvider,
@@ -10,6 +15,10 @@ from examples.hardware.control_panel import (
 )
 from examples.hardware.live_preview import LIVE_CONFIG, HardwareLivePreview
 from examples.hardware.preview import build_preview_html
+from otoe.cli import main
+
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _click_id_before(html, marker):
@@ -41,6 +50,90 @@ def test_hardware_preview_contains_reference_app_surface():
     assert "Run self-test" in html
     assert "Computed object" not in html
     assert "HardwareControlPanel" not in html
+
+
+def test_hardware_control_panel_app_cli_renders_html_and_native_png(tmp_path):
+    styles = ROOT / "preview" / "hardware_portable.css"
+    html_output = tmp_path / "hardware.html"
+    png_output = tmp_path / "hardware.png"
+
+    html_result = main(
+        [
+            "render",
+            "examples.hardware.control_panel:app",
+            "--out",
+            str(html_output),
+            "--css",
+            str(styles),
+            "--pretty",
+        ]
+    )
+    native_result = main(
+        [
+            "render",
+            "examples.hardware.control_panel:app",
+            "--out",
+            str(png_output),
+            "--native",
+            "--css",
+            str(styles),
+        ]
+    )
+
+    html = html_output.read_text(encoding="utf-8")
+    assert html_result == 0
+    assert native_result == 0
+    assert "Otoe Hardware Lab" in html
+    assert "Bench Controller A17" in html
+    assert "Provider healthy" in html
+    assert 'style="' in html
+    assert png_output.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+
+
+def test_hardware_control_panel_app_build_validates_offline_bundle(
+    tmp_path,
+    capsys,
+):
+    styles = ROOT / "preview" / "hardware_portable.css"
+    output = tmp_path / "hardware-cage"
+    frame = tmp_path / "hardware-frame.png"
+
+    result = main(
+        [
+            "build",
+            "examples.hardware.control_panel:app",
+            "--out",
+            str(output),
+            "--css",
+            str(styles),
+            "--validate",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    plan = json.loads((output / "otoe-plan.json").read_text(encoding="utf-8"))
+    runtime_paths = sorted(entry["bundlePath"] for entry in manifest["runtimeFiles"])
+    png = subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), "--png", str(frame)],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )
+
+    assert result == 0
+    assert "validation: ok" in captured.out
+    assert manifest["target"] == "examples.hardware.control_panel:app"
+    assert manifest["status"] == "warnings"
+    assert plan["status"] == "warnings"
+    assert plan["hasErrors"] is False
+    assert runtime_paths == [
+        "app/examples/hardware/__init__.py",
+        "app/examples/hardware/control_panel.py",
+    ]
+    assert png.returncode == 0, png.stderr
+    assert frame.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
 
 
 def test_hardware_provider_queues_command_events():

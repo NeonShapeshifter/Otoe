@@ -120,6 +120,7 @@ hardware, admin, data workflow, utility, SaaS, and UI examples.
 - [Concepts](docs/concepts.md)
 - [API Tiers](docs/api-tiers.md)
 - [Portable Core UI v0](docs/portable-core-ui-v0.md)
+- [Hardware Control Panel Demo](docs/hardware-control-panel.md)
 - [Native Status](docs/native-status.md)
 - [Offline Build](docs/build-offline.md)
 - [Backend Candidates](docs/backend-candidates.md)
@@ -145,7 +146,7 @@ hardware, admin, data workflow, utility, SaaS, and UI examples.
 
 ## Status
 
-Current status: post-v0.1.7 workshop hardening. The test baseline is 712
+Current status: post-v0.1.7 workshop hardening. The test baseline is 722
 passing tests with optional typing/Pillow tests skipped when those dependencies
 are unavailable.
 See [ROADMAP.md](ROADMAP.md) for the active phase plan.

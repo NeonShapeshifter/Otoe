@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Protocol
 
-from otoe import For, HStack, Show, Text, VStack, component, computed
+from otoe import For, HStack, Show, Text, VStack, component, computed, signal
 from otoe.ui import (
     ActionButton,
     AppShell,
@@ -148,6 +148,25 @@ class FakeHardwareProvider:
             last_feedback=feedback,
         )
         return self._snapshot
+
+
+def app(snapshot: DeviceSnapshot | None = None, route: str = "overview"):
+    provider = FakeHardwareProvider(snapshot)
+    snapshot_signal = signal(provider.snapshot())
+    active_route = signal(route)
+
+    def navigate(route_id: str) -> None:
+        active_route.set(route_id)
+
+    def run_command(command_id: str) -> None:
+        snapshot_signal.set(provider.run_command(command_id))
+
+    return HardwareControlPanel(
+        snapshot=snapshot_signal,
+        active_route=active_route,
+        on_navigate=navigate,
+        on_command=run_command,
+    )
 
 
 @component

@@ -216,6 +216,8 @@ Paths:
 - `examples/hardware/adapters.py`
 - `examples/hardware/preview.py`
 - `examples/hardware/live_preview.py`
+- `preview/hardware.css`
+- `preview/hardware_portable.css`
 
 Use this as the first Phase 5 reference app: a professional Python/hardware
 surface that is framework-neutral but shaped like something that could later
@@ -231,10 +233,24 @@ safe actions, and offline-testable state.
 - provider boundary with fake data and alternate states for tests
 - loading, offline, error, and empty telemetry surfaces
 
+Product target:
+
+```bash
+PYTHONPATH=src:. python -m otoe render examples.hardware.control_panel:app --out preview/hardware_cli.html --css preview/hardware_portable.css --pretty
+PYTHONPATH=src:. python -m otoe render examples.hardware.control_panel:app --out preview/hardware_cli.png --native --css preview/hardware_portable.css
+PYTHONPATH=src:. python -m otoe build examples.hardware.control_panel:app --out dist/hardware_cage --css preview/hardware_portable.css --validate
+```
+
+Browser/live preview:
+
 ```bash
 PYTHONPATH=src:. python -m examples.hardware.preview > preview/hardware.html
 PYTHONPATH=src:. python -m examples.hardware.live_preview
 ```
+
+`preview/hardware.css` is the browser presentation stylesheet.
+`preview/hardware_portable.css` is the Otoe Style subset used by CLI render,
+native PNG, plan, and build smoke tests.
 
 This example uses fake data intentionally. The fake provider is the test
 boundary; the component surface should remain ready for a real provider.

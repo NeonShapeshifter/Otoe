@@ -23,6 +23,9 @@
   that keeps the JSON matrix, Markdown table, exported symbols, native widget
   support, HTML samples, native layout/paint samples, and input dispatch samples
   aligned.
+- Promoted the hardware control panel into a product-shaped source demo with a
+  public `examples.hardware.control_panel:app` target, portable demo stylesheet,
+  CLI HTML/native render coverage, offline build validation, and docs.
 - Hardened offline bundle manifests so generated runners require safe relative
   paths, size metadata, lowercase SHA-256 hashes, unique bundle paths, core
   artifact entries, and backend framework file policy before verification,

@@ -1,19 +1,10 @@
-from examples.hardware.adapters import MemoryHardwareTransport, TransportHardwareProvider
-from examples.hardware.control_panel import DeviceSnapshot, HardwareControlPanel
-from otoe import mount, render_html, signal
+from examples.hardware.control_panel import DeviceSnapshot, app
+from otoe import mount, render_html
 
 
 def build_preview_html(snapshot: DeviceSnapshot | None = None, route: str = "overview") -> str:
-    provider = TransportHardwareProvider(MemoryHardwareTransport(snapshot))
-    app = mount(
-        HardwareControlPanel(
-            snapshot=signal(provider.snapshot()),
-            active_route=signal(route),
-            on_navigate=lambda route_id: None,
-            on_command=lambda command_id: None,
-        )
-    )
-    body = render_html(app, pretty=True, indent=4)
+    mounted = mount(app(snapshot=snapshot, route=route))
+    body = render_html(mounted, pretty=True, indent=4)
     return f"""<!doctype html>
 <html lang="en">
 <head>

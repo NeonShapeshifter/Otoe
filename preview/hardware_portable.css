@@ -1,0 +1,551 @@
+/* Portable Otoe Style subset for examples.hardware.control_panel:app. */
+
+.otoe-stack {
+  gap: 0;
+  padding: 0;
+}
+
+.otoe-vstack {
+  display: flex;
+}
+
+.otoe-hstack {
+  display: flex;
+  align-items: center;
+}
+
+.otoe-panel {
+  min-width: 0;
+  background: #ffffff;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #dfe5ec;
+  border-radius: 8px;
+}
+
+.otoe-text {
+  min-width: 0;
+  color: #151c27;
+}
+
+.otoe-button {
+  min-height: 38px;
+  padding: 10px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: transparent;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 760;
+}
+
+.otoe-fragment {
+  display: block;
+}
+
+.otoe-for {
+  display: block;
+}
+
+.otoe-show {
+  display: block;
+}
+
+.ui-app-shell {
+  background: #f4f6f8;
+}
+
+.ui-app-header {
+  width: 1232px;
+}
+
+.ui-app-main {
+  width: 1232px;
+  align-items: flex-start;
+}
+
+.ui-app-sidebar {
+  width: 226px;
+}
+
+.ui-app-content {
+  min-width: 0;
+  width: 982px;
+}
+
+.ui-toolbar {
+  width: 1232px;
+}
+
+.ui-button {
+  min-height: 38px;
+}
+
+.ui-card {
+  background: #ffffff;
+}
+
+.ui-sidebar-nav {
+  padding: 12px;
+}
+
+.ui-sidebar-brand {
+  width: 202px;
+}
+
+.ui-sidebar-footer {
+  width: 202px;
+}
+
+.ui-nav-item {
+  width: 202px;
+  min-height: 48px;
+  background: transparent;
+  color: #637083;
+}
+
+.ui-nav-row {
+  width: 202px;
+}
+
+.ui-nav-copy {
+  min-width: 0;
+}
+
+.ui-nav-label {
+  color: #151c27;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.ui-nav-description {
+  color: #637083;
+  font-size: 12px;
+}
+
+.ui-nav-badge {
+  min-height: 24px;
+  padding: 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.ui-route-view {
+  width: 982px;
+}
+
+.ui-stat-card {
+  width: 224px;
+}
+
+.ui-stat-body {
+  padding: 16px;
+}
+
+.ui-stat-label {
+  color: #637083;
+  font-size: 13px;
+}
+
+.ui-stat-value {
+  color: #151c27;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.ui-stat-detail {
+  font-size: 13px;
+}
+
+.ui-badge {
+  min-height: 28px;
+  padding: 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.ui-section-header {
+  width: 936px;
+  align-items: flex-start;
+}
+
+.ui-section-copy {
+  min-width: 0;
+}
+
+.ui-section-title {
+  color: #151c27;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.ui-section-badge {
+  min-height: 24px;
+}
+
+.ui-section-actions {
+  min-width: 0;
+}
+
+.is-default {
+  background: #ffffff;
+  color: #151c27;
+}
+
+.is-primary {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.is-ghost {
+  background: #ffffff;
+  border-color: #dfe5ec;
+  color: #151c27;
+}
+
+.is-md {
+  min-height: 38px;
+  font-size: 14px;
+}
+
+.is-sm {
+  min-height: 34px;
+  font-size: 13px;
+}
+
+.is-active {
+  background: #eef4ff;
+  color: #2563eb;
+}
+
+.is-ready {
+  border-color: #16835b;
+}
+
+.is-success {
+  background: #e8f7ef;
+  color: #16835b;
+}
+
+.is-info {
+  background: #e8efff;
+  color: #2563eb;
+}
+
+.is-warn {
+  background: #fff4da;
+  color: #b77912;
+}
+
+.is-danger {
+  background: #ffe8ec;
+  color: #c8374b;
+}
+
+.is-neutral {
+  background: #eef2f6;
+  color: #637083;
+}
+
+.hardware-app {
+  width: 1280px;
+  min-height: 720px;
+  padding: 24px;
+  background: #f4f6f8;
+}
+
+.hardware-topbar {
+  min-height: 68px;
+  padding: 16px;
+  background: #ffffff;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #dfe5ec;
+  border-radius: 8px;
+}
+
+.hardware-brand {
+  color: #151c27;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.hardware-device {
+  color: #637083;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.hardware-mode {
+  color: #637083;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.hardware-connection {
+  min-height: 30px;
+}
+
+.hardware-sidebar {
+  width: 226px;
+  background: #ffffff;
+}
+
+.hardware-sidebar-brand {
+  color: #151c27;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.hardware-sidebar-copy {
+  color: #637083;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.hardware-sidebar-meta {
+  color: #637083;
+  font-size: 12px;
+}
+
+.hardware-route-shell {
+  min-width: 0;
+  width: 982px;
+}
+
+.hardware-route {
+  width: 982px;
+}
+
+.hardware-page {
+  width: 982px;
+}
+
+.hardware-stat-grid {
+  width: 982px;
+}
+
+.hardware-stat {
+  width: 224px;
+}
+
+.hardware-panel {
+  padding: 16px;
+}
+
+.hardware-telemetry-panel {
+  width: 560px;
+}
+
+.hardware-events-panel {
+  width: 420px;
+}
+
+.hardware-overview-grid {
+  width: 982px;
+  align-items: flex-start;
+}
+
+.hardware-section-heading {
+  width: 936px;
+}
+
+.hardware-empty-state {
+  padding: 16px;
+  color: #637083;
+}
+
+.hardware-status {
+  padding: 14px;
+}
+
+.hardware-status-row {
+  width: 936px;
+}
+
+.hardware-status-badge {
+  min-height: 30px;
+}
+
+.hardware-status-title {
+  color: #151c27;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.hardware-status-copy {
+  color: #637083;
+  font-size: 13px;
+}
+
+.hardware-signal-row {
+  min-height: 54px;
+  align-items: center;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #dfe5ec;
+}
+
+.hardware-signal-name {
+  color: #151c27;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.hardware-signal-detail {
+  color: #637083;
+  font-size: 13px;
+}
+
+.hardware-signal-value {
+  color: #151c27;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.hardware-signal-badge {
+  min-height: 28px;
+}
+
+.hardware-event-row {
+  min-height: 54px;
+  align-items: center;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #dfe5ec;
+}
+
+.hardware-event-time {
+  width: 66px;
+  color: #8a95a5;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.hardware-event-source {
+  color: #151c27;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.hardware-event-message {
+  color: #637083;
+  font-size: 13px;
+}
+
+.hardware-event-badge {
+  min-height: 28px;
+}
+
+.hardware-control-grid {
+  width: 982px;
+  align-items: flex-start;
+}
+
+.hardware-command-panel {
+  width: 560px;
+}
+
+.hardware-safety-panel {
+  width: 360px;
+}
+
+.hardware-command-row {
+  min-height: 54px;
+  align-items: center;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #dfe5ec;
+}
+
+.hardware-command-title {
+  color: #151c27;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.hardware-command-copy {
+  color: #637083;
+  font-size: 13px;
+}
+
+.hardware-command-reason {
+  color: #c8374b;
+  font-size: 13px;
+}
+
+.hardware-settings-panel {
+  width: 720px;
+}
+
+.hardware-setting-row {
+  min-height: 42px;
+  align-items: center;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #dfe5ec;
+}
+
+.hardware-setting-label {
+  color: #637083;
+  font-size: 13px;
+}
+
+.hardware-setting-value {
+  color: #151c27;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.hardware-empty {
+  padding: 16px;
+  color: #637083;
+}
+
+.hardware-feedback-row {
+  width: 936px;
+  align-items: center;
+}
+
+.hardware-feedback-badge {
+  min-height: 30px;
+}
+
+.hardware-feedback-title {
+  color: #151c27;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.hardware-feedback-copy {
+  color: #637083;
+  font-size: 13px;
+}
+
+.hardware-table {
+  width: 936px;
+}
+
+.ui-table-cell {
+  color: #151c27;
+  font-size: 13px;
+}
+
+.hardware-table-name {
+  color: #151c27;
+  font-weight: 850;
+}
+
+.hardware-table-value {
+  color: #151c27;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.hardware-table-badge {
+  min-height: 28px;
+}

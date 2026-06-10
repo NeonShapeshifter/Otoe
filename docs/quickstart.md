@@ -104,4 +104,5 @@ PYTHONPATH=src:. python -m otoe dev examples.live_counter:app --port 8767
 ```
 
 Use `EXAMPLES_GUIDE.md` to pick the smallest example for a specific runtime,
-UI, native, or build behavior.
+UI, native, or build behavior. The current product-shaped source demo is
+documented in `docs/hardware-control-panel.md`.
