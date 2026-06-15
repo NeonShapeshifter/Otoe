@@ -18,7 +18,68 @@ from .capabilities import (
 from ._native_contracts import LayoutBox, NativeLayout, NativeLayoutError, NativePaintError
 from .mount import FakeWidget, MountedNode, root_widget
 from .node import Node
-from .style import Size, StyleSheet, Token, UnknownStyleClassError
+from .style import (
+    Size,
+    StyleSheet,
+    StyleSyntaxError,
+    Token,
+    UnknownStyleClassError,
+    _format_token_cycle,
+)
+
+__all__ = [
+    "NATIVE_CONTAINER_WIDGETS",
+    "NATIVE_CONTROL_WIDGETS",
+    "NATIVE_IGNORED_STYLE_PROPERTIES",
+    "NATIVE_INPUT_SUPPORT",
+    "NATIVE_LAYOUT_STYLE_PROPERTIES",
+    "NATIVE_PAINT_STYLE_PROPERTIES",
+    "NATIVE_RENDERER_BOUNDARY_SUPPORT",
+    "NATIVE_STYLE_SUPPORT",
+    "NATIVE_TEXT_WIDGETS",
+    "NATIVE_WIDGET_SUPPORT",
+    "LayoutBox",
+    "NativeLayout",
+    "NativeLayoutError",
+    "NativePaintError",
+    "FakeWidget",
+    "MountedNode",
+    "root_widget",
+    "Node",
+    "Size",
+    "StyleSheet",
+    "Token",
+    "UnknownStyleClassError",
+    "native_surface_target",
+    "mounted_or_none",
+    "surface_root_widget",
+    "walk_widgets",
+    "tree_revision",
+    "resolve_style",
+    "native_style_support",
+    "native_widget_support",
+    "native_input_support",
+    "resolve_tokens",
+    "resolve_token",
+    "color_value",
+    "dimension",
+    "constrain",
+    "widget_context",
+    "box_context",
+    "style_items",
+    "state_items",
+    "flatten",
+    "ancestor_paths",
+    "visible_through_scroll_ancestors",
+    "max_scroll_y",
+    "scroll_y",
+    "clamp_scroll_y",
+    "box_rect",
+    "intersect_rects",
+    "widget_by_path",
+    "optional_string",
+    "parse_color",
+]
 
 
 def native_surface_target(
@@ -109,11 +170,17 @@ def resolve_tokens(style: dict[str, Any], tokens: dict[str, Any]) -> dict[str, A
     return {name: resolve_token(value, tokens) for name, value in style.items()}
 
 
-def resolve_token(value: Any, tokens: dict[str, Any]) -> Any:
+def resolve_token(
+    value: Any,
+    tokens: dict[str, Any],
+    seen_tokens: tuple[str, ...] = (),
+) -> Any:
     if isinstance(value, Token):
+        if value.name in seen_tokens:
+            raise StyleSyntaxError(_format_token_cycle((*seen_tokens, value.name)))
         if value.name not in tokens:
             return value
-        return resolve_token(tokens[value.name], tokens)
+        return resolve_token(tokens[value.name], tokens, (*seen_tokens, value.name))
     return value
 
 

@@ -215,20 +215,13 @@ def verify_backend_package_report(
     report_relative = manifest.get("externalBackendReport")
     if report_relative is None:
         return
-    if not isinstance(report_relative, str) or not report_relative:
-        raise ValueError(
-            "manifest.json: externalBackendReport must be a non-empty string"
-        )
+    report_relative = _require_manifest_string(manifest, "externalBackendReport")
     if not isinstance(package, dict):
         raise ValueError("manifest.json: backendPackage must be an object")
 
     verify_backend_package(manifest, root=root)
-    render_tree_relative = manifest.get("renderTree")
-    if not isinstance(render_tree_relative, str) or not render_tree_relative:
-        raise ValueError("manifest.json: renderTree must be a non-empty string")
-    styles_relative = manifest.get("styles")
-    if not isinstance(styles_relative, str) or not styles_relative:
-        raise ValueError("manifest.json: styles must be a non-empty string")
+    render_tree_relative = _require_manifest_string(manifest, "renderTree")
+    styles_relative = _require_manifest_string(manifest, "styles")
     render_tree_payload = _load_json_bundle_file(root, render_tree_relative)
     styles_payload = _load_json_bundle_file(root, styles_relative)
     report = _load_json_bundle_file(root, report_relative)
@@ -415,6 +408,13 @@ def _require_artifact_entry(manifest: dict[str, Any], relative: str) -> None:
     ):
         return
     raise ValueError(f"manifest.json: artifacts missing {relative!r}")
+
+
+def _require_manifest_string(manifest: dict[str, Any], key: str) -> str:
+    value = manifest.get(key)
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"manifest.json: {key} must be a non-empty string")
+    return value
 
 
 def _load_json_bundle_file(root: str | Path, relative: str) -> dict[str, Any]:

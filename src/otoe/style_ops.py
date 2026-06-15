@@ -23,6 +23,26 @@ from .style_ops_types import (
     StyleOpsValidation,
 )
 
+__all__ = [
+    "load_style_ir",
+    "style_ops_support_map",
+    "expected_omitted_style_ops",
+    "replay_style_ops_class",
+    "replay_style_ops_direct",
+    "style_op_support",
+    "validate_style_ops",
+    "STYLE_IR_SCHEMA_VERSION",
+    "STYLE_OPS_FORMAT",
+    "STYLE_OPS_SCHEMA_VERSION",
+    "AppliedStyleOps",
+    "StyleIRArtifact",
+    "StyleIRError",
+    "StyleOpsClassReplay",
+    "StyleOpsDirectReplay",
+    "StyleOpsValidation",
+    "apply_style_ops",
+]
+
 
 def apply_style_ops(
     artifact: StyleIRArtifact | Mapping[str, Any],
@@ -66,16 +86,16 @@ def _duplicate_style_ops_errors(
 
     seen_paths: set[tuple[int, ...]] = set()
     seen_node_ids: set[str] = set()
-    for replay in direct_style_replays:
-        if replay.node_id is not None:
-            if replay.node_id in seen_node_ids:
+    for direct_replay in direct_style_replays:
+        if direct_replay.node_id is not None:
+            if direct_replay.node_id in seen_node_ids:
                 errors.append(
-                    f"duplicate styleOps directStyles nodeId {replay.node_id!r}"
+                    f"duplicate styleOps directStyles nodeId {direct_replay.node_id!r}"
                 )
-            seen_node_ids.add(replay.node_id)
-        if replay.path in seen_paths:
+            seen_node_ids.add(direct_replay.node_id)
+        if direct_replay.path in seen_paths:
             errors.append(
-                f"duplicate styleOps directStyles path {list(replay.path)!r}"
+                f"duplicate styleOps directStyles path {list(direct_replay.path)!r}"
             )
-        seen_paths.add(replay.path)
+        seen_paths.add(direct_replay.path)
     return tuple(errors)

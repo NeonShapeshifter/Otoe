@@ -58,7 +58,10 @@ PYTHONPATH=src:. python -m otoe build examples.portable_core_ui:app --out dist/p
 ```
 
 `preview/portable_core_ui.css` is the strict Otoe Style subset used by CLI
-render, native PNG, plan, and build smoke tests for the gallery.
+render, native PNG, plan, and build smoke tests for the gallery. It uses
+single class selectors and portable properties, not full browser CSS. See
+[`STYLE_GUIDE.md`](../STYLE_GUIDE.md) for the current Otoe CSS subset and the
+Style IR/styleOps build contract.
 
 For native visual evidence over the same product-facing subset:
 

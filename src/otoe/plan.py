@@ -153,7 +153,7 @@ def plan_mounted(
     planned_classes: list[str] = []
     html_only_classes: list[str] = []
     invalid_classes: list[str] = []
-    diagnostics = list(diagnostics)
+    diagnostic_entries: list[PlanDiagnostic] = list(diagnostics)
     style_counts = _empty_counts()
     direct_style_counts = _empty_counts()
     direct_styles: list[DirectStyleEntry] = []
@@ -161,24 +161,24 @@ def plan_mounted(
     for class_name in classes_to_plan:
         rule = stylesheet.rules.get(f".{class_name}") if stylesheet is not None else None
         if rule is None:
-            message = (
+            missing_message = (
                 f"class {class_name!r} has no portable rule for profile {profile!r}"
             )
             if strict_styles:
                 invalid_classes.append(class_name)
                 style_counts["invalid"] += 1
-                diagnostics.append(PlanDiagnostic("error", message))
+                diagnostic_entries.append(PlanDiagnostic("error", missing_message))
             else:
                 html_only_classes.append(class_name)
-                diagnostics.append(
-                    PlanDiagnostic("warning", f"{message}; treating it as html-only")
+                diagnostic_entries.append(
+                    PlanDiagnostic("warning", f"{missing_message}; treating it as html-only")
                 )
             continue
 
         planned_classes.append(class_name)
         if not rule.declarations:
             html_only_classes.append(class_name)
-            diagnostics.append(
+            diagnostic_entries.append(
                 PlanDiagnostic(
                     "warning",
                     f"class {class_name!r} has no portable declarations for profile {profile!r}",
@@ -190,7 +190,7 @@ def plan_mounted(
             status, message = _classify_style_value(prop, value, stylesheet, capabilities)
             style_counts[status] += 1
             if message is not None:
-                diagnostics.append(
+                diagnostic_entries.append(
                     PlanDiagnostic(
                         "error" if status == "invalid" else "warning",
                         f"class {class_name!r}: {message}",
@@ -227,7 +227,7 @@ def plan_mounted(
                     )
                 )
             if message is not None:
-                diagnostics.append(
+                diagnostic_entries.append(
                     PlanDiagnostic(
                         "error" if status == "invalid" else "warning",
                         f"{widget.name} direct style {prop!r}: {message}",
@@ -259,7 +259,7 @@ def plan_mounted(
         style_counts=style_counts,
         direct_style_counts=direct_style_counts,
         direct_styles=tuple(direct_styles),
-        diagnostics=tuple(diagnostics),
+        diagnostics=tuple(diagnostic_entries),
     )
 
 

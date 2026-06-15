@@ -21,6 +21,25 @@ handler shapes.
 - Unknown `on...` names are reported as unknown events; other unknown names are
   reported as unknown props.
 
+## Naming Convention
+
+Callback prop names intentionally follow the layer that owns the API:
+
+- Core widgets use JSX-compatible camelCase names such as `onClick`,
+  `onChange`, `onKeyDown`, and `className`. These names are renderer-facing and
+  match the DOM-like event vocabulary used by HTML/live preview and native
+  input bridges.
+- Higher-level Python UI components use snake_case for domain callbacks such as
+  `on_select`, `on_open_change`, `on_action`, and `render_cell`.
+- UI components that are thin pass-through wrappers around a core event keep
+  the core camelCase name. Today that includes `ActionButton.onClick`,
+  `TabButton.onClick`, and `ShortcutScope.onKeyDown`.
+- `className` stays camelCase across both layers because it is the shared style
+  hook consumed by the core style/runtime pipeline.
+
+Do not add spelling aliases by default. Aliases should be a deliberate
+compatibility migration with stubs, tests, and deprecation notes.
+
 ## Core Widgets
 
 These are the low-level widgets in `otoe.widgets`.
@@ -63,6 +82,33 @@ Built-in widget event shapes are:
 | `ScrollView.onScroll` | `lambda next_scroll_y: ...` |
 | `ShortcutScope.onGlobalKeyDown` | `lambda event: ...` |
 
+## Public Callback Props
+
+This table lists public callback props in the current widget and UI component
+surface. Control-flow callbacks are included because they are user-authored
+callables even though they are not event handlers.
+
+| API | Callback Props | Naming | Handler Shape |
+| --- | --- | --- | --- |
+| `Button` | `onClick`, `onKeyDown`, `onFocus`, `onBlur` | core camelCase | `()`, `(key)`, `()`, `()` |
+| `Input` | `onChange`, `onKeyDown`, `onFocus`, `onBlur` | core camelCase | `(value)`, `(key)`, `()`, `()` |
+| `ScrollView` | `onScroll` | core camelCase | `(next_scroll_y)` |
+| `ShortcutScope` core widget | `onGlobalKeyDown` | core camelCase | `(event)` |
+| `For` | `key`, `children` | control callback props | `(item)`, `(item) -> Node` |
+| `ActionButton` | `onClick` | core pass-through camelCase | `()` |
+| `TabButton` | `onClick` | core pass-through camelCase | `()` |
+| `ShortcutScope` UI component | `onKeyDown` | core pass-through camelCase | `(event)` |
+| `SectionHeader` | `on_action` | UI snake_case | `()` |
+| `EmptyState` | `on_action` | UI snake_case | `()` |
+| `ListRow` | `on_action` | UI snake_case | `()` |
+| `CommandPalette` | `on_query`, `on_select` | UI snake_case | `(value)`, `(command_id)` |
+| `Menu` | `on_select`, `on_focus`, `on_open_change` | UI snake_case | `(item_id)`, `(item_id)`, `(open)` |
+| `Select` | `on_change`, `on_open_change` | UI snake_case | `(value)`, `(open)` |
+| `SidebarNav` | `on_navigate` | UI snake_case | `(route_id)` |
+| `NavItem` | `on_navigate` | UI snake_case | `(route_id)` |
+| `DataTable` | `key`, `render_cell` | UI snake_case/render callbacks | `(row)`, `(row, column) -> Node` |
+| `RouteView` | `render` | render callback | `(route) -> Node` |
+
 `event_signature_for(...)` exposes the same contract programmatically:
 
 ```python
@@ -97,25 +143,34 @@ above.
 | `ShortcutScope` | children, `className` | `onKeyDown(event)` |
 | `FocusScope` | children, `trapFocus=True`, `restoreFocus=True`, `className` | none |
 | `AppShell` | `sidebar`, `content`, optional `header`, `className` | none |
+| `AppFrame` | `sidebar`, `content`, `topbar`, `feedback`, `className`, `shellClassName`, `contentClassName`, `max_width="7xl"` | none |
+| `SidebarFrame` | items, `brand`, `subtitle`, `footer`, `className` | none |
+| `SidebarItem` | `label`, `detail`, `tone="neutral"`, `active=False`, `className` | none |
 | `Card` | children, `title`, `tone="default"`, `className` | none |
+| `StatusPill` | `label`, `tone="neutral"`, `className` | none |
+| `TopBar` | `title`, `subtitle`, `status`, `status_tone="neutral"`, `actions`, `className` | none |
+| `Surface` | children, `title`, `detail`, `badge`, `badge_tone="neutral"`, `actions`, `tone="default"`, `padding=16`, `gap=12`, `className` | none |
+| `MetricGrid` | children, `className` | none |
+| `MetricTile` | `label`, `value`, `detail`, `tone="neutral"`, `className` | none |
 | `Badge` | `label`, `tone="neutral"`, `className` | none |
 | `ActionButton` | `label`, `variant="primary"`, `size="md"`, `disabled=False`, `leading`, `trailing`, `full_width=False`, `className` | `onClick()` |
 | `Toolbar` | children, `gap=8`, `className` | none |
 | `Tabs` | children, `gap=6`, `orientation="horizontal"`, `className` | none |
 | `TabButton` | `label`, `active=False`, `className` | `onClick()` |
 | `StatCard` | `label`, `value`, `detail`, `tone="neutral"`, `className` | none |
-| `DataTable` | `columns`, `rows`, `key`, `render_cell`, `empty`, `className` | none |
+| `DataTable` | `columns`, `rows`, `empty`, `className` | `key(row)`, `render_cell(row, column)` |
 | `Dialog` | children, `open`, `title`, `description`, `className` | none |
 | `Toast` | `title`, `description`, `tone="neutral"`, `className` | none |
 | `FeedbackToast` | `feedback`, `title_key="title"`, `description_key="detail"`, `tone_key="tone"`, `className` | none |
-| `SectionHeader` | `title`, `detail`, `badge`, `badge_tone="neutral"`, `actions`, `className` | none |
-| `EmptyState` | `title`, `description`, `action`, `className` | none |
+| `SectionHeader` | `title`, `detail`, `badge`, `badge_tone="neutral"`, `actions`, `action_label`, `action_variant="ghost"`, `className` | `on_action()` |
+| `EmptyState` | `title`, `description`, `action`, `action_label`, `action_variant="ghost"`, `className` | `on_action()` |
+| `ListRow` | `title`, `detail`, `meta`, `badge`, `badge_tone="neutral"`, `tone="default"`, `action`, `action_label`, `action_variant="ghost"`, `className` | `on_action()` |
 | `CommandPalette` | `query`, `commands`, `placeholder`, `empty`, `autoFocus`, `className` | `on_query(value)`, `on_select(command_id)` |
 | `Menu` | `items`, `open=True`, `active`, `focused`, `empty`, `className` | `on_select(item_id)`, `on_focus(item_id)`, `on_open_change(open)` |
 | `Select` | `options`, `value`, `open`, `placeholder`, `empty`, `className` | `on_change(value)`, `on_open_change(open)` |
 | `SidebarNav` | `routes`, `active`, `brand`, `footer`, `empty`, `className` | `on_navigate(route_id)` |
 | `NavItem` | `route`, `active`, `className` | `on_navigate(route_id)` |
-| `RouteView` | `route`, `routes`, `render`, `fallback`, `className` | none |
+| `RouteView` | `route`, `routes`, `fallback`, `className` | `render(route)` |
 
 UI components may accept reactive values for display/state props when the
 underlying implementation reads them with `computed(...)` or passes them to a

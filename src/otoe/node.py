@@ -26,7 +26,7 @@ class Widget:
     event_signatures: ClassVar[dict[str, EventSignature]] = {}
     primary_prop: ClassVar[str | None] = None
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> Node:
+    def __new__(cls, *args: Any, **kwargs: Any) -> Any:
         return create_node(cls, *args, **kwargs)
 
 
@@ -44,7 +44,7 @@ def create_node(tag: Any, *args: Any, **kwargs: Any) -> Node:
         props[primary_prop] = args[0]
         children_args = args[1:]
 
-    children = [_normalize_child(tag, child) for child in children_args]
+    children = tuple(_normalize_child(tag, child) for child in children_args)
     return Node(tag=tag, props=props, children=children)
 
 

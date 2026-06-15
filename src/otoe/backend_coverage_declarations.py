@@ -46,7 +46,7 @@ def backend_declared_coverage_names(
     covers = declaration.get("covers", {})
     if not isinstance(covers, dict):
         return set()
-    keys = (section,)
+    keys: tuple[str, ...] = (section,)
     if section == "declaredStyleOmissions":
         keys = ("declaredStyleOmissions", "styleOmissions")
     names: set[str] = set()

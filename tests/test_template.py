@@ -2,7 +2,6 @@ import pytest
 
 from otoe import (
     Button,
-    HStack,
     TemplateError,
     Text,
     VStack,

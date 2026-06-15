@@ -11,6 +11,10 @@ from examples.live_server import (
     run_live_preview,
 )
 from examples.wraith.mission_exec_fixture import EVENTS, LOG_LINES, MISSION
+from examples.wraith.mission_exec_snapshot import (
+    format_elapsed,
+    normalize_mission_exec_snapshot,
+)
 from examples.wraith.mission_exec_surface import MissionExecSurface
 from otoe import LiveHtmlRenderer, mount, signal
 
@@ -31,23 +35,31 @@ class MissionExecLivePreview:
         self.next_line = 1
         self.elapsed_seconds = 76
 
-        self.mission = signal(dict(MISSION))
-        self.log_lines = signal([dict(line) for line in LOG_LINES])
-        self.events = signal([dict(event) for event in EVENTS])
-        self.active_filter = signal("ALL")
-        self.active_event_filter = signal("ALL")
-        self.pending_approval = signal(None)
-        self.status = signal("ENGAGED")
-        self.elapsed = signal(self._format_elapsed())
-        self.paused = signal(False)
-        self.runtime_probe = signal(
-            {
+        snapshot = normalize_mission_exec_snapshot(
+            mission=MISSION,
+            status="ENGAGED",
+            elapsed_seconds=self.elapsed_seconds,
+            logs=LOG_LINES,
+            events=EVENTS,
+            pending_approval=None,
+            runtime_probe={
                 "frame": 0,
                 "label": "Signal graph ready",
                 "last": "Handshake capture stream is staged for replay.",
                 "tone": "ok",
-            }
+            },
         )
+
+        self.mission = signal(snapshot["mission"])
+        self.log_lines = signal(snapshot["logs"])
+        self.events = signal(snapshot["events"])
+        self.active_filter = signal("ALL")
+        self.active_event_filter = signal("ALL")
+        self.pending_approval = signal(snapshot["pending_approval"])
+        self.status = signal(snapshot["status"])
+        self.elapsed = signal(snapshot["elapsed"])
+        self.paused = signal(False)
+        self.runtime_probe = signal(snapshot["runtime_probe"])
 
         self.surface = mount(
             MissionExecSurface(
@@ -211,9 +223,11 @@ class MissionExecLivePreview:
         self.elapsed_seconds = int(snapshot.get("elapsed_seconds") or self.elapsed_seconds)
         self.elapsed.set(self._format_elapsed())
 
-        pending_approval = snapshot.get("pending_approval")
+        pending_approval = normalize_mission_exec_snapshot(
+            pending_approval=snapshot.get("pending_approval")
+        )["pending_approval"]
         self.log_lines.set(self._snapshot_log_lines(snapshot.get("output_lines") or []))
-        self.pending_approval.set(dict(pending_approval) if pending_approval else None)
+        self.pending_approval.set(pending_approval)
 
         if pending_approval:
             self.status.set("AWAITING APPROVAL")
@@ -230,8 +244,8 @@ class MissionExecLivePreview:
                 "id": "event-recover-snapshot",
                 "ts": "08:55:00",
                 "tag": "RECOVER",
-                "sev": "ok",
-                "msg": "Remote runtime snapshot restored",
+                "severity": "ok",
+                "message": "Remote runtime snapshot restored",
             }
         ]
         if pending_approval:
@@ -241,8 +255,8 @@ class MissionExecLivePreview:
                     "id": "event-recover-approval",
                     "ts": "08:55:01",
                     "tag": "WAIT",
-                    "sev": "warn",
-                    "msg": f"Recovered approval gate for {step_id}",
+                    "severity": "warn",
+                    "message": f"Recovered approval gate for {step_id}",
                 }
             )
         self.events.set([*self.events.value, *recovered_events][-16:])
@@ -257,8 +271,8 @@ class MissionExecLivePreview:
             {
                 "id": f"snapshot-{index}",
                 "ts": f"08:55:{index:02d}",
-                "lvl": "warn" if "waiting" in line else "info",
-                "msg": line,
+                "level": "warn" if "waiting" in line else "info",
+                "message": line,
             }
             for index, line in enumerate(lines, start=1)
         ]
@@ -271,8 +285,8 @@ class MissionExecLivePreview:
                 {
                     "id": f"live-{self.next_line}",
                     "ts": f"08:52:{self.next_line:02d}",
-                    "lvl": level,
-                    "msg": message,
+                    "level": level,
+                    "message": message,
                 },
             ][-80:]
         )
@@ -286,8 +300,8 @@ class MissionExecLivePreview:
                     "id": f"event-{self.next_line}",
                     "ts": f"08:52:{self.next_line:02d}",
                     "tag": tag,
-                    "sev": severity,
-                    "msg": message,
+                    "severity": severity,
+                    "message": message,
                 },
             ][-16:]
         )
@@ -311,9 +325,7 @@ class MissionExecLivePreview:
         )
 
     def _format_elapsed(self) -> str:
-        minutes, seconds = divmod(self.elapsed_seconds, 60)
-        hours, minutes = divmod(minutes, 60)
-        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        return format_elapsed(self.elapsed_seconds)
 
 
 def run(host: str = "127.0.0.1", port: int = 8767) -> None:

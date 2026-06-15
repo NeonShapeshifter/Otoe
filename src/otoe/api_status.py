@@ -17,8 +17,9 @@ API_METADATA_DETAIL = (
     "not make the named APIs stable yet."
 )
 CORE_PREVIEW_DETAIL = (
-    "Core app-authoring preview API. It is the first surface Otoe intends to "
-    "protect, but it does not carry a stable compatibility promise yet."
+    "Core public app-authoring preview API. It is the first surface Otoe "
+    "intends to protect, but it does not carry a stable compatibility promise "
+    "yet."
 )
 PRODUCT_PREVIEW_UI_DETAIL = (
     "Product-preview UI primitive. Prefer importing it from otoe.ui; top-level "

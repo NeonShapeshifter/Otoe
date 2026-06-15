@@ -91,7 +91,7 @@ def _scale_paint(paint: NativePaint, *, scale: int) -> NativePaint:
 def _scale_command(command: PaintCommand, *, scale: int) -> PaintCommand:
     clip = command.clip
     if clip is not None:
-        clip = tuple(value * scale for value in clip)
+        clip = (clip[0] * scale, clip[1] * scale, clip[2] * scale, clip[3] * scale)
     return PaintCommand(
         kind=command.kind,
         path=command.path,
@@ -165,7 +165,7 @@ def _draw_rounded_rect(
                     command.height - stroke_width * 2,
                     max(radius - stroke_width, 0),
                 )
-            if border_pixel:
+            if border_pixel and stroke is not None:
                 _set_pixel(image, image_width, x, y, stroke)
             elif fill is not None:
                 _set_pixel(image, image_width, x, y, fill)

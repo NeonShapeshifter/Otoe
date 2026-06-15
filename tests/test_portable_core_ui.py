@@ -11,7 +11,6 @@ from otoe import (
     Input,
     PRODUCT_PREVIEW_UI_APIS,
     ScrollView,
-    Text,
     VStack,
     api_status,
     css,

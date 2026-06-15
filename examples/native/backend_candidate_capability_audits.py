@@ -7,3 +7,9 @@ from .backend_candidate_renderer_capability_audits import (
 from .backend_candidate_style_ops_capability_audits import (
     style_ops_capability_audit_to_dict,
 )
+
+__all__ = [
+    "INPUT_EVENT_CAPABILITIES",
+    "renderer_capability_audit_to_dict",
+    "style_ops_capability_audit_to_dict",
+]

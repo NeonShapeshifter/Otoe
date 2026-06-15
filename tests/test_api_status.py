@@ -111,6 +111,12 @@ def test_api_status_registry_matches_declared_sets():
     }
 
 
+def test_pre_alpha_exports_do_not_claim_stable_status():
+    for status in API_STATUSES.values():
+        assert status.category != "stable"
+        assert status.tier != "stable"
+
+
 def test_api_tier_sets_are_disjoint():
     tier_items = list(API_TIERS.items())
     for index, (tier, names) in enumerate(tier_items):

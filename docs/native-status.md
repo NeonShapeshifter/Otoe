@@ -6,6 +6,12 @@ validation. It is not a production desktop renderer.
 The default PNG path still uses deterministic marker text. The first readable
 text path is available as an optional Pillow-backed renderer.
 
+The long-term native backend roadmap now targets Yoga for layout, Skia for
+paint/raster, and SDL3 for window/input/presentation, with SDL3 using the Linux
+Wayland stack under a compositor such as Weston or Cage. That roadmap is
+recorded in [`ADR-021`](../ADR-021-native-yoga-skia-sdl3-roadmap.md); it is a
+future backend direction, not a current dependency or product claim.
+
 ## What Works
 
 - Layout of mounted Otoe trees through the current native layout code.

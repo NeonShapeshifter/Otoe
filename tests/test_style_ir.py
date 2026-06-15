@@ -1,6 +1,6 @@
 import pytest
 
-from otoe import For, HStack, Text, VStack, css, layout_native, mount, render_html
+from otoe import For, HStack, Text, Token, VStack, css, layout_native, mount, render_html
 from otoe import signal, unmount
 from otoe.plan import plan_mounted, plan_to_dict
 from otoe.style import (
@@ -70,6 +70,20 @@ def test_style_ir_resolves_portable_tokens_before_bundle_runtime():
         "value": {"type": "literal", "value": "solid"},
         "message": "property 'borderStyle' is accepted but ignored by native",
     } in shell_ops["omittedOps"]
+
+
+def test_style_ir_rejects_cyclic_tokens_before_bundle_runtime():
+    stylesheet = css(
+        ".shell { background: first; }\n",
+        tokens={"first": Token("second"), "second": Token("first")},
+    )
+    mounted = mount(VStack(Text("Cycle"), className="shell"))
+
+    with pytest.raises(
+        StyleSyntaxError,
+        match="Cyclic style token reference: first -> second -> first",
+    ):
+        plan_mounted(mounted, stylesheet=stylesheet)
 
 
 def test_style_ir_keeps_static_and_safelisted_classes_in_deterministic_order():

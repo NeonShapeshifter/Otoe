@@ -62,6 +62,42 @@ from .backend_candidate_style_ops_types import (
 )
 from .window_demo import NativeWindowDemo
 
+__all__ = [
+    "NativeRendererBackend",
+    "run_native",
+    "BACKEND_CANDIDATE_STYLES",
+    "backend_candidate_app",
+    "run_render_tree_candidate_acceptance",
+    "backend_candidate_style_artifact",
+    "run_style_ops_candidate_acceptance",
+    "run_path0_render_tree_evidence",
+    "run_external_path0_backend_evidence",
+    "run_composed_renderer_candidate_acceptance",
+    "run_headless_candidate_acceptance",
+    "run_layout_only_renderer_candidate_acceptance",
+    "run_layout_only_task_board_static_acceptance",
+    "run_paint_only_renderer_candidate_acceptance",
+    "run_path0_renderer_candidate_acceptance",
+    "run_raster_only_renderer_candidate_acceptance",
+    "run_renderer_candidate_acceptance",
+    "run_renderer_candidate_acceptance_with",
+    "RecordingBackendCandidate",
+    "replay_minimal_candidate",
+    "replay_task_board_candidate",
+    "backend_readiness_report_payload_to_dict",
+    "Path0RenderTreeEvidenceReport",
+    "RenderTreeCandidateAcceptanceReport",
+    "RendererCandidateAcceptanceReport",
+    "BackendCandidateAcceptanceReport",
+    "MinimalBackendCandidateReplay",
+    "TaskBoardBackendCandidateReplay",
+    "StyleOpsCandidateAcceptanceReport",
+    "NativeWindowDemo",
+    "run_backend_candidate_acceptance",
+    "backend_readiness_report_to_dict",
+    "backend_coverage_report_to_dict",
+]
+
 
 def run_backend_candidate_acceptance(
     *,

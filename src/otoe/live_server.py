@@ -14,6 +14,21 @@ from .live_config import LivePreviewApp, LivePreviewConfig, LivePreviewStyleshee
 from .live_events import LiveEventSequenceTracker, live_event_from_payload
 from .live_script import LIVE_SCRIPT
 
+__all__ = [
+    "LivePreviewApp",
+    "LivePreviewConfig",
+    "LivePreviewStylesheet",
+    "LiveEventSequenceTracker",
+    "live_event_from_payload",
+    "LIVE_SCRIPT",
+    "render_live_page",
+    "run_live_preview",
+    "parse_host_port",
+]
+
+
+MAX_EVENT_BODY_BYTES = 64 * 1024
+
 
 def render_live_page(app: LivePreviewApp, config: LivePreviewConfig) -> str:
     root_class = (
@@ -139,9 +154,14 @@ class _LivePreviewHandler(BaseHTTPRequestHandler):
             self.send_error(HTTPStatus.NOT_FOUND)
             return
         try:
-            length = int(self.headers.get("content-length", "0"))
-            payload = json.loads(self.rfile.read(length) or b"{}")
+            payload = self._read_event_payload()
             result = self.state.dispatch_payload(payload)
+        except _PayloadTooLargeError as exc:
+            self._send_json(
+                {"ok": False, "error": str(exc)},
+                HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
+            )
+            return
         except Exception as exc:
             self._send_json({"ok": False, "error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
@@ -173,3 +193,29 @@ class _LivePreviewHandler(BaseHTTPRequestHandler):
             "application/json; charset=utf-8",
             status,
         )
+
+    def _read_event_payload(self) -> dict[str, Any]:
+        raw_length = self.headers.get("content-length", "0")
+        try:
+            length = int(raw_length)
+        except ValueError as exc:
+            raise ValueError("invalid Content-Length") from exc
+        if length < 0:
+            raise ValueError("invalid Content-Length")
+        if length > MAX_EVENT_BODY_BYTES:
+            raise _PayloadTooLargeError(
+                f"event payload exceeds {MAX_EVENT_BODY_BYTES} bytes"
+            )
+
+        raw_body = self.rfile.read(length) or b"{}"
+        try:
+            payload = json.loads(raw_body)
+        except json.JSONDecodeError as exc:
+            raise ValueError("invalid JSON event payload") from exc
+        if not isinstance(payload, dict):
+            raise TypeError("event payload must be a JSON object")
+        return payload
+
+
+class _PayloadTooLargeError(ValueError):
+    pass

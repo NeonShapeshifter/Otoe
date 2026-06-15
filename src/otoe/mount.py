@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any, Callable, Protocol, cast
 
 from .component import is_component_tag
 from .control import is_control_tag, is_for_tag, is_show_tag, list_from_value, resolve_value
@@ -52,9 +52,19 @@ class MountedNode:
     children: list["MountedNode"] = field(default_factory=list)
     owner: Owner | None = None
     cleanups: list[Callable[[], None]] = field(default_factory=list)
+    _keyed_children: dict[Any, "MountedNode"] = field(default_factory=dict, init=False, repr=False)
+    _keyed_items: dict[Any, Any] = field(default_factory=dict, init=False, repr=False)
+    _fallback_mounted: "MountedNode | None" = field(default=None, init=False, repr=False)
 
     def root_widget(self) -> FakeWidget:
         return root_widget(self)
+
+
+class _ReadableReactive(Protocol):
+    @property
+    def value(self) -> Any: ...
+
+    def subscribe(self, callback: Callable[[], None]) -> Any: ...
 
 
 def mount(node: Node) -> MountedNode:
@@ -160,9 +170,9 @@ def _mount_show(node: Node, *, component_stack: tuple[str, ...]) -> MountedNode:
 def _mount_for(node: Node, *, component_stack: tuple[str, ...]) -> MountedNode:
     widget = FakeWidget(node.tag, component_stack=component_stack)
     mounted = MountedNode(node=node, widget=widget)
-    mounted._keyed_children = {}  # type: ignore[attr-defined]
-    mounted._keyed_items = {}  # type: ignore[attr-defined]
-    mounted._fallback_mounted = None  # type: ignore[attr-defined]
+    mounted._keyed_children = {}
+    mounted._keyed_items = {}
+    mounted._fallback_mounted = None
 
     key_fn = node.props["key"]
     render = node.props["render"]
@@ -170,15 +180,15 @@ def _mount_for(node: Node, *, component_stack: tuple[str, ...]) -> MountedNode:
 
     def refresh() -> None:
         items = list_from_value(node.props["each"])
-        keyed_children: dict[Any, MountedNode] = mounted._keyed_children  # type: ignore[attr-defined]
-        keyed_items: dict[Any, Any] = mounted._keyed_items  # type: ignore[attr-defined]
+        keyed_children: dict[Any, MountedNode] = mounted._keyed_children
+        keyed_items: dict[Any, Any] = mounted._keyed_items
         next_keys = [key_fn(item) for item in items]
         next_key_set = _validated_key_set(widget, next_keys)
 
-        fallback_mounted = mounted._fallback_mounted  # type: ignore[attr-defined]
+        fallback_mounted = mounted._fallback_mounted
         if items and fallback_mounted is not None:
             unmount(fallback_mounted)
-            mounted._fallback_mounted = None  # type: ignore[attr-defined]
+            mounted._fallback_mounted = None
         if not items:
             for existing in keyed_children.values():
                 unmount(existing)
@@ -187,12 +197,12 @@ def _mount_for(node: Node, *, component_stack: tuple[str, ...]) -> MountedNode:
             mounted.children.clear()
             widget.children.clear()
             if fallback is not None:
-                if mounted._fallback_mounted is None:  # type: ignore[attr-defined]
-                    mounted._fallback_mounted = _mount(  # type: ignore[attr-defined]
+                if mounted._fallback_mounted is None:
+                    mounted._fallback_mounted = _mount(
                         fallback,
                         component_stack=component_stack,
                     )
-                fallback_mounted = mounted._fallback_mounted  # type: ignore[attr-defined]
+                fallback_mounted = mounted._fallback_mounted
                 mounted.children = [fallback_mounted]
                 widget.children = [root_widget(fallback_mounted)]
             return
@@ -274,8 +284,7 @@ def _join_context(widget: FakeWidget, leaf: str) -> str:
 
 def _assign_prop(mounted: MountedNode, widget: FakeWidget, name: str, value: Any) -> None:
     if is_reactive(value):
-        source = value
-        assert isinstance(source, ReactiveValue)
+        source = cast(_ReadableReactive, value)
 
         def update() -> None:
             widget.set_prop(name, source.value)

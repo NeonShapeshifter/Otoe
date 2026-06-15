@@ -5,6 +5,35 @@ engine. `css(...)` parses a constrained class-based subset, stores declarations
 in `StyleSheet`, and lets renderers decide which supported properties they can
 honor.
 
+This guide calls that surface the **Otoe CSS subset**. It exists so the same
+authoring file can feed HTML previews, native smoke renders, `otoe plan`,
+offline bundles, and backend-candidate evidence without requiring a browser CSS
+engine on constrained targets. Full CSS is a future direction, not a current
+promise.
+
+Supported today:
+
+- single class selectors such as `.surface`
+- multiple class names on `className`, resolved left to right
+- selected portable properties listed below
+- simple numbers, `px`, `%`, booleans, quoted strings, hex colors, and raw
+  keywords
+- simple tokens for `background`, `border-color`, and `color`
+- direct widget style props such as `gap`, `padding`, `scrollY`, and `color`
+- Style IR/styleOps artifacts for build and backend replay
+
+Not supported today:
+
+- element, id, descendant, child, sibling, attribute, pseudo-class, or
+  pseudo-element selectors
+- grouped selectors such as `.a, .b`
+- cascade/specificity parity with browsers
+- `@media`, `@supports`, `@keyframes`, or other at-rules
+- inheritance, custom properties as a general variable system, `calc(...)`, or
+  arbitrary functions
+- shorthand expansion beyond the explicitly listed properties
+- full flexbox/grid/browser layout semantics in native rendering
+
 ## Basic Shape
 
 Only single class selectors are supported:
@@ -34,6 +63,49 @@ VStack(..., className="surface")
 
 Multiple classes are applied left to right; later classes override earlier
 declarations for the same property.
+
+Valid Otoe CSS subset:
+
+```css
+.panel {
+  padding: 16px;
+  gap: 8;
+  background: panel;
+  color: ink;
+}
+```
+
+Invalid today, because it uses a descendant selector:
+
+```css
+.panel .title {
+  color: ink;
+}
+```
+
+Use separate class names instead:
+
+```python
+VStack(Text("Title", className="title"), className="panel")
+```
+
+Portable property example:
+
+```css
+.stack {
+  align-items: center;
+  justify-content: space-between;
+}
+```
+
+Token example:
+
+```python
+styles = css(
+    ".button { background: accent; color: on-accent; }",
+    tokens={"accent": "#2563eb", "on-accent": "#ffffff"},
+)
+```
 
 ## Utility Layer
 
@@ -596,3 +668,23 @@ styles.resolve("missing-class")  # UnknownStyleClassError
 
 The style layer should stay small until the renderer boundary is ready for a
 real layout and paint backend.
+
+## Future CSS Direction
+
+Otoe can grow toward a more complete CSS authoring surface after the portable
+renderer boundary is stronger. That future work should be explicit and tested,
+not implied by today's subset. Likely pieces include:
+
+- a real CSS parser instead of the current constrained rule scanner
+- cascade and specificity
+- grouped, descendant, child, sibling, attribute, pseudo-class, and
+  pseudo-element selectors
+- media queries and other at-rules
+- inheritance
+- CSS variables/custom properties as a real variable system
+- richer value parsing, including functions such as `calc(...)`
+- layout mapping that can explain what maps to HTML only, portable native
+  layout, backend-specific native layout, or unsupported behavior
+
+Until that work lands, treat `css(...)` and `otoe build --css` files as Otoe CSS
+subset input, not browser CSS input.

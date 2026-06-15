@@ -40,8 +40,13 @@ class NativeSurface:
         self.renderer_backend = renderer_backend or PYTHON_NATIVE_RENDERER_BACKEND
         self.frame = 0
         self.focused_path: tuple[int, ...] | None = None
-        self._owns_mount = isinstance(target, Node)
-        self._mounted = mount(target) if self._owns_mount else None
+        self._mounted: MountedNode | None
+        if isinstance(target, Node):
+            self._owns_mount = True
+            self._mounted = mount(target)
+        else:
+            self._owns_mount = False
+            self._mounted = None
         self._target: FakeWidget | MountedNode = (
             self._mounted
             if self._mounted is not None
@@ -207,6 +212,7 @@ class NativeSurface:
         if target_path != self.focused_path:
             assert target_path is not None
             self.focus(target_path)
+        assert target_path is not None
         result = self._trigger_path_event(target_path, "onChange", value)
         self.refresh()
         return result

@@ -37,11 +37,31 @@ def test_event_signature_formatter_documents_callback_shape():
 
 
 def test_ui_event_signature_catalog_documents_public_callbacks():
+    assert set(UI_EVENT_SIGNATURES) == {
+        "ActionButton.onClick",
+        "CommandPalette.on_query",
+        "CommandPalette.on_select",
+        "EmptyState.on_action",
+        "ListRow.on_action",
+        "Menu.on_focus",
+        "Menu.on_open_change",
+        "Menu.on_select",
+        "NavItem.on_navigate",
+        "SectionHeader.on_action",
+        "Select.on_change",
+        "Select.on_open_change",
+        "ShortcutScope.onKeyDown",
+        "SidebarNav.on_navigate",
+        "TabButton.onClick",
+    }
     assert UI_EVENT_SIGNATURES["ActionButton.onClick"] == EventSignature()
     assert UI_EVENT_SIGNATURES["CommandPalette.on_query"] == EventSignature(("value",))
     assert UI_EVENT_SIGNATURES["CommandPalette.on_select"] == EventSignature(
         ("command_id",)
     )
+    assert UI_EVENT_SIGNATURES["SectionHeader.on_action"] == EventSignature()
+    assert UI_EVENT_SIGNATURES["EmptyState.on_action"] == EventSignature()
+    assert UI_EVENT_SIGNATURES["ListRow.on_action"] == EventSignature()
     assert UI_EVENT_SIGNATURES["Select.on_change"] == EventSignature(("value",))
     assert UI_EVENT_SIGNATURES["SidebarNav.on_navigate"] == EventSignature(
         ("route_id",)

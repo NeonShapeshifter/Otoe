@@ -22,9 +22,29 @@ from .deps_types import (
 from .profile_types import PlanProfileConfig
 from .runtime_files import build_runtime_files
 
+__all__ = [
+    "runtime_file_dynamic_imports",
+    "runtime_file_imports",
+    "runtime_file_policy_refs",
+    "deps_to_dict",
+    "format_deps",
+    "DependencyAudit",
+    "DependencyAuditDiagnostic",
+    "DependencyAuditDynamicImport",
+    "DependencyAuditExternalImport",
+    "DependencyAuditExtra",
+    "DependencyAuditPackage",
+    "DependencyAuditRuntimePolicyFinding",
+    "PlanProfileConfig",
+    "build_runtime_files",
+    "KNOWN_EXTRAS",
+    "audit_deps",
+]
+
 
 KNOWN_EXTRAS: dict[str, tuple[str, ...]] = {
     "dev": ("pytest", "mypy"),
+    "native-text": ("Pillow",),
     "release": ("build", "twine"),
 }
 
@@ -232,7 +252,7 @@ def _is_internal_import(module: str, *, local_modules: set[str]) -> bool:
         return True
     if module in sys.builtin_module_names:
         return True
-    stdlib_modules = getattr(sys, "stdlib_module_names", frozenset())
+    stdlib_modules: frozenset[str] = getattr(sys, "stdlib_module_names", frozenset())
     return module in stdlib_modules
 
 

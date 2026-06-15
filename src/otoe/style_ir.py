@@ -26,6 +26,36 @@ from .style_ops import (
     validate_style_ops,
 )
 
+__all__ = [
+    "BackendCapabilityProfile",
+    "resolve_token",
+    "OtoePlan",
+    "DIMENSION_PROPERTIES",
+    "Size",
+    "StyleSheet",
+    "Token",
+    "style_value_to_dict",
+    "STYLE_IR_SCHEMA_VERSION",
+    "STYLE_OPS_FORMAT",
+    "STYLE_OPS_SCHEMA_VERSION",
+    "AppliedStyleOps",
+    "StyleIRArtifact",
+    "StyleIRError",
+    "StyleOpsClassReplay",
+    "StyleOpsDirectReplay",
+    "StyleOpsValidation",
+    "apply_style_ops",
+    "expected_omitted_style_ops",
+    "load_style_ir",
+    "replay_style_ops_class",
+    "replay_style_ops_direct",
+    "style_op_support",
+    "style_ops_support_map",
+    "validate_style_ops",
+    "PORTABLE_DIMENSION_PROPERTIES",
+    "compiled_styles_to_dict",
+]
+
 
 PORTABLE_DIMENSION_PROPERTIES = frozenset((*DIMENSION_PROPERTIES, "scrollY"))
 
@@ -93,6 +123,7 @@ def _compiled_rules(
             )
             continue
 
+        assert stylesheet is not None
         declarations: dict[str, dict[str, Any]] = {}
         omitted: list[dict[str, Any]] = []
         for prop, value in rule.declarations.items():
@@ -172,6 +203,7 @@ def _compiled_class_style_ops(
             "omittedOps": [],
         }
 
+    assert stylesheet is not None
     ops: list[dict[str, Any]] = []
     omitted_ops: list[dict[str, Any]] = []
     for prop, value in rule.declarations.items():

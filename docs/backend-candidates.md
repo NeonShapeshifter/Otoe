@@ -2,6 +2,8 @@
 
 Backend-candidate tooling is advanced and experimental. It exists so renderer
 work can be evaluated with repeatable evidence instead of informal screenshots.
+It is not a sandbox boundary; backend package checks can execute local Python
+and subprocesses. See [Security and Trust Boundaries](security.md).
 
 Most app authors do not need these commands.
 

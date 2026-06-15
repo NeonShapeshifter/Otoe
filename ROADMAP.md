@@ -2,7 +2,7 @@
 
 **Status:** post-v0.1.8 workshop hardening; backend capability gates, bundle hermeticity, dependency audit contract, namespace runtime discovery, RenderTree validation hardening, experimental external Path0 JSON runner, first backend package manifest, productized Portable Core UI/native layout boundaries, and native text truncation evidence
 **Updated:** June 10, 2026
-**Current baseline:** 758 tests passing, 3 skipped when optional `mypy`/Pillow dependencies are unavailable
+**Current baseline:** the test suite is expected to pass locally; optional `mypy`/Pillow checks skip cleanly when those dependencies are unavailable
 **Reference validation surfaces:** native task board, native window demo, UI kit, SaaS preview, utility ops console, hardware control panel, local admin/settings console, data workflow console, Wraith Mission Exec preview
 
 ---
@@ -130,6 +130,12 @@ string interpolation.
 Dynamic `className` f-strings and string interpolation now produce plan
 warnings with source file and line numbers so missing safelist edges are visible
 before deployment.
+The current CSS parser remains intentionally narrow: single class selectors,
+selected portable properties, simple tokens, and Style IR/styleOps output. A
+future fuller CSS track should add a real parser, cascade, specificity, media
+queries, pseudo-classes, inheritance, variables, and explicit portable/native
+layout mapping without pretending constrained runtimes have a browser CSS
+engine.
 The generated runner now rejects unsupported artifact schema versions before
 verification, layout checks, PNG rendering, or packing.
 Native bundle verification now enforces required manifest metadata: declared
@@ -684,6 +690,9 @@ Remaining:
 - No broad Tailwind clone before the current style subset hardens.
 - No browser CSS engine or runtime dependency installer inside hardware/cage
   targets.
+- No full CSS compatibility claim until a real parser, cascade, specificity,
+  media queries, pseudo-classes, inheritance, variables, and portable/native
+  layout mapping are implemented and documented.
 - No custom animation system before layout, input, lifecycle, and renderer invalidation are stable.
 - No public branding push before the native demo is credible.
 - No public framework stability promises before native layout, paint, input, diagnostics, and backend boundaries are proven.
@@ -708,4 +717,5 @@ Remaining:
 4. Keep `NATIVE_WORKFLOWS.md` aligned whenever render paths or backend adapter
    semantics change.
 5. Keep Phase 5 CSS extraction focused on portable utility/style-planner needs
-   instead of broad browser CSS parity.
+   instead of broad browser CSS parity, while documenting the future full-CSS
+   track separately from today's Otoe CSS subset.

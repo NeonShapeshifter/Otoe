@@ -276,7 +276,6 @@ def UIKitRoute(
     on_density_change,
     on_density_open_change,
 ):
-    selected_label = computed(lambda: _selected_label(selected.value))
     selected_tone = computed(lambda: "success" if selected.value else "neutral")
     menu_label = computed(lambda: _menu_action_label(menu_action.value))
     density_label = computed(lambda: _density_label(density.value))

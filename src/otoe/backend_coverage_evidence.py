@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, cast
 
 from .backend_capability_proofs import capability_proof_matches_expectation
 from .backend_evidence_common import is_sha256_uri
@@ -186,6 +186,7 @@ def _valid_capability_refs_by_name(
     proof = group.get("proof")
     if not _valid_capability_proof(proof, observed_key=observed_key):
         return {}
+    proof = cast(Mapping[str, Any], proof)
     if proof.get("source") != group.get("source"):
         return {}
     if not capability_proof_matches_expectation(
@@ -270,6 +271,7 @@ def _valid_style_application_refs_by_name(
     runtime = group.get("runtime")
     if not _valid_style_runtime(runtime):
         return {}
+    runtime = cast(Mapping[str, Any], runtime)
     refs_by_name: dict[str, list[dict[str, Any]]] = {}
     items = group.get("properties", [])
     if not isinstance(items, list):
@@ -311,6 +313,7 @@ def _valid_style_omission_refs_by_name(
     runtime = group.get("runtime")
     if not _valid_style_runtime(runtime):
         return {}
+    runtime = cast(Mapping[str, Any], runtime)
     refs_by_name: dict[str, list[dict[str, Any]]] = {}
     items = group.get("properties", [])
     if not isinstance(items, list):

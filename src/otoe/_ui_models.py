@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 from ._ui_helpers import _list_value
 
@@ -90,10 +90,10 @@ def _normalize_column(column: Any) -> TableColumn:
     if isinstance(column, TableColumn):
         return column
     if isinstance(column, dict):
-        key = column["key"]
+        key = cast(str, column["key"])
         return TableColumn(
             key=key,
-            label=column.get("label", key),
+            label=cast(str, column.get("label", key)),
             className=column.get("className"),
         )
     raise TypeError(f"DataTable columns must be TableColumn or dict; got {type(column).__name__}.")

@@ -8,13 +8,36 @@ scripts/release_check.sh
 
 The script removes stale local build artifacts, installs local dev/release plus
 `native-text` extras, verifies generated Portable Core UI docs, compiles source
-files, runs tests, builds distributions, runs `twine check`, and runs the
-sdist and installed-wheel smokes.
+files, runs Ruff, mypy, tests, builds distributions, runs `twine check`, and
+runs the sdist and installed-wheel smokes.
 
 If the Portable Core UI matrix changes, regenerate the docs before release:
 
 ```bash
-python scripts/update_portable_core_docs.py
+python3 scripts/update_portable_core_docs.py
+```
+
+The focused local validation commands are:
+
+```bash
+python3 -m compileall -q src examples tests
+python3 scripts/update_portable_core_docs.py --check
+python3 -m ruff check src tests examples scripts
+python3 -m mypy src/otoe
+python3 -m pytest -q
+```
+
+Coverage is tracked as a diagnostic command, not a release threshold yet:
+
+```bash
+python3 -m pytest --cov=otoe --cov-report=term-missing
+```
+
+After building distributions, check only package artifacts so unrelated
+directories in `dist/` do not break local release validation:
+
+```bash
+python3 -m twine check dist/*.whl dist/*.tar.gz
 ```
 
 ## Installed-Wheel Smoke

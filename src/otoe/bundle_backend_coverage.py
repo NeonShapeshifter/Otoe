@@ -188,11 +188,12 @@ def _verify_backend_coverage_trace_contract(
     path0 = trace.get("path0")
     if not isinstance(path0, dict):
         raise ValueError(f"{label}: trace.path0 must be an object")
-    result = {"candidateScopeLevel": level}
+    result: dict[str, str] = {"candidateScopeLevel": level}
     for key in ("renderTreeHash", "layoutOutputHash", "paintOutputHash"):
         value = path0.get(key)
         if not _is_sha256_uri(value):
             raise ValueError(f"{label}: trace.path0.{key} must be a sha256 string")
+        assert isinstance(value, str)
         result[key] = value
     semantic_validation = path0.get("semanticValidation")
     if not isinstance(semantic_validation, dict):

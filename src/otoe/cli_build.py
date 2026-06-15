@@ -112,6 +112,7 @@ def run_build(args: argparse.Namespace) -> int:
                 root=output,
                 executable=sys.executable,
             )
+            assert external_backend_report is not None
             external_backend_report_path = (
                 output / PATH0_EXTERNAL_BACKEND_ARTIFACT_FILENAME
             )

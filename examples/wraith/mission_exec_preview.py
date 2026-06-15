@@ -1,30 +1,42 @@
 from __future__ import annotations
 
 from examples.wraith.mission_exec_fixture import EVENTS, LOG_LINES, MISSION
+from examples.wraith.mission_exec_snapshot import (
+    normalize_mission_exec_snapshot,
+    snapshot_to_signals,
+)
 from examples.wraith.mission_exec_surface import MissionExecSurface
 from otoe import mount, render_html, signal
 
 
 def build_preview_html() -> str:
+    snapshot = normalize_mission_exec_snapshot(
+        mission=MISSION,
+        status="ENGAGED",
+        elapsed="00:01:16",
+        logs=LOG_LINES,
+        events=EVENTS,
+        pending_approval=None,
+        runtime_probe={
+            "frame": 0,
+            "label": "Fixture telemetry loaded",
+            "last": "Handshake capture stream is staged for replay.",
+            "tone": "ok",
+        },
+    )
+    signals = snapshot_to_signals(snapshot)
     surface = mount(
         MissionExecSurface(
-            mission=signal(MISSION),
-            log_lines=signal(LOG_LINES),
-            events=signal(EVENTS),
+            mission=signals["mission"],
+            log_lines=signals["log_lines"],
+            events=signals["events"],
             active_filter=signal("ALL"),
             active_event_filter=signal("ALL"),
-            pending_approval=signal(None),
-            status=signal("ENGAGED"),
-            elapsed=signal("00:01:16"),
+            pending_approval=signals["pending_approval"],
+            status=signals["status"],
+            elapsed=signals["elapsed"],
             paused=signal(False),
-            runtime_probe=signal(
-                {
-                    "frame": 0,
-                    "label": "Fixture telemetry loaded",
-                    "last": "Handshake capture stream is staged for replay.",
-                    "tone": "ok",
-                }
-            ),
+            runtime_probe=signals["runtime_probe"],
             on_filter=lambda value: None,
             on_event_filter=lambda value: None,
             on_request_approval=lambda: None,

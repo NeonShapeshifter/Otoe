@@ -4,6 +4,11 @@ This cookbook shows small Otoe patterns that are useful for app code. The goal
 is not to demonstrate every widget; it is to show how component functions,
 signals, computed values, events, control flow, and render targets fit together.
 
+Naming note: core widgets use JSX-style callback props such as `onClick` and
+`onChange`. Higher-level helpers in `otoe.ui` use snake_case for domain
+callbacks such as `on_action` and `on_navigate`, except when they intentionally
+pass through a core event name.
+
 ## Static Render Target
 
 Use a plain component when the surface does not need local state yet. Export a

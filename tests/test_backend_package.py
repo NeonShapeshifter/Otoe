@@ -18,6 +18,7 @@ from otoe.backend_package import (
     copy_backend_package,
     load_backend_package_manifest,
 )
+from otoe.bundle_backend_package import verify_backend_package_report
 from otoe.cli import main as otoe_cli_main
 from otoe.pack import pack_bundle
 from otoe.profile import ProfileError, load_plan_profile
@@ -64,6 +65,20 @@ def test_backend_package_copy_materializes_descriptor_and_files(tmp_path):
     assert descriptor == payload
     assert (output / "path0_external_backend.py").is_file()
     assert backend_package_payload_errors(descriptor) == []
+
+
+def test_backend_package_report_rejects_invalid_external_report_once(tmp_path):
+    manifest = {
+        "backendPackage": {"path": "backend/package/backend-package.json"},
+        "externalBackendReport": "",
+    }
+
+    with pytest.raises(ValueError) as exc:
+        verify_backend_package_report(manifest, root=tmp_path)
+
+    message = "manifest.json: externalBackendReport must be a non-empty string"
+    assert str(exc.value) == message
+    assert str(exc.value).count(message) == 1
 
 
 def test_backend_package_manifest_rejects_unsafe_file_path(tmp_path):

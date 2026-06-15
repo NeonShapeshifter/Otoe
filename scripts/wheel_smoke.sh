@@ -7,7 +7,10 @@ if [[ -n "${PYTHON:-}" ]]; then
 elif [[ -x "$ROOT/.venv/bin/python" ]]; then
   PYTHON_BIN="$ROOT/.venv/bin/python"
 else
-  PYTHON_BIN="python"
+  PYTHON_BIN="python3"
+fi
+if [[ "$PYTHON_BIN" == */* && "$PYTHON_BIN" != /* ]]; then
+  PYTHON_BIN="$(pwd)/$PYTHON_BIN"
 fi
 WHEELHOUSE="${1:-"$ROOT/dist-wheel-smoke"}"
 WORKDIR="${OTOE_SMOKE_WORKDIR:-"$(mktemp -d)"}"

@@ -288,7 +288,7 @@ def css(source: str, *, tokens: dict[str, Any] | None = None) -> StyleSheet:
     cleaned = _strip_comments(source)
     for selector, body in _rule_blocks(cleaned):
         selector = selector.strip()
-        if not selector.startswith(".") or " " in selector:
+        if not _is_single_class_selector(selector):
             raise StyleSyntaxError(
                 f"Only single class selectors are supported; got {selector!r}."
             )
@@ -353,16 +353,32 @@ def _parse_value(prop: str, value: str) -> Any:
     return value
 
 
-def _html_value(prop: str, value: Any, tokens: dict[str, Any]) -> str:
+def _html_value(
+    prop: str,
+    value: Any,
+    tokens: dict[str, Any],
+    seen_tokens: tuple[str, ...] = (),
+) -> str:
     if isinstance(value, Size):
         return f"{_format_number(value.value)}{value.unit}"
     if isinstance(value, Token):
+        if value.name in seen_tokens:
+            raise StyleSyntaxError(_format_token_cycle((*seen_tokens, value.name)))
         if value.name in tokens:
-            return _html_value(prop, tokens[value.name], tokens)
+            return _html_value(
+                prop,
+                tokens[value.name],
+                tokens,
+                (*seen_tokens, value.name),
+            )
         return f"var(--{value.name})"
     if isinstance(value, (int, float)) and prop in DIMENSION_PROPERTIES:
         return f"{_format_number(value)}px"
     return str(value)
+
+
+def _format_token_cycle(path: tuple[str, ...]) -> str:
+    return f"Cyclic style token reference: {' -> '.join(path)}."
 
 
 def _format_number(value: int | float) -> str:
@@ -383,3 +399,7 @@ def _is_number(value: str) -> bool:
     except ValueError:
         return False
     return True
+
+
+def _is_single_class_selector(selector: str) -> bool:
+    return re.fullmatch(r"\.[A-Za-z0-9_-]+", selector) is not None

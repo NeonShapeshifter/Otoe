@@ -51,6 +51,35 @@ def test_css_generates_html_inline_styles_with_tokens():
     )
 
 
+def test_css_resolves_direct_token_to_html_value():
+    sheet = css(
+        ".button { background: accent; }",
+        tokens={"accent": "#2563eb"},
+    )
+
+    assert sheet.resolve("button") == {"background": Token("accent")}
+    assert sheet.inline_style("button") == "background:#2563eb"
+
+
+def test_css_unknown_token_falls_back_to_css_custom_property():
+    sheet = css(".button { background: missing; }")
+
+    assert sheet.inline_style("button") == "background:var(--missing)"
+
+
+def test_css_rejects_cyclic_tokens_with_clear_error():
+    sheet = css(
+        ".button { background: first; }",
+        tokens={"first": Token("second"), "second": Token("first")},
+    )
+
+    with pytest.raises(
+        StyleSyntaxError,
+        match="Cyclic style token reference: first -> second -> first",
+    ):
+        sheet.inline_style("button")
+
+
 def test_css_parses_portable_text_overflow_styles():
     sheet = css(
         """
@@ -78,6 +107,19 @@ def test_css_rejects_unknown_properties_and_selectors():
 
     with pytest.raises(StyleSyntaxError, match="Only single class selectors"):
         css("Button { padding: 8; }")
+
+
+def test_css_rejects_compound_selectors():
+    with pytest.raises(StyleSyntaxError, match="Only single class selectors"):
+        css(".card.primary { padding: 8; }")
+
+    with pytest.raises(StyleSyntaxError, match="Only single class selectors"):
+        css(".card, .panel { padding: 8; }")
+
+
+def test_css_rejects_unexpected_content_outside_rules():
+    with pytest.raises(StyleSyntaxError, match="Unexpected style content"):
+        css(".card { padding: 8; } trailing")
 
 
 def test_css_resolve_rejects_unknown_classes_in_strict_mode():

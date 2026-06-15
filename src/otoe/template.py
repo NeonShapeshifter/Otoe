@@ -138,7 +138,7 @@ class _TemplateParser(HTMLParser):
         primary_prop = getattr(frame.tag, "primary_prop", None)
         if primary_prop:
             primary_values = [child for child in frame.children if not isinstance(child, Node)]
-            child_nodes = [child for child in frame.children if isinstance(child, Node)]
+            child_nodes = tuple(child for child in frame.children if isinstance(child, Node))
             if primary_prop in frame.props:
                 if primary_values:
                     raise TemplateError(

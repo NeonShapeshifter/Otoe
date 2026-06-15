@@ -26,7 +26,6 @@ from otoe import (
     MetricGrid,
     MetricTile,
     StatCard,
-    StatusPill,
     Surface,
     TabButton,
     TableColumn,

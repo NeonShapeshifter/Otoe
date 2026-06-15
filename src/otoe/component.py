@@ -18,7 +18,7 @@ class Component:
         return Node(
             tag=self,
             props={"args": args, "kwargs": kwargs},
-            children=[],
+            children=(),
         )
 
 
@@ -42,4 +42,3 @@ def on_cleanup(callback: Callable[[], None]) -> None:
 
 def is_component_tag(tag: Any) -> bool:
     return isinstance(tag, Component)
-

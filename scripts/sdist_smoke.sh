@@ -2,7 +2,10 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PYTHON_BIN="${PYTHON:-python}"
+PYTHON_BIN="${PYTHON:-python3}"
+if [[ "$PYTHON_BIN" == */* && "$PYTHON_BIN" != /* ]]; then
+  PYTHON_BIN="$(pwd)/$PYTHON_BIN"
+fi
 SDIST="${1:-}"
 WORKDIR="${OTOE_SDIST_SMOKE_WORKDIR:-"$(mktemp -d)"}"
 
@@ -34,7 +37,7 @@ cd "$SOURCE_DIR"
 PYTHONPATH=src:. "$PYTHON_BIN" -m pytest -q \
   tests/test_html.py \
   tests/test_backend_package.py::test_backend_package_manifest_describes_path0_external_backend \
-  tests/test_cli.py::test_cli_portable_core_accepts_format_json_alias
+  tests/test_cli_dev_new_portable.py::test_cli_portable_core_accepts_format_json_alias
 PYTHONPATH=src:. "$PYTHON_BIN" -m otoe portable-core --format json > portable-core.json
 test -s portable-core.json
 

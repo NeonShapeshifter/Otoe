@@ -32,7 +32,12 @@ Changelog = "https://github.com/NeonShapeshifter/Otoe/blob/main/CHANGELOG.md"
 otoe = "otoe.cli:main"
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "mypy>=1.10"]
+dev = [
+    "pytest>=8",
+    "mypy>=1.10",
+    "ruff>=0.5",
+    "pytest-cov>=5",
+]
 native-text = ["Pillow>=10"]
 release = ["build>=1.2", "twine>=6"]
 
@@ -46,3 +51,36 @@ otoe = ["py.typed", "*.pyi"]
 testpaths = ["tests"]
 pythonpath = ["src", "."]
 addopts = "-ra"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = [
+    "build",
+    "dist",
+    "dist-wheel-smoke",
+]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+ignore = [
+    "E501",
+    "E731",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/bench_smoke.py" = ["E402"]
+"scripts/update_portable_core_docs.py" = ["E402"]
+
+[tool.coverage.run]
+branch = true
+source = ["otoe"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]

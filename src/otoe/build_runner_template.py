@@ -6,13 +6,16 @@ import importlib
 import json
 import sys
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 
 ROOT = Path(__file__).resolve().parent
 MANIFEST_PATH = ROOT / "manifest.json"
 EXPECTED_SCHEMA_VERSION = 1
-EXPECTED_FRAMEWORK_FILES = "__OTOE_EXPECTED_FRAMEWORK_FILES__"
+if TYPE_CHECKING:
+    EXPECTED_FRAMEWORK_FILES: dict[str, tuple[str, ...]] = {}
+else:
+    EXPECTED_FRAMEWORK_FILES = "__OTOE_EXPECTED_FRAMEWORK_FILES__"
 CACHE_DIR_NAMES = frozenset({"__pycache__", ".pytest_cache"})
 CACHE_SUFFIXES = (".pyc", ".pyo")
 PACK_TOP_LEVEL_FILES = frozenset(

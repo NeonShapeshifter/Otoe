@@ -365,9 +365,9 @@ def FilterButton(*, label, active_filter, on_filter):
 def LogLine(*, line):
     return HStack(
         Text(line["ts"], className="log-ts"),
-        Text(line["lvl"], className=f"log-level is-{line['lvl']}"),
-        Text(line["msg"], className="log-message"),
-        className=f"log-line is-{line['lvl']}",
+        Text(line["level"], className=f"log-level is-{line['level']}"),
+        Text(line["message"], className="log-message"),
+        className=f"log-line is-{line['level']}",
         gap=10,
     )
 
@@ -376,9 +376,9 @@ def LogLine(*, line):
 def EventRow(*, event):
     return HStack(
         Text(event["ts"], className="event-ts"),
-        Text(event["tag"], className=f"event-tag is-{event['sev']}"),
-        Text(event["msg"], className="event-message"),
-        className=f"event-row is-{event['sev']}",
+        Text(event["tag"], className=f"event-tag is-{event['severity']}"),
+        Text(event["message"], className="event-message"),
+        className=f"event-row is-{event['severity']}",
         gap=10,
     )
 
@@ -387,14 +387,14 @@ def _visible_lines(lines, active_filter):
     if active_filter == "ALL":
         return list(lines)
     tone = active_filter.lower()
-    return [line for line in lines if line["lvl"] == tone]
+    return [line for line in lines if line["level"] == tone]
 
 
 def _visible_events(events, active_filter):
     if active_filter == "ALL":
         return list(events)
     tone = active_filter.lower()
-    return [event for event in events if event["sev"] == tone]
+    return [event for event in events if event["severity"] == tone]
 
 
 def _approval_value(approval, key, default):

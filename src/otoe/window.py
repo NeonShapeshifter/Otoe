@@ -383,8 +383,8 @@ def _draw_tk_canvas_rect(
     rect = _visible_canvas_rect(command)
     if rect is None:
         return
-    rect = _transform_canvas_rect(rect, scale=scale, offset_x=offset_x, offset_y=offset_y)
-    left, top, right, bottom = rect
+    transformed = _transform_canvas_rect(rect, scale=scale, offset_x=offset_x, offset_y=offset_y)
+    left, top, right, bottom = transformed
     if command.fill:
         canvas.create_rectangle(
             left,

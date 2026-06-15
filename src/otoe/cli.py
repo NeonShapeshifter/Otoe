@@ -21,6 +21,25 @@ from .cli_style_ir import run_style_ir
 from .cli_render import run_render
 from .plan_artifacts import compiled_styles_to_dict
 
+__all__ = [
+    "run_backend_coverage",
+    "run_backend_package",
+    "run_backend_profile",
+    "DEFAULT_CHECK_PATHS",
+    "run_check",
+    "run_compare_contract",
+    "run_deps",
+    "run_dev",
+    "run_new",
+    "run_pack",
+    "run_plan",
+    "run_portable_core",
+    "run_style_ir",
+    "run_render",
+    "compiled_styles_to_dict",
+    "main",
+]
+
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = _build_parser()

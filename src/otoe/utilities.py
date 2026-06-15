@@ -215,10 +215,10 @@ def _utility_rules(
         ("border-color", "var(--otoe-line)"),
     )
     rules["border-0"] = (("border-width", "0"),)
-    for name, value in RADIUS_SCALE.items():
-        rules[f"rounded-{name}"] = (("border-radius", f"{value}px"),)
-    for name, value in SHADOW_SCALE.items():
-        rules[f"shadow-{name}"] = (("box-shadow", value),)
+    for name, radius_value in RADIUS_SCALE.items():
+        rules[f"rounded-{name}"] = (("border-radius", f"{radius_value}px"),)
+    for name, shadow_value in SHADOW_SCALE.items():
+        rules[f"shadow-{name}"] = (("box-shadow", shadow_value),)
 
     rules["opacity-0"] = (("opacity", "0"),)
     rules["opacity-50"] = (("opacity", "0.5"),)

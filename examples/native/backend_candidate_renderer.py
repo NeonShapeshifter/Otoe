@@ -15,3 +15,16 @@ from .backend_candidate_phase_renderer_candidates import (
     RasterOnlyRendererCandidate,
 )
 from .backend_candidate_recording_renderer import RecordingRendererCandidate
+
+__all__ = [
+    "render_tree_from_target",
+    "candidate_resolved_style_map",
+    "RenderTreeRendererCandidate",
+    "run_path0_render_tree_artifact_evidence",
+    "run_path0_render_tree_evidence",
+    "Path0RendererCandidate",
+    "LayoutOnlyRendererCandidate",
+    "PaintOnlyRendererCandidate",
+    "RasterOnlyRendererCandidate",
+    "RecordingRendererCandidate",
+]

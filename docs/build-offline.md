@@ -4,6 +4,11 @@ The offline build path is Otoe's first hardware/cage workflow. It is meant to
 prove that an app can be planned, audited, copied, validated, and packed before
 deployment to a constrained target.
 
+Offline bundles verify manifest paths, hashes, generated artifacts, and runtime
+policy metadata, but they are not a Python sandbox. See
+[Security and Trust Boundaries](security.md) before running bundles or backend
+packages from sources you do not fully trust.
+
 ## Minimal Build
 
 ```bash
@@ -89,6 +94,9 @@ wheels, or create a lockfile. It reports missing packages, undeclared external
 imports, visible dynamic import calls, and visible stdlib network/process usage
 according to `[runtime.policy]`.
 
+`otoe deps` does not isolate code execution. Treat it as a static audit aid, not
+as containment.
+
 Use `[runtime] files` for dynamic imports and files the static local import
 scanner cannot see.
 
@@ -139,3 +147,6 @@ hit testing, and bundled style evidence in logical coordinates.
 Backend coverage requirements and backend package manifests are advanced
 renderer-candidate features. Keep them out of the first app-authoring workflow
 unless you are validating a backend.
+
+Backend packages may execute subprocesses during package checks. Only run
+packages from trusted sources or inside an OS-level sandbox that you control.

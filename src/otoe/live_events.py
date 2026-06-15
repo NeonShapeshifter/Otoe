@@ -27,7 +27,10 @@ class LiveEventSequenceTracker:
 
 
 def live_event_from_payload(payload: dict[str, Any]) -> LiveEvent:
-    event_id = payload["id"]
+    event_id = payload.get("id")
+    if not isinstance(event_id, str) or not event_id:
+        raise TypeError("event id must be a non-empty string")
+
     args = payload.get("args", [])
     if not isinstance(args, list):
         raise TypeError("event args must be a list")
@@ -37,7 +40,7 @@ def live_event_from_payload(payload: dict[str, Any]) -> LiveEvent:
     if sequence is not None:
         if not isinstance(client_id, str) or not client_id:
             raise TypeError("event clientId must be a non-empty string")
-        if not isinstance(sequence, int) or sequence < 1:
+        if type(sequence) is not int or sequence < 1:
             raise TypeError("event sequence must be a positive integer")
 
     return LiveEvent(

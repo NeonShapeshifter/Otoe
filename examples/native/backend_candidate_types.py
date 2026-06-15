@@ -26,3 +26,24 @@ from .backend_candidate_style_ops_types import (
     StyleOpsCandidateClassReport,
     StyleOpsCandidateDirectStyleReport,
 )
+
+__all__ = [
+    "Path0RenderTreeEvidenceReport",
+    "RenderTreeCandidateAcceptanceReport",
+    "ComposedRendererCandidateAcceptanceReport",
+    "HeadlessCandidateAcceptanceReport",
+    "HeadlessCandidateFrameSummary",
+    "HeadlessCandidateRunReport",
+    "LayoutOnlyCandidateAcceptanceReport",
+    "LayoutOnlyTaskBoardStaticAcceptanceReport",
+    "RendererCandidateAcceptanceReport",
+    "RendererCandidateCall",
+    "RendererContractBoxSnapshot",
+    "RendererContractPaintSnapshot",
+    "BackendCandidateAcceptanceReport",
+    "MinimalBackendCandidateReplay",
+    "TaskBoardBackendCandidateReplay",
+    "StyleOpsCandidateAcceptanceReport",
+    "StyleOpsCandidateClassReport",
+    "StyleOpsCandidateDirectStyleReport",
+]

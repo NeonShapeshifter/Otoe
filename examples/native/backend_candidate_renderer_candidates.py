@@ -7,3 +7,11 @@ from .backend_candidate_phase_renderer_candidates import (
     RasterOnlyRendererCandidate,
 )
 from .backend_candidate_recording_renderer import RecordingRendererCandidate
+
+__all__ = [
+    "Path0RendererCandidate",
+    "LayoutOnlyRendererCandidate",
+    "PaintOnlyRendererCandidate",
+    "RasterOnlyRendererCandidate",
+    "RecordingRendererCandidate",
+]

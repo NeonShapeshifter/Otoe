@@ -175,14 +175,16 @@ def _static_class_scan_from_expr(
                 )
             return
         if isinstance(current, ast.JoinedStr):
-            if all(
-                isinstance(value, ast.Constant) and isinstance(value.value, str)
-                for value in current.values
-            ):
+            literal_parts: list[str] = []
+            literal_only = True
+            for value in current.values:
+                if not isinstance(value, ast.Constant) or not isinstance(value.value, str):
+                    literal_only = False
+                    break
+                literal_parts.append(value.value)
+            if literal_only:
                 class_names.extend(
-                    _split_static_class_literal(
-                        "".join(str(value.value) for value in current.values)
-                    )
+                    _split_static_class_literal("".join(literal_parts))
                 )
             else:
                 diagnostics.append(

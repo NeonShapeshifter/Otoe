@@ -17,6 +17,20 @@ from .backend_evidence import (
     readiness_evidence_errors,
 )
 
+__all__ = [
+    "renderer_capability_proof_expectations",
+    "backend_coverage_declaration_errors",
+    "BACKEND_COVERAGE_SECTIONS",
+    "has_backend_coverage_requirements",
+    "requirements_from_backend_coverage_payload",
+    "requirements_from_readiness",
+    "backend_coverage_section",
+    "evidence_error",
+    "readiness_evidence_blockers",
+    "readiness_evidence_errors",
+    "backend_coverage_report_to_dict",
+]
+
 
 def backend_coverage_report_to_dict(
     declaration: dict[str, Any],

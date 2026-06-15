@@ -18,21 +18,27 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install
         run: python -m pip install -e ".[dev]"
+      - name: Portable core docs
+        run: python scripts/update_portable_core_docs.py --check
       - name: Compile
         run: python -m compileall -q src examples tests
+      - name: Ruff
+        run: python -m ruff check src tests examples scripts
+      - name: Mypy
+        run: python -m mypy src/otoe
       - name: Test
-        run: pytest -q
+        run: python -m pytest -q
       - name: Smoke optional Pillow native text
         run: |
           python -m pip install -e ".[native-text]"
           python -m otoe render examples.quickstart:app --out /tmp/otoe-pillow.png --native --native-text pillow
           test -s /tmp/otoe-pillow.png
-          pytest -q tests/test_cli.py tests/test_native_renderer_backend.py -k "pillow_native_text or profile_pillow or pillow"
+          python -m pytest -q tests/test_cli_render.py tests/test_native_text_build.py tests/test_native_renderer_backend.py -k "pillow_native_text or profile_pillow or pillow"
       - name: Install release tooling
         run: python -m pip install build twine "setuptools>=68" wheel
       - name: Build package
         run: python -m build
       - name: Check package metadata
-        run: python -m twine check dist/*
+        run: python -m twine check dist/*.whl dist/*.tar.gz
       - name: Smoke installed wheel
         run: OTOE_SMOKE_NO_BUILD_ISOLATION=1 bash scripts/wheel_smoke.sh

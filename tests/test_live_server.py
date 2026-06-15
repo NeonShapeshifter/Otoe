@@ -1,8 +1,12 @@
+import json
+from io import BytesIO
 from pathlib import Path
 
 from otoe.live_server import (
     LivePreviewConfig,
     LivePreviewStylesheet,
+    MAX_EVENT_BODY_BYTES,
+    _LivePreviewHandler,
     _LivePreviewState,
     render_live_page,
 )
@@ -150,3 +154,99 @@ def test_live_preview_state_ignores_stale_event_sequences():
     assert latest == {"ok": True, "html": "<p>new</p>", "stale": False}
     assert stale == {"ok": True, "html": "<p>new</p>", "stale": True}
     assert app.events == ["new"]
+
+
+def test_live_event_endpoint_accepts_valid_payload():
+    state = _live_preview_state()
+
+    status, payload = _post_event(
+        state,
+        {"id": "x:onClick", "args": ["value"], "clientId": "client-a", "sequence": 1},
+    )
+
+    assert status == 200
+    assert payload == {"ok": True, "html": "x:onClick:1", "stale": False}
+
+
+def test_live_event_endpoint_rejects_missing_id():
+    status, payload = _post_event(_live_preview_state(), {"args": []})
+
+    assert status == 400
+    assert payload == {"ok": False, "error": "event id must be a non-empty string"}
+
+
+def test_live_event_endpoint_rejects_non_string_id():
+    status, payload = _post_event(_live_preview_state(), {"id": 12, "args": []})
+
+    assert status == 400
+    assert payload == {"ok": False, "error": "event id must be a non-empty string"}
+
+
+def test_live_event_endpoint_rejects_non_list_args():
+    status, payload = _post_event(_live_preview_state(), {"id": "x:onClick", "args": {}})
+
+    assert status == 400
+    assert payload == {"ok": False, "error": "event args must be a list"}
+
+
+def test_live_event_endpoint_rejects_invalid_json():
+    status, payload = _post_event_bytes(_live_preview_state(), b'{"id":')
+
+    assert status == 400
+    assert payload == {"ok": False, "error": "invalid JSON event payload"}
+
+
+def test_live_event_endpoint_rejects_oversized_body():
+    status, payload = _post_event_bytes(
+        _live_preview_state(),
+        b"x" * (MAX_EVENT_BODY_BYTES + 1),
+    )
+
+    assert status == 413
+    assert payload == {
+        "ok": False,
+        "error": f"event payload exceeds {MAX_EVENT_BODY_BYTES} bytes",
+    }
+
+
+def _live_preview_state() -> _LivePreviewState:
+    return _LivePreviewState(
+        DummyPreview(),
+        LivePreviewConfig(
+            title="Dummy",
+            css_route="/dummy.css",
+            css_path=Path("dummy.css"),
+        ),
+    )
+
+
+def _post_event(
+    state: _LivePreviewState,
+    payload: dict,
+) -> tuple[int, dict]:
+    return _post_event_bytes(
+        state,
+        json.dumps(payload).encode("utf-8"),
+    )
+
+
+def _post_event_bytes(
+    state: _LivePreviewState,
+    body: bytes,
+) -> tuple[int, dict]:
+    class Handler(_LivePreviewHandler):
+        captured_status = 0
+        captured_body: dict | None = None
+
+        def _send_json(self, body, status=200):
+            self.captured_status = int(status)
+            self.captured_body = body
+
+    handler = object.__new__(Handler)
+    handler.state = state
+    handler.path = "/event"
+    handler.headers = {"content-length": str(len(body))}
+    handler.rfile = BytesIO(body)
+    handler.do_POST()
+    assert handler.captured_body is not None
+    return handler.captured_status, handler.captured_body

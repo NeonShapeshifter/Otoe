@@ -21,6 +21,16 @@ snapshot or HTML tests when it does not.
 Avoid starting with PNG or OS-window tests. Most behavior should be proven by
 snapshots, HTML output, `NativeSurface`, or `NativeWindowDriver`.
 
+## Local Check Commands
+
+Before opening a change that touches runtime code, run the focused local gates:
+
+```bash
+python3 -m ruff check src tests examples scripts
+python3 -m mypy src/otoe
+python3 -m pytest -q
+```
+
 ## Snapshot Tests
 
 Use snapshots when the behavior is about component output rather than renderer
@@ -64,6 +74,9 @@ assert '"content": "Running"' in after
 
 Snapshot tests are the right home for `Show`, `For`, reactive props, lifecycle
 effects that mutate visible state, and app-level case-study surfaces.
+See [Reactive Model](docs/reactive-model.md) for the authoring distinction
+between passing a signal/computed as a prop and reading `.value` into a static
+string during render.
 
 ## HTML Render Tests
 
@@ -247,3 +260,21 @@ the contract.
 
 Keep renderer tests framework-neutral unless a case study is intentionally
 acting as regression pressure.
+
+## Coverage And Smoke Benchmarks
+
+Coverage is useful as a local diagnostic, but Otoe does not impose a threshold
+yet:
+
+```bash
+python3 -m pytest --cov=otoe --cov-report=term-missing
+```
+
+For a coarse performance smoke, run:
+
+```bash
+python3 scripts/bench_smoke.py
+```
+
+The benchmark is intentionally non-blocking and should not be treated as a
+strict CI gate.
