@@ -4,50 +4,18 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from ._style_schema import (
+    dimension_properties,
+    html_properties,
+    supported_properties,
+    token_properties,
+)
 
-SUPPORTED_PROPERTIES = {
-    "align-items": "alignItems",
-    "background": "background",
-    "border-color": "borderColor",
-    "border-radius": "borderRadius",
-    "border-style": "borderStyle",
-    "border-width": "borderWidth",
-    "color": "color",
-    "display": "display",
-    "font-size": "fontSize",
-    "font-weight": "fontWeight",
-    "gap": "gap",
-    "height": "height",
-    "justify-content": "justifyContent",
-    "margin": "margin",
-    "max-height": "maxHeight",
-    "max-width": "maxWidth",
-    "min-height": "minHeight",
-    "min-width": "minWidth",
-    "opacity": "opacity",
-    "overflow": "overflow",
-    "padding": "padding",
-    "text-overflow": "textOverflow",
-    "white-space": "whiteSpace",
-    "width": "width",
-}
 
-HTML_PROPERTIES = {value: key for key, value in SUPPORTED_PROPERTIES.items()}
-DIMENSION_PROPERTIES = {
-    "borderRadius",
-    "borderWidth",
-    "fontSize",
-    "gap",
-    "height",
-    "margin",
-    "maxHeight",
-    "maxWidth",
-    "minHeight",
-    "minWidth",
-    "padding",
-    "width",
-}
-TOKEN_PROPERTIES = {"background", "borderColor", "color"}
+SUPPORTED_PROPERTIES = supported_properties()
+HTML_PROPERTIES = html_properties()
+DIMENSION_PROPERTIES = dimension_properties()
+TOKEN_PROPERTIES = token_properties()
 RAW_KEYWORDS = {
     "auto",
     "block",

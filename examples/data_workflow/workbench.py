@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Protocol
 
-from otoe import For, HStack, Input, Text, VStack, component, computed
+from otoe import For, HStack, Input, Text, VStack, component, computed, signal
 from otoe.ui import (
     ActionButton,
     AppShell,
@@ -253,6 +253,42 @@ class MemoryDataWorkflowProvider:
             ),
         )
         return self._snapshot
+
+
+def app(
+    snapshot: WorkflowSnapshot | None = None,
+    route: str = "queue",
+    *,
+    provider: DataWorkflowProvider | None = None,
+):
+    provider = provider or MemoryDataWorkflowProvider(snapshot)
+    snapshot_signal = signal(provider.snapshot())
+    active_route = signal(route)
+
+    def navigate(route_id: str) -> None:
+        active_route.set(route_id)
+
+    def set_query(value: str) -> None:
+        snapshot_signal.set(provider.set_query(value))
+
+    def set_stage_filter(value: str) -> None:
+        snapshot_signal.set(provider.set_stage_filter(value))
+
+    def toggle_record(record_id: str) -> None:
+        snapshot_signal.set(provider.toggle_record(record_id))
+
+    def run_action(action_id: str) -> None:
+        snapshot_signal.set(provider.run_action(action_id))
+
+    return DataWorkflowWorkbench(
+        snapshot=snapshot_signal,
+        active_route=active_route,
+        on_navigate=navigate,
+        on_query=set_query,
+        on_stage_filter=set_stage_filter,
+        on_toggle_record=toggle_record,
+        on_action=run_action,
+    )
 
 
 @component

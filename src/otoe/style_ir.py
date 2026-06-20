@@ -3,8 +3,10 @@ from __future__ import annotations
 from typing import Any
 
 from .capabilities import BackendCapabilityProfile
+from ._style_schema import portable_dimension_properties
 from ._native_shared import resolve_token
-from .plan import OtoePlan, _classify_style_value, _planned_class_names
+from ._style_planning import classify_style_value, planned_class_names
+from .plan import OtoePlan
 from .style import DIMENSION_PROPERTIES, Size, StyleSheet, Token, style_value_to_dict
 from .style_ops import (
     STYLE_IR_SCHEMA_VERSION,
@@ -57,7 +59,7 @@ __all__ = [
 ]
 
 
-PORTABLE_DIMENSION_PROPERTIES = frozenset((*DIMENSION_PROPERTIES, "scrollY"))
+PORTABLE_DIMENSION_PROPERTIES = portable_dimension_properties()
 
 
 def compiled_styles_to_dict(
@@ -127,7 +129,7 @@ def _compiled_rules(
         declarations: dict[str, dict[str, Any]] = {}
         omitted: list[dict[str, Any]] = []
         for prop, value in rule.declarations.items():
-            status, message = _classify_style_value(
+            status, message = classify_style_value(
                 prop,
                 value,
                 stylesheet,
@@ -207,7 +209,7 @@ def _compiled_class_style_ops(
     ops: list[dict[str, Any]] = []
     omitted_ops: list[dict[str, Any]] = []
     for prop, value in rule.declarations.items():
-        status, message = _classify_style_value(prop, value, stylesheet, capabilities)
+        status, message = classify_style_value(prop, value, stylesheet, capabilities)
         support = capabilities.style(prop) or "unsupported"
         resolved = resolve_token(value, stylesheet.tokens)
         if status == "portable":
@@ -241,7 +243,7 @@ def _compiled_class_style_ops(
 
 
 def _compiled_class_names(plan: OtoePlan) -> tuple[str, ...]:
-    return _planned_class_names(
+    return planned_class_names(
         used_classes=plan.used_classes,
         static_classes=plan.static_classes,
         safelisted_classes=plan.safelisted_classes,

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel>=0.43"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -12,6 +12,7 @@ authors = [
     {name = "Ale"}
 ]
 license = "MIT"
+license-files = ["LICENSE"]
 keywords = ["ui", "desktop", "reactive", "components", "python"]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
@@ -39,7 +40,12 @@ dev = [
     "pytest-cov>=5",
 ]
 native-text = ["Pillow>=10"]
-release = ["build>=1.2", "twine>=6"]
+release = [
+    "build>=1.2",
+    "setuptools>=77",
+    "twine>=6",
+    "wheel>=0.43",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

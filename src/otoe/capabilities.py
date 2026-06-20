@@ -5,6 +5,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
+from ._style_schema import (
+    native_ignored_style_properties,
+    native_layout_style_properties,
+    native_paint_style_properties,
+    native_style_support,
+)
+from ._widget_contracts import known_widget_names
+
 
 class CapabilityProfileError(ValueError):
     pass
@@ -83,67 +91,19 @@ WIDGET_SUPPORT_VALUES = frozenset({"container", "control", "text"})
 INPUT_SUPPORT_VALUES = frozenset({"supported", "deferred"})
 RENDERER_BOUNDARY_SUPPORT_VALUES = frozenset({"supported", "deferred"})
 
-NATIVE_LAYOUT_STYLE_PROPERTIES = frozenset(
-    {
-        "borderWidth",
-        "fontSize",
-        "gap",
-        "height",
-        "alignItems",
-        "justifyContent",
-        "maxHeight",
-        "maxWidth",
-        "minHeight",
-        "minWidth",
-        "padding",
-        "scrollY",
-        "width",
-    }
-)
-NATIVE_PAINT_STYLE_PROPERTIES = frozenset(
-    {
-        "background",
-        "borderColor",
-        "borderRadius",
-        "borderWidth",
-        "color",
-        "fontSize",
-        "overflow",
-        "textOverflow",
-        "whiteSpace",
-    }
-)
-NATIVE_IGNORED_STYLE_PROPERTIES = frozenset(
-    {
-        "borderStyle",
-        "display",
-        "fontWeight",
-        "margin",
-        "opacity",
-    }
-)
-NATIVE_STYLE_SUPPORT = {
-    **{name: "layout" for name in NATIVE_LAYOUT_STYLE_PROPERTIES},
-    **{name: "paint" for name in NATIVE_PAINT_STYLE_PROPERTIES},
-    **{name: "ignored" for name in NATIVE_IGNORED_STYLE_PROPERTIES},
-}
-for _name in NATIVE_LAYOUT_STYLE_PROPERTIES & NATIVE_PAINT_STYLE_PROPERTIES:
-    NATIVE_STYLE_SUPPORT[_name] = "layout+paint"
+NATIVE_LAYOUT_STYLE_PROPERTIES = native_layout_style_properties()
+NATIVE_PAINT_STYLE_PROPERTIES = native_paint_style_properties()
+NATIVE_IGNORED_STYLE_PROPERTIES = native_ignored_style_properties()
+NATIVE_STYLE_SUPPORT = native_style_support()
 
-NATIVE_TEXT_WIDGETS = frozenset({"Text"})
-NATIVE_CONTROL_WIDGETS = frozenset({"Button", "Input"})
-NATIVE_CONTAINER_WIDGETS = frozenset(
-    {
-        "FocusScope",
-        "For",
-        "HStack",
-        "Panel",
-        "ScrollView",
-        "ShortcutScope",
-        "Show",
-        "VStack",
-    }
-)
+_CORE_WIDGET_NAMES = frozenset(known_widget_names())
+NATIVE_TEXT_WIDGETS = _CORE_WIDGET_NAMES & {"Text"}
+NATIVE_CONTROL_WIDGETS = _CORE_WIDGET_NAMES & {"Button", "Input"}
+# Show and For are control nodes, not registry widgets, but native layout treats
+# them as transparent containers after mount resolves their current branch.
+NATIVE_CONTAINER_WIDGETS = (
+    _CORE_WIDGET_NAMES - NATIVE_TEXT_WIDGETS - NATIVE_CONTROL_WIDGETS
+) | frozenset({"For", "Show"})
 NATIVE_WIDGET_SUPPORT = {
     **{name: "text" for name in NATIVE_TEXT_WIDGETS},
     **{name: "control" for name in NATIVE_CONTROL_WIDGETS},

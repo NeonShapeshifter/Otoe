@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import ast
 import hashlib
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Iterable, Mapping
 
 from pathlib import Path
 
@@ -61,6 +62,7 @@ CORE_RUNTIME_FILES = (
     "scheduler.py",
     "snapshot.py",
     "style.py",
+    "_style_schema.py",
     "style_ops.py",
     "style_ops_artifact.py",
     "style_ops_replay.py",
@@ -71,6 +73,7 @@ CORE_RUNTIME_FILES = (
     "timing.py",
     "ui.py",
     "ui.pyi",
+    "_widget_contracts.py",
     "_ui_commands.py",
     "_ui_data.py",
     "_ui_helpers.py",
@@ -100,9 +103,15 @@ BACKEND_RUNTIME_FILES = {
         "_native_png.py",
         "_native_shared.py",
         "_native_surface.py",
+        "_native_surface_focus.py",
+        "_native_surface_input.py",
+        "_native_surface_scroll.py",
         "_native_text.py",
     ),
 }
+# Keep this empty unless an imported local module is intentionally excluded
+# from frameworkFiles and the reason is documented near the test.
+FRAMEWORK_IMPORT_DEPENDENCY_ALLOWLIST: Mapping[str, frozenset[str]] = {}
 
 
 class BuildError(ValueError):
@@ -320,12 +329,7 @@ def bundle_artifact(path: Path, *, output_dir: Path) -> dict[str, Any]:
 
 def _framework_files(profile_config: PlanProfileConfig) -> tuple[BundleFile, ...]:
     backend_name = profile_config.backend_name or "native"
-    if backend_name not in BACKEND_RUNTIME_FILES:
-        supported = ", ".join(sorted(BACKEND_RUNTIME_FILES))
-        raise BuildError(
-            f"unsupported build backend {backend_name!r}; supported: {supported}"
-        )
-    paths = _unique_paths(CORE_RUNTIME_FILES + BACKEND_RUNTIME_FILES[backend_name])
+    paths = _framework_runtime_paths(backend_name)
     return tuple(
         BundleFile(
             source=OTOE_PACKAGE_DIR / path,
@@ -333,6 +337,154 @@ def _framework_files(profile_config: PlanProfileConfig) -> tuple[BundleFile, ...
         )
         for path in paths
     )
+
+
+def _framework_runtime_paths(backend_name: str) -> tuple[str, ...]:
+    if backend_name not in BACKEND_RUNTIME_FILES:
+        supported = ", ".join(sorted(BACKEND_RUNTIME_FILES))
+        raise BuildError(
+            f"unsupported build backend {backend_name!r}; supported: {supported}"
+        )
+    return _unique_paths(CORE_RUNTIME_FILES + BACKEND_RUNTIME_FILES[backend_name])
+
+
+def _framework_import_dependency_errors(
+    backend_name: str,
+    *,
+    included_paths: Iterable[str] | None = None,
+    allowlist: Mapping[str, Iterable[str]] | None = None,
+) -> tuple[str, ...]:
+    paths = (
+        tuple(included_paths)
+        if included_paths is not None
+        else _framework_runtime_paths(backend_name)
+    )
+    included = set(paths)
+    allowed = _normalize_framework_dependency_allowlist(
+        allowlist or FRAMEWORK_IMPORT_DEPENDENCY_ALLOWLIST
+    )
+    errors: list[str] = []
+    for source_path in sorted(path for path in included if path.endswith(".py")):
+        for dependency_path in _local_runtime_imports(source_path):
+            if dependency_path in included:
+                continue
+            if dependency_path in allowed.get(source_path, frozenset()):
+                continue
+            if dependency_path in allowed.get("*", frozenset()):
+                continue
+            errors.append(
+                f"{source_path} imports {dependency_path}, but {dependency_path} "
+                f"is not included in frameworkFiles for backend {backend_name!r}"
+            )
+    return tuple(errors)
+
+
+def _normalize_framework_dependency_allowlist(
+    allowlist: Mapping[str, Iterable[str]],
+) -> dict[str, frozenset[str]]:
+    return {source: frozenset(dependencies) for source, dependencies in allowlist.items()}
+
+
+def _local_runtime_imports(runtime_path: str) -> tuple[str, ...]:
+    source_path = OTOE_PACKAGE_DIR / runtime_path
+    if source_path.suffix != ".py" or not source_path.is_file():
+        return ()
+
+    tree = ast.parse(source_path.read_text(encoding="utf-8"), filename=str(source_path))
+    dependencies: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom):
+            dependencies.update(_import_from_local_runtime_files(runtime_path, node))
+        elif isinstance(node, ast.Import):
+            for alias in node.names:
+                dependency = _absolute_otoe_module_runtime_file(alias.name)
+                if dependency is not None:
+                    dependencies.add(dependency)
+    dependencies.discard(runtime_path)
+    return tuple(sorted(dependencies))
+
+
+def _import_from_local_runtime_files(
+    runtime_path: str,
+    node: ast.ImportFrom,
+) -> tuple[str, ...]:
+    dependencies: set[str] = set()
+    if node.level:
+        base_parts = _relative_import_base_parts(runtime_path, node.level)
+        if node.module is None:
+            for alias in node.names:
+                dependency = _module_runtime_file((*base_parts, *alias.name.split(".")))
+                if dependency is not None:
+                    dependencies.add(dependency)
+            return tuple(sorted(dependencies))
+
+        module_parts = (*base_parts, *node.module.split("."))
+        dependency = _module_runtime_file(module_parts)
+        if dependency is not None:
+            dependencies.add(dependency)
+        if _is_runtime_package(module_parts):
+            for alias in node.names:
+                dependency = _module_runtime_file((*module_parts, *alias.name.split(".")))
+                if dependency is not None:
+                    dependencies.add(dependency)
+        return tuple(sorted(dependencies))
+
+    if node.module is None:
+        return ()
+    if node.module == "otoe":
+        for alias in node.names:
+            dependency = _module_runtime_file(tuple(alias.name.split(".")))
+            if dependency is not None:
+                dependencies.add(dependency)
+        return tuple(sorted(dependencies))
+    if node.module.startswith("otoe."):
+        module_parts = tuple(node.module.split(".")[1:])
+        dependency = _module_runtime_file(module_parts)
+        if dependency is not None:
+            dependencies.add(dependency)
+        if _is_runtime_package(module_parts):
+            for alias in node.names:
+                dependency = _module_runtime_file((*module_parts, *alias.name.split(".")))
+                if dependency is not None:
+                    dependencies.add(dependency)
+    return tuple(sorted(dependencies))
+
+
+def _relative_import_base_parts(runtime_path: str, level: int) -> tuple[str, ...]:
+    package_parts = Path(runtime_path).parent.parts
+    parent_levels = level - 1
+    if parent_levels > len(package_parts):
+        return ()
+    if parent_levels == 0:
+        return package_parts
+    return package_parts[:-parent_levels]
+
+
+def _absolute_otoe_module_runtime_file(module_name: str) -> str | None:
+    if module_name == "otoe":
+        return "__init__.py"
+    if not module_name.startswith("otoe."):
+        return None
+    return _module_runtime_file(tuple(module_name.split(".")[1:]))
+
+
+def _module_runtime_file(module_parts: tuple[str, ...]) -> str | None:
+    if not module_parts:
+        return "__init__.py"
+    module_file = Path(*module_parts).with_suffix(".py")
+    if (OTOE_PACKAGE_DIR / module_file).is_file():
+        return module_file.as_posix()
+    package_file = Path(*module_parts) / "__init__.py"
+    if (OTOE_PACKAGE_DIR / package_file).is_file():
+        return package_file.as_posix()
+    return None
+
+
+def _is_runtime_package(module_parts: tuple[str, ...]) -> bool:
+    if not module_parts:
+        return True
+    package_file = Path(*module_parts) / "__init__.py"
+    return (OTOE_PACKAGE_DIR / package_file).is_file()
 
 
 def _backend_package_bundle_root(name: str) -> Path:

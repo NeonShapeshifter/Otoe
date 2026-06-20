@@ -1,7 +1,17 @@
 from examples.wraith.arsenal import ArsenalView
 from examples.wraith.runtime_status import RuntimeStatusCluster
 from examples.wraith.topbar import TopBar
-from otoe import mount, signal, snapshot, snapshot_text
+from otoe import Widget, mount, signal, snapshot, snapshot_text
+
+
+class SnapshotProbe:
+    def __repr__(self):
+        return "<SnapshotProbe>"
+
+
+class SnapshotWidget(Widget):
+    props = {"data", "label"}
+    events = {"onReady"}
 
 
 def test_snapshot_serializes_widget_props_events_and_children():
@@ -21,6 +31,37 @@ def test_snapshot_serializes_widget_props_events_and_children():
         "content": "WRAITH OS",
     }
     assert tree["children"][3]["events"] == ["onClick"]
+
+
+def test_snapshot_stabilizes_nested_non_json_props_and_event_order():
+    mounted = mount(
+        SnapshotWidget(
+            label="Probe",
+            data={
+                2: ("tuple", SnapshotProbe()),
+                "list": [None, True, 3],
+            },
+            onReady=lambda: None,
+        )
+    )
+
+    tree = snapshot(mounted)
+    text = snapshot_text(mounted)
+
+    assert tree == {
+        "name": "SnapshotWidget",
+        "props": {
+            "data": {
+                "2": ["tuple", "<SnapshotProbe>"],
+                "list": [None, True, 3],
+            },
+            "label": "Probe",
+        },
+        "events": ["onReady"],
+        "children": [],
+    }
+    assert '"2": [' in text
+    assert '"events": [\n    "onReady"\n  ]' in text
 
 
 def test_snapshot_reflects_topbar_state_changes():
@@ -95,4 +136,3 @@ def test_snapshot_tracks_runtime_status_polling():
     assert "CPU: 42C" in before
     assert "WiFi: DOWN" in after
     assert "CPU: 45C" in after
-

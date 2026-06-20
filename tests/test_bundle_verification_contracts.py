@@ -7,7 +7,10 @@ import pytest
 import otoe.build_runner_template as runner
 from otoe.backend_package import package_hash
 from otoe.bundle_backend_coverage import verify_backend_coverage_contract
-from otoe.bundle_backend_package import verify_backend_package
+from otoe.bundle_backend_package import (
+    verify_backend_package,
+    verify_backend_package_report,
+)
 from otoe.bundle_deps import verify_dependency_audit_contract
 
 
@@ -173,6 +176,110 @@ def test_backend_coverage_contract_rejects_external_render_tree_hash_drift():
         verify_backend_coverage_contract(payload, "otoe-backend-coverage.json")
 
 
+def test_backend_coverage_contract_reports_failed_blockers():
+    payload = _backend_coverage_payload()
+    payload["passed"] = False
+    payload["blockers"] = ["widgets missing: Button", "inputs missing: click"]
+
+    with pytest.raises(
+        ValueError,
+        match="backend coverage failed: widgets missing: Button, inputs missing: click",
+    ):
+        verify_backend_coverage_contract(payload, "otoe-backend-coverage.json")
+
+
+def test_backend_coverage_contract_rejects_duplicate_section_names():
+    payload = _backend_coverage_payload()
+    payload["coverage"]["inputs"]["required"] = ["click", "click"]
+
+    with pytest.raises(
+        ValueError,
+        match="coverage.inputs.required must not contain duplicate names",
+    ):
+        verify_backend_coverage_contract(payload, "otoe-backend-coverage.json")
+
+
+def test_backend_coverage_contract_rejects_evidence_map_key_drift():
+    payload = _backend_coverage_payload()
+    payload["coverage"]["widgets"] = _covered_section(
+        "Text",
+        {
+            "groupIndex": 0,
+            "source": "widget-audit",
+            "gate": "required",
+            "capabilityProof": {
+                "source": "widget-audit",
+                "auditHash": _sha_uri("widgets"),
+                "itemCount": 1,
+                "observedWidgets": ["Text"],
+            },
+        },
+    )
+    payload["coverage"]["widgets"]["evidenceMap"]["Button"] = (
+        payload["coverage"]["widgets"]["evidenceMap"].pop("Text")
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="coverage.widgets.evidenceMap keys mismatch: missing Text; extra Button",
+    ):
+        verify_backend_coverage_contract(payload, "otoe-backend-coverage.json")
+
+
+def test_backend_coverage_contract_rejects_malformed_capability_proof():
+    payload = _backend_coverage_payload()
+    payload["coverage"]["widgets"] = _covered_section(
+        "Button",
+        {
+            "groupIndex": 0,
+            "source": "widget-audit",
+            "gate": "required",
+            "capabilityProof": {
+                "source": "widget-audit",
+                "auditHash": _sha_uri("widgets"),
+                "itemCount": 1,
+                "observedWidgets": ["Text"],
+            },
+        },
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"capabilityProof.observedWidgets must include 'Button'",
+    ):
+        verify_backend_coverage_contract(payload, "otoe-backend-coverage.json")
+
+
+def test_backend_coverage_contract_rejects_malformed_runtime_proof():
+    payload = _backend_coverage_payload()
+    payload["coverage"]["styles"] = _covered_section(
+        "background",
+        {
+            "groupIndex": 0,
+            "source": "style-runtime",
+            "gate": "required",
+            "runtimeProof": {
+                "source": "style-runtime",
+                "rendererBackend": "native-python",
+                "styleOpsPresent": True,
+                "styleOpsMatchesRenderTree": True,
+                "styledNodes": 1,
+                "layoutBoxes": 1,
+                "paintCommands": 1,
+                "phases": ["layout", "composite"],
+                "layoutObservationCount": 1,
+                "layoutObservationHash": _sha_uri("style-layout"),
+            },
+        },
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="runtimeProof.phases must include layout/paint phase names",
+    ):
+        verify_backend_coverage_contract(payload, "otoe-backend-coverage.json")
+
+
 def test_build_runner_rejects_path_traversal_manifest_entry():
     with pytest.raises(ValueError, match="bundle path '../secret.py' is not safe"):
         runner._verify_manifest_file_entry(
@@ -250,6 +357,43 @@ def test_bundle_backend_package_rejects_unsafe_descriptor_path(tmp_path):
         verify_backend_package(manifest, root=tmp_path)
 
 
+def test_bundle_backend_package_allows_missing_package_section(tmp_path):
+    verify_backend_package({}, root=tmp_path)
+
+
+def test_bundle_backend_package_rejects_non_object_package_section(tmp_path):
+    with pytest.raises(
+        ValueError,
+        match="manifest.json: backendPackage must be an object",
+    ):
+        verify_backend_package({"backendPackage": []}, root=tmp_path)
+
+
+def test_bundle_backend_package_rejects_missing_descriptor_file(tmp_path):
+    manifest = {"backendPackage": {"path": "backend/path0/backend-package.json"}}
+
+    with pytest.raises(
+        FileNotFoundError,
+        match="bundle file 'backend/path0/backend-package.json' does not exist",
+    ):
+        verify_backend_package(manifest, root=tmp_path)
+
+
+def test_bundle_backend_package_rejects_descriptor_schema_mismatch(tmp_path):
+    descriptor = tmp_path / "backend/path0/backend-package.json"
+    descriptor.parent.mkdir(parents=True)
+    _write_json(descriptor, {"schemaVersion": 2, "format": "backend-package"})
+
+    with pytest.raises(
+        ValueError,
+        match="unsupported schemaVersion 2; expected 1",
+    ):
+        verify_backend_package(
+            {"backendPackage": {"path": "backend/path0/backend-package.json"}},
+            root=tmp_path,
+        )
+
+
 def test_bundle_backend_package_rejects_invalid_descriptor_payload(tmp_path):
     descriptor = tmp_path / "backend/path0/backend-package.json"
     descriptor.parent.mkdir(parents=True)
@@ -272,6 +416,17 @@ def test_bundle_backend_package_rejects_invalid_descriptor_payload(tmp_path):
         )
 
 
+def test_bundle_backend_package_rejects_manifest_descriptor_metadata_drift(tmp_path):
+    manifest = _write_backend_package_bundle(tmp_path)
+    manifest["backendPackage"]["label"] = "Wrong Label"
+
+    with pytest.raises(
+        ValueError,
+        match="manifest.json.backendPackage.label must match",
+    ):
+        verify_backend_package(manifest, root=tmp_path)
+
+
 def test_bundle_backend_package_requires_file_artifact_entry(tmp_path):
     manifest = _write_backend_package_bundle(tmp_path)
     manifest["artifacts"] = [{"path": manifest["backendPackage"]["path"]}]
@@ -279,6 +434,17 @@ def test_bundle_backend_package_requires_file_artifact_entry(tmp_path):
     with pytest.raises(
         ValueError,
         match="manifest.json: artifacts missing 'backend/path0/runner.py'",
+    ):
+        verify_backend_package(manifest, root=tmp_path)
+
+
+def test_bundle_backend_package_rejects_missing_declared_file(tmp_path):
+    manifest = _write_backend_package_bundle(tmp_path)
+    (tmp_path / "backend/path0/runner.py").unlink()
+
+    with pytest.raises(
+        FileNotFoundError,
+        match="bundle file 'backend/path0/runner.py' does not exist",
     ):
         verify_backend_package(manifest, root=tmp_path)
 
@@ -292,6 +458,20 @@ def test_bundle_backend_package_detects_descriptor_file_hash_mismatch(tmp_path):
         "'backend/path0/runner.py' sha256 mismatch",
     ):
         verify_backend_package(manifest, root=tmp_path)
+
+
+def test_bundle_backend_package_report_rejects_style_hash_drift(tmp_path):
+    manifest = _write_backend_package_report_bundle(tmp_path)
+    report_path = tmp_path / manifest["externalBackendReport"]
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report["input"]["styleOps"]["artifactHash"] = _sha_uri("wrong-styles")
+    _write_json(report_path, report)
+
+    with pytest.raises(
+        ValueError,
+        match="backend package report style artifact hash mismatch",
+    ):
+        verify_backend_package_report(manifest, root=tmp_path)
 
 
 def _backend_coverage_payload() -> dict:
@@ -470,11 +650,74 @@ def _write_backend_package_bundle(
     }
 
 
+def _write_backend_package_report_bundle(root: Path) -> dict:
+    manifest = _write_backend_package_bundle(root)
+    render_tree = {
+        "schemaVersion": 1,
+        "format": "otoe-render-tree",
+        "nodeCount": 1,
+    }
+    styles = {
+        "schemaVersion": 1,
+        "format": "otoe-style-artifact",
+        "styleOps": {"classes": []},
+    }
+    layout = {
+        "format": "path0-layout-output",
+        "boxCount": 1,
+    }
+    layout["outputHash"] = _contract_hash(layout)
+    paint = {
+        "format": "path0-paint-output",
+        "commandCount": 1,
+    }
+    paint["outputHash"] = _contract_hash(paint)
+    report = {
+        "schemaVersion": 1,
+        "format": "path0-external-backend-report",
+        "backend": "path0",
+        "source": "bundle:otoe-render-tree.json",
+        "input": {
+            "renderTreeHash": _contract_hash(render_tree),
+            "nodeCount": 1,
+            "styleOps": {
+                "present": True,
+                "artifactHash": _contract_hash(styles),
+            },
+        },
+        "output": {
+            "layout": layout,
+            "paint": paint,
+        },
+    }
+    _write_json(root / "otoe-render-tree.json", render_tree)
+    _write_json(root / "otoe-styles.json", styles)
+    _write_json(root / "otoe-path0-external-backend.json", report)
+    manifest.update(
+        {
+            "renderTree": "otoe-render-tree.json",
+            "styles": "otoe-styles.json",
+            "externalBackendReport": "otoe-path0-external-backend.json",
+        }
+    )
+    return manifest
+
+
 def _write_json(path: Path, payload: dict) -> None:
     path.write_text(
         json.dumps(payload, ensure_ascii=True, sort_keys=True),
         encoding="utf-8",
     )
+
+
+def _contract_hash(payload: dict) -> str:
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
 
 
 def _sha_uri(label: str) -> str:

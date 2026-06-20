@@ -32,6 +32,8 @@ def _jsonable(value: Any) -> Any:
     if isinstance(value, tuple):
         return [_jsonable(item) for item in value]
     if isinstance(value, dict):
-        return {str(key): _jsonable(val) for key, val in sorted(value.items())}
+        return {
+            str(key): _jsonable(val)
+            for key, val in sorted(value.items(), key=lambda item: str(item[0]))
+        }
     return repr(value)
-

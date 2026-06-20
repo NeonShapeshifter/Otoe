@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Protocol
 
-from otoe import For, HStack, Input, Show, Text, VStack, component, computed
+from otoe import For, HStack, Input, Show, Text, VStack, component, computed, signal
 from otoe.ui import (
     ActionButton,
     AppShell,
@@ -208,6 +208,38 @@ class MemoryAdminSettingsProvider:
                 ),
             )
         )
+
+
+def app(
+    snapshot: AdminSnapshot | None = None,
+    route: str = "overview",
+    *,
+    provider: AdminSettingsProvider | None = None,
+):
+    provider = provider or MemoryAdminSettingsProvider(snapshot)
+    snapshot_signal = signal(provider.snapshot())
+    active_route = signal(route)
+
+    def navigate(route_id: str) -> None:
+        active_route.set(route_id)
+
+    def update_setting(setting_id: str, value: str) -> None:
+        snapshot_signal.set(provider.update_setting(setting_id, value))
+
+    def run_action(action_id: str) -> None:
+        snapshot_signal.set(provider.run_action(action_id))
+
+    def toggle_rule(rule_id: str) -> None:
+        snapshot_signal.set(provider.toggle_access_rule(rule_id))
+
+    return AdminSettingsConsole(
+        snapshot=snapshot_signal,
+        active_route=active_route,
+        on_navigate=navigate,
+        on_setting_change=update_setting,
+        on_action=run_action,
+        on_rule_toggle=toggle_rule,
+    )
 
 
 @component

@@ -150,8 +150,13 @@ class FakeHardwareProvider:
         return self._snapshot
 
 
-def app(snapshot: DeviceSnapshot | None = None, route: str = "overview"):
-    provider = FakeHardwareProvider(snapshot)
+def app(
+    snapshot: DeviceSnapshot | None = None,
+    route: str = "overview",
+    *,
+    provider: HardwareProvider | None = None,
+):
+    provider = provider or FakeHardwareProvider(snapshot)
     snapshot_signal = signal(provider.snapshot())
     active_route = signal(route)
 

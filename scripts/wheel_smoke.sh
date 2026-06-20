@@ -17,6 +17,41 @@ WORKDIR="${OTOE_SMOKE_WORKDIR:-"$(mktemp -d)"}"
 BUILD_ARGS=()
 if [[ "${OTOE_SMOKE_NO_BUILD_ISOLATION:-0}" == "1" ]]; then
   BUILD_ARGS+=(--no-build-isolation)
+  "$PYTHON_BIN" - <<'PY'
+from importlib.metadata import PackageNotFoundError, version
+import re
+import sys
+
+
+def version_tuple(distribution: str) -> tuple[int, ...]:
+    try:
+        raw = version(distribution)
+    except PackageNotFoundError:
+        print(
+            f"wheel smoke: --no-build-isolation requires {distribution} to be installed.",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
+    parts = tuple(int(part) for part in re.findall(r"\d+", raw)[:3])
+    return parts or (0,)
+
+
+requirements = {
+    "setuptools": (77,),
+    "wheel": (0, 43),
+}
+for distribution, minimum in requirements.items():
+    current = version_tuple(distribution)
+    if current < minimum:
+        floor = ".".join(str(part) for part in minimum)
+        installed = ".".join(str(part) for part in current)
+        print(
+            "wheel smoke: --no-build-isolation requires "
+            f"{distribution}>={floor}; found {installed}.",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
+PY
 fi
 
 rm -rf "$WHEELHOUSE"

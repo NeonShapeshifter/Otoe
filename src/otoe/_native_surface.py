@@ -7,18 +7,28 @@ from ._native_backend import NativeRendererBackend, PYTHON_NATIVE_RENDERER_BACKE
 from ._native_contracts import LayoutBox, NativeLayout, NativePaint
 from ._native_hit_test import dispatch_native_click, hit_test_native
 from ._native_shared import (
-    clamp_scroll_y,
-    max_scroll_y,
     mounted_or_none,
     native_surface_target,
-    scroll_y,
     surface_root_widget,
     tree_revision,
-    visible_through_scroll_ancestors,
-    walk_widgets,
     widget_by_path,
-    widget_context,
 )
+from ._native_surface_focus import (
+    first_autofocus_path,
+    focus_error_message,
+    focusable_paths,
+    hit_test_focusable,
+    is_focusable_path,
+)
+from ._native_surface_input import (
+    enabled_input_widget,
+    global_key_payload,
+    should_activate_button_with_key,
+    should_send_global_key,
+    trigger_global_key_down,
+    trigger_path_event,
+)
+from ._native_surface_scroll import dispatch_scroll
 from .mount import FakeWidget, MountedNode, mount, unmount
 from .node import Node
 from .style import StyleSheet
@@ -103,7 +113,7 @@ class NativeSurface:
             stylesheet=self.stylesheet,
             strict_styles=self.strict_styles,
         )
-        self._tree_revision = tree_revision(surface_root_widget(self._target))
+        self._tree_revision = tree_revision(self._root_widget())
         self._sync_focus_after_refresh()
         self._paint = self.renderer_backend.paint(
             self._layout,
@@ -139,7 +149,7 @@ class NativeSurface:
         if path == self.focused_path:
             return
         if path is not None and not self._is_focusable_path(path):
-            raise KeyError(self._focus_error_message(path))
+            raise KeyError(focus_error_message(self._root_widget(), path))
 
         previous_path = self.focused_path
         self.focused_path = path
@@ -182,22 +192,19 @@ class NativeSurface:
         result = None
         if self.focused_path is not None:
             result = self._trigger_path_event(self.focused_path, "onKeyDown", key)
-            widget = widget_by_path(
-                surface_root_widget(self._target),
-                self.focused_path,
-            )
-            if widget.name == "Button" and key in {"Enter", " ", "Spacebar"}:
+            widget = widget_by_path(self._root_widget(), self.focused_path)
+            if should_activate_button_with_key(widget, key):
                 result = self._trigger_path_event(self.focused_path, "onClick")
 
         if self._should_send_global_key(key, shift=shift, ctrl=ctrl, meta=meta, alt=alt):
             global_result = self._trigger_global_key_down(
-                {
-                    "key": key,
-                    "ctrlKey": ctrl,
-                    "metaKey": meta,
-                    "altKey": alt,
-                    "shiftKey": shift,
-                }
+                global_key_payload(
+                    key,
+                    shift=shift,
+                    ctrl=ctrl,
+                    meta=meta,
+                    alt=alt,
+                )
             )
             if global_result is not None:
                 result = global_result
@@ -223,22 +230,15 @@ class NativeSurface:
         return str(widget.props.get("value") or "")
 
     def scroll(self, x: int, y: int, delta_y: int) -> Any:
-        hit = hit_test_native(self.layout, x, y, event="onScroll")
-        if hit is None:
-            return None
-        widget = widget_by_path(surface_root_widget(self._target), hit.path)
-        if widget.name != "ScrollView" or "onScroll" not in widget.events:
-            return None
-
-        current_scroll_y = scroll_y(widget)
-        next_scroll_y = clamp_scroll_y(
-            current_scroll_y + int(delta_y),
-            max_scroll_y=max_scroll_y(hit),
+        did_scroll, result = dispatch_scroll(
+            self._root_widget(),
+            self.layout,
+            x,
+            y,
+            delta_y,
         )
-        if next_scroll_y == current_scroll_y:
+        if not did_scroll:
             return None
-
-        result = widget.trigger("onScroll", next_scroll_y)
         self.refresh()
         return result
 
@@ -254,8 +254,12 @@ class NativeSurface:
         self.focused_path = None
 
     def _ensure_fresh(self) -> None:
-        current_revision = tree_revision(surface_root_widget(self._target))
-        if self._layout is None or self._paint is None or current_revision != self._tree_revision:
+        current_revision = tree_revision(self._root_widget())
+        if (
+            self._layout is None
+            or self._paint is None
+            or current_revision != self._tree_revision
+        ):
             self.refresh()
 
     def _sync_focus_after_refresh(self) -> None:
@@ -266,100 +270,25 @@ class NativeSurface:
         self.focused_path = self._first_autofocus_path()
 
     def _first_autofocus_path(self) -> tuple[int, ...] | None:
-        widget = surface_root_widget(self._target)
-        for box in self.layout.boxes:
-            candidate = widget_by_path(widget, box.path)
-            if candidate.props.get("autoFocus") and self._is_focusable_widget(candidate):
-                return box.path
-        return None
+        return first_autofocus_path(self.layout, self._root_widget())
 
     def _focusable_paths(self) -> list[tuple[int, ...]]:
-        widget = surface_root_widget(self._target)
-        return [
-            box.path
-            for box in self.layout.boxes
-            if self._is_focusable_widget(widget_by_path(widget, box.path))
-        ]
+        return focusable_paths(self.layout, self._root_widget())
 
     def _hit_test_focusable(self, x: int, y: int) -> LayoutBox | None:
-        widget = surface_root_widget(self._target)
-        containing = [
-            box
-            for box in self.layout.boxes
-            if box.contains(x, y)
-            and visible_through_scroll_ancestors(self.layout, box, x, y)
-            and self._is_focusable_widget(widget_by_path(widget, box.path))
-        ]
-        if not containing:
-            return None
-        return max(
-            enumerate(containing),
-            key=lambda item: (len(item[1].path), item[0]),
-        )[1]
+        return hit_test_focusable(self.layout, self._root_widget(), x, y)
 
     def _is_focusable_path(self, path: tuple[int, ...]) -> bool:
-        try:
-            widget = widget_by_path(surface_root_widget(self._target), path)
-        except KeyError:
-            return False
-        return self._is_focusable_widget(widget)
-
-    def _is_focusable_widget(self, widget: FakeWidget) -> bool:
-        if widget.props.get("disabled"):
-            return False
-        return widget.name in {"Button", "Input"}
+        return is_focusable_path(self._root_widget(), path)
 
     def _enabled_input_widget(self, path: tuple[int, ...] | None) -> FakeWidget:
-        if path is None:
-            raise KeyError("NativeSurface has no focused input for text entry.")
-        try:
-            widget = widget_by_path(surface_root_widget(self._target), path)
-        except KeyError as exc:
-            raise KeyError(
-                f"No enabled native input exists at path {path!r}: "
-                "no native widget exists at that path."
-            ) from exc
-        if widget.name != "Input":
-            raise KeyError(
-                f"No enabled native input exists at path {path!r}: "
-                f"{widget_context(widget)} is {widget.name}, not Input."
-            )
-        if widget.props.get("disabled"):
-            raise KeyError(
-                f"No enabled native input exists at path {path!r}: "
-                f"{widget_context(widget)} is disabled."
-            )
-        return widget
-
-    def _focus_error_message(self, path: tuple[int, ...]) -> str:
-        try:
-            widget = widget_by_path(surface_root_widget(self._target), path)
-        except KeyError:
-            return f"No focusable native box exists at path {path!r}: no native widget exists."
-        if widget.props.get("disabled"):
-            return (
-                f"No focusable native box exists at path {path!r}: "
-                f"{widget_context(widget)} is disabled."
-            )
-        return (
-            f"No focusable native box exists at path {path!r}: "
-            f"{widget_context(widget)} is {widget.name}, not a focusable native control."
-        )
+        return enabled_input_widget(self._root_widget(), path)
 
     def _trigger_path_event(self, path: tuple[int, ...], event: str, *args: Any) -> Any:
-        try:
-            widget = widget_by_path(surface_root_widget(self._target), path)
-        except KeyError:
-            return None
-        if event not in widget.events:
-            return None
-        return widget.trigger(event, *args)
+        return trigger_path_event(self._root_widget(), path, event, *args)
 
     def _trigger_global_key_down(self, payload: dict[str, Any]) -> Any:
-        for widget in walk_widgets(surface_root_widget(self._target)):
-            if "onGlobalKeyDown" in widget.events:
-                return widget.trigger("onGlobalKeyDown", payload)
-        return None
+        return trigger_global_key_down(self._root_widget(), payload)
 
     def _should_send_global_key(
         self,
@@ -370,19 +299,15 @@ class NativeSurface:
         meta: bool,
         alt: bool,
     ) -> bool:
-        has_global = any(
-            "onGlobalKeyDown" in widget.events
-            for widget in walk_widgets(surface_root_widget(self._target))
+        return should_send_global_key(
+            self._root_widget(),
+            self.focused_path,
+            key,
+            shift=shift,
+            ctrl=ctrl,
+            meta=meta,
+            alt=alt,
         )
-        if not has_global:
-            return False
-        if ctrl or meta or key == "Escape":
-            return True
-        if len(key) != 1:
-            return False
-        if self.focused_path is None:
-            return True
-        focused = widget_by_path(surface_root_widget(self._target), self.focused_path)
-        if focused.name == "Input":
-            return False
-        return True
+
+    def _root_widget(self) -> FakeWidget:
+        return surface_root_widget(self._target)

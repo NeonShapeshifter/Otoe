@@ -1,24 +1,21 @@
 from examples.admin.settings_console import (
-    AdminSettingsConsole,
+    AdminSettingsProvider,
     AdminSnapshot,
     MemoryAdminSettingsProvider,
+    app,
 )
-from otoe import mount, render_html, signal
+from otoe import mount, render_html
 
 
-def build_preview_html(snapshot: AdminSnapshot | None = None, route: str = "overview") -> str:
-    provider = MemoryAdminSettingsProvider(snapshot)
-    app = mount(
-        AdminSettingsConsole(
-            snapshot=signal(provider.snapshot()),
-            active_route=signal(route),
-            on_navigate=lambda route_id: None,
-            on_setting_change=lambda setting_id, value: None,
-            on_action=lambda action_id: None,
-            on_rule_toggle=lambda rule_id: None,
-        )
-    )
-    body = render_html(app, pretty=True, indent=4)
+def build_preview_html(
+    snapshot: AdminSnapshot | None = None,
+    route: str = "overview",
+    *,
+    provider: AdminSettingsProvider | None = None,
+) -> str:
+    provider = provider or MemoryAdminSettingsProvider(snapshot)
+    mounted = mount(app(route=route, provider=provider))
+    body = render_html(mounted, pretty=True, indent=4)
     return f"""<!doctype html>
 <html lang="en">
 <head>

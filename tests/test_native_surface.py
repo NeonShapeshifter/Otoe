@@ -149,6 +149,21 @@ def test_native_surface_tracks_autofocus_input():
     )
 
 
+def test_native_surface_autofocus_skips_disabled_input():
+    surface = NativeSurface(
+        VStack(
+            Input(value="", disabled=True, autoFocus=True),
+            Input(value="", autoFocus=True),
+            padding=4,
+            gap=4,
+        )
+    )
+
+    assert surface.focused_path == (1,)
+    assert surface.focused_box is not None
+    assert surface.focused_box.name == "Input"
+
+
 def test_native_surface_click_moves_focus_and_runs_focus_events():
     events = []
     surface = NativeSurface(
@@ -206,6 +221,23 @@ def test_native_surface_tab_cycles_focusable_controls_and_skips_disabled():
     assert second is not None and second.path == (2,)
     assert third is not None and third.path == (0,)
     assert reverse is not None and reverse.path == (2,)
+
+
+def test_native_surface_focus_next_reverse_starts_at_last_focusable_control():
+    surface = NativeSurface(
+        HStack(
+            Button("One", onClick=lambda: None),
+            Input(value=""),
+            gap=4,
+            padding=4,
+        )
+    )
+
+    focused = surface.focus_next(reverse=True)
+
+    assert focused is not None
+    assert focused.path == (1,)
+    assert surface.focused_path == (1,)
 
 
 def test_native_surface_click_ignores_disabled_button_without_focus_change():
@@ -311,6 +343,30 @@ def test_native_surface_scroll_dispatches_clamped_scroll_y():
     assert surface.box((1,)).y == 2
 
 
+def test_native_surface_scroll_noop_at_clamped_bounds_does_not_refresh_or_dispatch():
+    calls = []
+    scroll_y = signal(0)
+    sheet = css(".scroll { width: 120; height: 40; padding: 4; gap: 4; }")
+    surface = NativeSurface(
+        ScrollView(
+            Button("First", onClick=lambda: None),
+            Button("Second", onClick=lambda: None),
+            scrollY=scroll_y,
+            onScroll=lambda next_scroll_y: calls.append(next_scroll_y),
+            className="scroll",
+        ),
+        stylesheet=sheet,
+    )
+    frame = surface.frame
+
+    result = surface.scroll(8, 8, -100)
+
+    assert result is None
+    assert calls == []
+    assert scroll_y.value == 0
+    assert surface.frame == frame
+
+
 def test_native_surface_key_down_dispatches_to_focused_widget():
     keys = []
     surface = NativeSurface(Input(value="", autoFocus=True, onKeyDown=keys.append))
@@ -328,6 +384,22 @@ def test_native_surface_enter_activates_focused_button():
     surface.key_down("Enter")
 
     assert label.value == "ON"
+
+
+def test_native_surface_global_key_down_skips_plain_text_while_input_is_focused():
+    focused_keys = []
+    payloads = []
+    surface = NativeSurface(
+        ShortcutScope(
+            Input(value="", autoFocus=True, onKeyDown=focused_keys.append),
+            onKeyDown=payloads.append,
+        )
+    )
+
+    surface.key_down("a")
+
+    assert focused_keys == ["a"]
+    assert payloads == []
 
 
 def test_native_surface_global_key_down_matches_live_preview_shape():
@@ -393,6 +465,13 @@ def test_native_surface_input_value_reads_focused_or_explicit_input():
 
     assert surface.input_value() == "alpha"
     assert surface.input_value(path=(1,)) == "beta"
+
+
+def test_native_surface_input_value_rejects_disabled_input():
+    surface = NativeSurface(Input(value="locked", disabled=True))
+
+    with pytest.raises(KeyError, match="No enabled native input"):
+        surface.input_value(path=())
 
 
 def test_native_surface_input_text_can_target_an_unfocused_input():

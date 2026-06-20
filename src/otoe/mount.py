@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Callable, Protocol, cast
 
+from ._widget_contracts import widget_event_signatures, widget_events, widget_props
 from .component import is_component_tag
 from .control import is_control_tag, is_for_tag, is_show_tag, list_from_value, resolve_value
 from .errors import EventHandlerError, UnknownEventError, UnknownPropError
@@ -112,8 +113,8 @@ def _mount_widget(
     widget = FakeWidget(node.tag, component_stack=component_stack)
     mounted = MountedNode(node=node, widget=widget)
 
-    data_props = set(getattr(node.tag, "props", set()))
-    events = set(getattr(node.tag, "events", set()))
+    data_props = set(widget_props(node.tag))
+    events = set(widget_events(node.tag))
 
     for name, value in node.props.items():
         if name in events:
@@ -257,7 +258,7 @@ def _unknown_event_message(widget: FakeWidget, name: str, events: set[str]) -> s
     message = f"{_widget_context(widget)} received unknown event {name!r}."
     if not events:
         return message
-    signatures = getattr(widget.tag, "event_signatures", {})
+    signatures = widget_event_signatures(widget.tag)
     return f"{message} Known events: {format_event_catalog(events, signatures)}."
 
 

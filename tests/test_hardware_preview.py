@@ -3,10 +3,13 @@ import os
 import re
 import subprocess
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 from examples.hardware.control_panel import (
+    CommandFeedback,
     FakeHardwareProvider,
+    HardwareEvent,
     demo_snapshot,
     empty_snapshot,
     error_snapshot,
@@ -19,6 +22,39 @@ from otoe.cli import main
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+class RecordingHardwareProvider:
+    def __init__(self):
+        self.commands: list[str] = []
+        self._snapshot = replace(demo_snapshot(), mode="Injected provider idle")
+
+    def snapshot(self):
+        return self._snapshot
+
+    def run_command(self, command_id):
+        self.commands.append(command_id)
+        self._snapshot = replace(
+            self._snapshot,
+            mode=f"Provider handled {command_id}",
+            events=[
+                HardwareEvent(
+                    "injected-provider-command",
+                    "10:01",
+                    "provider",
+                    f"Injected provider handled {command_id}",
+                    "success",
+                ),
+                *self._snapshot.events,
+            ][:8],
+            last_feedback=CommandFeedback(
+                command_id,
+                "Injected provider command",
+                f"Provider adapter received {command_id}.",
+                "success",
+            ),
+        )
+        return self._snapshot
 
 
 def _click_id_before(html, marker):
@@ -50,6 +86,22 @@ def test_hardware_preview_contains_reference_app_surface():
     assert "Run self-test" in html
     assert "Computed object" not in html
     assert "HardwareControlPanel" not in html
+
+
+def test_hardware_preview_accepts_provider_boundary():
+    provider = FakeHardwareProvider(
+        replace(
+            demo_snapshot(),
+            device_name="Bench Controller P42",
+            status_detail="Injected provider snapshot for preview.",
+        )
+    )
+
+    html = build_preview_html(provider=provider)
+
+    assert "Bench Controller P42" in html
+    assert "Injected provider snapshot for preview." in html
+    assert "Bench Controller A17" not in html
 
 
 def test_hardware_control_panel_app_cli_renders_html_and_native_png(tmp_path):
@@ -216,6 +268,19 @@ def test_hardware_live_preview_dispatches_command():
     assert "Mode: Self-test queued" in html
     assert "Self-test scheduled" in html
     assert "Diagnostics will run without changing output state." in html
+
+
+def test_hardware_live_preview_uses_injected_provider_for_commands():
+    provider = RecordingHardwareProvider()
+    app = HardwareLivePreview(provider=provider)
+    html = app.render_fragment()
+    click_id = _click_id_before(html, "Run self-test")
+
+    html = app.dispatch_event(click_id)
+
+    assert provider.commands == ["self-test"]
+    assert "Mode: Provider handled self-test" in html
+    assert "Provider adapter received self-test." in html
 
 
 def test_hardware_live_preview_navigates_to_controls_and_runs_calibration():

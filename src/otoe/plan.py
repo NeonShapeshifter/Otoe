@@ -8,38 +8,24 @@ from .capabilities import (
     CapabilityProfileError,
     backend_capability_profile,
 )
-from ._native_shared import (
-    parse_color,
-    resolve_token,
-)
-from ._native_contracts import NativePaintError
 from ._render_identity import (
     mounted_child_key,
     optional_string,
     render_key_label,
     render_node_id,
 )
+from ._style_planning import (
+    classify_style_value,
+    dedupe_names,
+    planned_class_names,
+)
 from .mount import MountedNode
-from .style import DIMENSION_PROPERTIES, Size, StyleSheet, Token
+from .style import StyleSheet
 
 
 PLAN_STATUSES = ("portable", "html-only", "deferred", "invalid")
 SUPPORTED_PLAN_PROFILES = frozenset({"cage"})
 DIRECT_STYLE_PROPS = ("gap", "padding", "scrollY", "color")
-TOKEN_STYLE_PROPS = frozenset({"background", "borderColor", "color"})
-ALIGN_VALUES = frozenset({"start", "flex-start", "center", "end", "flex-end", "stretch"})
-JUSTIFY_VALUES = frozenset(
-    {
-        "start",
-        "flex-start",
-        "center",
-        "end",
-        "flex-end",
-        "space-between",
-        "space-around",
-        "space-evenly",
-    }
-)
 
 
 class PlanError(ValueError):
@@ -137,15 +123,15 @@ def plan_mounted(
     widgets = [entry.widget for entry in widgets_with_paths]
     widget_support_counts = _widget_support_counts(widgets, capabilities)
     used_classes = _used_classes(widgets)
-    safelisted_classes = tuple(_dedupe(safelist))
+    safelisted_classes = tuple(dedupe_names(safelist))
     static_classes = tuple(
-        _dedupe(
+        dedupe_names(
             class_name
             for class_name in static_classes
             if class_name not in used_classes and class_name not in safelisted_classes
         )
     )
-    classes_to_plan = _planned_class_names(
+    classes_to_plan = planned_class_names(
         used_classes=used_classes,
         static_classes=static_classes,
         safelisted_classes=safelisted_classes,
@@ -187,7 +173,7 @@ def plan_mounted(
             continue
 
         for prop, value in rule.declarations.items():
-            status, message = _classify_style_value(prop, value, stylesheet, capabilities)
+            status, message = classify_style_value(prop, value, stylesheet, capabilities)
             style_counts[status] += 1
             if message is not None:
                 diagnostic_entries.append(
@@ -206,7 +192,7 @@ def plan_mounted(
         for prop in DIRECT_STYLE_PROPS:
             if prop not in widget.props:
                 continue
-            status, message = _classify_style_value(
+            status, message = classify_style_value(
                 prop,
                 widget.props[prop],
                 stylesheet,
@@ -254,8 +240,8 @@ def plan_mounted(
         static_classes=static_classes,
         safelisted_classes=safelisted_classes,
         planned_classes=tuple(planned_classes),
-        html_only_classes=tuple(_dedupe(html_only_classes)),
-        invalid_classes=tuple(_dedupe(invalid_classes)),
+        html_only_classes=tuple(dedupe_names(html_only_classes)),
+        invalid_classes=tuple(dedupe_names(invalid_classes)),
         style_counts=style_counts,
         direct_style_counts=direct_style_counts,
         direct_styles=tuple(direct_styles),
@@ -284,41 +270,6 @@ def compiled_styles_to_dict(
     from .plan_artifacts import compiled_styles_to_dict as _compiled_styles_to_dict
 
     return _compiled_styles_to_dict(plan, target=target, stylesheet=stylesheet)
-
-
-def _classify_style_value(
-    prop: str,
-    value: Any,
-    stylesheet: StyleSheet | None,
-    capabilities: BackendCapabilityProfile,
-) -> tuple[str, str | None]:
-    native_support = capabilities.style(prop)
-    if native_support is None:
-        return "invalid", f"unsupported native style property {prop!r}"
-    if native_support == "ignored":
-        return "html-only", f"property {prop!r} is accepted but ignored by native"
-
-    resolved = resolve_token(value, stylesheet.tokens if stylesheet is not None else {})
-    if isinstance(resolved, Token):
-        return "invalid", f"unresolved token {resolved.name!r}"
-
-    if prop in DIMENSION_PROPERTIES:
-        dimension_status = _classify_dimension(prop, resolved)
-        if dimension_status is not None:
-            return dimension_status
-
-    if prop in TOKEN_STYLE_PROPS and isinstance(resolved, str):
-        try:
-            parse_color(resolved)
-        except NativePaintError as exc:
-            return "invalid", str(exc)
-
-    if prop == "alignItems" and str(resolved) not in ALIGN_VALUES:
-        return "invalid", f"unsupported native alignItems value {resolved!r}"
-    if prop == "justifyContent" and str(resolved) not in JUSTIFY_VALUES:
-        return "invalid", f"unsupported native justifyContent value {resolved!r}"
-
-    return "portable", None
 
 
 def _widget_support_counts(
@@ -375,20 +326,6 @@ def _walk_widgets_with_paths(
         )
 
 
-def _classify_dimension(prop: str, value: Any) -> tuple[str, str] | None:
-    if isinstance(value, Size):
-        if value.unit != "px":
-            return "deferred", f"property {prop!r} uses non-px dimension {value.unit!r}"
-        if value.value < 0:
-            return "invalid", f"property {prop!r} uses negative dimension {value.value!r}"
-        return None
-    if isinstance(value, (int, float)):
-        if value < 0:
-            return "invalid", f"property {prop!r} uses negative dimension {value!r}"
-        return None
-    return "deferred", f"property {prop!r} needs a px dimension, got {value!r}"
-
-
 def _used_classes(widgets) -> tuple[str, ...]:
     class_names: list[str] = []
     for widget in widgets:
@@ -396,27 +333,7 @@ def _used_classes(widgets) -> tuple[str, ...]:
         if raw is None:
             continue
         class_names.extend(name for name in str(raw).split() if name)
-    return tuple(_dedupe(class_names))
-
-
-def _planned_class_names(
-    *,
-    used_classes: tuple[str, ...],
-    static_classes: tuple[str, ...],
-    safelisted_classes: tuple[str, ...],
-) -> tuple[str, ...]:
-    return _dedupe((*used_classes, *static_classes, *safelisted_classes))
-
-
-def _dedupe(values) -> tuple[str, ...]:
-    seen = set()
-    result = []
-    for value in values:
-        if value in seen:
-            continue
-        seen.add(value)
-        result.append(value)
-    return tuple(result)
+    return tuple(dedupe_names(class_names))
 
 
 def _empty_counts() -> dict[str, int]:

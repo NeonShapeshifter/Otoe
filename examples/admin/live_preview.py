@@ -4,7 +4,11 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from examples.admin.settings_console import AdminSettingsConsole, MemoryAdminSettingsProvider
+from examples.admin.settings_console import (
+    AdminSettingsConsole,
+    AdminSettingsProvider,
+    MemoryAdminSettingsProvider,
+)
 from examples.live_server import (
     LivePreviewConfig,
     parse_host_port,
@@ -26,9 +30,9 @@ LIVE_CONFIG = LivePreviewConfig(
 
 
 class AdminLivePreview:
-    def __init__(self) -> None:
+    def __init__(self, provider: AdminSettingsProvider | None = None) -> None:
         self._lock = threading.RLock()
-        self.provider = MemoryAdminSettingsProvider()
+        self.provider = provider or MemoryAdminSettingsProvider()
         self.renderer = LiveHtmlRenderer()
         self.snapshot = signal(self.provider.snapshot())
         self.active_route = signal("overview")

@@ -140,8 +140,8 @@ def test_style_guide_points_css_at_offline_profiles():
     assert "--profile cage" in text
 
 
-def test_roadmap_keeps_low_level_build_work_in_scope():
-    text = (ROOT / "ROADMAP.md").read_text(encoding="utf-8")
+def test_technical_ledger_keeps_low_level_build_work_in_scope():
+    text = (ROOT / "docs" / "technical-ledger.md").read_text(encoding="utf-8")
     single_spaced = _single_spaced(text)
 
     assert "Low-Level Build Direction" in text

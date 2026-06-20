@@ -4,7 +4,11 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from examples.data_workflow.workbench import DataWorkflowWorkbench, MemoryDataWorkflowProvider
+from examples.data_workflow.workbench import (
+    DataWorkflowProvider,
+    DataWorkflowWorkbench,
+    MemoryDataWorkflowProvider,
+)
 from examples.live_server import (
     LivePreviewConfig,
     parse_host_port,
@@ -26,9 +30,9 @@ LIVE_CONFIG = LivePreviewConfig(
 
 
 class DataWorkflowLivePreview:
-    def __init__(self) -> None:
+    def __init__(self, provider: DataWorkflowProvider | None = None) -> None:
         self._lock = threading.RLock()
-        self.provider = MemoryDataWorkflowProvider()
+        self.provider = provider or MemoryDataWorkflowProvider()
         self.renderer = LiveHtmlRenderer()
         self.snapshot = signal(self.provider.snapshot())
         self.active_route = signal("queue")

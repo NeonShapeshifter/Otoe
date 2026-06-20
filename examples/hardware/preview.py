@@ -1,9 +1,14 @@
-from examples.hardware.control_panel import DeviceSnapshot, app
+from examples.hardware.control_panel import DeviceSnapshot, HardwareProvider, app
 from otoe import mount, render_html
 
 
-def build_preview_html(snapshot: DeviceSnapshot | None = None, route: str = "overview") -> str:
-    mounted = mount(app(snapshot=snapshot, route=route))
+def build_preview_html(
+    snapshot: DeviceSnapshot | None = None,
+    route: str = "overview",
+    *,
+    provider: HardwareProvider | None = None,
+) -> str:
+    mounted = mount(app(snapshot=snapshot, route=route, provider=provider))
     body = render_html(mounted, pretty=True, indent=4)
     return f"""<!doctype html>
 <html lang="en">

@@ -1,6 +1,7 @@
 import json
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 from otoe.live_server import (
     LivePreviewConfig,
@@ -156,6 +157,44 @@ def test_live_preview_state_ignores_stale_event_sequences():
     assert app.events == ["new"]
 
 
+def test_live_preview_state_tracks_stale_sequences_per_client():
+    class StatefulPreview:
+        def __init__(self):
+            self.events = []
+
+        def render_fragment(self) -> str:
+            return f"<p>{','.join(self.events)}</p>"
+
+        def dispatch_event(self, event_id, *args):
+            self.events.append(event_id)
+            return self.render_fragment()
+
+    app = StatefulPreview()
+    state = _LivePreviewState(
+        app,
+        LivePreviewConfig(
+            title="Dummy",
+            css_route="/dummy.css",
+            css_path=Path("dummy.css"),
+        ),
+    )
+
+    first_client = state.dispatch_payload(
+        {"id": "a1", "args": [], "clientId": "client-a", "sequence": 1}
+    )
+    second_client = state.dispatch_payload(
+        {"id": "b1", "args": [], "clientId": "client-b", "sequence": 1}
+    )
+    stale_first_client = state.dispatch_payload(
+        {"id": "a0", "args": [], "clientId": "client-a", "sequence": 1}
+    )
+
+    assert first_client == {"ok": True, "html": "<p>a1</p>", "stale": False}
+    assert second_client == {"ok": True, "html": "<p>a1,b1</p>", "stale": False}
+    assert stale_first_client == {"ok": True, "html": "<p>a1,b1</p>", "stale": True}
+    assert app.events == ["a1", "b1"]
+
+
 def test_live_event_endpoint_accepts_valid_payload():
     state = _live_preview_state()
 
@@ -189,11 +228,77 @@ def test_live_event_endpoint_rejects_non_list_args():
     assert payload == {"ok": False, "error": "event args must be a list"}
 
 
+def test_live_event_endpoint_rejects_sequence_without_client_id():
+    status, payload = _post_event(
+        _live_preview_state(),
+        {"id": "x:onClick", "args": [], "sequence": 1},
+    )
+
+    assert status == 400
+    assert payload == {
+        "ok": False,
+        "error": "event clientId must be a non-empty string",
+    }
+
+
+def test_live_event_endpoint_rejects_non_positive_sequence():
+    status, payload = _post_event(
+        _live_preview_state(),
+        {"id": "x:onClick", "args": [], "clientId": "client-a", "sequence": 0},
+    )
+
+    assert status == 400
+    assert payload == {
+        "ok": False,
+        "error": "event sequence must be a positive integer",
+    }
+
+
 def test_live_event_endpoint_rejects_invalid_json():
     status, payload = _post_event_bytes(_live_preview_state(), b'{"id":')
 
     assert status == 400
     assert payload == {"ok": False, "error": "invalid JSON event payload"}
+
+
+def test_live_event_errors_use_json_response_content_type():
+    status, content_type, body = _post_event_text_response(
+        _live_preview_state(),
+        b'{"id":',
+    )
+
+    assert status == 400
+    assert content_type == "application/json; charset=utf-8"
+    assert json.loads(body) == {"ok": False, "error": "invalid JSON event payload"}
+
+
+def test_live_event_endpoint_rejects_invalid_content_length():
+    status, payload = _post_event_bytes(
+        _live_preview_state(),
+        b"{}",
+        content_length="not-a-number",
+    )
+
+    assert status == 400
+    assert payload == {"ok": False, "error": "invalid Content-Length"}
+
+
+def test_live_event_endpoint_rejects_negative_content_length():
+    status, payload = _post_event_bytes(
+        _live_preview_state(),
+        b"{}",
+        content_length="-1",
+    )
+
+    assert status == 400
+    assert payload == {"ok": False, "error": "invalid Content-Length"}
+
+
+def test_live_event_endpoint_rejects_non_object_payload():
+    status, payload = _post_event_bytes(_live_preview_state(), b"[]")
+
+    assert status == 400
+    assert payload == {"ok": False, "error": "event payload must be a JSON object"}
 
 
 def test_live_event_endpoint_rejects_oversized_body():
@@ -207,6 +312,46 @@ def test_live_event_endpoint_rejects_oversized_body():
         "ok": False,
         "error": f"event payload exceeds {MAX_EVENT_BODY_BYTES} bytes",
     }
+
+
+def test_live_event_endpoint_rejects_unknown_path():
+    status, payload = _post_event_bytes(
+        _live_preview_state(),
+        b"{}",
+        path="/missing",
+    )
+
+    assert status == 404
+    assert payload is None
+
+
+def test_live_preview_handler_serves_page_stylesheets_health_and_404(tmp_path):
+    stylesheet = tmp_path / "dummy.css"
+    stylesheet.write_text(".dummy { color: red; }\n", encoding="utf-8")
+    state = _LivePreviewState(
+        DummyPreview(),
+        LivePreviewConfig(
+            title="Dummy",
+            css_route="/dummy.css",
+            css_path=stylesheet,
+            extra_css=(LivePreviewStylesheet("/empty.css", None),),
+        ),
+    )
+
+    root = _get_path(state, "/")
+    index = _get_path(state, "/index.html")
+    css = _get_path(state, "/dummy.css")
+    empty_css = _get_path(state, "/empty.css")
+    health = _get_path(state, "/health")
+    missing = _get_path(state, "/missing")
+
+    assert root == (200, "text/html; charset=utf-8", root[2])
+    assert "<title>Dummy</title>" in root[2]
+    assert index[0] == 200
+    assert css == (200, "text/css; charset=utf-8", ".dummy { color: red; }\n")
+    assert empty_css == (200, "text/css; charset=utf-8", "")
+    assert health == (200, "application/json; charset=utf-8", '{"ok": true}')
+    assert missing[0] == 404
 
 
 def _live_preview_state() -> _LivePreviewState:
@@ -233,20 +378,105 @@ def _post_event(
 def _post_event_bytes(
     state: _LivePreviewState,
     body: bytes,
-) -> tuple[int, dict]:
+    *,
+    content_length: str | None = None,
+    path: str = "/event",
+) -> tuple[int, dict[str, Any] | None]:
+    return _post_event_request(
+        state,
+        body,
+        content_length=str(len(body)) if content_length is None else content_length,
+        path=path,
+    )
+
+
+def _post_event_request(
+    state: _LivePreviewState,
+    body: bytes,
+    *,
+    content_length: str,
+    path: str,
+) -> tuple[int, dict[str, Any] | None]:
     class Handler(_LivePreviewHandler):
         captured_status = 0
-        captured_body: dict | None = None
+        captured_body: dict[str, Any] | None = None
 
         def _send_json(self, body, status=200):
             self.captured_status = int(status)
             self.captured_body = body
 
+        def send_error(self, code, message=None, explain=None):
+            self.captured_status = int(code)
+            self.captured_body = None
+
     handler = object.__new__(Handler)
     handler.state = state
-    handler.path = "/event"
-    handler.headers = {"content-length": str(len(body))}
+    handler.path = path
+    handler.headers = {"content-length": content_length}
     handler.rfile = BytesIO(body)
     handler.do_POST()
-    assert handler.captured_body is not None
     return handler.captured_status, handler.captured_body
+
+
+def _post_event_text_response(
+    state: _LivePreviewState,
+    body: bytes,
+    *,
+    content_length: str | None = None,
+    path: str = "/event",
+) -> tuple[int, str, str]:
+    class Handler(_LivePreviewHandler):
+        captured_status = 0
+        captured_content_type = ""
+        captured_body = ""
+
+        def _send_text(self, body, content_type, status=200):
+            self.captured_status = int(status)
+            self.captured_content_type = content_type
+            self.captured_body = body
+
+        def send_error(self, code, message=None, explain=None):
+            self.captured_status = int(code)
+            self.captured_content_type = "text/html"
+            self.captured_body = message or ""
+
+    handler = object.__new__(Handler)
+    handler.state = state
+    handler.path = path
+    handler.headers = {
+        "content-length": str(len(body)) if content_length is None else content_length
+    }
+    handler.rfile = BytesIO(body)
+    handler.do_POST()
+    return (
+        handler.captured_status,
+        handler.captured_content_type,
+        handler.captured_body,
+    )
+
+
+def _get_path(state: _LivePreviewState, path: str) -> tuple[int, str, str]:
+    class Handler(_LivePreviewHandler):
+        captured_status = 0
+        captured_content_type = ""
+        captured_body = ""
+
+        def _send_text(self, body, content_type, status=200):
+            self.captured_status = int(status)
+            self.captured_content_type = content_type
+            self.captured_body = body
+
+        def send_error(self, code, message=None, explain=None):
+            self.captured_status = int(code)
+            self.captured_content_type = "text/html"
+            self.captured_body = message or ""
+
+    handler = object.__new__(Handler)
+    handler.state = state
+    handler.path = path
+    handler.do_GET()
+    return (
+        handler.captured_status,
+        handler.captured_content_type,
+        handler.captured_body,
+    )

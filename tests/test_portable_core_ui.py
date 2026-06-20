@@ -18,7 +18,8 @@ from otoe import (
     render_html,
     root_widget,
 )
-from otoe._native_shared import native_widget_support
+from otoe._native_shared import NATIVE_WIDGET_SUPPORT, native_widget_support
+from otoe._widget_contracts import known_widget_names, widget_contract_for_name
 from otoe.cli import main
 from otoe.portable_core import (
     format_portable_core_ui_v0,
@@ -34,6 +35,13 @@ MATRIX_PATH = ROOT / "docs" / "portable-core-ui-v0.json"
 DOC_PATH = ROOT / "docs" / "portable-core-ui-v0.md"
 UPDATE_DOCS_SCRIPT = ROOT / "scripts" / "update_portable_core_docs.py"
 PORTABLE_STYLES_PATH = ROOT / "preview" / "portable_core_ui.css"
+PORTABLE_CORE_REGISTRY_WIDGETS = frozenset(
+    {"Text", "Button", "Input", "VStack", "HStack", "Panel", "ScrollView"}
+)
+OUTSIDE_PORTABLE_CORE_REGISTRY_WIDGETS = frozenset(
+    {"FocusScope", "ShortcutScope"}
+)
+NATIVE_CONTROL_NODE_NAMES = frozenset({"For", "Show"})
 
 
 def _matrix():
@@ -225,6 +233,58 @@ def test_product_preview_ui_surface_is_fully_classified():
         assert item["id"]
         assert item["reason"].endswith(".")
         assert item["symbols"]
+
+
+def test_portable_core_ui_documents_registry_widget_boundary():
+    matrix_symbols = {
+        symbol for entry in _entries() for symbol in entry["symbols"]
+    }
+    outside_symbols = {
+        symbol for item in _outside_portable_core() for symbol in item["symbols"]
+    }
+    registry_symbols = frozenset(known_widget_names())
+
+    assert matrix_symbols & registry_symbols == PORTABLE_CORE_REGISTRY_WIDGETS
+    assert outside_symbols & registry_symbols == OUTSIDE_PORTABLE_CORE_REGISTRY_WIDGETS
+    assert registry_symbols == (
+        PORTABLE_CORE_REGISTRY_WIDGETS | OUTSIDE_PORTABLE_CORE_REGISTRY_WIDGETS
+    )
+
+    for entry in _entries():
+        if set(entry["symbols"]) & PORTABLE_CORE_REGISTRY_WIDGETS:
+            assert entry["portableCore"] is True
+            assert entry["status"] == "core preview"
+
+    interactive = next(
+        item for item in _outside_portable_core() if item["id"] == "interactive-overlays"
+    )
+    assert (
+        set(interactive["symbols"]) & registry_symbols
+        == OUTSIDE_PORTABLE_CORE_REGISTRY_WIDGETS
+    )
+
+
+def test_eventful_registry_widgets_are_visible_in_portable_core_docs():
+    documented_symbols = {
+        symbol for entry in _entries() for symbol in entry["symbols"]
+    } | {symbol for item in _outside_portable_core() for symbol in item["symbols"]}
+    eventful_registry_widgets = {
+        name
+        for name in known_widget_names()
+        if (contract := widget_contract_for_name(name)) is not None and contract.events
+    }
+
+    assert eventful_registry_widgets <= documented_symbols
+
+
+def test_native_capability_widgets_reference_registry_or_control_nodes():
+    expected_native_widgets = frozenset(known_widget_names()) | NATIVE_CONTROL_NODE_NAMES
+
+    assert set(NATIVE_WIDGET_SUPPORT) == expected_native_widgets
+    for name in known_widget_names():
+        assert native_widget_support(name) in {"container", "control", "text"}
+    for name in NATIVE_CONTROL_NODE_NAMES:
+        assert native_widget_support(name) == "container"
 
 
 def test_portable_core_ui_native_widgets_are_declared_supported():

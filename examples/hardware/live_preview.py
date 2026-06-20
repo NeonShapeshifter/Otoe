@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from examples.hardware.adapters import MemoryHardwareTransport, TransportHardwareProvider
-from examples.hardware.control_panel import HardwareControlPanel
+from examples.hardware.control_panel import HardwareControlPanel, HardwareProvider
 from examples.live_server import (
     LivePreviewConfig,
     parse_host_port,
@@ -27,9 +27,9 @@ LIVE_CONFIG = LivePreviewConfig(
 
 
 class HardwareLivePreview:
-    def __init__(self) -> None:
+    def __init__(self, provider: HardwareProvider | None = None) -> None:
         self._lock = threading.RLock()
-        self.provider = TransportHardwareProvider(MemoryHardwareTransport())
+        self.provider = provider or TransportHardwareProvider(MemoryHardwareTransport())
         self.renderer = LiveHtmlRenderer()
         self.snapshot = signal(self.provider.snapshot())
         self.active_route = signal("overview")
