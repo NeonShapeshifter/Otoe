@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Otoe Portable Core UI Preview</title>
+</head>
+<body>
+<div class="otoe-stack otoe-vstack" style="--otoe-gap:8px;--otoe-padding:12px">
+  <span class="otoe-text portable-title" style="color:#111827;font-size:22px;font-weight:900">Portable Core UI v0</span>
+  <span class="otoe-text">Portable text</span>
+  <button class="otoe-button" type="button">Run</button>
+  <input class="otoe-input" placeholder="Name" value="A">
+  <div class="otoe-stack otoe-vstack" style="--otoe-gap:4px">
+    <span class="otoe-text">One</span>
+    <span class="otoe-text">Two</span>
+  </div>
+  <div class="otoe-stack otoe-hstack" style="--otoe-gap:4px">
+    <span class="otoe-text">Left</span>
+    <span class="otoe-text">Right</span>
+  </div>
+  <section class="otoe-panel">
+    <div class="otoe-panel-title">Panel</div>
+    <span class="otoe-text">Panel body</span>
+  </section>
+  <div class="otoe-scroll">
+    <button class="otoe-button" type="button">First</button>
+    <button class="otoe-button" type="button">Second</button>
+  </div>
+  <section class="otoe-panel ui-card is-default" style="background:#ffffff;color:#152033">
+    <div class="otoe-stack otoe-vstack ui-card-body" style="--otoe-gap:4px;--otoe-padding:8px;padding:8px;gap:4px">
+      <span class="otoe-text">Card body</span>
+    </div>
+  </section>
+  <span class="otoe-text ui-badge is-success" style="min-height:26px;padding:7px;border-width:1px;border-style:solid;border-color:#1a7f55;border-radius:999px;font-size:12px;font-weight:800;background:#e7f7ed;color:#1a7f55">Ready</span>
+  <button class="otoe-button ui-button is-primary is-md" type="button" style="min-height:36px;border-radius:8px;font-weight:800;background:#2563eb;border-color:#2563eb;color:#ffffff;font-size:14px">Execute</button>
+  <div class="otoe-stack otoe-hstack ui-tabs is-horizontal" style="--otoe-gap:6px;padding:4px;border-width:1px;border-style:solid;border-color:#d9e1ea;border-radius:8px;background:#eef3f8;display:flex">
+    <button class="otoe-button ui-tab is-active" type="button" style="min-height:32px;background:#ffffff;color:#2563eb">Overview</button>
+    <button class="otoe-button ui-tab" type="button" style="min-height:32px;background:transparent;color:#506174">Logs</button>
+  </div>
+  <div class="otoe-stack otoe-hstack ui-list-row p-3 gap-3 rounded-lg items-center bg-panel border border-line" style="width:520px;min-height:58px;padding:12px;gap:12px;border-radius:8px;align-items:center;background:#ffffff;border-width:1px;border-style:solid;border-color:#d9e1ea">
+    <div class="otoe-stack otoe-vstack flex-1 min-w-0" style="--otoe-gap:1px;min-width:0px">
+      <span class="otoe-text font-semibold text-ink" style="font-weight:760;color:#111827">Job</span>
+      <div class="otoe-fragment otoe-show">
+        <span class="otoe-text text-sm text-muted truncate" style="font-size:13px;color:#506174;max-width:320px">Queued</span>
+      </div>
+    </div>
+    <span class="otoe-text ui-badge is-neutral ui-status-pill shrink-0" style="min-height:26px;padding:7px;border-width:1px;border-style:solid;border-color:#c8d2df;border-radius:999px;font-size:12px;font-weight:800;background:#edf2f7;color:#506174;min-width:0px">Ready</span>
+    <button class="otoe-button ui-button is-ghost is-sm" type="button" style="min-height:32px;border-radius:8px;font-weight:800;background:#ffffff;border-color:#c8d2df;color:#152033;font-size:13px">Open</button>
+  </div>
+  <section class="otoe-panel ui-card is-default ui-stat-card ui-metric-tile flex-1 min-w-0 rounded-xl shadow-sm bg-success-soft border border-success" style="background:#e7f7ed;color:#152033;width:220px;min-width:0px;border-radius:8px;border-width:1px;border-style:solid;border-color:#1a7f55">
+    <div class="otoe-stack otoe-vstack ui-stat-body" style="padding:12px;gap:4px">
+      <span class="otoe-text ui-stat-label" style="color:#506174;font-size:12px;font-weight:700">Latency</span>
+      <span class="otoe-text ui-stat-value" style="color:#111827;font-size:24px;font-weight:900">31 ms</span>
+      <div class="otoe-fragment otoe-show">
+        <span class="otoe-text ui-stat-detail is-success" style="font-size:13px;font-weight:750;background:#e7f7ed;border-color:#1a7f55;color:#1a7f55">p95</span>
+      </div>
+    </div>
+  </section>
+  <div class="otoe-stack otoe-vstack ui-frame min-h-screen bg-bg text-ink" style="width:1040px;min-height:520px;padding:16px;background:#f4f7fb;color:#111827">
+    <div class="otoe-stack otoe-hstack ui-frame-shell max-w-7xl mx-auto w-full p-6 gap-4 items-start flex-wrap" style="width:960px;align-items:flex-start;max-width:960px;margin:0px;padding:24px;gap:16px;display:flex">
+      <div class="otoe-stack otoe-vstack">
+        <span class="otoe-text">Navigation</span>
+      </div>
+      <div class="otoe-stack otoe-vstack ui-frame-content flex-1 min-w-0 gap-4" style="min-width:0px;width:720px;gap:16px">
+        <span class="otoe-text">Top bar</span>
+        <div class="otoe-stack otoe-vstack">
+          <span class="otoe-text">Workspace</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

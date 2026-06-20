@@ -499,7 +499,10 @@ verification also rejects malformed `runtimePolicy` metadata after hash updates.
 | `min-height` | `minHeight` | dimension |
 | `min-width` | `minWidth` | dimension |
 | `opacity` | `opacity` | accepted, native no-op |
+| `overflow` | `overflow` | text clipping keyword |
 | `padding` | `padding` | dimension |
+| `text-overflow` | `textOverflow` | text clipping keyword |
+| `white-space` | `whiteSpace` | text clipping keyword |
 | `width` | `width` | dimension |
 
 Unknown properties fail during `css(...)` parsing. For example,
@@ -572,6 +575,9 @@ Native paint-only properties:
 - `borderColor`
 - `borderRadius`
 - `color`
+- `overflow`
+- `textOverflow`
+- `whiteSpace`
 
 Native layout-and-paint properties:
 

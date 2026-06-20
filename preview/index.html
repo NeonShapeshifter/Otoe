@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Otoe Preview Gallery</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --panel-soft: #eef4f7;
+      --ink: #172033;
+      --muted: #5f6f83;
+      --line: #d8e0ea;
+      --accent: #146c72;
+      --accent-soft: #e3f4f3;
+      --warn: #9a6614;
+      --warn-soft: #fff3d6;
+      --case: #5f4bb6;
+      --case-soft: #eeeafd;
+      --ok: #177245;
+      --ok-soft: #e4f5ec;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family:
+        Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    a {
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration-thickness: 0.08em;
+      text-underline-offset: 0.18em;
+    }
+
+    code {
+      display: block;
+      max-width: 100%;
+      padding: 8px 10px;
+      overflow-wrap: anywhere;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #f8fafc;
+      color: #273348;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 44px;
+    }
+
+    .top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: end;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(32px, 5vw, 54px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .intro {
+      max-width: 820px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .quick-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .quick-links a,
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 5px 9px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .section-head {
+      display: flex;
+      gap: 12px;
+      align-items: baseline;
+      justify-content: space-between;
+      margin: 30px 0 14px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .section-note {
+      max-width: 620px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .card h3 {
+      margin: 0;
+      font-size: 19px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 30px;
+    }
+
+    .chip.reference {
+      border-color: #a8d9d5;
+      background: var(--accent-soft);
+      color: #095b60;
+    }
+
+    .chip.case {
+      border-color: #cdc3f7;
+      background: var(--case-soft);
+      color: var(--case);
+    }
+
+    .chip.status {
+      border-color: #efd38d;
+      background: var(--warn-soft);
+      color: var(--warn);
+    }
+
+    .chip.ready {
+      border-color: #a8dcbf;
+      background: var(--ok-soft);
+      color: var(--ok);
+    }
+
+    .detail {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+    }
+
+    .detail dt {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .detail dd {
+      margin: 0;
+      min-width: 0;
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--panel-soft);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    footer {
+      margin-top: 30px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        width: min(100% - 20px, 1180px);
+        padding-top: 20px;
+      }
+
+      .top,
+      .section-head {
+        grid-template-columns: 1fr;
+        align-items: start;
+      }
+
+      .quick-links {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="top">
+      <div>
+        <h1>Otoe Preview Gallery</h1>
+        <p class="intro">
+          Static entry points for Otoe's current pre-alpha product surfaces:
+          local operational interfaces, reference apps, portable UI evidence,
+          and Wraith case studies.
+        </p>
+      </div>
+      <nav class="quick-links" aria-label="Gallery shortcuts">
+        <a href="../docs/product-north-star.md">North Star</a>
+        <a href="../docs/quickstart.md">Quick Start</a>
+        <a href="../docs/api-tiers.md">API Tiers</a>
+        <a href="README.md">Preview README</a>
+      </nav>
+    </header>
+
+    <section aria-labelledby="front-door-heading">
+      <div class="section-head">
+        <h2 id="front-door-heading">Front-Door Previews</h2>
+        <p class="section-note">
+          Hardware, Portable Core UI, and UI Kit are the neutral starting
+          points. Wraith remains here as case-study evidence, not the product
+          identity.
+        </p>
+      </div>
+
+      <div class="grid">
+        <article class="card">
+          <div class="meta">
+            <span class="chip reference">Reference app</span>
+            <span class="chip status">Product preview</span>
+          </div>
+          <h3>Hardware Control Panel</h3>
+          <dl class="detail">
+            <dt>Demonstrates</dt>
+            <dd>Python-first appliance UI for telemetry, controls, safe actions, and local hardware state.</dd>
+            <dt>Maturity</dt>
+            <dd>Static HTML is usable for review. Native PNG and offline bundle paths are pre-alpha evidence.</dd>
+            <dt>HTML</dt>
+            <dd class="links">
+              <a href="hardware.html">hardware.html</a>
+              <a href="hardware_cli.html">hardware_cli.html</a>
+            </dd>
+            <dt>Regenerate</dt>
+            <dd>
+              <code>PYTHONPATH=src:. python -m examples.hardware.preview &gt; preview/hardware.html</code>
+              <code>PYTHONPATH=src:. python -m otoe render examples.hardware.control_panel:app --out /tmp/hardware_cli.fragment.html --css preview/hardware_portable.css --pretty</code>
+              <span>Then copy the rendered fragment into the checked-in <code>hardware_cli.html</code> wrapper.</span>
+            </dd>
+          </dl>
+        </article>
+
+        <article class="card">
+          <div class="meta">
+            <span class="chip reference">Reference gallery</span>
+            <span class="chip status">Public pre-alpha</span>
+          </div>
+          <h3>Portable Core UI</h3>
+          <dl class="detail">
+            <dt>Demonstrates</dt>
+            <dd>The current portable widget and product-preview UI primitive matrix.</dd>
+            <dt>Maturity</dt>
+            <dd>Support-matrix evidence for HTML/native/build parity work, not a stable API guarantee.</dd>
+            <dt>HTML</dt>
+            <dd><a href="portable_core_ui.html">portable_core_ui.html</a></dd>
+            <dt>Regenerate</dt>
+            <dd><code>PYTHONPATH=src:. python -m otoe render examples.portable_core_ui:app --out preview/portable_core_ui.html --css preview/portable_core_ui.css --pretty</code></dd>
+          </dl>
+        </article>
+
+        <article class="card">
+          <div class="meta">
+            <span class="chip reference">Reference app</span>
+            <span class="chip status">Product preview</span>
+          </div>
+          <h3>UI Kit</h3>
+          <dl class="detail">
+            <dt>Demonstrates</dt>
+            <dd>Shared UI primitives, route chrome, command palette, dialogs, select/menu states, and dense surfaces.</dd>
+            <dt>Maturity</dt>
+            <dd>Useful for visual review and live-preview interaction checks; native parity varies by component.</dd>
+            <dt>HTML</dt>
+            <dd><a href="ui.html">ui.html</a></dd>
+            <dt>Regenerate</dt>
+            <dd><code>PYTHONPATH=src:. python -m examples.ui.preview &gt; preview/ui.html</code></dd>
+          </dl>
+        </article>
+
+        <article class="card">
+          <div class="meta">
+            <span class="chip case">Case study</span>
+            <span class="chip ready">Static HTML</span>
+          </div>
+          <h3>SaaS Case Study</h3>
+          <dl class="detail">
+            <dt>Demonstrates</dt>
+            <dd>A polished dashboard shape using the same component/runtime path outside the appliance niche.</dd>
+            <dt>Maturity</dt>
+            <dd>Browser/static product-shape example; not Otoe's primary target market.</dd>
+            <dt>HTML</dt>
+            <dd><a href="saas.html">saas.html</a></dd>
+            <dt>Regenerate</dt>
+            <dd><code>PYTHONPATH=src:. python -m examples.saas.preview &gt; preview/saas.html</code></dd>
+          </dl>
+        </article>
+
+        <article class="card">
+          <div class="meta">
+            <span class="chip reference">Reference app</span>
+            <span class="chip status">Product preview</span>
+          </div>
+          <h3>Utility Ops</h3>
+          <dl class="detail">
+            <dt>Demonstrates</dt>
+            <dd>Utility-first operational console with helper components, low-level utility classes, and fallback states.</dd>
+            <dt>Maturity</dt>
+            <dd>Static reference app for app-author ergonomics; native/offline behavior is still evidence work.</dd>
+            <dt>HTML</dt>
+            <dd><a href="utility_ops.html">utility_ops.html</a></dd>
+            <dt>Regenerate</dt>
+            <dd><code>PYTHONPATH=src:. python -m examples.utility.preview &gt; preview/utility_ops.html</code></dd>
+          </dl>
+        </article>
+
+        <article class="card">
+          <div class="meta">
+            <span class="chip case">Case study</span>
+            <span class="chip ready">Legacy static</span>
+          </div>
+          <h3>Wraith Case Study</h3>
+          <dl class="detail">
+            <dt>Demonstrates</dt>
+            <dd>The original Wraith-inspired runtime/status/arsenal surface that helped reveal Otoe's needs.</dd>
+            <dt>Maturity</dt>
+            <dd>Legacy case-study context. Useful evidence, but not Otoe's front-door product identity.</dd>
+            <dt>HTML</dt>
+            <dd><a href="wraith.html">wraith.html</a></dd>
+            <dt>Regenerate</dt>
+            <dd><code>PYTHONPATH=src:. python -m examples.wraith.preview &gt; preview/wraith.html</code></dd>
+          </dl>
+        </article>
+
+        <article class="card">
+          <div class="meta">
+            <span class="chip case">Case study</span>
+            <span class="chip status">Pre-alpha evidence</span>
+          </div>
+          <h3>Wraith Mission Exec Case Study</h3>
+          <dl class="detail">
+            <dt>Demonstrates</dt>
+            <dd>Dense operator-console showcase with fake local state, preflight checks, emergency controls, logs, and timeline.</dd>
+            <dt>Maturity</dt>
+            <dd>Pre-alpha showcase for HTML/native/build evidence. It does not touch hardware or mission runners.</dd>
+            <dt>HTML</dt>
+            <dd><a href="wraith_mission_exec.html">wraith_mission_exec.html</a></dd>
+            <dt>Regenerate</dt>
+            <dd><code>PYTHONPATH=src:. python -m otoe render examples.wraith.mission_exec_showcase:app --out preview/wraith_mission_exec.html --css preview/wraith_mission_exec.css --pretty</code></dd>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="supporting-heading">
+      <div class="section-head">
+        <h2 id="supporting-heading">Supporting Previews</h2>
+        <p class="section-note">
+          These files keep reference CSS and case-study support surfaces visible
+          even when they are not front-door cards.
+        </p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Asset</th>
+              <th>HTML</th>
+              <th>Status</th>
+              <th>Regenerate</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>admin.css</code></td>
+              <td><a href="admin.html">admin.html</a></td>
+              <td>Supporting local-admin reference preview.</td>
+              <td><code>PYTHONPATH=src:. python -m examples.admin.preview &gt; preview/admin.html</code></td>
+            </tr>
+            <tr>
+              <td><code>data_workflow.css</code></td>
+              <td><a href="data_workflow.html">data_workflow.html</a></td>
+              <td>Supporting data workflow reference preview.</td>
+              <td><code>PYTHONPATH=src:. python -m examples.data_workflow.preview &gt; preview/data_workflow.html</code></td>
+            </tr>
+            <tr>
+              <td><code>wraith_input_console.css</code></td>
+              <td><a href="wraith_input_console.html">wraith_input_console.html</a></td>
+              <td>Wraith case-study support surface for portable input and command patterns.</td>
+              <td><code>PYTHONPATH=src:. python -m otoe render examples.wraith_input_console:app --out preview/wraith_input_console.html --css preview/wraith_input_console.css --pretty</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="css-heading">
+      <div class="section-head">
+        <h2 id="css-heading">CSS Inventory</h2>
+        <p class="section-note">
+          CSS files are paired with checked-in HTML. Otoe CLI renders may inline
+          resolved styles, so the HTML does not always contain a stylesheet link.
+        </p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>CSS</th>
+              <th>Checked-in HTML</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>admin.css</code></td>
+              <td><a href="admin.html">admin.html</a></td>
+              <td>Supporting local-admin reference preview.</td>
+            </tr>
+            <tr>
+              <td><code>data_workflow.css</code></td>
+              <td><a href="data_workflow.html">data_workflow.html</a></td>
+              <td>Supporting data workflow reference preview.</td>
+            </tr>
+            <tr>
+              <td><code>hardware.css</code></td>
+              <td><a href="hardware.html">hardware.html</a></td>
+              <td>Rich static hardware reference preview.</td>
+            </tr>
+            <tr>
+              <td><code>hardware_portable.css</code></td>
+              <td><a href="hardware_cli.html">hardware_cli.html</a></td>
+              <td>Strict portable CSS path for CLI render, native PNG, plan, and build evidence.</td>
+            </tr>
+            <tr>
+              <td><code>portable_core_ui.css</code></td>
+              <td><a href="portable_core_ui.html">portable_core_ui.html</a></td>
+              <td>Portable Core UI support matrix/gallery source CSS.</td>
+            </tr>
+            <tr>
+              <td><code>reference_theme.css</code></td>
+              <td>
+                <a href="hardware.html">hardware.html</a>,
+                <a href="admin.html">admin.html</a>,
+                <a href="data_workflow.html">data_workflow.html</a>,
+                <a href="utility_ops.html">utility_ops.html</a>
+              </td>
+              <td>Shared browser-preview theme for neutral reference apps. Utility Ops also inlines generated utility CSS.</td>
+            </tr>
+            <tr>
+              <td><code>saas.css</code></td>
+              <td><a href="saas.html">saas.html</a></td>
+              <td>SaaS case-study browser stylesheet.</td>
+            </tr>
+            <tr>
+              <td><code>ui.css</code></td>
+              <td><a href="ui.html">ui.html</a></td>
+              <td>UI Kit browser stylesheet.</td>
+            </tr>
+            <tr>
+              <td><code>wraith.css</code></td>
+              <td><a href="wraith.html">wraith.html</a></td>
+              <td>Legacy Wraith case-study stylesheet. Mission Exec now uses <code>wraith_mission_exec.css</code>.</td>
+            </tr>
+            <tr>
+              <td><code>wraith_input_console.css</code></td>
+              <td><a href="wraith_input_console.html">wraith_input_console.html</a></td>
+              <td>Wraith case-study support surface.</td>
+            </tr>
+            <tr>
+              <td><code>wraith_mission_exec.css</code></td>
+              <td><a href="wraith_mission_exec.html">wraith_mission_exec.html</a></td>
+              <td>Current Mission Exec showcase CSS. The legacy <code>wraith.css</code> link is no longer used by the checked-in showcase HTML.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      Otoe is pre-alpha. These previews are evidence and review artifacts, not
+      production renderer guarantees.
+    </footer>
+  </main>
+</body>
+</html>

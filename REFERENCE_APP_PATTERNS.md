@@ -52,6 +52,10 @@ Reference app providers should expose a small synchronous contract:
 
 - `snapshot()` returns the initial immutable snapshot.
 - Event methods return a replacement snapshot instead of mutating UI state.
+- Static preview builders and live preview classes should accept an explicit
+  `provider=` argument and default to an in-memory fake provider.
+- `snapshot=` fixture arguments are allowed as a convenience, but they should
+  feed the fake provider rather than bypassing the provider boundary.
 - Guardrails live in the provider, not only in disabled buttons.
 - Unsafe or invalid actions return feedback and leave state unchanged.
 - Successful actions update both domain state and operator-visible feedback.
@@ -169,8 +173,9 @@ frozen in this reference-app pattern note.
 ## Current Decision
 
 The Phase 5 reference apps satisfy the initial product-shape requirement:
-hardware/control panel, local admin/settings, and data/table workflow all exist
-with provider boundaries and tests.
+hardware/control panel, local admin/settings, and data/table workflow all expose
+`provider=` boundaries for static previews and live previews, with in-memory
+providers and substitution tests.
 
 The current implementation direction is to return to backend work with these
 apps as acceptance surfaces. More CSS extraction should wait until at least two

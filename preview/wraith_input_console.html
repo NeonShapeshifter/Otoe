@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Otoe Wraith Input Console Preview</title>
+</head>
+<body>
+<div class="otoe-shortcut-scope ui-shortcut-scope" style="display:block">
+  <div class="otoe-stack otoe-vstack wraith-console" style="--otoe-gap:12px;width:1120px;min-height:720px;padding:16px;gap:12px;background:#0b1117">
+    <div class="otoe-stack otoe-hstack topbar" style="--otoe-gap:10px;width:1088px;min-height:76px;padding:14px;gap:10px;border-width:1px;border-style:solid;border-color:#273849;border-radius:8px;background:#101923">
+      <div class="otoe-stack otoe-vstack brand-stack" style="--otoe-gap:2px;width:520px;min-width:0px">
+        <span class="otoe-text app-title" style="color:#f4f8fb;font-size:24px;font-weight:900">Wraith Input Console</span>
+        <span class="otoe-text app-subtitle" style="color:#91a4b7;font-size:13px">Portable touch, mouse, and keyboard validation surface</span>
+      </div>
+      <span class="otoe-text ui-badge is-success ui-status-pill shrink-0" style="min-height:28px;padding:7px;border-width:1px;border-style:solid;border-radius:999px;font-size:12px;font-weight:900;background:#143328;border-color:#2d8a64;color:#9bf0be;min-width:0px">Ready</span>
+      <span class="otoe-text ui-badge is-neutral ui-status-pill shrink-0" style="min-height:28px;padding:7px;border-width:1px;border-style:solid;border-radius:999px;font-size:12px;font-weight:900;background:#172638;border-color:#39536c;color:#c9d7e5;min-width:0px">Safe Mode Off</span>
+      <span class="otoe-text topbar-meta" style="width:80px;color:#91a4b7;font-size:13px">4 logs</span>
+      <button class="otoe-button shortcut-button" type="button" style="width:88px;min-height:48px;background:#172638;border-color:#5b7c9d;color:#d8ecff">Ctrl+K</button>
+    </div>
+    <div class="otoe-stack otoe-hstack console-main" style="--otoe-gap:14px;width:1088px;align-items:flex-start">
+      <section class="otoe-panel ui-card is-default mission-sidebar-card" style="border-width:1px;border-style:solid;border-radius:8px;background:#101923;border-color:#273849;color:#dbe7f3;width:350px;min-height:560px;padding:12px">
+        <div class="otoe-stack otoe-vstack sidebar-body" style="--otoe-gap:10px;gap:10px">
+          <div class="otoe-stack otoe-hstack sidebar-header" style="--otoe-gap:8px;width:326px;justify-content:space-between">
+            <span class="otoe-text section-title" style="color:#f4f8fb;font-size:17px;font-weight:900">Missions</span>
+            <span class="otoe-text ui-badge is-info ui-status-pill shrink-0" style="min-height:28px;padding:7px;border-width:1px;border-style:solid;border-radius:999px;font-size:12px;font-weight:900;background:#122b43;border-color:#3176a7;color:#9cd7ff;min-width:0px">4 visible</span>
+          </div>
+          <input class="otoe-input mission-search" placeholder="Search missions" autofocus="autofocus" data-otoe-autofocus="true" style="width:326px">
+          <div class="otoe-scroll mission-scroll" style="width:326px;height:444px;padding:0px;background:#0c141d;border-width:1px;border-style:solid;border-color:#1e2d3d;border-radius:8px">
+            <div class="otoe-stack otoe-vstack mission-list" style="--otoe-gap:8px;width:324px;gap:8px">
+              <div class="otoe-fragment otoe-for">
+                <div class="otoe-stack otoe-hstack ui-list-row p-3 gap-3 rounded-lg items-center bg-accent-soft border border-accent mission-row is-selected" style="min-height:84px;border-width:1px;border-style:solid;padding:8px;gap:8px;border-radius:8px;align-items:center;background:#122b43;border-color:#84c7ff;width:318px">
+                  <div class="otoe-stack otoe-vstack flex-1 min-w-0" style="--otoe-gap:1px;width:150px;min-width:0px">
+                    <span class="otoe-text font-semibold text-ink" style="font-weight:800;color:#f4f8fb">Thermal Guard</span>
+                    <div class="otoe-fragment otoe-show">
+                      <span class="otoe-text text-sm text-muted truncate" style="font-size:13px;color:#91a4b7;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">Validate cooling envelope and idle actuator state before handoff.</span>
+                    </div>
+                  </div>
+                  <span class="otoe-text ui-badge is-success ui-status-pill shrink-0" style="min-height:28px;padding:7px;border-width:1px;border-style:solid;border-radius:999px;font-size:12px;font-weight:900;background:#143328;border-color:#2d8a64;color:#9bf0be;min-width:0px">Low</span>
+                  <span class="otoe-text text-sm text-muted shrink-0" style="font-size:13px;color:#91a4b7;min-width:0px">08:14 / Ops</span>
+                  <button class="otoe-button mission-open-button" type="button" style="width:60px;min-height:48px;background:#172638;border-color:#5b7c9d;color:#eaf5ff">Open</button>
+                </div>
+                <div class="otoe-stack otoe-hstack ui-list-row p-3 gap-3 rounded-lg items-center bg-panel border border-line mission-row" style="min-height:84px;border-width:1px;border-style:solid;padding:8px;gap:8px;border-radius:8px;align-items:center;background:#101923;border-color:#273849;width:318px">
+                  <div class="otoe-stack otoe-vstack flex-1 min-w-0" style="--otoe-gap:1px;width:150px;min-width:0px">
+                    <span class="otoe-text font-semibold text-ink" style="font-weight:800;color:#f4f8fb">Relay Sweep</span>
+                    <div class="otoe-fragment otoe-show">
+                      <span class="otoe-text text-sm text-muted truncate" style="font-size:13px;color:#91a4b7;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">Exercise non-destructive relay diagnostics against the staging bus.</span>
+                    </div>
+                  </div>
+                  <span class="otoe-text ui-badge is-warn ui-status-pill shrink-0" style="min-height:28px;padding:7px;border-width:1px;border-style:solid;border-radius:999px;font-size:12px;font-weight:900;background:#3a2a12;border-color:#9b6b22;color:#ffd089;min-width:0px">Medium</span>
+                  <span class="otoe-text text-sm text-muted shrink-0" style="font-size:13px;color:#91a4b7;min-width:0px">07:48 / Runtime</span>
+                  <button class="otoe-button mission-open-button" type="button" style="width:60px;min-height:48px;background:#172638;border-color:#5b7c9d;color:#eaf5ff">Open</button>
+                </div>
+                <div class="otoe-stack otoe-hstack ui-list-row p-3 gap-3 rounded-lg items-center bg-panel border border-line mission-row" style="min-height:84px;border-width:1px;border-style:solid;padding:8px;gap:8px;border-radius:8px;align-items:center;background:#101923;border-color:#273849;width:318px">
+                  <div class="otoe-stack otoe-vstack flex-1 min-w-0" style="--otoe-gap:1px;width:150px;min-width:0px">
+                    <span class="otoe-text font-semibold text-ink" style="font-weight:800;color:#f4f8fb">Latch Audit</span>
+                    <div class="otoe-fragment otoe-show">
+                      <span class="otoe-text text-sm text-muted truncate" style="font-size:13px;color:#91a4b7;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">Inspect latch metadata and require operator confirmation before execute.</span>
+                    </div>
+                  </div>
+                  <span class="otoe-text ui-badge is-danger ui-status-pill shrink-0" style="min-height:28px;padding:7px;border-width:1px;border-style:solid;border-radius:999px;font-size:12px;font-weight:900;background:#8f2e38;border-color:#f47777;color:#fff7f7;min-width:0px">High</span>
+                  <span class="otoe-text text-sm text-muted shrink-0" style="font-size:13px;color:#91a4b7;min-width:0px">yesterday / Safety</span>
+                  <button class="otoe-button mission-open-button" type="button" style="width:60px;min-height:48px;background:#172638;border-color:#5b7c9d;color:#eaf5ff">Open</button>
+                </div>
+                <div class="otoe-stack otoe-hstack ui-list-row p-3 gap-3 rounded-lg items-center bg-panel border border-line mission-row" style="min-height:84px;border-width:1px;border-style:solid;padding:8px;gap:8px;border-radius:8px;align-items:center;background:#101923;border-color:#273849;width:318px">
+                  <div class="otoe-stack otoe-vstack flex-1 min-w-0" style="--otoe-gap:1px;width:150px;min-width:0px">
+                    <span class="otoe-text font-semibold text-ink" style="font-weight:800;color:#f4f8fb">Sensor Mirror</span>
+                    <div class="otoe-fragment otoe-show">
+                      <span class="otoe-text text-sm text-muted truncate" style="font-size:13px;color:#91a4b7;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">Mirror telemetry headers for appliance display validation.</span>
+                    </div>
+                  </div>
+                  <span class="otoe-text ui-badge is-success ui-status-pill shrink-0" style="min-height:28px;padding:7px;border-width:1px;border-style:solid;border-radius:999px;font-size:12px;font-weight:900;background:#143328;border-color:#2d8a64;color:#9bf0be;min-width:0px">Low</span>
+                  <span class="otoe-text text-sm text-muted shrink-0" style="font-size:13px;color:#91a4b7;min-width:0px">06:35 / pinned</span>
+                  <button class="otoe-button mission-open-button" type="button" style="width:60px;min-height:48px;background:#172638;border-color:#5b7c9d;color:#eaf5ff">Open</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <div class="otoe-stack otoe-vstack detail-column" style="--otoe-gap:12px;width:724px">
+        <section class="otoe-panel ui-card is-default detail-card" style="border-width:1px;border-style:solid;border-radius:8px;background:#101923;border-color:#273849;color:#dbe7f3;width:724px;padding:14px">
+          <div class="otoe-stack otoe-vstack detail-card-body" style="--otoe-gap:12px;gap:12px">
+            <div class="otoe-stack otoe-hstack detail-header" style="--otoe-gap:10px;width:696px;align-items:flex-start">
+              <div class="otoe-stack otoe-vstack detail-heading" style="--otoe-gap:4px;width:480px;min-width:0px">
+                <span class="otoe-text detail-title" style="color:#f4f8fb;font-size:22px;font-weight:900">Thermal Guard</span>
+                <span class="otoe-text detail-copy" style="color:#a8bacb;font-size:14px">Validate cooling envelope and idle actuator state before handoff.</span>
+              </div>
+              <span class="otoe-text ui-badge is-success ui-status-pill shrink-0" style="min-height:28px;padding:7px;border-width:1px;border-style:solid;border-radius:999px;font-size:12px;font-weight:900;background:#143328;border-color:#2d8a64;color:#9bf0be;min-width:0px">Ready</span>
+              <span class="otoe-text ui-badge is-success ui-status-pill shrink-0" style="min-height:28px;padding:7px;border-width:1px;border-style:solid;border-radius:999px;font-size:12px;font-weight:900;background:#143328;border-color:#2d8a64;color:#9bf0be;min-width:0px">Low</span>
+            </div>
+            <div class="otoe-stack otoe-hstack meta-grid" style="--otoe-gap:8px;width:696px;align-items:flex-start">
+              <div class="otoe-stack otoe-vstack meta-tile" style="--otoe-gap:3px;width:162px;min-height:68px;padding:10px;border-width:1px;border-style:solid;border-color:#263747;border-radius:8px;background:#0d1720">
+                <span class="otoe-text meta-label" style="color:#7f93a6;font-size:12px;font-weight:800">Mission ID</span>
+                <span class="otoe-text meta-value" style="color:#eef7ff;font-size:16px;font-weight:900">WR-018</span>
+              </div>
+              <div class="otoe-stack otoe-vstack meta-tile" style="--otoe-gap:3px;width:162px;min-height:68px;padding:10px;border-width:1px;border-style:solid;border-color:#263747;border-radius:8px;background:#0d1720">
+                <span class="otoe-text meta-label" style="color:#7f93a6;font-size:12px;font-weight:800">Status</span>
+                <span class="otoe-text meta-value" style="color:#eef7ff;font-size:16px;font-weight:900">Ready</span>
+              </div>
+              <div class="otoe-stack otoe-vstack meta-tile" style="--otoe-gap:3px;width:162px;min-height:68px;padding:10px;border-width:1px;border-style:solid;border-color:#263747;border-radius:8px;background:#0d1720">
+                <span class="otoe-text meta-label" style="color:#7f93a6;font-size:12px;font-weight:800">Owner</span>
+                <span class="otoe-text meta-value" style="color:#eef7ff;font-size:16px;font-weight:900">Ops</span>
+              </div>
+              <div class="otoe-stack otoe-vstack meta-tile" style="--otoe-gap:3px;width:162px;min-height:68px;padding:10px;border-width:1px;border-style:solid;border-color:#263747;border-radius:8px;background:#0d1720">
+                <span class="otoe-text meta-label" style="color:#7f93a6;font-size:12px;font-weight:800">Zone</span>
+                <span class="otoe-text meta-value" style="color:#eef7ff;font-size:16px;font-weight:900">Cage A</span>
+              </div>
+            </div>
+            <section class="otoe-panel metadata-panel" style="width:696px;gap:5px;background:#0d1720">
+              <span class="otoe-text metadata-title" style="color:#edf6ff;font-size:14px;font-weight:900">Metadata</span>
+              <span class="otoe-text metadata-line" style="color:#a8bacb;font-size:13px">mode=Read-only probe</span>
+              <span class="otoe-text metadata-line" style="color:#a8bacb;font-size:13px">lastRun=08:14</span>
+              <span class="otoe-text metadata-line" style="color:#a8bacb;font-size:13px">selectedMissionId=WR-018</span>
+            </section>
+          </div>
+        </section>
+        <section class="otoe-panel ui-card is-default action-card" style="border-width:1px;border-style:solid;border-radius:8px;background:#101923;border-color:#273849;color:#dbe7f3;width:724px;padding:12px">
+          <div class="otoe-stack otoe-hstack action-strip" style="--otoe-gap:8px;width:696px">
+            <button class="otoe-button ui-button is-primary is-md" type="button" style="min-height:48px;padding:12px;border-width:1px;border-style:solid;border-radius:8px;font-size:14px;font-weight:900;background:#2f86ff;border-color:#5ab0ff;color:#ffffff">Dry Run</button>
+            <button class="otoe-button ui-button is-danger is-md execute-button" type="button" style="min-height:48px;padding:12px;border-width:1px;border-style:solid;border-radius:8px;font-size:14px;font-weight:900;background:#9f303d;border-color:#ff9a9a;color:#fff7f7">Execute</button>
+            <button class="otoe-button ui-button is-ghost is-md safe-button" type="button" style="min-height:48px;padding:12px;border-width:1px;border-style:solid;border-radius:8px;font-size:14px;font-weight:900;background:#172638;border-color:#39536c;color:#eaf5ff;width:132px">Safe Mode</button>
+            <button class="otoe-button secondary-button" type="button" style="width:92px;min-height:48px;background:#172638;border-color:#5b7c9d;color:#eaf5ff">More</button>
+          </div>
+        </section>
+        <section class="otoe-panel ui-card is-default log-card" style="border-width:1px;border-style:solid;border-radius:8px;background:#101923;border-color:#273849;color:#dbe7f3;width:724px;padding:12px">
+          <div class="otoe-stack otoe-vstack log-panel-body" style="--otoe-gap:10px;gap:10px">
+            <div class="otoe-stack otoe-hstack log-header" style="--otoe-gap:8px;width:696px;justify-content:space-between">
+              <span class="otoe-text section-title" style="color:#f4f8fb;font-size:17px;font-weight:900">Operator Log</span>
+              <span class="otoe-text ui-badge is-neutral ui-status-pill shrink-0" style="min-height:28px;padding:7px;border-width:1px;border-style:solid;border-radius:999px;font-size:12px;font-weight:900;background:#172638;border-color:#39536c;color:#c9d7e5;min-width:0px">4 lines</span>
+            </div>
+            <div class="otoe-scroll log-scroll" style="width:696px;height:176px;padding:10px;gap:6px;background:#050a0f;border-width:1px;border-style:solid;border-color:#1e2d3d;border-radius:8px;overflow:auto">
+              <div class="otoe-stack otoe-vstack log-list" style="--otoe-gap:6px;width:676px;gap:6px">
+                <div class="otoe-fragment otoe-for">
+                  <div class="otoe-stack otoe-hstack log-row log-row-info" style="--otoe-gap:8px;width:670px;min-height:32px;padding:6px;border-width:1px;border-style:solid;border-color:#274760;border-radius:6px;background:#0b131b">
+                    <span class="otoe-text log-time" style="width:68px;color:#9db0c2;font-size:12px;font-weight:800">08:10:03</span>
+                    <span class="otoe-text log-severity log-info" style="width:48px;font-size:12px;font-weight:900;color:#8bd3ff">INFO</span>
+                    <span class="otoe-text log-message" style="width:520px;color:#edf6ff;font-size:13px;font-weight:700">console booted in portable input mode</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-row log-row-ok" style="--otoe-gap:8px;width:670px;min-height:32px;padding:6px;border-width:1px;border-style:solid;border-color:#24634b;border-radius:6px;background:#0b131b">
+                    <span class="otoe-text log-time" style="width:68px;color:#9db0c2;font-size:12px;font-weight:800">08:10:06</span>
+                    <span class="otoe-text log-severity log-ok" style="width:48px;font-size:12px;font-weight:900;color:#77e8aa">OK</span>
+                    <span class="otoe-text log-message" style="width:520px;color:#edf6ff;font-size:13px;font-weight:700">mission WR-018 selected as primary target</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-row log-row-warn" style="--otoe-gap:8px;width:670px;min-height:32px;padding:6px;border-width:1px;border-style:solid;border-color:#7d5a22;border-radius:6px;background:#0b131b">
+                    <span class="otoe-text log-time" style="width:68px;color:#9db0c2;font-size:12px;font-weight:800">08:10:09</span>
+                    <span class="otoe-text log-severity log-warn" style="width:48px;font-size:12px;font-weight:900;color:#ffd58c">WARN</span>
+                    <span class="otoe-text log-message" style="width:520px;color:#edf6ff;font-size:13px;font-weight:700">execute remains confirmation-gated</span>
+                  </div>
+                  <div class="otoe-stack otoe-hstack log-row log-row-info" style="--otoe-gap:8px;width:670px;min-height:32px;padding:6px;border-width:1px;border-style:solid;border-color:#274760;border-radius:6px;background:#0b131b">
+                    <span class="otoe-text log-time" style="width:68px;color:#9db0c2;font-size:12px;font-weight:800">08:10:12</span>
+                    <span class="otoe-text log-severity log-info" style="width:48px;font-size:12px;font-weight:900;color:#8bd3ff">INFO</span>
+                    <span class="otoe-text log-message" style="width:520px;color:#edf6ff;font-size:13px;font-weight:700">secondary actions available through More</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <div class="otoe-fragment otoe-show"></div>
+    <div class="otoe-fragment otoe-show"></div>
+    <div class="otoe-fragment otoe-show"></div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,8 +1,8 @@
 # Offline Build
 
-The offline build path is Otoe's first hardware/cage workflow. It is meant to
-prove that an app can be planned, audited, copied, validated, and packed before
-deployment to a constrained target.
+The offline build path is Otoe's first technical-preview hardware/cage
+workflow. It is meant to prove that an app can be planned, audited, copied,
+validated, and packed before deployment to a constrained target.
 
 Offline bundles verify manifest paths, hashes, generated artifacts, and runtime
 policy metadata, but they are not a Python sandbox. See

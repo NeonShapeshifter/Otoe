@@ -1,79 +1,75 @@
-# Wraith Preview
+# Otoe Preview Gallery
 
-Open `wraith.html` directly in a browser for the current static visual preview.
-Open `wraith_mission_exec.html` for the extracted Mission Exec surface.
-Open `saas.html` for a softer SaaS-style case study using the same Otoe runtime.
-Open `ui.html` for the shared UI kit kitchen-sink preview.
-Reference app previews use `reference_theme.css` before their app-specific
-stylesheets so static and live runs share the same base Otoe selector styling,
-tone variants, and extracted helper styling.
+`preview/` is the checked-in static gallery for Otoe's current product-facing
+examples. It should lead with neutral Otoe surfaces for local operational UI:
+hardware panels, portable UI primitives, utility consoles, dashboards, and
+case studies.
 
-The checked-in HTML is a convenience artifact generated from the current Otoe
-fake tree with the pretty HTML renderer:
+Open `index.html` directly in a browser to browse the gallery.
+
+The HTML files are convenience artifacts. Regenerate them from the source
+checkout with `PYTHONPATH=src:.` so the local package is used.
+
+## Gallery Entries
+
+| Preview | Type | Maturity | HTML | Regenerate |
+| --- | --- | --- | --- | --- |
+| Hardware Control Panel | Reference app | Product-preview surface; static HTML is usable for review, native/offline paths remain pre-alpha evidence | `hardware.html`, `hardware_cli.html` | `python -m examples.hardware.preview > preview/hardware.html`; `python -m otoe render examples.hardware.control_panel:app --out /tmp/hardware_cli.fragment.html --css preview/hardware_portable.css --pretty`, then copy the fragment into the checked-in wrapper |
+| Portable Core UI | Reference gallery | Public pre-alpha support matrix for portable widgets and product-preview UI primitives | `portable_core_ui.html` | `python -m otoe render examples.portable_core_ui:app --out preview/portable_core_ui.html --css preview/portable_core_ui.css --pretty` |
+| UI Kit | Reference app | Product-preview kitchen sink for shared UI primitives and live interaction patterns | `ui.html` | `python -m examples.ui.preview > preview/ui.html` |
+| SaaS Case Study | Case study | Browser/static product-shape example; not Otoe's primary appliance niche | `saas.html` | `python -m examples.saas.preview > preview/saas.html` |
+| Utility Ops | Reference app | Utility-first operational console using Otoe helpers and generated utility CSS | `utility_ops.html` | `python -m examples.utility.preview > preview/utility_ops.html` |
+| Wraith Case Study | Case study | Legacy Wraith-inspired static surface; useful context, not the product identity | `wraith.html` | `python -m examples.wraith.preview > preview/wraith.html` |
+| Wraith Mission Exec Case Study | Case study | Pre-alpha operator-console showcase with fake local data and portable style evidence | `wraith_mission_exec.html` | `python -m otoe render examples.wraith.mission_exec_showcase:app --out preview/wraith_mission_exec.html --css preview/wraith_mission_exec.css --pretty` |
+
+## Supporting Reference Previews
+
+These are checked in for coverage and comparison, but they are not front-door
+gallery cards yet.
+
+| Asset | HTML status | Regenerate |
+| --- | --- | --- |
+| `admin.css` | `admin.html` is checked in | `python -m examples.admin.preview > preview/admin.html` |
+| `data_workflow.css` | `data_workflow.html` is checked in | `python -m examples.data_workflow.preview > preview/data_workflow.html` |
+| `wraith_input_console.css` | `wraith_input_console.html` is checked in as a Wraith case-study support surface | `python -m otoe render examples.wraith_input_console:app --out preview/wraith_input_console.html --css preview/wraith_input_console.css --pretty` |
+
+## CSS Inventory
+
+Every CSS file currently checked into `preview/` is listed below. Some
+`otoe render --css` outputs inline resolved styles instead of linking the CSS
+file directly; in those cases the CSS remains the source artifact used by the
+command.
+
+| CSS | Checked-in HTML | Notes |
+| --- | --- | --- |
+| `admin.css` | `admin.html` | Supporting local-admin reference preview. |
+| `data_workflow.css` | `data_workflow.html` | Supporting data workflow reference preview. |
+| `hardware.css` | `hardware.html` | Rich static hardware reference preview from `examples.hardware.preview`. |
+| `hardware_portable.css` | `hardware_cli.html` | Strict portable CSS path for CLI render, native PNG, plan, and build evidence. |
+| `portable_core_ui.css` | `portable_core_ui.html` | Portable Core UI support matrix/gallery source CSS. |
+| `reference_theme.css` | `hardware.html`, `admin.html`, `data_workflow.html`, `utility_ops.html` | Shared browser-preview theme for neutral reference apps. `utility_ops.html` also inlines generated utility CSS. |
+| `saas.css` | `saas.html` | SaaS case-study browser stylesheet. |
+| `ui.css` | `ui.html` | UI Kit browser stylesheet. |
+| `wraith.css` | `wraith.html` | Legacy Wraith case-study stylesheet. Mission Exec now uses `wraith_mission_exec.css`. |
+| `wraith_input_console.css` | `wraith_input_console.html` | Wraith case-study support surface. |
+| `wraith_mission_exec.css` | `wraith_mission_exec.html` | Mission Exec showcase CSS. The checked-in HTML is regenerated from `examples.wraith.mission_exec_showcase:app`; the older `wraith.css` link was legacy, not the current showcase path. |
+
+## Live Preview Commands
+
+Live previews are local-development tools only. Keep them bound to localhost;
+they are not public servers or sandboxes.
 
 ```bash
-PYTHONPATH=src:. python -m examples.wraith.preview
-```
-
-For the interactive preview, run:
-
-```bash
+PYTHONPATH=src:. python -m examples.hardware.live_preview
+PYTHONPATH=src:. python -m examples.admin.live_preview
+PYTHONPATH=src:. python -m examples.data_workflow.live_preview
+PYTHONPATH=src:. python -m examples.saas.live_preview
+PYTHONPATH=src:. python -m examples.ui.live_preview
 PYTHONPATH=src:. python -m examples.wraith.live_preview
-```
-
-Then open <http://127.0.0.1:8765>.
-
-The Wraith Mission Exec preview can be regenerated with:
-
-```bash
-PYTHONPATH=src:. python -m examples.wraith.mission_exec_preview
-```
-
-For the interactive Mission Exec preview, run:
-
-```bash
 PYTHONPATH=src:. python -m examples.wraith.mission_exec_live_preview
 ```
 
-Then open <http://127.0.0.1:8767>.
-Use `SIMULATE FRAME` to verify the live runtime path: frame, elapsed time,
-telemetry, and timeline state update through Otoe events and signals.
-
-The SaaS preview can be regenerated with:
-
-```bash
-PYTHONPATH=src:. python -m examples.saas.preview
-```
-
-For the interactive SaaS preview, run:
-
-```bash
-PYTHONPATH=src:. python -m examples.saas.live_preview
-```
-
-Then open <http://127.0.0.1:8766>.
-
-The UI kit preview can be regenerated with:
-
-```bash
-PYTHONPATH=src:. python -m examples.ui.preview
-```
-
-For the interactive UI kit preview, run:
-
-```bash
-PYTHONPATH=src:. python -m examples.ui.live_preview
-```
-
-Then open <http://127.0.0.1:8768>.
-Use the sidebar, command launcher, `Ctrl+K`/`Meta+K`, command search, Enter key,
-`Escape`, and single-key command shortcuts to verify the live command overlay
-and route switching. The UI kit route also includes a controlled select and
-action menu to verify open state, disabled options, selection events, Arrow
-keys, Enter/Space submit, and Escape close behavior. The command input is marked
-for autofocus when the overlay opens. Dialogs and popovers are wrapped in
-`FocusScope` so the live preview traps Tab inside the active overlay scope and
-restores focus after the overlay disappears.
+## Authoring Notes
 
 Otoe also has an optional JSX-like `template(...)` authoring path. It returns
 the same `Node` tree as Python components, so it is syntax sugar rather than a
@@ -90,3 +86,7 @@ html = render_html(view, stylesheet=styles)
 
 The HTML renderer emits inline styles only as a proof backend; `StyleSheet` is
 intended to be renderer-independent.
+
+`hardware_cli.html` is wrapped for the static gallery so it has a document
+title. `otoe render ...` emits the inner fragment; preserve the checked-in
+wrapper when refreshing it.

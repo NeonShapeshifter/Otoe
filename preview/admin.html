@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Otoe Local Admin Console</title>
+  <link rel="stylesheet" href="reference_theme.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <div class="otoe-stack otoe-vstack ui-app-shell admin-app" style="--otoe-gap:0px">
+      <div class="otoe-stack otoe-hstack ui-app-header">
+        <div class="otoe-stack otoe-hstack ui-toolbar admin-topbar" style="--otoe-gap:12px">
+          <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+            <span class="otoe-text admin-brand">Otoe Admin Console</span>
+            <span class="otoe-text admin-workspace">Local Workspace</span>
+          </div>
+          <span class="otoe-text ui-badge is-info admin-env-badge">Lab machine</span>
+          <span class="otoe-text ui-badge is-success admin-status-badge">Saved</span>
+          <button class="otoe-button ui-button is-ghost is-md" type="button">Reload</button>
+          <button class="otoe-button ui-button is-ghost is-md" type="button" disabled="disabled">Reset</button>
+          <button class="otoe-button ui-button is-primary is-md" type="button" disabled="disabled">Save changes</button>
+        </div>
+      </div>
+      <div class="otoe-stack otoe-hstack ui-app-main" style="--otoe-gap:0px">
+        <div class="otoe-stack otoe-vstack ui-app-sidebar">
+          <div class="otoe-stack otoe-vstack ui-sidebar-nav admin-sidebar" style="--otoe-gap:8px">
+            <div class="otoe-stack otoe-vstack ui-sidebar-brand">
+              <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                <span class="otoe-text admin-sidebar-brand">Otoe</span>
+                <span class="otoe-text admin-sidebar-copy">Local Admin</span>
+              </div>
+            </div>
+            <div class="otoe-fragment otoe-for">
+              <button class="otoe-button ui-nav-item is-active" type="button">
+                <div class="otoe-stack otoe-hstack ui-nav-row" style="--otoe-gap:10px">
+                  <div class="otoe-stack otoe-vstack ui-nav-copy" style="--otoe-gap:2px">
+                    <span class="otoe-text ui-nav-label">Overview</span>
+                    <div class="otoe-fragment otoe-show">
+                      <span class="otoe-text ui-nav-description">Status, pending work, and recent activity</span>
+                    </div>
+                  </div>
+                  <div class="otoe-fragment otoe-show">
+                    <span class="otoe-text ui-badge is-info ui-nav-badge">Local</span>
+                  </div>
+                </div>
+              </button>
+              <button class="otoe-button ui-nav-item" type="button">
+                <div class="otoe-stack otoe-hstack ui-nav-row" style="--otoe-gap:10px">
+                  <div class="otoe-stack otoe-vstack ui-nav-copy" style="--otoe-gap:2px">
+                    <span class="otoe-text ui-nav-label">Settings</span>
+                    <div class="otoe-fragment otoe-show">
+                      <span class="otoe-text ui-nav-description">Editable workspace and runtime defaults</span>
+                    </div>
+                  </div>
+                  <div class="otoe-fragment otoe-show">
+                    <span class="otoe-text ui-badge is-warn ui-nav-badge">5</span>
+                  </div>
+                </div>
+              </button>
+              <button class="otoe-button ui-nav-item" type="button">
+                <div class="otoe-stack otoe-hstack ui-nav-row" style="--otoe-gap:10px">
+                  <div class="otoe-stack otoe-vstack ui-nav-copy" style="--otoe-gap:2px">
+                    <span class="otoe-text ui-nav-label">Access</span>
+                    <div class="otoe-fragment otoe-show">
+                      <span class="otoe-text ui-nav-description">Local permissions and safety controls</span>
+                    </div>
+                  </div>
+                  <div class="otoe-fragment otoe-show">
+                    <span class="otoe-text ui-badge is-success ui-nav-badge">3</span>
+                  </div>
+                </div>
+              </button>
+              <button class="otoe-button ui-nav-item" type="button">
+                <div class="otoe-stack otoe-hstack ui-nav-row" style="--otoe-gap:10px">
+                  <div class="otoe-stack otoe-vstack ui-nav-copy" style="--otoe-gap:2px">
+                    <span class="otoe-text ui-nav-label">Audit</span>
+                    <div class="otoe-fragment otoe-show">
+                      <span class="otoe-text ui-nav-description">Recent local admin activity</span>
+                    </div>
+                  </div>
+                  <div class="otoe-fragment otoe-show">
+                    <span class="otoe-text ui-badge is-neutral ui-nav-badge">Log</span>
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="otoe-stack otoe-vstack ui-sidebar-footer">
+              <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                <span class="otoe-text admin-sidebar-meta">Lab machine</span>
+                <span class="otoe-text admin-sidebar-meta">0 pending</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="otoe-stack otoe-vstack ui-app-content">
+          <div class="otoe-stack otoe-vstack admin-route-shell" style="--otoe-gap:14px">
+            <div class="otoe-fragment otoe-show"></div>
+            <div class="otoe-stack otoe-vstack ui-route-view admin-route" style="--otoe-gap:0px">
+              <div class="otoe-fragment otoe-for">
+                <div class="otoe-stack otoe-vstack admin-page" style="--otoe-gap:14px">
+                  <div class="otoe-stack otoe-hstack admin-stat-grid" style="--otoe-gap:12px">
+                    <section class="otoe-panel ui-card is-default ui-stat-card admin-stat">
+                      <div class="otoe-stack otoe-vstack ui-stat-body">
+                        <span class="otoe-text ui-stat-label">Status</span>
+                        <span class="otoe-text ui-stat-value">Saved</span>
+                        <div class="otoe-fragment otoe-show">
+                          <span class="otoe-text ui-stat-detail is-success">Lab machine</span>
+                        </div>
+                      </div>
+                    </section>
+                    <section class="otoe-panel ui-card is-default ui-stat-card admin-stat">
+                      <div class="otoe-stack otoe-vstack ui-stat-body">
+                        <span class="otoe-text ui-stat-label">Pending</span>
+                        <span class="otoe-text ui-stat-value">0</span>
+                        <div class="otoe-fragment otoe-show">
+                          <span class="otoe-text ui-stat-detail is-success">settings staged</span>
+                        </div>
+                      </div>
+                    </section>
+                    <section class="otoe-panel ui-card is-default ui-stat-card admin-stat">
+                      <div class="otoe-stack otoe-vstack ui-stat-body">
+                        <span class="otoe-text ui-stat-label">Access</span>
+                        <span class="otoe-text ui-stat-value">2/3</span>
+                        <div class="otoe-fragment otoe-show">
+                          <span class="otoe-text ui-stat-detail is-info">rules enabled</span>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+                  <div class="otoe-stack otoe-hstack admin-overview-grid" style="--otoe-gap:14px">
+                    <section class="otoe-panel ui-card is-default admin-panel admin-review-panel">
+                      <div class="otoe-stack otoe-vstack" style="--otoe-gap:10px">
+                        <div class="otoe-stack otoe-hstack ui-section-header" style="--otoe-gap:10px">
+                          <div class="otoe-stack otoe-vstack ui-section-copy" style="--otoe-gap:2px">
+                            <span class="otoe-text ui-section-title">Settings requiring review</span>
+                            <div class="otoe-fragment otoe-show"></div>
+                          </div>
+                          <div class="otoe-fragment otoe-show"></div>
+                        </div>
+                        <div class="otoe-fragment otoe-for">
+                          <div class="otoe-stack otoe-vstack ui-empty-state admin-empty-state" style="--otoe-gap:4px">
+                            <span class="otoe-text ui-empty-title">No pending settings</span>
+                            <div class="otoe-fragment otoe-show"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                    <section class="otoe-panel ui-card is-default admin-panel admin-audit-panel">
+                      <div class="otoe-stack otoe-vstack" style="--otoe-gap:10px">
+                        <div class="otoe-stack otoe-hstack ui-section-header" style="--otoe-gap:10px">
+                          <div class="otoe-stack otoe-vstack ui-section-copy" style="--otoe-gap:2px">
+                            <span class="otoe-text ui-section-title">Recent activity</span>
+                            <div class="otoe-fragment otoe-show"></div>
+                          </div>
+                          <div class="otoe-fragment otoe-show"></div>
+                        </div>
+                        <div class="otoe-fragment otoe-for">
+                          <div class="otoe-stack otoe-hstack admin-event-row" style="--otoe-gap:10px">
+                            <span class="otoe-text admin-event-time">09:14:02</span>
+                            <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                              <span class="otoe-text admin-event-actor">system</span>
+                              <span class="otoe-text admin-event-action">Loaded local settings</span>
+                            </div>
+                            <span class="otoe-text ui-badge is-success admin-event-badge">SUCCESS</span>
+                          </div>
+                          <div class="otoe-stack otoe-hstack admin-event-row" style="--otoe-gap:10px">
+                            <span class="otoe-text admin-event-time">09:14:05</span>
+                            <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                              <span class="otoe-text admin-event-actor">system</span>
+                              <span class="otoe-text admin-event-action">Audit retention verified</span>
+                            </div>
+                            <span class="otoe-text ui-badge is-info admin-event-badge">INFO</span>
+                          </div>
+                          <div class="otoe-stack otoe-hstack admin-event-row" style="--otoe-gap:10px">
+                            <span class="otoe-text admin-event-time">09:14:08</span>
+                            <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                              <span class="otoe-text admin-event-actor">operator</span>
+                              <span class="otoe-text admin-event-action">Remote admin bridge disabled</span>
+                            </div>
+                            <span class="otoe-text ui-badge is-warn admin-event-badge">WARN</span>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Otoe Data Workflow Console</title>
+  <link rel="stylesheet" href="reference_theme.css">
+  <link rel="stylesheet" href="data_workflow.css">
+</head>
+<body>
+    <div class="otoe-stack otoe-vstack ui-app-shell data-app" style="--otoe-gap:0px">
+      <div class="otoe-stack otoe-hstack ui-app-header">
+        <div class="otoe-stack otoe-hstack ui-toolbar data-topbar" style="--otoe-gap:12px">
+          <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+            <span class="otoe-text data-brand">Data Workflow Console</span>
+            <span class="otoe-text data-subtitle">Quarterly intake review</span>
+          </div>
+          <span class="otoe-text ui-badge is-success data-sync-badge">Ready</span>
+          <span class="otoe-text ui-badge is-info data-count-badge">5 visible</span>
+          <button class="otoe-button ui-button is-ghost is-md" type="button" disabled="disabled">Clear selection</button>
+          <button class="otoe-button ui-button is-ghost is-md" type="button">Export table</button>
+          <button class="otoe-button ui-button is-primary is-md" type="button" disabled="disabled">Approve selected</button>
+        </div>
+      </div>
+      <div class="otoe-stack otoe-hstack ui-app-main" style="--otoe-gap:0px">
+        <div class="otoe-stack otoe-vstack ui-app-sidebar">
+          <div class="otoe-stack otoe-vstack ui-sidebar-nav data-sidebar" style="--otoe-gap:8px">
+            <div class="otoe-stack otoe-vstack ui-sidebar-brand">
+              <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                <span class="otoe-text data-sidebar-brand">Otoe</span>
+                <span class="otoe-text data-sidebar-copy">Data Workflow</span>
+              </div>
+            </div>
+            <div class="otoe-fragment otoe-for">
+              <button class="otoe-button ui-nav-item is-active" type="button">
+                <div class="otoe-stack otoe-hstack ui-nav-row" style="--otoe-gap:10px">
+                  <div class="otoe-stack otoe-vstack ui-nav-copy" style="--otoe-gap:2px">
+                    <span class="otoe-text ui-nav-label">Queue</span>
+                    <div class="otoe-fragment otoe-show">
+                      <span class="otoe-text ui-nav-description">Search, filter, select, and process rows</span>
+                    </div>
+                  </div>
+                  <div class="otoe-fragment otoe-show">
+                    <span class="otoe-text ui-badge is-info ui-nav-badge">Table</span>
+                  </div>
+                </div>
+              </button>
+              <button class="otoe-button ui-nav-item" type="button">
+                <div class="otoe-stack otoe-hstack ui-nav-row" style="--otoe-gap:10px">
+                  <div class="otoe-stack otoe-vstack ui-nav-copy" style="--otoe-gap:2px">
+                    <span class="otoe-text ui-nav-label">Selected</span>
+                    <div class="otoe-fragment otoe-show">
+                      <span class="otoe-text ui-nav-description">Review the active batch before action</span>
+                    </div>
+                  </div>
+                  <div class="otoe-fragment otoe-show">
+                    <span class="otoe-text ui-badge is-warn ui-nav-badge">Batch</span>
+                  </div>
+                </div>
+              </button>
+              <button class="otoe-button ui-nav-item" type="button">
+                <div class="otoe-stack otoe-hstack ui-nav-row" style="--otoe-gap:10px">
+                  <div class="otoe-stack otoe-vstack ui-nav-copy" style="--otoe-gap:2px">
+                    <span class="otoe-text ui-nav-label">History</span>
+                    <div class="otoe-fragment otoe-show">
+                      <span class="otoe-text ui-nav-description">Recent workflow activity</span>
+                    </div>
+                  </div>
+                  <div class="otoe-fragment otoe-show">
+                    <span class="otoe-text ui-badge is-neutral ui-nav-badge">Log</span>
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="otoe-stack otoe-vstack ui-sidebar-footer">
+              <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                <span class="otoe-text data-sidebar-meta">Local CSV import</span>
+                <span class="otoe-text data-sidebar-meta">0 selected</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="otoe-stack otoe-vstack ui-app-content">
+          <div class="otoe-stack otoe-vstack data-route-shell" style="--otoe-gap:14px">
+            <div class="otoe-fragment otoe-show"></div>
+            <div class="otoe-stack otoe-vstack ui-route-view data-route" style="--otoe-gap:0px">
+              <div class="otoe-fragment otoe-for">
+                <div class="otoe-stack otoe-vstack data-page" style="--otoe-gap:14px">
+                  <div class="otoe-stack otoe-hstack data-stat-grid" style="--otoe-gap:12px">
+                    <section class="otoe-panel ui-card is-default ui-stat-card data-stat">
+                      <div class="otoe-stack otoe-vstack ui-stat-body">
+                        <span class="otoe-text ui-stat-label">Rows</span>
+                        <span class="otoe-text ui-stat-value">5</span>
+                        <div class="otoe-fragment otoe-show">
+                          <span class="otoe-text ui-stat-detail is-info">match current filters</span>
+                        </div>
+                      </div>
+                    </section>
+                    <section class="otoe-panel ui-card is-default ui-stat-card data-stat">
+                      <div class="otoe-stack otoe-vstack ui-stat-body">
+                        <span class="otoe-text ui-stat-label">Selected</span>
+                        <span class="otoe-text ui-stat-value">0</span>
+                        <div class="otoe-fragment otoe-show">
+                          <span class="otoe-text ui-stat-detail is-neutral">ready for bulk action</span>
+                        </div>
+                      </div>
+                    </section>
+                    <section class="otoe-panel ui-card is-default ui-stat-card data-stat">
+                      <div class="otoe-stack otoe-vstack ui-stat-body">
+                        <span class="otoe-text ui-stat-label">Quality gate</span>
+                        <span class="otoe-text ui-stat-value">3</span>
+                        <div class="otoe-fragment otoe-show">
+                          <span class="otoe-text ui-stat-detail is-success">review-ready records</span>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+                  <section class="otoe-panel ui-card is-default data-panel data-table-panel">
+                    <div class="otoe-stack otoe-vstack" style="--otoe-gap:12px">
+                      <div class="otoe-stack otoe-hstack data-filter-row" style="--otoe-gap:12px">
+                        <input class="otoe-input data-search-input" placeholder="Search records">
+                        <div class="otoe-stack otoe-hstack ui-tabs is-horizontal data-stage-tabs" style="--otoe-gap:6px">
+                          <button class="otoe-button ui-tab data-stage-tab is-active" type="button">All</button>
+                          <button class="otoe-button ui-tab data-stage-tab" type="button">Intake</button>
+                          <button class="otoe-button ui-tab data-stage-tab" type="button">Review</button>
+                          <button class="otoe-button ui-tab data-stage-tab" type="button">Approved</button>
+                          <button class="otoe-button ui-tab data-stage-tab" type="button">Blocked</button>
+                        </div>
+                      </div>
+                      <div class="otoe-stack otoe-vstack ui-table data-record-table" style="--otoe-gap:8px">
+                        <div class="otoe-stack otoe-hstack ui-table-head">
+                          <span class="otoe-text ui-table-head-cell select"></span>
+                          <span class="otoe-text ui-table-head-cell account">Account</span>
+                          <span class="otoe-text ui-table-head-cell stage">Stage</span>
+                          <span class="otoe-text ui-table-head-cell status">Status</span>
+                          <span class="otoe-text ui-table-head-cell owner">Owner</span>
+                          <span class="otoe-text ui-table-head-cell amount">Amount</span>
+                          <span class="otoe-text ui-table-head-cell updated">Updated</span>
+                        </div>
+                        <div class="otoe-fragment otoe-for">
+                          <div class="otoe-stack otoe-hstack ui-table-row">
+                            <button class="otoe-button ui-button is-primary is-sm data-select-button" type="button">Select</button>
+                            <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                              <span class="otoe-text ui-table-cell data-record-account">Arcadia Finance</span>
+                              <span class="otoe-text data-record-note">Contract values reconciled.</span>
+                            </div>
+                            <span class="otoe-text ui-badge is-warn data-stage-badge">Review</span>
+                            <span class="otoe-text ui-table-cell data-record-status">Needs approval</span>
+                            <span class="otoe-text ui-table-cell data-record-owner">Mara</span>
+                            <span class="otoe-text ui-table-cell data-record-amount">$42,800</span>
+                            <span class="otoe-text ui-table-cell data-record-updated">09:22</span>
+                          </div>
+                          <div class="otoe-stack otoe-hstack ui-table-row">
+                            <button class="otoe-button ui-button is-primary is-sm data-select-button" type="button">Select</button>
+                            <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                              <span class="otoe-text ui-table-cell data-record-account">Northstar Analytics</span>
+                              <span class="otoe-text data-record-note">Imported from partner feed.</span>
+                            </div>
+                            <span class="otoe-text ui-badge is-info data-stage-badge">Intake</span>
+                            <span class="otoe-text ui-table-cell data-record-status">Ready</span>
+                            <span class="otoe-text ui-table-cell data-record-owner">Ilya</span>
+                            <span class="otoe-text ui-table-cell data-record-amount">$18,400</span>
+                            <span class="otoe-text ui-table-cell data-record-updated">09:28</span>
+                          </div>
+                          <div class="otoe-stack otoe-hstack ui-table-row">
+                            <button class="otoe-button ui-button is-primary is-sm data-select-button" type="button">Select</button>
+                            <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                              <span class="otoe-text ui-table-cell data-record-account">Mercury Labs</span>
+                              <span class="otoe-text data-record-note">Owner mapping is incomplete.</span>
+                            </div>
+                            <span class="otoe-text ui-badge is-danger data-stage-badge">Blocked</span>
+                            <span class="otoe-text ui-table-cell data-record-status">Missing owner</span>
+                            <span class="otoe-text ui-table-cell data-record-owner">Ren</span>
+                            <span class="otoe-text ui-table-cell data-record-amount">$9,600</span>
+                            <span class="otoe-text ui-table-cell data-record-updated">09:31</span>
+                          </div>
+                          <div class="otoe-stack otoe-hstack ui-table-row">
+                            <button class="otoe-button ui-button is-primary is-sm data-select-button" type="button">Select</button>
+                            <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                              <span class="otoe-text ui-table-cell data-record-account">Helio Works</span>
+                              <span class="otoe-text data-record-note">Usage and billing match.</span>
+                            </div>
+                            <span class="otoe-text ui-badge is-success data-stage-badge">Review</span>
+                            <span class="otoe-text ui-table-cell data-record-status">Ready</span>
+                            <span class="otoe-text ui-table-cell data-record-owner">Sana</span>
+                            <span class="otoe-text ui-table-cell data-record-amount">$27,300</span>
+                            <span class="otoe-text ui-table-cell data-record-updated">09:35</span>
+                          </div>
+                          <div class="otoe-stack otoe-hstack ui-table-row">
+                            <button class="otoe-button ui-button is-primary is-sm data-select-button" type="button">Select</button>
+                            <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                              <span class="otoe-text ui-table-cell data-record-account">Juniper Systems</span>
+                              <span class="otoe-text data-record-note">Cleared in previous batch.</span>
+                            </div>
+                            <span class="otoe-text ui-badge is-success data-stage-badge">Approved</span>
+                            <span class="otoe-text ui-table-cell data-record-status">Approved</span>
+                            <span class="otoe-text ui-table-cell data-record-owner">Mara</span>
+                            <span class="otoe-text ui-table-cell data-record-amount">$13,900</span>
+                            <span class="otoe-text ui-table-cell data-record-updated">09:40</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</body>
+</html>
+

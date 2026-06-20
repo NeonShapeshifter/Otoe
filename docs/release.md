@@ -6,10 +6,33 @@ Use the release check before tagging or publishing a package:
 scripts/release_check.sh
 ```
 
+When promoting work from `/home/ale/Otoe` into `/home/ale/Otoe-public`, use the
+[publication sync checklist](publication-sync-checklist.md). `Otoe-public` is
+the manual publication point; this repository does not publish automatically.
+
 The script removes stale local build artifacts, installs local dev/release plus
 `native-text` extras, verifies generated Portable Core UI docs, compiles source
 files, runs Ruff, mypy, tests, builds distributions, runs `twine check`, and
-runs the sdist and installed-wheel smokes.
+runs the sdist and installed-wheel smokes. CI runs both smoke tests after
+building and checking package metadata.
+
+## Build Tooling Policy
+
+Otoe uses the modern SPDX packaging metadata path. `pyproject.toml` declares
+`license = "MIT"` plus `license-files = ["LICENSE"]`, so local release tooling,
+CI, and publish jobs require:
+
+- `setuptools>=77`
+- `wheel>=0.43`
+- `build>=1.2`
+- `twine>=6`
+
+Do not downgrade the build backend to support `setuptools<77` unless the license
+metadata policy is deliberately revisited. The older
+`license = { text = "MIT" }` form is intentionally not used because modern
+setuptools treats it as deprecated metadata. There is no release lockfile yet;
+the lightweight policy is explicit minimum versions shared by `pyproject.toml`,
+the release scripts, and GitHub workflows.
 
 If the Portable Core UI matrix changes, regenerate the docs before release:
 
@@ -90,7 +113,9 @@ OTOE_SMOKE_NO_BUILD_ISOLATION=1 scripts/wheel_smoke.sh
 ```
 
 CI runs this smoke after building and checking package metadata. The publish
-workflow also runs it before uploading the distribution artifact.
+workflow also runs it before uploading the distribution artifact. Publishing
+from a tag checks that `vX.Y.Z` matches `project.version` in `pyproject.toml`
+before building.
 
 ## Local Build Shadowing
 

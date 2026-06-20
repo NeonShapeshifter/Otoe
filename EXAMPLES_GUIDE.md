@@ -9,6 +9,29 @@ the PyPI wheel. Use `otoe new` for installed-package onboarding, and run these
 examples from a checkout with `PYTHONPATH=src:.` unless the package is already
 installed in editable mode.
 
+## Choose an example
+
+Start with the smallest row that proves the surface you care about. Static
+commands render files and exit. Live commands start a localhost dev server and
+are for development only. Native output is experimental evidence, not a
+production renderer claim. Backend candidate examples are advanced contributor
+paths.
+
+| If you want to... | Example/module | Command | Writes files? | Needs display? | Works from wheel or source checkout? | Maturity/status |
+| --- | --- | --- | --- | --- | --- | --- |
+| Start from the installed package | Generated app from `otoe new` | `otoe new hello_otoe`<br>`cd hello_otoe`<br>`otoe check` | Yes, creates `hello_otoe/` | No | Wheel or editable checkout | App-author pre-alpha path |
+| Do the quickest static render from this repo | `examples.quickstart:app` | `PYTHONPATH=src:. python -m otoe render examples.quickstart:app --out preview.html --pretty` | Yes, `preview.html` | No | Source checkout | Usable static preview |
+| Inspect the portable widget/UI matrix | `examples.portable_core_ui:app` | `PYTHONPATH=src:. python -m otoe render examples.portable_core_ui:app --out preview/portable_core_ui.html --css preview/portable_core_ui.css --pretty` | Yes, `preview/portable_core_ui.html` | No | Source checkout | Public pre-alpha support matrix |
+| Review shared product UI primitives | `examples.ui.preview` | `PYTHONPATH=src:. python -m examples.ui.preview > preview/ui.html` | Yes, `preview/ui.html` | No | Source checkout | Product-preview reference app |
+| Try the main neutral product-facing demo | `examples.hardware.control_panel:app` | `PYTHONPATH=src:. python -m otoe render examples.hardware.control_panel:app --out preview/hardware_cli.html --css preview/hardware_portable.css --pretty` | Yes, `preview/hardware_cli.html` | No | Source checkout | Active Phase 5 product-shape validation |
+| See a utility-first operational console | `examples.utility.preview` | `PYTHONPATH=src:. python -m examples.utility.preview > preview/utility_ops.html` | Yes, `preview/utility_ops.html` | No | Source checkout | Product-preview reference app |
+| Run the smallest live localhost example | `examples.live_counter:app` | `PYTHONPATH=src:. python -m otoe dev examples.live_counter:app --port 8767` | No persistent files | Browser recommended to interact | Source checkout | Local dev only |
+| Produce native/headless evidence | `examples.native.counter_demo` | `PYTHONPATH=src:. python -m examples.native.counter_demo` | Yes, frames under `preview/native/` | No | Source checkout | Experimental native evidence |
+| Build and validate an offline bundle | `examples/offline_bundle/` | `cd examples/offline_bundle`<br>`PYTHONPATH=../../src:. python -m otoe build app:app --profile-file otoe.profile.toml --out ../../dist/offline_bundle --validate` | Yes, `dist/offline_bundle/` | No | Source checkout | Technical preview, not a sandbox |
+| Compare a non-appliance dashboard shape | `examples.saas.preview` | `PYTHONPATH=src:. python -m examples.saas.preview > preview/saas.html` | Yes, `preview/saas.html` | No | Source checkout | Case study |
+| Inspect Wraith as advanced case-study pressure | `examples.wraith.mission_exec_showcase:app` | `PYTHONPATH=src:. python -m otoe render examples.wraith.mission_exec_showcase:app --out preview/wraith_mission_exec.html --css preview/wraith_mission_exec.css --pretty` | Yes, `preview/wraith_mission_exec.html` | No | Source checkout | Advanced case study, not default path |
+| Work on renderer/backend contributor contracts | `examples.native.backend_candidate_skeleton` | `PYTHONPATH=src:. python -m examples.native.backend_candidate_skeleton --json` | No by default | No | Source checkout | Advanced/contributor experimental path |
+
 The Phase 5 reference app extraction rules live in
 `REFERENCE_APP_PATTERNS.md`. Use that document before adding another broad
 example or moving repeated markup into `otoe.ui`.
@@ -59,7 +82,7 @@ Use this when you need the smallest live preview app shape:
 - signal-driven rerendering
 
 ```bash
-otoe dev examples.live_counter:app --port 8767
+PYTHONPATH=src:. python -m otoe dev examples.live_counter:app --port 8767
 ```
 
 This is the reference for future tiny live-preview examples.
@@ -407,8 +430,9 @@ Paths:
 - `examples/wraith/mission_exec_surface.py`
 - `examples/wraith/mission_exec_preview.py`
 - `examples/wraith/mission_exec_live_preview.py`
+- `examples/wraith/mission_exec_showcase.py`
 
-Use these to validate dense operational UI pressure:
+Use these as advanced case studies for dense operational UI pressure:
 
 - topbar/status surfaces
 - mission cards
@@ -420,30 +444,12 @@ Use these to validate dense operational UI pressure:
 ```bash
 PYTHONPATH=src:. python -m examples.wraith.preview > preview/wraith.html
 PYTHONPATH=src:. python -m examples.wraith.live_preview
-PYTHONPATH=src:. python -m examples.wraith.mission_exec_preview > preview/wraith_mission_exec.html
+PYTHONPATH=src:. python -m otoe render examples.wraith.mission_exec_showcase:app --out preview/wraith_mission_exec.html --css preview/wraith_mission_exec.css --pretty
 PYTHONPATH=src:. python -m examples.wraith.mission_exec_live_preview
 ```
 
 Wraith examples should pressure-test Otoe without leaking Wraith-specific
-assumptions into the runtime.
-
-## Choosing An Example
-
-| Need | Start With |
-| --- | --- |
-| Static CLI render target | `examples.quickstart:app` |
-| Portable primitive examples | `examples.portable_core_ui:app` |
-| Minimal live preview app | `examples.live_counter:app` |
-| Minimal native PNG smoke | `examples.native.counter_demo` |
-| App-shaped native renderer surface | `examples.native.task_board_demo` |
-| Portable UI native visual smoke | `examples.native.portable_core_ui_demo` |
-| Window-driver or Tk smoke | `examples.native.window_demo` |
-| Shared UI primitive regression | `examples.ui.kitchen_sink` |
-| Product-dashboard case study | `examples.saas.overview` |
-| Professional hardware reference app | `examples.hardware.control_panel` |
-| Local admin/settings reference app | `examples.admin.settings_console` |
-| Data/table workflow reference app | `examples.data_workflow.workbench` |
-| Dense operational case study | `examples.wraith.mission_exec_surface` |
+assumptions into the runtime. They are not the default onboarding path.
 
 ## Example Rules
 
@@ -452,5 +458,5 @@ assumptions into the runtime.
 - Prefer small examples for docs and CLI behavior.
 - Prefer app-shaped examples for renderer and UI primitive integration.
 - Do not add a new primitive just to make an example prettier.
-- When an example exposes a new framework boundary, add a focused test for that
+- When an example exposes a new runtime boundary, add a focused test for that
   boundary.

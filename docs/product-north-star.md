@@ -10,7 +10,8 @@ making a browser the required runtime and without splitting the product across
 an unrelated frontend stack.
 
 Wraith inspired the need. Wraith should not define the product boundary. Otoe
-must stand on its own as a public runtime for many appliance-shaped products.
+must evolve toward standing on its own as a public runtime for many
+appliance-shaped products, without implying stability while it is pre-alpha.
 
 ## The Real Problem
 
@@ -209,7 +210,7 @@ claims.
 
 People building Python-controlled devices, lab tools, embedded panels,
 diagnostics consoles, manufacturing fixtures, or field equipment. They need
-local UI that is direct, touchable, testable, and shippable.
+local UI that is direct, touchable, testable, and eventually shippable.
 
 ### Appliance Builders
 

@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Otoe Hardware Control Panel</title>
+  <link rel="stylesheet" href="reference_theme.css">
+  <link rel="stylesheet" href="hardware.css">
+</head>
+<body>
+    <div class="otoe-stack otoe-vstack ui-app-shell hardware-app" style="--otoe-gap:0px">
+      <div class="otoe-stack otoe-hstack ui-app-header">
+        <div class="otoe-stack otoe-hstack ui-toolbar hardware-topbar" style="--otoe-gap:12px">
+          <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+            <span class="otoe-text hardware-brand">Otoe Hardware Lab</span>
+            <span class="otoe-text hardware-device">Bench Controller A17</span>
+          </div>
+          <span class="otoe-text ui-badge is-success hardware-connection">Online</span>
+          <span class="otoe-text hardware-mode">Mode: Closed-loop monitor</span>
+          <button class="otoe-button ui-button is-ghost is-md" type="button">Refresh</button>
+          <button class="otoe-button ui-button is-primary is-md" type="button">Run self-test</button>
+        </div>
+      </div>
+      <div class="otoe-stack otoe-hstack ui-app-main" style="--otoe-gap:0px">
+        <div class="otoe-stack otoe-vstack ui-app-sidebar">
+          <div class="otoe-stack otoe-vstack ui-sidebar-nav hardware-sidebar" style="--otoe-gap:8px">
+            <div class="otoe-stack otoe-vstack ui-sidebar-brand">
+              <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                <span class="otoe-text hardware-sidebar-brand">Otoe</span>
+                <span class="otoe-text hardware-sidebar-copy">Hardware reference</span>
+              </div>
+            </div>
+            <div class="otoe-fragment otoe-for">
+              <button class="otoe-button ui-nav-item is-active" type="button">
+                <div class="otoe-stack otoe-hstack ui-nav-row" style="--otoe-gap:10px">
+                  <div class="otoe-stack otoe-vstack ui-nav-copy" style="--otoe-gap:2px">
+                    <span class="otoe-text ui-nav-label">Overview</span>
+                    <div class="otoe-fragment otoe-show">
+                      <span class="otoe-text ui-nav-description">Device state and priority signals</span>
+                    </div>
+                  </div>
+                  <div class="otoe-fragment otoe-show">
+                    <span class="otoe-text ui-badge is-success ui-nav-badge">Live</span>
+                  </div>
+                </div>
+              </button>
+              <button class="otoe-button ui-nav-item" type="button">
+                <div class="otoe-stack otoe-hstack ui-nav-row" style="--otoe-gap:10px">
+                  <div class="otoe-stack otoe-vstack ui-nav-copy" style="--otoe-gap:2px">
+                    <span class="otoe-text ui-nav-label">Telemetry</span>
+                    <div class="otoe-fragment otoe-show">
+                      <span class="otoe-text ui-nav-description">Sensor readings and sample metadata</span>
+                    </div>
+                  </div>
+                  <div class="otoe-fragment otoe-show">
+                    <span class="otoe-text ui-badge is-info ui-nav-badge">8 Hz</span>
+                  </div>
+                </div>
+              </button>
+              <button class="otoe-button ui-nav-item" type="button">
+                <div class="otoe-stack otoe-hstack ui-nav-row" style="--otoe-gap:10px">
+                  <div class="otoe-stack otoe-vstack ui-nav-copy" style="--otoe-gap:2px">
+                    <span class="otoe-text ui-nav-label">Controls</span>
+                    <div class="otoe-fragment otoe-show">
+                      <span class="otoe-text ui-nav-description">Safe operator actions</span>
+                    </div>
+                  </div>
+                  <div class="otoe-fragment otoe-show">
+                    <span class="otoe-text ui-badge is-warn ui-nav-badge">4</span>
+                  </div>
+                </div>
+              </button>
+              <button class="otoe-button ui-nav-item" type="button">
+                <div class="otoe-stack otoe-hstack ui-nav-row" style="--otoe-gap:10px">
+                  <div class="otoe-stack otoe-vstack ui-nav-copy" style="--otoe-gap:2px">
+                    <span class="otoe-text ui-nav-label">Settings</span>
+                    <div class="otoe-fragment otoe-show">
+                      <span class="otoe-text ui-nav-description">Connection and firmware defaults</span>
+                    </div>
+                  </div>
+                  <div class="otoe-fragment otoe-show">
+                    <span class="otoe-text ui-badge is-neutral ui-nav-badge">USB</span>
+                  </div>
+                </div>
+              </button>
+            </div>
+            <div class="otoe-stack otoe-vstack ui-sidebar-footer">
+              <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                <span class="otoe-text hardware-sidebar-meta">FW 1.8.4</span>
+                <span class="otoe-text hardware-sidebar-meta">Uptime 04:18:22</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="otoe-stack otoe-vstack ui-app-content">
+          <div class="otoe-stack otoe-vstack hardware-route-shell" style="--otoe-gap:14px">
+            <div class="otoe-fragment otoe-show"></div>
+            <div class="otoe-stack otoe-vstack ui-route-view hardware-route" style="--otoe-gap:0px">
+              <div class="otoe-fragment otoe-for">
+                <div class="otoe-stack otoe-vstack hardware-page" style="--otoe-gap:14px">
+                  <div class="otoe-stack otoe-hstack hardware-stat-grid" style="--otoe-gap:12px">
+                    <section class="otoe-panel ui-card is-default ui-stat-card hardware-stat">
+                      <div class="otoe-stack otoe-vstack ui-stat-body">
+                        <span class="otoe-text ui-stat-label">Connection</span>
+                        <span class="otoe-text ui-stat-value">Online</span>
+                        <div class="otoe-fragment otoe-show">
+                          <span class="otoe-text ui-stat-detail is-success">8 Hz sample</span>
+                        </div>
+                      </div>
+                    </section>
+                    <section class="otoe-panel ui-card is-default ui-stat-card hardware-stat">
+                      <div class="otoe-stack otoe-vstack ui-stat-body">
+                        <span class="otoe-text ui-stat-label">Bus voltage</span>
+                        <span class="otoe-text ui-stat-value">24.1V</span>
+                        <div class="otoe-fragment otoe-show">
+                          <span class="otoe-text ui-stat-detail is-success">Within rail tolerance</span>
+                        </div>
+                      </div>
+                    </section>
+                    <section class="otoe-panel ui-card is-default ui-stat-card hardware-stat">
+                      <div class="otoe-stack otoe-vstack ui-stat-body">
+                        <span class="otoe-text ui-stat-label">Motor current</span>
+                        <span class="otoe-text ui-stat-value">1.8A</span>
+                        <div class="otoe-fragment otoe-show">
+                          <span class="otoe-text ui-stat-detail is-info">Idle draw with fan load</span>
+                        </div>
+                      </div>
+                    </section>
+                    <section class="otoe-panel ui-card is-default ui-stat-card hardware-stat">
+                      <div class="otoe-stack otoe-vstack ui-stat-body">
+                        <span class="otoe-text ui-stat-label">Thermal headroom</span>
+                        <span class="otoe-text ui-stat-value">18C</span>
+                        <div class="otoe-fragment otoe-show">
+                          <span class="otoe-text ui-stat-detail is-warn">Heatsink margin remaining</span>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+                  <section class="otoe-panel ui-card is-default hardware-status is-ready">
+                    <div class="otoe-stack otoe-hstack hardware-status-row" style="--otoe-gap:12px">
+                      <span class="otoe-text ui-badge is-success hardware-status-badge">READY</span>
+                      <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                        <span class="otoe-text hardware-status-title">Online</span>
+                        <span class="otoe-text hardware-status-copy">Provider healthy. Telemetry is live and operator controls are available.</span>
+                      </div>
+                    </div>
+                  </section>
+                  <div class="otoe-stack otoe-hstack hardware-overview-grid" style="--otoe-gap:14px">
+                    <section class="otoe-panel ui-card is-default hardware-panel hardware-telemetry-panel">
+                      <div class="otoe-stack otoe-vstack" style="--otoe-gap:10px">
+                        <div class="otoe-stack otoe-hstack ui-section-header hardware-section-heading" style="--otoe-gap:10px">
+                          <div class="otoe-stack otoe-vstack ui-section-copy" style="--otoe-gap:2px">
+                            <span class="otoe-text ui-section-title">Priority telemetry</span>
+                            <div class="otoe-fragment otoe-show"></div>
+                          </div>
+                          <div class="otoe-fragment otoe-show">
+                            <span class="otoe-text ui-badge is-info ui-section-badge">Live sample</span>
+                          </div>
+                        </div>
+                        <div class="otoe-fragment otoe-for">
+                          <div class="otoe-stack otoe-hstack hardware-signal-row" style="--otoe-gap:10px">
+                            <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                              <span class="otoe-text hardware-signal-name">Bus voltage</span>
+                              <span class="otoe-text hardware-signal-detail">Within rail tolerance</span>
+                            </div>
+                            <span class="otoe-text hardware-signal-value">24.1V</span>
+                            <span class="otoe-text ui-badge is-success hardware-signal-badge">SUCCESS</span>
+                          </div>
+                          <div class="otoe-stack otoe-hstack hardware-signal-row" style="--otoe-gap:10px">
+                            <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                              <span class="otoe-text hardware-signal-name">Motor current</span>
+                              <span class="otoe-text hardware-signal-detail">Idle draw with fan load</span>
+                            </div>
+                            <span class="otoe-text hardware-signal-value">1.8A</span>
+                            <span class="otoe-text ui-badge is-info hardware-signal-badge">INFO</span>
+                          </div>
+                          <div class="otoe-stack otoe-hstack hardware-signal-row" style="--otoe-gap:10px">
+                            <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                              <span class="otoe-text hardware-signal-name">Thermal headroom</span>
+                              <span class="otoe-text hardware-signal-detail">Heatsink margin remaining</span>
+                            </div>
+                            <span class="otoe-text hardware-signal-value">18C</span>
+                            <span class="otoe-text ui-badge is-warn hardware-signal-badge">WARN</span>
+                          </div>
+                          <div class="otoe-stack otoe-hstack hardware-signal-row" style="--otoe-gap:10px">
+                            <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                              <span class="otoe-text hardware-signal-name">Vibration RMS</span>
+                              <span class="otoe-text hardware-signal-detail">Below maintenance threshold</span>
+                            </div>
+                            <span class="otoe-text hardware-signal-value">0.04g</span>
+                            <span class="otoe-text ui-badge is-success hardware-signal-badge">SUCCESS</span>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                    <section class="otoe-panel ui-card is-default hardware-panel hardware-events-panel">
+                      <div class="otoe-stack otoe-vstack" style="--otoe-gap:10px">
+                        <div class="otoe-stack otoe-hstack ui-section-header hardware-section-heading" style="--otoe-gap:10px">
+                          <div class="otoe-stack otoe-vstack ui-section-copy" style="--otoe-gap:2px">
+                            <span class="otoe-text ui-section-title">Event stream</span>
+                            <div class="otoe-fragment otoe-show"></div>
+                          </div>
+                          <div class="otoe-fragment otoe-show"></div>
+                          <div class="otoe-stack otoe-vstack ui-section-actions">
+                            <button class="otoe-button ui-button is-ghost is-sm" type="button">Clear</button>
+                          </div>
+                        </div>
+                        <div class="otoe-fragment otoe-for">
+                          <div class="otoe-stack otoe-hstack hardware-event-row" style="--otoe-gap:10px">
+                            <span class="otoe-text hardware-event-time">08:42:18</span>
+                            <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                              <span class="otoe-text hardware-event-source">controller</span>
+                              <span class="otoe-text hardware-event-message">Device handshake accepted</span>
+                            </div>
+                            <span class="otoe-text ui-badge is-success hardware-event-badge">SUCCESS</span>
+                          </div>
+                          <div class="otoe-stack otoe-hstack hardware-event-row" style="--otoe-gap:10px">
+                            <span class="otoe-text hardware-event-time">08:42:21</span>
+                            <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                              <span class="otoe-text hardware-event-source">cooling</span>
+                              <span class="otoe-text hardware-event-message">Fan curve settled at 32%</span>
+                            </div>
+                            <span class="otoe-text ui-badge is-info hardware-event-badge">INFO</span>
+                          </div>
+                          <div class="otoe-stack otoe-hstack hardware-event-row" style="--otoe-gap:10px">
+                            <span class="otoe-text hardware-event-time">08:42:29</span>
+                            <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                              <span class="otoe-text hardware-event-source">thermal</span>
+                              <span class="otoe-text hardware-event-message">Thermal margin below preferred target</span>
+                            </div>
+                            <span class="otoe-text ui-badge is-warn hardware-event-badge">WARN</span>
+                          </div>
+                          <div class="otoe-stack otoe-hstack hardware-event-row" style="--otoe-gap:10px">
+                            <span class="otoe-text hardware-event-time">08:42:31</span>
+                            <div class="otoe-stack otoe-vstack" style="--otoe-gap:2px">
+                              <span class="otoe-text hardware-event-source">telemetry</span>
+                              <span class="otoe-text hardware-event-message">Sample frame synchronized</span>
+                            </div>
+                            <span class="otoe-text ui-badge is-success hardware-event-badge">SUCCESS</span>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</body>
+</html>
+

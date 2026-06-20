@@ -1,7 +1,7 @@
 # Native Status
 
 The native path is currently a deterministic headless renderer spike. It is
-useful for tests, fixtures, backend contract work, and early framework API
+useful for tests, fixtures, backend contract work, and early runtime API
 validation. It is not a production desktop renderer.
 The default PNG path still uses deterministic marker text. The first readable
 text path is available as an optional Pillow-backed renderer.
