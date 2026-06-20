@@ -46,24 +46,103 @@ shape and the existing `otoe.ui` primitive cannot express it clearly. The first
 extracted helpers from this rule are `SectionHeader`, `EmptyState`, and
 `FeedbackToast`.
 
-## Provider Contract
+## Provider Boundaries
 
-Reference app providers should expose a small synchronous contract:
+Phase 5 reference apps use provider/adaptor boundaries to keep UI examples
+testable without hiding data in global fixtures. A provider is the local edge
+between the Otoe component tree and whatever would supply data in a real app:
+memory, a file, SQLite, serial, GPIO, USB, or a localhost service. The reference
+apps use only fake or in-memory providers by default.
 
-- `snapshot()` returns the initial immutable snapshot.
-- Event methods return a replacement snapshot instead of mutating UI state.
-- Static preview builders and live preview classes should accept an explicit
-  `provider=` argument and default to an in-memory fake provider.
-- `snapshot=` fixture arguments are allowed as a convenience, but they should
-  feed the fake provider rather than bypassing the provider boundary.
-- Guardrails live in the provider, not only in disabled buttons.
-- Unsafe or invalid actions return feedback and leave state unchanged.
-- Successful actions update both domain state and operator-visible feedback.
-- Fake providers model realistic failure, empty, blocked, and loading states.
+This pattern solves three app-author problems:
 
-The UI should not know whether data came from memory, CSV, SQLite, serial,
-GPIO, USB, a local service, or another adapter. Component code should receive
-snapshots and callbacks only.
+- previews can render representative local data without I/O;
+- tests can swap providers and prove that UI output changes;
+- event handlers can be tested through provider methods instead of browser or
+  hardware automation.
+
+The practical shape is intentionally small:
+
+- define a protocol or narrow class for the provider;
+- keep a fake/in-memory provider as the default;
+- make the app factory and preview builders accept explicit `provider=`;
+- keep `snapshot=` as fixture convenience when useful, but feed it into the
+  default provider instead of bypassing the boundary;
+- let provider methods return replacement snapshots;
+- keep guardrails in the provider, not only in disabled buttons;
+- return feedback in the snapshot for blocked, invalid, and successful actions;
+- avoid real I/O in static previews, live previews, and tests.
+
+Conceptually:
+
+```python
+class SettingsProvider(Protocol):
+    def snapshot(self) -> SettingsSnapshot: ...
+    def update_setting(self, setting_id: str, value: str) -> SettingsSnapshot: ...
+
+
+class MemorySettingsProvider:
+    def __init__(self, snapshot: SettingsSnapshot | None = None) -> None:
+        self._snapshot = snapshot or demo_settings_snapshot()
+
+    def snapshot(self) -> SettingsSnapshot:
+        return self._snapshot
+
+    def update_setting(self, setting_id: str, value: str) -> SettingsSnapshot:
+        self._snapshot = replace(self._snapshot, ...)
+        return self._snapshot
+
+
+def app(
+    snapshot: SettingsSnapshot | None = None,
+    *,
+    provider: SettingsProvider | None = None,
+):
+    provider = provider or MemorySettingsProvider(snapshot)
+    snapshot_signal = signal(provider.snapshot())
+
+    def on_setting_change(setting_id: str, value: str) -> None:
+        snapshot_signal.set(provider.update_setting(setting_id, value))
+
+    return SettingsConsole(
+        snapshot=snapshot_signal,
+        on_setting_change=on_setting_change,
+    )
+```
+
+Static preview entry points should mirror the same boundary:
+
+```python
+def build_preview_html(
+    snapshot: SettingsSnapshot | None = None,
+    *,
+    provider: SettingsProvider | None = None,
+) -> str:
+    provider = provider or MemorySettingsProvider(snapshot)
+    mounted = mount(app(provider=provider))
+    return render_html(mounted, pretty=True, indent=4)
+```
+
+Tests should prove substitution, not implementation detail:
+
+- build a provider with alternate data and assert the rendered HTML changes;
+- subclass or wrap the memory provider to record calls from live events;
+- assert blocked actions leave domain state stable and return visible feedback;
+- do not require global fixtures, real files, network services, or devices.
+
+Current examples of the pattern:
+
+- hardware/control panel: `HardwareProvider`, `FakeHardwareProvider`, and the
+  `TransportHardwareProvider` adapter around `MemoryHardwareTransport`;
+- local admin/settings: `AdminSettingsProvider` and
+  `MemoryAdminSettingsProvider`;
+- data workflow: `DataWorkflowProvider` and `MemoryDataWorkflowProvider`.
+
+This is not a dependency-injection framework. It is a pre-alpha app-author
+pattern for making local boundaries explicit enough to test and replace.
+
+The UI should not know which provider implementation supplied the data.
+Component code should receive snapshots and callbacks only.
 
 ## Feedback Pattern
 

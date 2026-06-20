@@ -34,7 +34,10 @@ paths.
 
 The Phase 5 reference app extraction rules live in
 `REFERENCE_APP_PATTERNS.md`. Use that document before adding another broad
-example or moving repeated markup into `otoe.ui`.
+example or moving repeated markup into `otoe.ui`. It also documents the
+provider/adaptor boundary used by the hardware, admin/settings, and data
+workflow reference apps: fake providers by default, explicit `provider=` for
+previews and tests, and no hidden global fixture requirement.
 
 ## Quickstart
 

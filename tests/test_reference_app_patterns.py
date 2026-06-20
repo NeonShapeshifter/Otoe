@@ -11,7 +11,11 @@ def test_reference_app_patterns_tracks_current_phase5_apps():
     assert "examples.admin.settings_console" in text
     assert "examples.data_workflow.workbench" in text
     assert "examples.utility.ops_console" in text
-    assert "Provider Contract" in text
+    assert "Provider Boundaries" in text
+    assert "explicit `provider=`" in text
+    assert "HardwareProvider" in text
+    assert "MemoryAdminSettingsProvider" in text
+    assert "MemoryDataWorkflowProvider" in text
     assert "Feedback Pattern" in text
     assert "Table Pattern" in text
     assert "SectionHeader" in text
