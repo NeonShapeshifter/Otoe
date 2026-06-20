@@ -5,6 +5,7 @@ from cli_helpers import (
     subprocess,
     sys,
     main,
+    _refresh_manifest_artifact_hash,
     _png_contains_rgba,
 )
 
@@ -167,6 +168,119 @@ def test_cli_build_runner_rejects_manifest_schema_version(
     assert "manifest.json: unsupported schemaVersion 0; expected 1" in verify.stderr
     assert layout_check.returncode == 1
     assert "manifest.json: unsupported schemaVersion 0; expected 1" in layout_check.stderr
+
+def test_cli_build_runner_reports_missing_and_malformed_manifest(
+    tmp_path,
+    monkeypatch,
+):
+    app = tmp_path / "manifest_load_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Manifest load')\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "manifest-load"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "manifest_load_app:app",
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+    manifest_path = output / "manifest.json"
+    backup_path = output / "manifest.json.bak"
+    manifest_path.rename(backup_path)
+
+    missing = _run_generated_runner(output, "--verify")
+
+    backup_path.rename(manifest_path)
+    manifest_path.write_text("{", encoding="utf-8")
+    malformed = _run_generated_runner(output, "--verify")
+
+    assert result == 0
+    assert missing.returncode == 1
+    assert "manifest.json" in missing.stderr
+    assert "No such file or directory" in missing.stderr
+    assert malformed.returncode == 1
+    assert "Expecting property name enclosed in double quotes" in malformed.stderr
+
+def test_cli_build_runner_rejects_missing_style_artifact(
+    tmp_path,
+    monkeypatch,
+):
+    app = tmp_path / "missing_style_artifact_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Missing style artifact')\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "missing-style-artifact"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "missing_style_artifact_app:app",
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+    (output / "otoe-styles.json").unlink()
+
+    verify = _run_generated_runner(output, "--verify")
+    layout_check = _run_generated_runner(output, "--layout-check")
+
+    assert result == 0
+    assert verify.returncode == 1
+    assert "bundle file 'otoe-styles.json' does not exist" in verify.stderr
+    assert layout_check.returncode == 1
+    assert "bundle file 'otoe-styles.json' does not exist" in layout_check.stderr
+
+def test_cli_build_runner_rejects_invalid_render_tree_artifact(
+    tmp_path,
+    monkeypatch,
+):
+    app = tmp_path / "invalid_render_tree_artifact_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Invalid render tree artifact')\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "invalid-render-tree-artifact"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "invalid_render_tree_artifact_app:app",
+            "--out",
+            str(output),
+            "--validate",
+        ]
+    )
+    render_tree_path = output / "otoe-render-tree.json"
+    render_tree_path.write_text(
+        json.dumps({"schemaVersion": 1, "format": "wrong-render-tree"}),
+        encoding="utf-8",
+    )
+    _refresh_manifest_artifact_hash(output, "otoe-render-tree.json")
+
+    verify = _run_generated_runner(output, "--verify")
+    check = _run_generated_runner(output, "--check")
+
+    assert result == 0
+    assert verify.returncode == 1
+    assert (
+        "otoe-render-tree.json: RenderTree missing required fields: "
+        "'nodeCount', 'root'"
+    ) in verify.stderr
+    assert check.returncode == 1
+    assert "RenderTree missing required fields" in check.stderr
 
 def test_cli_build_runner_rejects_style_artifact_schema_version(
     tmp_path,
@@ -897,3 +1011,43 @@ def test_cli_build_runner_rejects_runtime_installs_allowed_manifest(
     assert verify.returncode == 1
     assert "manifest.json: runtimeInstallsAllowed must be false" in verify.stderr
 
+def test_cli_build_runner_rejects_unmanifested_bundle_file(
+    tmp_path,
+    monkeypatch,
+):
+    app = tmp_path / "unmanifested_bundle_file_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Unmanifested bundle file')\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "unmanifested-bundle-file"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    assert (
+        main(
+            [
+                "build",
+                "unmanifested_bundle_file_app:app",
+                "--out",
+                str(output),
+            ]
+        )
+        == 0
+    )
+    (output / "app" / "extra.py").write_text("value = 1\n", encoding="utf-8")
+
+    verify = _run_generated_runner(output, "--verify")
+
+    assert verify.returncode == 1
+    assert "unmanifested bundle file 'app/extra.py'" in verify.stderr
+
+
+def _run_generated_runner(output, *args):
+    return subprocess.run(
+        [sys.executable, str(output / "otoe-run.py"), *args],
+        capture_output=True,
+        cwd=output,
+        env={**os.environ, "PYTHONPATH": ""},
+        text=True,
+    )

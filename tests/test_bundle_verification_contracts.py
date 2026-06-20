@@ -297,6 +297,26 @@ def test_build_runner_rejects_missing_schema_version():
         runner._verify_schema_version({}, "manifest.json")
 
 
+def test_build_runner_load_manifest_reports_missing_and_malformed_payload(
+    tmp_path,
+    monkeypatch,
+):
+    manifest_path = tmp_path / "manifest.json"
+    monkeypatch.setattr(runner, "MANIFEST_PATH", manifest_path)
+
+    with pytest.raises(FileNotFoundError, match="manifest.json"):
+        runner._load_manifest()
+
+    manifest_path.write_text("{", encoding="utf-8")
+
+    with pytest.raises(json.JSONDecodeError):
+        runner._load_manifest()
+
+    _write_json(manifest_path, {"schemaVersion": 1})
+
+    assert runner._load_manifest() == {"schemaVersion": 1}
+
+
 def test_build_runner_detects_manifest_file_sha_mismatch(tmp_path, monkeypatch):
     artifact = tmp_path / "otoe-plan.json"
     artifact.write_text("plan", encoding="utf-8")
@@ -345,6 +365,89 @@ def test_build_runner_manifest_contract_rejects_duplicate_bundle_paths():
         match="duplicate bundle path 'otoe-run.py'",
     ):
         runner._verify_manifest_contract(manifest)
+
+
+def test_build_runner_rejects_missing_style_artifact_during_schema_check(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setattr(runner, "ROOT", tmp_path)
+    _write_json(tmp_path / "otoe-plan.json", _runner_plan_payload())
+    _write_json(tmp_path / "otoe-deps.json", _runner_deps_payload())
+
+    with pytest.raises(
+        FileNotFoundError,
+        match="bundle file 'otoe-styles.json' does not exist",
+    ):
+        runner._verify_artifact_schemas(_runner_manifest())
+
+
+def test_build_runner_rejects_invalid_render_tree_artifact():
+    with pytest.raises(
+        ValueError,
+        match="otoe-render-tree.json: RenderTree missing required fields",
+    ):
+        runner._verify_render_tree_schema(
+            {"schemaVersion": 1, "format": "wrong-render-tree"},
+            "otoe-render-tree.json",
+        )
+
+
+def test_build_runner_rejects_unmanifested_packaged_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(runner, "ROOT", tmp_path)
+    app_extra = tmp_path / "app" / "extra.py"
+    app_extra.parent.mkdir()
+    app_extra.write_text("value = 1\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="unmanifested bundle file 'app/extra.py'"):
+        runner._reject_unmanifested_bundle_files(_runner_manifest())
+
+
+def test_build_runner_ignores_cache_files_when_rejecting_unmanifested_files(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setattr(runner, "ROOT", tmp_path)
+    cache_file = tmp_path / "app" / "__pycache__" / "demo.pyc"
+    cache_file.parent.mkdir(parents=True)
+    cache_file.write_bytes(b"cached")
+
+    runner._reject_unmanifested_bundle_files(_runner_manifest())
+
+
+def test_build_runner_native_text_contracts_cover_marker_and_pillow_font():
+    runner._verify_manifest_native_text_contract({"renderer": "marker"})
+    with pytest.raises(
+        ValueError,
+        match="manifest.json.nativeText.font requires renderer 'pillow'",
+    ):
+        runner._verify_manifest_native_text_contract(
+            {"renderer": "marker", "font": {"bundlePath": "fonts/app.ttf"}},
+        )
+    with pytest.raises(
+        ValueError,
+        match="manifest.json: nativeText.font must be an object",
+    ):
+        runner._native_renderer_backend({"nativeText": {"renderer": "pillow"}})
+
+
+def test_build_runner_manifest_pack_paths_include_native_text_font():
+    paths = runner._manifest_pack_paths(
+        {
+            **_runner_manifest(),
+            "nativeText": {
+                "renderer": "pillow",
+                "font": {
+                    "bundlePath": "assets/fonts/app.ttf",
+                    "size": 1,
+                    "sha256": "0" * 64,
+                },
+            },
+        }
+    )
+
+    assert "manifest.json" in paths
+    assert "assets/fonts/app.ttf" in paths
 
 
 def test_bundle_backend_package_rejects_unsafe_descriptor_path(tmp_path):
@@ -591,6 +694,29 @@ def _runner_manifest() -> dict:
         "assets": [],
         "frameworkFiles": [],
         "runtimeFiles": [],
+    }
+
+
+def _runner_plan_payload() -> dict:
+    return {
+        "schemaVersion": 1,
+        "hasErrors": False,
+        "status": "ok",
+    }
+
+
+def _runner_deps_payload() -> dict:
+    return {
+        "schemaVersion": 1,
+        "hasErrors": False,
+        "status": "ok",
+        "runtimeInstallsAllowed": False,
+        "resolution": {
+            "mode": "audit-only",
+            "lockfile": False,
+            "wheelClosure": False,
+            "runtimeInstallsAllowed": False,
+        },
     }
 
 
