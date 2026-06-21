@@ -172,7 +172,7 @@ def _load_font(font_path: str | Path | None, *, font_size: int) -> Any:
 
 def _pillow_modules() -> tuple[Any, Any, Any]:
     try:
-        from PIL import Image, ImageDraw, ImageFont
+        from PIL import Image, ImageDraw, ImageFont  # type: ignore[import-not-found]
     except ImportError as exc:
         raise NativePaintError(
             f"Pillow native text backend requires Pillow. {_PILLOW_INSTALL_HINT}"

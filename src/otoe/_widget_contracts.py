@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from types import MappingProxyType
 from typing import cast
@@ -26,7 +26,9 @@ class WidgetContract:
 class _WidgetContractSpec:
     props: frozenset[str]
     events: frozenset[str] = frozenset()
-    event_signatures: Mapping[str, EventSignature] = _EMPTY_EVENT_SIGNATURES
+    event_signatures: Mapping[str, EventSignature] = field(
+        default_factory=lambda: _EMPTY_EVENT_SIGNATURES
+    )
     primary_prop: str | None = None
 
 
