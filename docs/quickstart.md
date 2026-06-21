@@ -41,7 +41,7 @@ The scaffold contains:
 
 - `app.py` - a small counter surface.
 - `styles.css` - portable Otoe style declarations.
-- `README.md` - render commands for the generated app.
+- `README.md` - first-run commands and caveats for the generated app.
 
 ## 3. Check The App
 

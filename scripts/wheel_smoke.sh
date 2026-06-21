@@ -69,6 +69,9 @@ fi
 "$WORKDIR/venv/bin/otoe" new "$WORKDIR/app"
 
 cd "$WORKDIR/app"
+test -f app.py
+test -f README.md
+test -f styles.css
 "$WORKDIR/venv/bin/otoe" render app:app --out preview.html --css styles.css --pretty
 "$WORKDIR/venv/bin/otoe" render app:app --out preview.png --native --css styles.css
 "$WORKDIR/venv/bin/otoe" check --tests > check.txt
@@ -111,5 +114,7 @@ test -s portable-core-format.json
 "$WORKDIR/venv/bin/python" -c 'import json, sys; payload = json.load(open(sys.argv[1], encoding="utf-8")); assert payload["format"] == "otoe-portable-core-ui-v0"; assert any(entry["id"] == "button" for entry in payload["entries"])' portable-core.json
 "$WORKDIR/venv/bin/python" -c 'import json, sys; payload = json.load(open(sys.argv[1], encoding="utf-8")); assert payload["format"] == "otoe-portable-core-ui-v0"; assert any(entry["id"] == "button" for entry in payload["entries"])' portable-core-format.json
 "$WORKDIR/venv/bin/python" -c 'from pathlib import Path; text = Path("check.txt").read_text(encoding="utf-8"); assert "compile app.py: ok" in text and "pytest: skipped (tests directory missing)" in text'
+"$WORKDIR/venv/bin/python" -c 'from pathlib import Path; text = Path("README.md").read_text(encoding="utf-8"); assert "otoe check" in text; assert "otoe render app:app --out preview.html --css styles.css --pretty" in text; assert "otoe render app:app --out preview.png --native --css styles.css" in text; assert "otoe build app:app --out dist/cage --css styles.css --validate" in text; assert "examples." not in text and "PYTHONPATH" not in text'
+"$WORKDIR/venv/bin/python" -c 'from pathlib import Path; from otoe.style import css; sheet = css(Path("styles.css").read_text(encoding="utf-8")); assert set(sheet.rules) == {".app", ".title"}'
 
 echo "wheel smoke: ok"

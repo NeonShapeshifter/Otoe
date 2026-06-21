@@ -328,14 +328,25 @@ def test_cli_new_scaffolds_renderable_app(tmp_path, monkeypatch, capsys):
     captured = capsys.readouterr()
     assert result == 0
     assert f"new Hello Otoe: {project}" in captured.out
-    assert "def app():" in (project / "app.py").read_text(encoding="utf-8")
-    assert "otoe dev app:app --css styles.css" in (
-        project / "README.md"
-    ).read_text(encoding="utf-8")
+    app_source = (project / "app.py").read_text(encoding="utf-8")
+    readme = (project / "README.md").read_text(encoding="utf-8")
+    css_source = (project / "styles.css").read_text(encoding="utf-8")
+    assert "def app():" in app_source
     assert (project / "styles.css").is_file()
-    assert "otoe render app:app --out preview.html --css styles.css" in (
-        project / "README.md"
-    ).read_text(encoding="utf-8")
+    assert "otoe check" in readme
+    assert "otoe dev app:app --css styles.css" in readme
+    assert "otoe render app:app --out preview.html --css styles.css --pretty" in readme
+    assert "otoe render app:app --out preview.png --native --css styles.css" in readme
+    assert "otoe build app:app --out dist/cage --css styles.css --validate" in readme
+    assert "localhost development preview" in readme
+    assert "technical preview, not a sandbox" in readme
+    assert "examples." not in readme
+    assert "PYTHONPATH" not in readme
+
+    from otoe.style import css
+
+    stylesheet = css(css_source)
+    assert set(stylesheet.rules) == {".app", ".title"}
 
     monkeypatch.syspath_prepend(str(project))
     output = tmp_path / "preview.html"
@@ -362,11 +373,12 @@ def test_cli_new_can_skip_css(tmp_path):
 
     assert result == 0
     assert not (project / "styles.css").exists()
-    assert "otoe render app:app --out preview.html --pretty" in (
-        project / "README.md"
-    ).read_text(
-        encoding="utf-8"
-    )
+    readme = (project / "README.md").read_text(encoding="utf-8")
+    assert "otoe dev app:app\n" in readme
+    assert "otoe render app:app --out preview.html --pretty" in readme
+    assert "otoe render app:app --out preview.png --native" in readme
+    assert "otoe build app:app --out dist/cage --validate" in readme
+    assert "--css styles.css" not in readme
 
 def test_cli_new_refuses_existing_scaffold_file_without_force(
     tmp_path,

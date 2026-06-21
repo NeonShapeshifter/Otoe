@@ -73,13 +73,21 @@ def _readme_template(app_name: str, *, include_css: bool) -> str:
     return (
         f"# {app_name}\n"
         "\n"
-        "Render the app from this directory:\n"
+        "Run these commands from this directory:\n"
         "\n"
         "```bash\n"
-        f"otoe dev app:app{css_arg}\n"
+        "otoe check\n"
         f"otoe render app:app --out preview.html{css_arg} --pretty\n"
         f"otoe render app:app --out preview.png --native{css_arg}\n"
+        f"otoe dev app:app{css_arg}\n"
+        f"otoe build app:app --out dist/cage{css_arg} --validate\n"
         "```\n"
+        "\n"
+        "Notes:\n"
+        "\n"
+        "- `otoe dev` is a localhost development preview, not a public server.\n"
+        "- `--native` writes deterministic native evidence, not a production native renderer.\n"
+        "- `otoe build --validate` is offline bundle tooling in technical preview, not a sandbox.\n"
     )
 
 
