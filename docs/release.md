@@ -117,6 +117,11 @@ workflow also runs it before uploading the distribution artifact. Publishing
 from a tag checks that `vX.Y.Z` matches `project.version` in `pyproject.toml`
 before building.
 
+The publish workflow uses PyPI `skip-existing` so rerunning a successful tag
+upload does not fail only because the same files are already present. This does
+not replace a broken published version; PyPI artifacts are immutable, so a
+release that reached PyPI still needs a version bump.
+
 ## Local Build Shadowing
 
 If `python -m build` behaves strangely in a local checkout, remove stale build
