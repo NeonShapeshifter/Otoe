@@ -450,6 +450,57 @@ def test_build_runner_manifest_pack_paths_include_native_text_font():
     assert "assets/fonts/app.ttf" in paths
 
 
+def test_build_runner_backend_package_manifest_contract_validates_descriptor_shape():
+    package = {
+        "name": "path0",
+        "label": "Path0",
+        "kind": "path0-external-json",
+        "path": "backend/path0/backend-package.json",
+        "root": "backend/path0",
+        "entrypoint": "backend/path0/runner.py",
+        "packageHash": _sha_uri("backend-package"),
+        "files": ["backend/path0/runner.py"],
+    }
+
+    runner._verify_manifest_backend_package_contract(package)
+
+    invalid = dict(package)
+    invalid["packageHash"] = "not-a-hash"
+    with pytest.raises(
+        ValueError,
+        match="manifest.json.backendPackage.packageHash must be a sha256 string",
+    ):
+        runner._verify_manifest_backend_package_contract(invalid)
+
+    invalid = dict(package)
+    invalid["files"] = ["backend/path0/runner.py", "../secret.py"]
+    with pytest.raises(ValueError, match="bundle path '../secret.py' is not safe"):
+        runner._verify_manifest_backend_package_contract(invalid)
+
+
+def test_build_runner_verifies_backend_coverage_bundle_artifact(tmp_path, monkeypatch):
+    monkeypatch.setattr(runner, "ROOT", tmp_path)
+    coverage_path = tmp_path / "otoe-backend-coverage.json"
+    payload = {"schemaVersion": 1, **_backend_coverage_payload()}
+    _write_json(coverage_path, payload)
+
+    runner._verify_backend_coverage("otoe-backend-coverage.json")
+
+    with pytest.raises(ValueError, match="manifest.json: backendCoverage must be a string"):
+        runner._verify_backend_coverage(None)
+
+
+def test_build_runner_target_loading_and_coercion_errors():
+    with pytest.raises(ValueError, match="manifest target must use MODULE:OBJECT syntax"):
+        runner._load_target("missing_separator")
+
+    with pytest.raises(
+        TypeError,
+        match="bundled target must be a Node, MountedNode, or zero-argument callable",
+    ):
+        runner._coerce_target(object())
+
+
 def test_bundle_backend_package_rejects_unsafe_descriptor_path(tmp_path):
     manifest = {"backendPackage": {"path": "../backend-package.json"}}
 
