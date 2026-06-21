@@ -286,6 +286,8 @@ read serial, USB, GPIO, SQLite, or a local service adapter.
 This is the current recommended non-Wraith product demo because it matches
 Otoe's strongest niche: local operational UI with deterministic providers,
 safe actions, and offline-testable state.
+For a short walkthrough, use the five-minute evidence path in
+`docs/hardware-control-panel.md`.
 
 - device status and connection state
 - telemetry cards and table
