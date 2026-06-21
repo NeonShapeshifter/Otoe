@@ -4,6 +4,9 @@ Otoe native layout v0 is stack-first. It is designed for deterministic
 operational UI tests, native PNG evidence, and offline bundle checks, not full
 browser CSS parity.
 
+For the generated widget, input, style, and renderer-boundary support matrix,
+see [`native-support-matrix.md`](native-support-matrix.md).
+
 The decision record is
 [`ADR-020-native-layout-v0-v1-decision.md`](../ADR-020-native-layout-v0-v1-decision.md).
 

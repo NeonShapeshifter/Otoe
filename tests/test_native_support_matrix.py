@@ -23,6 +23,8 @@ from otoe.capabilities import (
     load_backend_capability_profile,
     supported_backend_capability_names,
 )
+from otoe._style_schema import STYLE_PROPERTY_SPECS
+from otoe._widget_contracts import known_widget_names, widget_contract_for_name
 from otoe._native_shared import (
     NATIVE_CONTAINER_WIDGETS,
     NATIVE_CONTROL_WIDGETS,
@@ -119,6 +121,7 @@ EXPECTED_RENDERER_BOUNDARIES = {
     "paint": "supported",
     "renderTreeLayout": "supported",
 }
+CONTROL_NODE_SUPPORT_ORDER = ("Show", "For")
 
 
 def test_native_style_support_matrix_is_complete_and_categorized():
@@ -350,6 +353,29 @@ def test_native_input_support_matrix_is_complete_and_categorized():
     assert native_input_support("pinch") is None
 
 
+def test_native_support_matrix_doc_matches_internal_sources():
+    doc = Path("docs/native-support-matrix.md").read_text(encoding="utf-8")
+    profile = backend_capability_profile("native")
+
+    assert "experimental/headless evidence, not production renderer" in doc
+    assert "src/otoe/_widget_contracts.py" in doc
+    assert "src/otoe/_style_schema.py" in doc
+    assert "src/otoe/capabilities.py" in doc
+
+    assert _table_rows(doc, "Widget And Control Support") == _widget_doc_rows(
+        profile.widget_support
+    )
+    assert _table_rows(doc, "Input Support") == _support_doc_rows(
+        profile.input_support
+    )
+    assert _table_rows(doc, "Style Support") == _style_doc_rows(
+        profile.style_support
+    )
+    assert _table_rows(doc, "Renderer Boundaries") == _support_doc_rows(
+        profile.renderer_boundary_support
+    )
+
+
 def test_native_support_matrix_is_reflected_in_renderer_spike_doc():
     doc = Path("NATIVE_RENDERER_SPIKE.md").read_text(encoding="utf-8")
 
@@ -510,3 +536,56 @@ def test_backend_candidate_guide_documents_graduation_path():
     assert "renderer-candidate replay" in doc
     assert "`tests/test_native_support_matrix.py` keeps `NATIVE_RENDERER_SPIKE.md`" in doc
     assert "supported style, widget, input, fallback, ignored, and deferred" in doc
+
+
+def _table_rows(doc: str, heading: str) -> list[str]:
+    start = doc.index(f"## {heading}")
+    next_heading = doc.find("\n## ", start + 1)
+    section = doc[start:] if next_heading == -1 else doc[start:next_heading]
+    return [line for line in section.splitlines() if line.startswith("| `")]
+
+
+def _widget_doc_rows(widget_support: object) -> list[str]:
+    assert isinstance(widget_support, dict)
+    rows: list[str] = []
+    for name in known_widget_names():
+        contract = widget_contract_for_name(name)
+        assert contract is not None
+        rows.append(
+            "| "
+            f"`{name}` | core widget | `{widget_support[name]}` | "
+            f"{_code_or_dash(contract.primary_prop)} | "
+            f"{_code_list_or_dash(contract.events)} |"
+        )
+    for name in CONTROL_NODE_SUPPORT_ORDER:
+        rows.append(
+            "| "
+            f"`{name}` | control node | `{widget_support[name]}` | - | "
+            "resolved by mount/control-flow |"
+        )
+    return rows
+
+
+def _style_doc_rows(style_support: object) -> list[str]:
+    assert isinstance(style_support, dict)
+    rows: list[str] = []
+    for spec in sorted(STYLE_PROPERTY_SPECS, key=lambda item: item.internal_name):
+        rows.append(
+            "| "
+            f"`{spec.internal_name}` | {_code_or_dash(spec.css_name)} | "
+            f"`{spec.value_kind}` | `{style_support[spec.internal_name]}` |"
+        )
+    return rows
+
+
+def _support_doc_rows(support: object) -> list[str]:
+    assert isinstance(support, dict)
+    return [f"| `{name}` | `{value}` |" for name, value in sorted(support.items())]
+
+
+def _code_or_dash(value: str | None) -> str:
+    return f"`{value}`" if value else "-"
+
+
+def _code_list_or_dash(values: frozenset[str]) -> str:
+    return ", ".join(f"`{value}`" for value in sorted(values)) or "-"

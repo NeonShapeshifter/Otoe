@@ -12,6 +12,11 @@ Wayland stack under a compositor such as Weston or Cage. That roadmap is
 recorded in [`ADR-021`](../ADR-021-native-yoga-skia-sdl3-roadmap.md); it is a
 future backend direction, not a current dependency or product claim.
 
+The current widget, input, style, and renderer-boundary support matrix is
+tracked in [`native-support-matrix.md`](native-support-matrix.md). That matrix
+is test-validated from the internal widget contracts, style schema, and native
+capability profile.
+
 ## What Works
 
 - Layout of mounted Otoe trees through the current native layout code.
