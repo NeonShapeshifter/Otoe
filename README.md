@@ -229,9 +229,10 @@ coverage declarations, and Path0. App authors do not need this path to start.
 
 ## Status
 
-Current status: post-v0.1.8 workshop hardening. The project maintains broad
-test coverage and the suite is expected to pass locally; optional typing and
-Pillow tests skip cleanly when those dependencies are unavailable.
+Current status: v0.1.9 pre-alpha product/evidence hardening. The project
+maintains broad test coverage and the suite is expected to pass locally;
+optional typing and Pillow tests skip cleanly when those dependencies are
+unavailable.
 See [ROADMAP.md](ROADMAP.md) for the active phase plan.
 
 Readable native PNG text is available through the optional Pillow-backed
