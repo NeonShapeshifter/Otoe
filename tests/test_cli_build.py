@@ -280,6 +280,119 @@ def test_cli_build_validate_accepts_relative_output_path(
     assert (tmp_path / "dist" / "cage" / "otoe-run.py").exists()
     assert (tmp_path / "dist" / "cage" / "manifest.json").exists()
 
+
+def test_cli_build_failed_reuse_invalidates_previous_manifest_and_runner(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    valid_app = tmp_path / "reused_output_valid_app.py"
+    valid_app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Reusable output')\n",
+        encoding="utf-8",
+    )
+    failing_app = tmp_path / "reused_output_failing_app.py"
+    failing_app.write_text(
+        "import pytest\n"
+        "from otoe import Text\n"
+        "app = Text(pytest.__name__)\n",
+        encoding="utf-8",
+    )
+    output = tmp_path / "dist" / "reused-output"
+    archive = tmp_path / "dist" / "reused-output.tar.gz"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    assert main(["build", "reused_output_valid_app:app", "--out", str(output)]) == 0
+    assert (output / "manifest.json").is_file()
+    assert (output / "otoe-run.py").is_file()
+
+    result = main(["build", "reused_output_failing_app:app", "--out", str(output)])
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "build: dependency audit invalid; refusing to write build manifest" in (
+        captured.err
+    )
+    assert not (output / "manifest.json").exists()
+    assert not (output / "otoe-run.py").exists()
+
+    pack_result = main(["pack", str(output), "--out", str(archive)])
+
+    captured = capsys.readouterr()
+    assert pack_result == 1
+    assert "pack: bundle is missing manifest.json" in captured.err
+    assert not archive.exists()
+
+    assert main(["build", "reused_output_valid_app:app", "--out", str(output)]) == 0
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    assert (output / "otoe-run.py").is_file()
+    assert manifest["target"] == "reused_output_valid_app:app"
+
+
+def test_cli_build_reports_invalid_css_property(tmp_path, monkeypatch, capsys):
+    app = tmp_path / "invalid_css_build_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Invalid CSS', className='shell')\n",
+        encoding="utf-8",
+    )
+    styles = tmp_path / "styles.css"
+    styles.write_text(".shell { nope: 1; }\n", encoding="utf-8")
+    output = tmp_path / "dist" / "invalid-css"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "invalid_css_build_app:app",
+            "--css",
+            str(styles),
+            "--out",
+            str(output),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "build: css file" in captured.err
+    assert "Unknown style property 'nope'." in captured.err
+    assert "Known portable properties:" in captured.err
+
+
+def test_cli_build_reports_missing_portable_style_class(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    app = tmp_path / "missing_class_build_app.py"
+    app.write_text(
+        "from otoe import Text\n"
+        "app = Text('Missing class', className='missing')\n",
+        encoding="utf-8",
+    )
+    styles = tmp_path / "styles.css"
+    styles.write_text(".known { color: #111827; }\n", encoding="utf-8")
+    output = tmp_path / "dist" / "missing-class"
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "build",
+            "missing_class_build_app:app",
+            "--css",
+            str(styles),
+            "--out",
+            str(output),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "plan invalid; refusing to write build manifest" in captured.err
+    assert "class 'missing' has no portable rule for profile 'cage'" in captured.err
+
+
 def test_cli_build_compiles_low_level_style_ops_for_omitted_declarations(
     tmp_path,
     monkeypatch,
@@ -548,4 +661,3 @@ def test_cli_build_compiles_static_class_names_from_local_target(
             "value": {"type": "literal", "value": "#dcfce7"},
         }
     ]
-

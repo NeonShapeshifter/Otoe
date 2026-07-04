@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any, Callable, Protocol, cast
 
@@ -56,6 +57,7 @@ class MountedNode:
     _keyed_children: dict[Any, "MountedNode"] = field(default_factory=dict, init=False, repr=False)
     _keyed_items: dict[Any, Any] = field(default_factory=dict, init=False, repr=False)
     _fallback_mounted: "MountedNode | None" = field(default=None, init=False, repr=False)
+    _activated: bool = field(default=False, init=False, repr=False)
 
     def root_widget(self) -> FakeWidget:
         return root_widget(self)
@@ -72,34 +74,47 @@ def mount(node: Node) -> MountedNode:
     return _mount(node)
 
 
-def _mount(node: Node, *, component_stack: tuple[str, ...] = ()) -> MountedNode:
+def _mount(
+    node: Node,
+    *,
+    component_stack: tuple[str, ...] = (),
+    activate: bool = True,
+) -> MountedNode:
     if is_component_tag(node.tag):
-        return _mount_component(node, component_stack=component_stack)
+        return _mount_component(node, component_stack=component_stack, activate=activate)
     if is_control_tag(node.tag):
-        return _mount_control(node, component_stack=component_stack)
-    return _mount_widget(node, component_stack=component_stack)
+        return _mount_control(node, component_stack=component_stack, activate=activate)
+    return _mount_widget(node, component_stack=component_stack, activate=activate)
 
 
 def _mount_component(
     node: Node,
     *,
     component_stack: tuple[str, ...],
+    activate: bool,
 ) -> MountedNode:
     owner = Owner(_tag_name(node.tag))
     mounted = MountedNode(node=node, owner=owner)
     token = CURRENT_OWNER.set(owner)
     try:
-        phase_token = CURRENT_MOUNT_PHASE.set("render")
         try:
-            child_node = node.tag.fn(*node.props["args"], **node.props["kwargs"])
-        finally:
-            CURRENT_MOUNT_PHASE.reset(phase_token)
-        child_mounted = _mount(
-            child_node,
-            component_stack=component_stack + (owner.name,),
-        )
-        mounted.children.append(child_mounted)
-        owner.run_mount()
+            phase_token = CURRENT_MOUNT_PHASE.set("render")
+            try:
+                child_node = node.tag.fn(*node.props["args"], **node.props["kwargs"])
+            finally:
+                CURRENT_MOUNT_PHASE.reset(phase_token)
+            child_mounted = _mount(
+                child_node,
+                component_stack=component_stack + (owner.name,),
+                activate=activate,
+            )
+            mounted.children.append(child_mounted)
+            if activate:
+                owner.run_mount()
+                mounted._activated = True
+        except Exception:
+            unmount(mounted)
+            raise
     finally:
         CURRENT_OWNER.reset(token)
     return mounted
@@ -109,6 +124,7 @@ def _mount_widget(
     node: Node,
     *,
     component_stack: tuple[str, ...],
+    activate: bool,
 ) -> MountedNode:
     widget = FakeWidget(node.tag, component_stack=component_stack)
     mounted = MountedNode(node=node, widget=widget)
@@ -116,59 +132,138 @@ def _mount_widget(
     data_props = set(widget_props(node.tag))
     events = set(widget_events(node.tag))
 
-    for name, value in node.props.items():
-        if name in events:
-            _register_event(widget, name, value)
-        elif name in data_props:
-            _assign_prop(mounted, widget, name, value)
-        else:
-            kind = "event" if name.startswith("on") else "prop"
-            if kind == "event":
-                raise UnknownEventError(_unknown_event_message(widget, name, events))
-            raise UnknownPropError(_unknown_prop_message(widget, name, data_props))
+    try:
+        for name, value in node.props.items():
+            if name in events:
+                _register_event(widget, name, value)
+            elif name in data_props:
+                _assign_prop(mounted, widget, name, value)
+            else:
+                kind = "event" if name.startswith("on") else "prop"
+                if kind == "event":
+                    raise UnknownEventError(_unknown_event_message(widget, name, events))
+                raise UnknownPropError(_unknown_prop_message(widget, name, data_props))
 
-    for child in node.children:
-        child_mounted = _mount(child, component_stack=component_stack)
-        mounted.children.append(child_mounted)
-        child_widget = root_widget(child_mounted)
-        widget.children.append(child_widget)
+        for child in node.children:
+            child_mounted = _mount(
+                child,
+                component_stack=component_stack,
+                activate=activate,
+            )
+            mounted.children.append(child_mounted)
+            child_widget = root_widget(child_mounted)
+            widget.children.append(child_widget)
+        if activate:
+            mounted._activated = True
+    except Exception:
+        unmount(mounted)
+        raise
 
     return mounted
 
 
-def _mount_control(node: Node, *, component_stack: tuple[str, ...]) -> MountedNode:
+def _mount_control(
+    node: Node,
+    *,
+    component_stack: tuple[str, ...],
+    activate: bool,
+) -> MountedNode:
     if is_show_tag(node.tag):
-        return _mount_show(node, component_stack=component_stack)
+        return _mount_show(node, component_stack=component_stack, activate=activate)
     if is_for_tag(node.tag):
-        return _mount_for(node, component_stack=component_stack)
+        return _mount_for(node, component_stack=component_stack, activate=activate)
     raise RuntimeError(f"Unknown control node {_tag_name(node.tag)}.")
 
 
-def _mount_show(node: Node, *, component_stack: tuple[str, ...]) -> MountedNode:
+def _mount_show(
+    node: Node,
+    *,
+    component_stack: tuple[str, ...],
+    activate: bool,
+) -> MountedNode:
     widget = FakeWidget(node.tag, component_stack=component_stack)
     mounted = MountedNode(node=node, widget=widget)
 
     def refresh() -> None:
-        for child in reversed(mounted.children):
-            unmount(child)
-        mounted.children.clear()
-        widget.children.clear()
-
         branch_nodes = node.children if bool(resolve_value(node.props["when"])) else []
         if not branch_nodes and node.props.get("fallback") is not None:
             branch_nodes = [node.props["fallback"]]
 
-        for branch_node in branch_nodes:
-            child_mounted = _mount(branch_node, component_stack=component_stack)
-            mounted.children.append(child_mounted)
-            widget.children.append(root_widget(child_mounted))
+        next_children = _mount_children(
+            branch_nodes,
+            component_stack=component_stack,
+            activate=False,
+        )
+        try:
+            next_widgets = [root_widget(child) for child in next_children]
+            if mounted._activated:
+                _activate_children(next_children)
+        except Exception:
+            _unmount_children(next_children)
+            raise
+        previous_children = mounted.children
+        mounted.children = next_children
+        widget.children = next_widgets
+        _unmount_children(previous_children)
 
-    refresh()
-    _subscribe_control_value(mounted, node.props["when"], refresh)
+    try:
+        refresh()
+        _subscribe_control_value(mounted, node.props["when"], refresh)
+        if activate:
+            _activate_mounted(mounted)
+    except Exception:
+        unmount(mounted)
+        raise
     return mounted
 
 
-def _mount_for(node: Node, *, component_stack: tuple[str, ...]) -> MountedNode:
+def _mount_children(
+    nodes: Sequence[Node],
+    *,
+    component_stack: tuple[str, ...],
+    activate: bool,
+) -> list[MountedNode]:
+    mounted_children: list[MountedNode] = []
+    try:
+        for child_node in nodes:
+            mounted_children.append(
+                _mount(
+                    child_node,
+                    component_stack=component_stack,
+                    activate=activate,
+                )
+            )
+    except Exception:
+        _unmount_children(mounted_children)
+        raise
+    return mounted_children
+
+
+def _unmount_children(children: list[MountedNode]) -> None:
+    for child in reversed(children):
+        unmount(child)
+
+
+def _activate_children(children: list[MountedNode]) -> None:
+    for child in children:
+        _activate_mounted(child)
+
+
+def _activate_mounted(mounted: MountedNode) -> None:
+    if mounted._activated:
+        return
+    _activate_children(mounted.children)
+    if mounted.owner is not None:
+        mounted.owner.run_mount()
+    mounted._activated = True
+
+
+def _mount_for(
+    node: Node,
+    *,
+    component_stack: tuple[str, ...],
+    activate: bool,
+) -> MountedNode:
     widget = FakeWidget(node.tag, component_stack=component_stack)
     mounted = MountedNode(node=node, widget=widget)
     mounted._keyed_children = {}
@@ -184,55 +279,93 @@ def _mount_for(node: Node, *, component_stack: tuple[str, ...]) -> MountedNode:
         keyed_children: dict[Any, MountedNode] = mounted._keyed_children
         keyed_items: dict[Any, Any] = mounted._keyed_items
         next_keys = [key_fn(item) for item in items]
-        next_key_set = _validated_key_set(widget, next_keys)
+        _validated_key_set(widget, next_keys)
 
         fallback_mounted = mounted._fallback_mounted
-        if items and fallback_mounted is not None:
-            unmount(fallback_mounted)
-            mounted._fallback_mounted = None
         if not items:
+            next_fallback = fallback_mounted
+            created_fallback = False
+            if fallback is not None:
+                if next_fallback is None:
+                    next_fallback = _mount(
+                        fallback,
+                        component_stack=component_stack,
+                        activate=False,
+                    )
+                    created_fallback = True
+                try:
+                    next_widgets = [root_widget(next_fallback)]
+                    if mounted._activated:
+                        _activate_mounted(next_fallback)
+                except Exception:
+                    if created_fallback:
+                        unmount(next_fallback)
+                    raise
+                next_children = [next_fallback]
+            else:
+                next_widgets = []
+                next_children = []
+
             for existing in keyed_children.values():
                 unmount(existing)
             keyed_children.clear()
             keyed_items.clear()
-            mounted.children.clear()
-            widget.children.clear()
-            if fallback is not None:
-                if mounted._fallback_mounted is None:
-                    mounted._fallback_mounted = _mount(
-                        fallback,
-                        component_stack=component_stack,
-                    )
-                fallback_mounted = mounted._fallback_mounted
-                mounted.children = [fallback_mounted]
-                widget.children = [root_widget(fallback_mounted)]
+            mounted._fallback_mounted = next_fallback if fallback is not None else None
+            mounted.children = next_children
+            widget.children = next_widgets
             return
 
-        for existing_key in list(keyed_children):
-            if existing_key not in next_key_set:
-                unmount(keyed_children.pop(existing_key))
-                keyed_items.pop(existing_key, None)
+        next_keyed_children: dict[Any, MountedNode] = {}
+        next_keyed_items: dict[Any, Any] = {}
+        created_children: list[MountedNode] = []
+        try:
+            for item, item_key in zip(items, next_keys):
+                if item_key in keyed_children and _items_equal(
+                    keyed_items.get(item_key), item
+                ):
+                    child_mounted = keyed_children[item_key]
+                else:
+                    child_mounted = _mount(
+                        render(item),
+                        component_stack=component_stack,
+                        activate=False,
+                    )
+                    created_children.append(child_mounted)
+                next_keyed_children[item_key] = child_mounted
+                next_keyed_items[item_key] = item
+        except Exception:
+            _unmount_children(created_children)
+            raise
 
-        for item, item_key in zip(items, next_keys):
-            if item_key not in keyed_children:
-                keyed_children[item_key] = _mount(
-                    render(item),
-                    component_stack=component_stack,
-                )
-                keyed_items[item_key] = item
-            elif not _items_equal(keyed_items.get(item_key), item):
-                unmount(keyed_children[item_key])
-                keyed_children[item_key] = _mount(
-                    render(item),
-                    component_stack=component_stack,
-                )
-                keyed_items[item_key] = item
+        next_children = [next_keyed_children[item_key] for item_key in next_keys]
+        try:
+            next_widgets = [root_widget(child) for child in next_children]
+            if mounted._activated:
+                _activate_children(next_children)
+        except Exception:
+            _unmount_children(created_children)
+            raise
 
-        mounted.children = [keyed_children[item_key] for item_key in next_keys]
-        widget.children = [root_widget(child) for child in mounted.children]
+        if fallback_mounted is not None:
+            unmount(fallback_mounted)
+        for existing_key, existing_child in keyed_children.items():
+            if next_keyed_children.get(existing_key) is not existing_child:
+                unmount(existing_child)
 
-    refresh()
-    _subscribe_control_value(mounted, node.props["each"], refresh)
+        mounted._fallback_mounted = None
+        mounted._keyed_children = next_keyed_children
+        mounted._keyed_items = next_keyed_items
+        mounted.children = next_children
+        widget.children = next_widgets
+
+    try:
+        refresh()
+        _subscribe_control_value(mounted, node.props["each"], refresh)
+        if activate:
+            _activate_mounted(mounted)
+    except Exception:
+        unmount(mounted)
+        raise
     return mounted
 
 

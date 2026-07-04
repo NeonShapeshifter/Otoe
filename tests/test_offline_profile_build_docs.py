@@ -77,6 +77,14 @@ def test_offline_profile_build_adr_captures_hardware_direction():
         assert classification in text
 
 
+def test_offline_build_docs_document_failed_rebuild_invalidation():
+    text = (ROOT / "docs" / "build-offline.md").read_text(encoding="utf-8")
+
+    assert "deliberately\nremoves the previous `manifest.json` and `otoe-run.py`" in text
+    assert "not packable until a later build\ncompletes successfully" in text
+    assert "prevents `otoe pack` from archiving a stale runner" in text
+
+
 def test_style_guide_points_css_at_offline_profiles():
     text = (ROOT / "STYLE_GUIDE.md").read_text(encoding="utf-8")
     single_spaced = _single_spaced(text)

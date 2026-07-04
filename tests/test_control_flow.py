@@ -1,6 +1,18 @@
 import pytest
 
-from otoe import For, HStack, Show, Text, component, effect, mount, on_cleanup, root_widget, signal
+from otoe import (
+    For,
+    HStack,
+    Show,
+    Text,
+    component,
+    effect,
+    mount,
+    on_cleanup,
+    on_mount,
+    root_widget,
+    signal,
+)
 
 
 def test_show_switches_between_branch_and_fallback():
@@ -96,7 +108,7 @@ def test_for_updates_same_key_when_item_data_changes():
 
     @component
     def MissionRow(*, mission):
-        events.append(f"mount:{mission['name']}")
+        on_mount(lambda: events.append(f"mount:{mission['name']}"))
         on_cleanup(lambda: events.append(f"cleanup:{mission['name']}"))
         return Text(mission["name"])
 
@@ -118,8 +130,8 @@ def test_for_updates_same_key_when_item_data_changes():
     assert root.children[0] is not first_widget
     assert events == [
         "mount:WiFi Scan",
-        "cleanup:WiFi Scan",
         "mount:WiFi Survey",
+        "cleanup:WiFi Scan",
     ]
 
 

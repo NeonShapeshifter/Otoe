@@ -7,9 +7,12 @@ from otoe import (
     DuplicatePrimaryPropError,
     EventHandlerArityError,
     EventHandlerError,
+    For,
     HStack,
     Input,
     Node,
+    ReactiveDisposedError,
+    Show,
     Text,
     UnknownEventError,
     UnknownPropError,
@@ -300,3 +303,177 @@ def test_computed_prop_updates_when_dependency_changes():
     active.set(True)
 
     assert widget.props["className"] == "on"
+
+
+def test_failed_prop_mount_disposes_reactive_subscription():
+    label = signal("READY")
+    node = Node(tag=Text, props={"content": label, "typo": True})
+
+    with pytest.raises(UnknownPropError):
+        mount(node)
+
+    assert len(label._subscribers) == 0
+
+
+def test_failed_child_mount_unmounts_partially_mounted_children():
+    cleanups = []
+
+    @component
+    def MountedChild():
+        on_cleanup(lambda: cleanups.append("child"))
+        return Text("Mounted")
+
+    broken_child = Node(tag=Text, props={"typo": True})
+
+    with pytest.raises(UnknownPropError):
+        mount(HStack(MountedChild(), broken_child))
+
+    assert cleanups == ["child"]
+
+
+def test_failed_component_render_disposes_owner_disposables():
+    status = signal("READY")
+    leaked = []
+    cleanups = []
+
+    @component
+    def BrokenStatus():
+        label = computed(lambda: status.value)
+        leaked.append(label)
+        _ = label.value
+        on_cleanup(lambda: cleanups.append("component"))
+        raise RuntimeError("render failed")
+
+    with pytest.raises(RuntimeError, match="render failed"):
+        mount(BrokenStatus())
+
+    assert len(status._subscribers) == 0
+    assert cleanups == ["component"]
+    with pytest.raises(ReactiveDisposedError):
+        _ = leaked[0].value
+
+
+def test_show_preserves_previous_ui_when_new_branch_mount_fails():
+    visible = signal(False)
+    cleanups = []
+
+    @component
+    def StableFallback():
+        on_cleanup(lambda: cleanups.append("fallback"))
+        return Text("Fallback")
+
+    mounted = mount(
+        Show(
+            Node(tag=Text, props={"typo": True}),
+            when=visible,
+            fallback=StableFallback(),
+        )
+    )
+    widget = root_widget(mounted)
+
+    with pytest.raises(UnknownPropError):
+        visible.set(True)
+
+    assert cleanups == []
+    assert widget.children[0].props["content"] == "Fallback"
+
+    unmount(mounted)
+
+
+def test_show_preserves_previous_ui_when_new_branch_on_mount_fails():
+    visible = signal(False)
+    cleanups = []
+
+    @component
+    def StableFallback():
+        on_cleanup(lambda: cleanups.append("fallback"))
+        return Text("Fallback")
+
+    @component
+    def BadBranch():
+        on_mount(lambda: (_ for _ in ()).throw(RuntimeError("mount failed")))
+        on_cleanup(lambda: cleanups.append("bad"))
+        return Text("Bad")
+
+    mounted = mount(Show(BadBranch(), when=visible, fallback=StableFallback()))
+    widget = root_widget(mounted)
+
+    with pytest.raises(RuntimeError, match="mount failed"):
+        visible.set(True)
+
+    assert cleanups == ["bad"]
+    assert widget.children[0].props["content"] == "Fallback"
+
+    unmount(mounted)
+    assert cleanups == ["bad", "fallback"]
+
+
+def test_for_preserves_previous_ui_when_refresh_mount_fails():
+    items = signal([{"id": "stable", "label": "Stable"}])
+    cleanups = []
+
+    @component
+    def StableItem(label: str):
+        on_cleanup(lambda: cleanups.append(label))
+        return Text(label)
+
+    def render_item(item):
+        if item["id"] == "bad":
+            return Node(tag=Text, props={"typo": True})
+        return StableItem(item["label"])
+
+    mounted = mount(
+        For(
+            each=items,
+            key=lambda item: item["id"],
+            children=render_item,
+        )
+    )
+    widget = root_widget(mounted)
+
+    with pytest.raises(UnknownPropError):
+        items.set([{"id": "bad", "label": "Bad"}])
+
+    assert cleanups == []
+    assert widget.children[0].props["content"] == "Stable"
+
+    unmount(mounted)
+
+
+def test_for_preserves_previous_ui_when_new_item_on_mount_fails():
+    items = signal([{"id": "stable", "label": "Stable"}])
+    cleanups = []
+
+    @component
+    def StableItem(label: str):
+        on_cleanup(lambda: cleanups.append(label))
+        return Text(label)
+
+    @component
+    def BadItem(label: str):
+        on_mount(lambda: (_ for _ in ()).throw(RuntimeError("mount failed")))
+        on_cleanup(lambda: cleanups.append(label))
+        return Text(label)
+
+    def render_item(item):
+        if item["id"] == "bad":
+            return BadItem(item["label"])
+        return StableItem(item["label"])
+
+    mounted = mount(
+        For(
+            each=items,
+            key=lambda item: item["id"],
+            children=render_item,
+        )
+    )
+    widget = root_widget(mounted)
+
+    with pytest.raises(RuntimeError, match="mount failed"):
+        items.set([{"id": "bad", "label": "Bad"}])
+
+    assert cleanups == ["Bad"]
+    assert widget.children[0].props["content"] == "Stable"
+
+    unmount(mounted)
+    assert cleanups == ["Bad", "Stable"]

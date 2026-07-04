@@ -218,6 +218,26 @@ def test_native_paint_rejects_unresolved_color_tokens():
         paint_native(layout_native(mounted, stylesheet=sheet))
 
 
+def test_native_paint_accepts_css_color_keywords():
+    sheet = css(".panel { background: white; } .label { color: red; }")
+    mounted = mount(VStack(Text("Keyword", className="label"), className="panel"))
+
+    paint = paint_native(layout_native(mounted, stylesheet=sheet))
+
+    panel_rect = next(
+        command
+        for command in paint.commands
+        if command.kind == "rect" and command.path == () and command.fill == "white"
+    )
+    label_text = next(
+        command
+        for command in paint.commands
+        if command.kind == "text" and command.path == (0,)
+    )
+    assert panel_rect.fill == "white"
+    assert label_text.color == "red"
+
+
 def test_native_paint_errors_include_component_context():
     sheet = css(".panel { background: missing; }")
 

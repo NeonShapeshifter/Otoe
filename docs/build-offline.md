@@ -21,6 +21,13 @@ otoe build app:app --out dist/cage --css styles.css --validate
 - `--check`
 - `--layout-check`
 
+When rebuilding into an existing output directory, `otoe build` deliberately
+removes the previous `manifest.json` and `otoe-run.py` before emitting any new
+failure diagnostics. A failed rebuild may leave plan or audit artifacts for
+debugging, but the directory is intentionally not packable until a later build
+completes successfully. This prevents `otoe pack` from archiving a stale runner
+or manifest after a failed build.
+
 ## Profile File
 
 For repeatable builds, use `otoe.profile.toml`:

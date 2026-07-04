@@ -800,7 +800,8 @@ def test_cli_build_validate_rejects_bad_compiled_styles(
 
     captured = capsys.readouterr()
     assert result == 1
-    assert (output / "manifest.json").is_file()
+    assert not (output / "manifest.json").exists()
+    assert not (output / "otoe-run.py").exists()
     assert "build: runner layout validation failed:" in captured.err
     assert "Native layout expected numeric fontSize" in captured.err
 
