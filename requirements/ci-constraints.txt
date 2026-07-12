@@ -5,7 +5,7 @@ mypy==2.1.0
 Pillow==12.2.0
 pytest==9.0.3
 pytest-cov==7.1.0
-ruff==0.15.17
+ruff==0.15.21
 setuptools==82.0.1
 sortedcontainers==2.4.0
 twine==6.2.0
