@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from typing import Any
 
 from .render_ir_types import (
@@ -145,7 +146,7 @@ def _validate_named_value_tuple(
     *,
     prefix: str,
     value_label: str,
-    serializer,
+    serializer: Callable[[Any], Any],
 ) -> list[str]:
     if not isinstance(values, tuple):
         return [f"{prefix} must be a tuple of name/value pairs"]

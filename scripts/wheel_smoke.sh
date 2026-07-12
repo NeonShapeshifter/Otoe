@@ -12,7 +12,71 @@ fi
 if [[ "$PYTHON_BIN" == */* && "$PYTHON_BIN" != /* ]]; then
   PYTHON_BIN="$(pwd)/$PYTHON_BIN"
 fi
-WHEELHOUSE="${1:-"$ROOT/dist-wheel-smoke"}"
+
+resolve_path() {
+  "$PYTHON_BIN" - "$1" <<'PY'
+from pathlib import Path
+import sys
+
+print(Path(sys.argv[1]).expanduser().resolve(strict=False))
+PY
+}
+
+refuse_unsafe_rm_rf() {
+  local label="$1"
+  local path="${2:-}"
+  local abs_path
+  local current_path
+  local home_path=""
+  local part
+  local depth=0
+  local -a path_parts
+
+  if [[ -z "$path" ]]; then
+    echo "wheel smoke: refusing to delete empty $label" >&2
+    exit 1
+  fi
+
+  abs_path="$(resolve_path "$path")"
+  current_path="$(resolve_path "$PWD")"
+  if [[ -n "${HOME:-}" ]]; then
+    home_path="$(resolve_path "$HOME")"
+  fi
+
+  IFS='/' read -r -a path_parts <<< "${abs_path#/}"
+  for part in "${path_parts[@]}"; do
+    if [[ -n "$part" ]]; then
+      depth=$((depth + 1))
+    fi
+  done
+
+  if [[ "$abs_path" == "/" || "$abs_path" == "$current_path" || "$abs_path" == "$ROOT_ABS" ]]; then
+    echo "wheel smoke: refusing to delete unsafe $label: $path" >&2
+    exit 1
+  fi
+  if [[ -n "$home_path" && "$abs_path" == "$home_path" ]]; then
+    echo "wheel smoke: refusing to delete home directory as $label: $path" >&2
+    exit 1
+  fi
+  if ((depth < 2)) || [[ "${abs_path##*/}" == "tmp" ]]; then
+    echo "wheel smoke: refusing to delete too-broad $label: $path" >&2
+    exit 1
+  fi
+}
+
+ROOT_ABS="$(resolve_path "$ROOT")"
+INPUT="${1:-}"
+WHEEL=""
+if [[ -n "$INPUT" && "$INPUT" == *.whl ]]; then
+  if [[ ! -f "$INPUT" ]]; then
+    echo "wheel smoke: wheel does not exist: $INPUT" >&2
+    exit 1
+  fi
+  WHEEL="$(resolve_path "$INPUT")"
+  WHEELHOUSE=""
+else
+  WHEELHOUSE="${INPUT:-"$ROOT/dist-wheel-smoke"}"
+fi
 WORKDIR="${OTOE_SMOKE_WORKDIR:-"$(mktemp -d)"}"
 BUILD_ARGS=()
 if [[ "${OTOE_SMOKE_NO_BUILD_ISOLATION:-0}" == "1" ]]; then
@@ -54,14 +118,23 @@ for distribution, minimum in requirements.items():
 PY
 fi
 
-rm -rf "$WHEELHOUSE"
-mkdir -p "$WHEELHOUSE"
-
-"$PYTHON_BIN" -m pip wheel "$ROOT" --no-deps "${BUILD_ARGS[@]}" -w "$WHEELHOUSE"
-WHEEL="$(find "$WHEELHOUSE" -maxdepth 1 -name 'otoe-*.whl' -print | sort | tail -n 1)"
 if [[ -z "$WHEEL" ]]; then
-  echo "wheel smoke: no otoe wheel produced in $WHEELHOUSE" >&2
-  exit 1
+  # A wheelhouse argument is destructive: this directory is deleted before rebuilding.
+  refuse_unsafe_rm_rf "wheelhouse" "$WHEELHOUSE"
+  WHEELHOUSE_ABS="$(resolve_path "$WHEELHOUSE")"
+  if [[ "$WHEELHOUSE_ABS" == "$ROOT_ABS"/* && "$WHEELHOUSE_ABS" != "$ROOT_ABS/dist-wheel-smoke" ]]; then
+    echo "wheel smoke: refusing to delete wheelhouse inside repo: $WHEELHOUSE" >&2
+    exit 1
+  fi
+  rm -rf -- "$WHEELHOUSE"
+  mkdir -p "$WHEELHOUSE"
+
+  "$PYTHON_BIN" -m pip wheel "$ROOT" --no-deps "${BUILD_ARGS[@]}" -w "$WHEELHOUSE"
+  WHEEL="$(find "$WHEELHOUSE" -maxdepth 1 -name 'otoe-*.whl' -print | sort | tail -n 1)"
+  if [[ -z "$WHEEL" ]]; then
+    echo "wheel smoke: no otoe wheel produced in $WHEELHOUSE" >&2
+    exit 1
+  fi
 fi
 
 "$PYTHON_BIN" -m venv "$WORKDIR/venv"
@@ -72,6 +145,7 @@ cd "$WORKDIR/app"
 test -f app.py
 test -f README.md
 test -f styles.css
+"$WORKDIR/venv/bin/otoe" check --target app:app --css styles.css > doctor.txt
 "$WORKDIR/venv/bin/otoe" render app:app --out preview.html --css styles.css --pretty
 "$WORKDIR/venv/bin/otoe" render app:app --out preview.png --native --css styles.css
 "$WORKDIR/venv/bin/otoe" check --tests > check.txt
@@ -102,6 +176,7 @@ kill "$DEV_PID"
 wait "$DEV_PID" 2>/dev/null || true
 trap - EXIT
 
+test -s doctor.txt
 test -s preview.html
 test -s preview.png
 test -s check.txt
@@ -113,8 +188,9 @@ test -s portable-core-format.json
 "$WORKDIR/venv/bin/python" -c 'from pathlib import Path; import sys; text = Path(sys.argv[1]).read_text(encoding="utf-8"); assert "Portable Core UI v0" in text and "`Button`" in text' portable-core.txt
 "$WORKDIR/venv/bin/python" -c 'import json, sys; payload = json.load(open(sys.argv[1], encoding="utf-8")); assert payload["format"] == "otoe-portable-core-ui-v0"; assert any(entry["id"] == "button" for entry in payload["entries"])' portable-core.json
 "$WORKDIR/venv/bin/python" -c 'import json, sys; payload = json.load(open(sys.argv[1], encoding="utf-8")); assert payload["format"] == "otoe-portable-core-ui-v0"; assert any(entry["id"] == "button" for entry in payload["entries"])' portable-core-format.json
+"$WORKDIR/venv/bin/python" -c 'from pathlib import Path; text = Path("doctor.txt").read_text(encoding="utf-8"); assert "compile app.py: ok" in text and "target app:app: ok" in text and "css styles.css: ok (2 rules)" in text'
 "$WORKDIR/venv/bin/python" -c 'from pathlib import Path; text = Path("check.txt").read_text(encoding="utf-8"); assert "compile app.py: ok" in text and "pytest: skipped (tests directory missing)" in text'
-"$WORKDIR/venv/bin/python" -c 'from pathlib import Path; text = Path("README.md").read_text(encoding="utf-8"); assert "otoe check" in text; assert "otoe render app:app --out preview.html --css styles.css --pretty" in text; assert "otoe render app:app --out preview.png --native --css styles.css" in text; assert "otoe build app:app --out dist/cage --css styles.css --validate" in text; assert "examples." not in text and "PYTHONPATH" not in text'
+"$WORKDIR/venv/bin/python" -c 'from pathlib import Path; text = Path("README.md").read_text(encoding="utf-8"); assert "otoe check" in text; assert "otoe check --target app:app --css styles.css" in text; assert "otoe render app:app --out preview.html --css styles.css --pretty" in text; assert "otoe render app:app --out preview.png --native --css styles.css" in text; assert "otoe build app:app --out dist/cage --css styles.css --validate" in text; assert "examples." not in text and "PYTHONPATH" not in text'
 "$WORKDIR/venv/bin/python" -c 'from pathlib import Path; from otoe.style import css; sheet = css(Path("styles.css").read_text(encoding="utf-8")); assert set(sheet.rules) == {".app", ".title"}'
 
 echo "wheel smoke: ok"

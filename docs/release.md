@@ -6,15 +6,21 @@ Use the release check before tagging or publishing a package:
 scripts/release_check.sh
 ```
 
+The historical v0.1.9 tag/source mismatch is recorded in
+[v0.1.9 Provenance](releases/v0.1.9-provenance.md). Do not move that tag again.
+
 When promoting work from `/home/ale/Otoe` into `/home/ale/Otoe-public`, use the
 [publication sync checklist](publication-sync-checklist.md). `Otoe-public` is
-the manual publication point; this repository does not publish automatically.
+the manual source publication point. PyPI package publication is separate and
+requires the deliberate tag gate described below.
 
-The script removes stale local build artifacts, installs local dev/release plus
-`native-text` extras, verifies generated Portable Core UI docs, compiles source
-files, runs Ruff, mypy, tests, builds distributions, runs `twine check`, and
-runs the sdist and installed-wheel smokes. CI runs both smoke tests after
-building and checking package metadata.
+The script removes stale local build artifacts, installs constrained local
+dev/release plus `native-text` extras, verifies generated Portable Core UI docs,
+checks installed dependency consistency, compiles source files, runs Ruff,
+strict mypy, stub/runtime parity, tests with the coverage gate, builds
+distributions, runs `twine check`, and runs the sdist and installed-wheel smokes.
+It also checks reproducibility and performance budgets. CI runs the same package
+checks after building package metadata.
 
 ## Build Tooling Policy
 
@@ -30,9 +36,12 @@ CI, and publish jobs require:
 Do not downgrade the build backend to support `setuptools<77` unless the license
 metadata policy is deliberately revisited. The older
 `license = { text = "MIT" }` form is intentionally not used because modern
-setuptools treats it as deprecated metadata. There is no release lockfile yet;
-the lightweight policy is explicit minimum versions shared by `pyproject.toml`,
-the release scripts, and GitHub workflows.
+setuptools treats it as deprecated metadata. `pyproject.toml` declares supported
+minimums; `requirements/ci-constraints.txt` fixes the direct CI and release
+tools. Editable release-test installs use `--no-build-isolation`, and release
+builds use `--no-isolation`, so both use the constrained build backend instead
+of a separately resolved isolated environment. Transitive dependencies are not
+fully locked yet.
 
 If the Portable Core UI matrix changes, regenerate the docs before release:
 
@@ -46,14 +55,15 @@ The focused local validation commands are:
 python3 -m compileall -q src examples tests
 python3 scripts/update_portable_core_docs.py --check
 python3 -m ruff check src tests examples scripts
-python3 -m mypy src/otoe
-python3 -m pytest -q
+python3 -m mypy --strict src/otoe
+python3 -m mypy.stubtest otoe --allowlist tests/stubtest_allowlist.txt
+python3 -m pytest -q --cov=otoe --cov-report=term-missing --cov-fail-under=82
 ```
 
-Coverage is tracked as a diagnostic command, not a release threshold yet:
+Coverage must remain at or above the configured release threshold:
 
 ```bash
-python3 -m pytest --cov=otoe --cov-report=term-missing
+python3 -m pytest --cov=otoe --cov-report=term-missing --cov-fail-under=82
 ```
 
 After building distributions, check only package artifacts so unrelated
@@ -114,13 +124,36 @@ OTOE_SMOKE_NO_BUILD_ISOLATION=1 scripts/wheel_smoke.sh
 
 CI runs this smoke after building and checking package metadata. The publish
 workflow also runs it before uploading the distribution artifact. Publishing
-from a tag checks that `vX.Y.Z` matches `project.version` in `pyproject.toml`
-before building.
+from a tag first requires an annotated `vX.Y.Z` tag whose message contains this
+exact marker on its own line:
 
-The publish workflow uses PyPI `skip-existing` so rerunning a successful tag
-upload does not fail only because the same files are already present. This does
-not replace a broken published version; PyPI artifacts are immutable, so a
-release that reached PyPI still needs a version bump.
+```text
+Publish-PyPI: yes
+```
+
+The workflow then checks that `vX.Y.Z` matches `project.version` in
+`pyproject.toml` before building. A lightweight tag, or an annotated tag without
+the marker, fails before building and never reaches the PyPI upload job.
+
+The workflow does not use PyPI `skip-existing`. Reusing or moving a published
+version must fail loudly because PyPI artifacts are immutable. A release that
+reached PyPI always needs a version bump, even when its tag or source metadata
+was wrong.
+
+The build uses the release commit timestamp as `SOURCE_DATE_EPOCH`, the
+constrained build backend, and normalized sdist ownership and timestamps. Two
+independent rebuilds must match each other and the exact wheel and sdist in
+`dist/` byte for byte. Those same files that pass smoke tests are copied into one
+checksummed GitHub artifact, attested with GitHub build provenance, downloaded
+by the publish job, checksum-verified, and uploaded without rebuilding.
+
+Create the PyPI publish tag only after the release checks and public sync are
+complete:
+
+```bash
+git tag -a vX.Y.Z -m "Release vX.Y.Z" -m "Publish-PyPI: yes"
+git push origin vX.Y.Z
+```
 
 ## Local Build Shadowing
 

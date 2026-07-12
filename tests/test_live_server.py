@@ -1,7 +1,7 @@
 import json
 from io import BytesIO
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from otoe.live_server import (
     LivePreviewConfig,
@@ -352,6 +352,69 @@ def test_live_preview_handler_serves_page_stylesheets_health_and_404(tmp_path):
     assert empty_css == (200, "text/css; charset=utf-8", "")
     assert health == (200, "application/json; charset=utf-8", '{"ok": true}')
     assert missing[0] == 404
+
+
+def test_live_preview_handler_missing_stylesheet_returns_404(tmp_path):
+    stylesheet = tmp_path / "missing.css"
+    state = _LivePreviewState(
+        DummyPreview(),
+        LivePreviewConfig(
+            title="Dummy",
+            css_route="/dummy.css",
+            css_path=stylesheet,
+        ),
+    )
+
+    status, content_type, body = _get_path(state, "/dummy.css")
+
+    assert status == 404
+    assert content_type == "text/html"
+    assert body == "Stylesheet not found"
+    assert str(stylesheet) not in body
+
+
+def test_live_preview_handler_unreadable_stylesheet_returns_500():
+    state = _LivePreviewState(
+        DummyPreview(),
+        LivePreviewConfig(
+            title="Dummy",
+            css_route="/dummy.css",
+            css_path=cast(Path, _BrokenStylesheetPath(PermissionError("secret path"))),
+        ),
+    )
+
+    status, content_type, body = _get_path(state, "/dummy.css")
+
+    assert status == 500
+    assert content_type == "text/html"
+    assert body == "Stylesheet could not be read"
+    assert "secret path" not in body
+
+
+def test_live_preview_handler_stylesheet_read_error_returns_500():
+    state = _LivePreviewState(
+        DummyPreview(),
+        LivePreviewConfig(
+            title="Dummy",
+            css_route="/dummy.css",
+            css_path=cast(Path, _BrokenStylesheetPath(OSError("secret path"))),
+        ),
+    )
+
+    status, content_type, body = _get_path(state, "/dummy.css")
+
+    assert status == 500
+    assert content_type == "text/html"
+    assert body == "Stylesheet could not be read"
+    assert "secret path" not in body
+
+
+class _BrokenStylesheetPath:
+    def __init__(self, error: Exception):
+        self._error = error
+
+    def read_text(self, *, encoding: str) -> str:
+        raise self._error
 
 
 def _live_preview_state() -> _LivePreviewState:

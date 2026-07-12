@@ -4,10 +4,11 @@ include LICENSE
 include *.md
 include ADR-*.md
 recursive-include docs *.md *.json
-recursive-include examples *.py *.json *.toml *.txt
+recursive-include examples *.py *.json *.toml *.txt *.md
 recursive-include preview *.md *.css *.html
+recursive-include requirements *.txt
 recursive-include scripts *.py *.sh
-recursive-include tests *.py
+recursive-include tests *.py *.txt
 global-exclude *.py[cod]
 global-exclude __pycache__
 global-exclude .DS_Store

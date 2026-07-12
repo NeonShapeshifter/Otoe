@@ -431,13 +431,14 @@ Remaining:
 - Use reference apps as acceptance pressure for backend-candidate evaluation,
   not as an excuse to move backend work back to the first app-author path.
 
-### Phase 6 - Public Framework Extraction/Stabilization
+### Phase 6 - Runtime/API Stabilization
 
 Planned after Phase 5 product-shape validation.
 
-The old question was whether Otoe should become public at all. The current
-North Star is clearer: public framework extraction/stabilization remains
-planned once the pre-alpha product surface is coherent. Future work should:
+The old question was whether Otoe should become public at all. That decision is
+historical: the repository and package are public. The remaining work is
+runtime/API stabilization after the pre-alpha product surface and native
+vertical slice provide enough evidence. Future work should:
 
 - keep case studies as regression suites;
 - remove accidental app assumptions from public APIs;

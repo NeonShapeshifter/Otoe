@@ -13,6 +13,9 @@ and approval layers that should not become another row in the document.
 
 - `examples/wraith/mission_exec_surface.py`
 - `preview/wraith.css`
+- `examples/wraith/mission_exec_showcase.py`
+- `preview/wraith_mission_exec.css`
+- `tests/test_wraith_mission_exec_showcase.py`
 - `src/otoe/_native_layout.py`
 - `src/otoe/_native_layout_align.py`
 - `docs/native-layout.md`
@@ -29,9 +32,16 @@ and approval layers that should not become another row in the document.
 
 ## MissionExec Findings
 
-MissionExec currently proves the desired product shape, but much of the layout
-is browser-only CSS. That is useful as a visual target, not as a portable
-layout contract.
+MissionExec now has two deliberately separate surfaces:
+
+- `examples.wraith.mission_exec_showcase:app` with
+  `preview/wraith_mission_exec.css` is the strict portable acceptance baseline;
+- `examples.wraith.mission_exec_surface` with `preview/wraith.css` is the richer
+  legacy browser target and is not a portable layout contract.
+
+The strict showcase proves that the current stack-first subset can express the
+core operator workflow. The richer surface still exposes the layout pressure
+that motivates Layout v1.
 
 Current hacks and limitations:
 
@@ -39,9 +49,10 @@ Current hacks and limitations:
   stylesheet. It uses `:root`, descendant selectors, pseudo-classes, media
   queries, `calc(...)`, `min(...)`, `var(...)`, `position: fixed`, CSS grid,
   flex shorthands, transitions, and `@media`.
-- MissionExec has no strict portable stylesheet equivalent to
-  `preview/wraith_input_console.css`, so it cannot yet be treated as a native
-  layout/build acceptance surface.
+- `preview/wraith_mission_exec.css` is the strict portable equivalent. It uses
+  flat class selectors and supported properties, passes `otoe check`, and is
+  exercised through HTML render, native PNG, native interaction, and validated
+  offline-build tests.
 - The two-column console depends on browser flex behavior:
   `.exec-left { width: 380px; flex: 0 0 380px; }` and
   `.exec-right { min-width: 0; flex: 1; }`.
@@ -59,9 +70,10 @@ Current hacks and limitations:
 - Some class names are data-driven, such as `is-{line["level"]}` and
   `is-{event["severity"]}`. Portable plan/build needs safelisting or explicit
   enumerable state classes.
-- The HTML preview tests validate content and live interactions, but they do
-  not validate native layout, RenderTree layout evidence, or offline bundle
-  output for MissionExec.
+- The strict showcase tests validate HTML content, native rendering and
+  interaction, approval and pause/resume behavior, offline bundle validation,
+  and the absence of Wraith imports. They do not prove that the richer legacy
+  surface is portable or that current native layout matches its browser layout.
 
 These findings are the reason Layout v1 should start with appliance stack
 semantics: bounded sizes, grow/shrink, wrapping, scroll viewports, and a limited
@@ -131,21 +143,29 @@ Not planned for Layout v1:
 
 These can stay HTML-only or future-engine topics.
 
-## Phase 0: MissionExec Portable Baseline
+## Phase 0: MissionExec Portable Baseline (Landed)
 
-Purpose: create the real acceptance surface before changing layout semantics.
+Purpose: establish the acceptance surface before changing layout semantics.
 
-Work:
+Landed evidence:
 
-- add a strict portable MissionExec stylesheet or portable mode separate from
-  `preview/wraith.css`;
-- keep it inside single class selectors and portable properties;
-- safelist enumerable dynamic classes for log levels, event severity, tab
-  active state, status tones, and dialog state;
-- render MissionExec through HTML, native PNG, `otoe plan`, `otoe build`, and
-  bundle validation;
-- document the exact places where the portable version must use explicit sizes
-  before Layout v1 features exist.
+- `examples.wraith.mission_exec_showcase:app` is independent of the rich legacy
+  surface and imports no Wraith application code;
+- `preview/wraith_mission_exec.css` stays inside flat class selectors and the
+  portable property subset;
+- `otoe check` parses the stylesheet as 143 strict portable rules;
+- tests cover HTML rendering, native PNG, native clicks, dialog and pause/resume
+  state, and validated offline build output;
+- explicit fixed dimensions and normal-flow fallbacks document where current
+  layout v0 substitutes for future grow, wrap, viewport, and overlay behavior.
+
+Ongoing baseline work:
+
+- keep strict check, render, native, interaction, and build evidence green as
+  Layout v1 changes land;
+- keep the portable stylesheet separate from `preview/wraith.css`;
+- add RenderTree layout assertions when a Layout v1 phase introduces new
+  geometry rather than treating browser appearance as acceptance evidence.
 
 Implementable now in Python layout:
 
@@ -533,8 +553,8 @@ Regression tests:
 
 Layout v1 should be considered ready for public documentation when:
 
-- MissionExec passes strict plan/build/native checks through a portable
-  stylesheet;
+- [Met by Phase 0] MissionExec passes strict check/build/native paths through
+  `preview/wraith_mission_exec.css`;
 - grow/shrink solves the fixed-left/growing-right appliance layout without
   hardcoded right-column widths;
 - wrapping solves filter/tool rows without browser media queries;

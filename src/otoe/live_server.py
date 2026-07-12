@@ -5,7 +5,7 @@ import json
 from dataclasses import dataclass, field
 from html import escape
 from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import RLock
 from typing import Any, Callable
 from urllib.parse import urlsplit
@@ -13,6 +13,7 @@ from urllib.parse import urlsplit
 from .live_config import LivePreviewApp, LivePreviewConfig, LivePreviewStylesheet
 from .live_events import LiveEventSequenceTracker, live_event_from_payload
 from .live_script import LIVE_SCRIPT
+from .scheduler import drain_posted
 
 __all__ = [
     "LivePreviewApp",
@@ -71,12 +72,14 @@ class _LivePreviewState:
 
     def render_page(self) -> str:
         with self.lock:
+            drain_posted()
             return render_live_page(self.app, self.config)
 
     def dispatch_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
         event = live_event_from_payload(payload)
 
         with self.lock:
+            drain_posted()
             if not self.event_sequences.accept(event):
                 return {
                     "ok": True,
@@ -101,7 +104,7 @@ def run_live_preview(
         pass
 
     Handler.state = state
-    server = ThreadingHTTPServer((host, port), Handler)
+    server = HTTPServer((host, port), Handler)
     print(f"{label}: http://{host}:{port}")
     try:
         server.serve_forever()
@@ -135,13 +138,7 @@ class _LivePreviewHandler(BaseHTTPRequestHandler):
             return
         stylesheet = self.state.config.stylesheet_for(path)
         if stylesheet is not None:
-            if stylesheet.path is None:
-                self._send_text("", "text/css; charset=utf-8")
-                return
-            self._send_text(
-                stylesheet.path.read_text(encoding="utf-8"),
-                "text/css; charset=utf-8",
-            )
+            self._send_stylesheet(stylesheet)
             return
         if path == "/health":
             self._send_json({"ok": True})
@@ -193,6 +190,23 @@ class _LivePreviewHandler(BaseHTTPRequestHandler):
             "application/json; charset=utf-8",
             status,
         )
+
+    def _send_stylesheet(self, stylesheet: LivePreviewStylesheet) -> None:
+        if stylesheet.path is None:
+            self._send_text("", "text/css; charset=utf-8")
+            return
+        try:
+            body = stylesheet.path.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            self.send_error(HTTPStatus.NOT_FOUND, "Stylesheet not found")
+            return
+        except (PermissionError, OSError, UnicodeError):
+            self.send_error(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                "Stylesheet could not be read",
+            )
+            return
+        self._send_text(body, "text/css; charset=utf-8")
 
     def _read_event_payload(self) -> dict[str, Any]:
         raw_length = self.headers.get("content-length", "0")

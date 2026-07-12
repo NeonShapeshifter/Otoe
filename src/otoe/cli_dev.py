@@ -5,7 +5,7 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 from threading import RLock
-from typing import Any
+from typing import Any, TypeGuard
 
 from .cli_common import CliError, load_target
 from .cli_targets import coerce_render_target
@@ -63,7 +63,7 @@ def _coerce_dev_app(target: Any) -> LivePreviewApp:
     return _RenderTargetPreview(mounted)
 
 
-def _is_live_preview_app(target: Any) -> bool:
+def _is_live_preview_app(target: Any) -> TypeGuard[LivePreviewApp]:
     if callable(getattr(target, "render_fragment", None)) and callable(
         getattr(target, "dispatch_event", None)
     ):

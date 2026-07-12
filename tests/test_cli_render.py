@@ -288,6 +288,88 @@ def test_cli_render_rejects_invalid_target(tmp_path, monkeypatch, capsys):
     assert result == 1
     assert "render target must be a Node, MountedNode" in captured.err
 
+
+def test_cli_render_reports_target_spec_without_module_object(tmp_path, capsys):
+    result = main(["render", "app", "--out", str(tmp_path / "out.html")])
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "render: target 'app' must use MODULE:OBJECT syntax" in captured.err
+    assert "for example app:app" in captured.err
+
+
+def test_cli_render_reports_missing_import_target_module(tmp_path, capsys):
+    result = main(
+        [
+            "render",
+            "missing_render_module:app",
+            "--out",
+            str(tmp_path / "out.html"),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "could not import module 'missing_render_module'" in captured.err
+    assert "from target 'missing_render_module:app'" in captured.err
+    assert "run the command from the app directory" in captured.err
+
+
+def test_cli_render_reports_missing_import_target_attribute(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "missing_attr_surface.py"
+    module.write_text("from otoe import Text\napp = Text('ok')\n", encoding="utf-8")
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "render",
+            "missing_attr_surface:missing",
+            "--out",
+            str(tmp_path / "out.html"),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "target 'missing_attr_surface:missing'" in captured.err
+    assert "could not resolve attribute 'missing'" in captured.err
+
+
+def test_cli_render_reports_missing_css_class_with_known_classes(
+    tmp_path,
+    monkeypatch,
+    capsys,
+):
+    module = tmp_path / "missing_class_surface.py"
+    module.write_text(
+        "from otoe import Text\napp = Text('Missing class', className='missing')\n",
+        encoding="utf-8",
+    )
+    styles = tmp_path / "styles.css"
+    styles.write_text(".known { color: #111827; }\n", encoding="utf-8")
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    result = main(
+        [
+            "render",
+            "missing_class_surface:app",
+            "--out",
+            str(tmp_path / "preview.html"),
+            "--css",
+            str(styles),
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "Unknown style class 'missing'." in captured.err
+    assert "Known classes: known." in captured.err
+
+
 def test_cli_render_reports_css_errors(tmp_path, monkeypatch, capsys):
     module = tmp_path / "surface.py"
     module.write_text("from otoe import Text\napp = Text('Bad CSS')\n", encoding="utf-8")
@@ -310,3 +392,4 @@ def test_cli_render_reports_css_errors(tmp_path, monkeypatch, capsys):
     assert result == 1
     assert "render: css file" in captured.err
     assert "Unknown style property 'nope'" in captured.err
+    assert "Known portable properties:" in captured.err

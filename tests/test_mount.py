@@ -291,6 +291,32 @@ def test_component_owner_runs_mount_cleanup_and_disposes_subscriptions():
     assert widget.props["content"] == "ARMED"
 
 
+def test_unmount_attempts_every_cleanup_when_one_fails():
+    events = []
+
+    @component
+    def CleanupFailures():
+        on_cleanup(lambda: events.append("first"))
+
+        def fail_cleanup():
+            events.append("failed")
+            raise RuntimeError("cleanup failed")
+
+        on_cleanup(fail_cleanup)
+        on_cleanup(lambda: events.append("last"))
+        return Text("Ready")
+
+    mounted = mount(CleanupFailures())
+
+    with pytest.raises(ExceptionGroup, match="CleanupFailures"):
+        unmount(mounted)
+
+    assert events == ["last", "failed", "first"]
+
+    unmount(mounted)
+    assert events == ["last", "failed", "first"]
+
+
 def test_computed_prop_updates_when_dependency_changes():
     active = signal(False)
     node = Button("ST", className=computed(lambda: "on" if active.value else "off"))
@@ -329,6 +355,28 @@ def test_failed_child_mount_unmounts_partially_mounted_children():
         mount(HStack(MountedChild(), broken_child))
 
     assert cleanups == ["child"]
+
+
+def test_failed_mount_preserves_primary_and_cleanup_errors():
+    @component
+    def CleanupFailure():
+        def cleanup():
+            raise RuntimeError("cleanup failed")
+
+        on_cleanup(cleanup)
+        return Text("Mounted")
+
+    broken_child = Node(tag=Text, props={"typo": True})
+
+    with pytest.raises(ExceptionGroup, match="mount and cleanup both failed") as caught:
+        mount(HStack(CleanupFailure(), broken_child))
+
+    nested_errors = _flatten_exceptions(caught.value)
+    assert any(isinstance(error, UnknownPropError) for error in nested_errors)
+    assert any(
+        isinstance(error, RuntimeError) and str(error) == "cleanup failed"
+        for error in nested_errors
+    )
 
 
 def test_failed_component_render_disposes_owner_disposables():
@@ -375,6 +423,7 @@ def test_show_preserves_previous_ui_when_new_branch_mount_fails():
         visible.set(True)
 
     assert cleanups == []
+    assert visible.value is False
     assert widget.children[0].props["content"] == "Fallback"
 
     unmount(mounted)
@@ -402,10 +451,132 @@ def test_show_preserves_previous_ui_when_new_branch_on_mount_fails():
         visible.set(True)
 
     assert cleanups == ["bad"]
+    assert visible.value is False
     assert widget.children[0].props["content"] == "Fallback"
 
     unmount(mounted)
     assert cleanups == ["bad", "fallback"]
+
+
+def test_show_activates_replacement_when_branch_switches_during_on_mount():
+    visible = signal(False)
+    events = []
+
+    @component
+    def Fallback():
+        def reveal_active_branch():
+            events.append("mount:fallback")
+            visible.set(True)
+
+        on_mount(reveal_active_branch)
+        on_mount(lambda: events.append("mount:fallback-after-dispose"))
+        on_cleanup(lambda: events.append("cleanup:fallback"))
+        return Text("Fallback")
+
+    @component
+    def Active():
+        on_mount(lambda: events.append("mount:active"))
+        on_cleanup(lambda: events.append("cleanup:active"))
+        return Text("Active")
+
+    mounted = mount(Show(Active(), when=visible, fallback=Fallback()))
+
+    assert visible.value is True
+    assert root_widget(mounted).children[0].props["content"] == "Active"
+    assert events == [
+        "mount:fallback",
+        "mount:active",
+        "cleanup:fallback",
+    ]
+
+    unmount(mounted)
+    assert events == [
+        "mount:fallback",
+        "mount:active",
+        "cleanup:fallback",
+        "cleanup:active",
+    ]
+
+
+def test_show_skips_siblings_unmounted_by_reentrant_on_mount_update():
+    visible = signal(True)
+    events = []
+
+    @component
+    def First():
+        def hide_branch():
+            events.append("mount:first")
+            visible.set(False)
+
+        on_mount(hide_branch)
+        on_cleanup(lambda: events.append("cleanup:first"))
+        return Text("First")
+
+    @component
+    def Second():
+        on_mount(lambda: events.append("mount:second"))
+        on_cleanup(lambda: events.append("cleanup:second"))
+        return Text("Second")
+
+    @component
+    def Fallback():
+        on_mount(lambda: events.append("mount:fallback"))
+        return Text("Fallback")
+
+    mounted = mount(Show(First(), Second(), when=visible, fallback=Fallback()))
+
+    assert visible.value is False
+    assert root_widget(mounted).children[0].props["content"] == "Fallback"
+    assert events == [
+        "mount:first",
+        "mount:fallback",
+        "cleanup:second",
+        "cleanup:first",
+    ]
+
+    unmount(mounted)
+
+
+def test_show_reentrant_update_during_refresh_keeps_signal_and_tree_aligned():
+    visible = signal(False)
+    events = []
+    fallback_instance = 0
+
+    @component
+    def Fallback():
+        nonlocal fallback_instance
+        fallback_instance += 1
+        instance = fallback_instance
+        on_mount(lambda: events.append(f"mount:fallback:{instance}"))
+        on_cleanup(lambda: events.append(f"cleanup:fallback:{instance}"))
+        return Text("Fallback")
+
+    @component
+    def Active():
+        def hide_again():
+            events.append("mount:active")
+            visible.set(False)
+
+        on_mount(hide_again)
+        on_cleanup(lambda: events.append("cleanup:active"))
+        return Text("Active")
+
+    mounted = mount(Show(Active(), when=visible, fallback=Fallback()))
+
+    visible.set(True)
+
+    assert visible.value is False
+    assert root_widget(mounted).children[0].props["content"] == "Fallback"
+    assert events == [
+        "mount:fallback:1",
+        "mount:active",
+        "mount:fallback:2",
+        "cleanup:active",
+        "cleanup:fallback:1",
+    ]
+
+    unmount(mounted)
+    assert events[-1] == "cleanup:fallback:2"
 
 
 def test_for_preserves_previous_ui_when_refresh_mount_fails():
@@ -435,6 +606,7 @@ def test_for_preserves_previous_ui_when_refresh_mount_fails():
         items.set([{"id": "bad", "label": "Bad"}])
 
     assert cleanups == []
+    assert items.value == [{"id": "stable", "label": "Stable"}]
     assert widget.children[0].props["content"] == "Stable"
 
     unmount(mounted)
@@ -473,7 +645,112 @@ def test_for_preserves_previous_ui_when_new_item_on_mount_fails():
         items.set([{"id": "bad", "label": "Bad"}])
 
     assert cleanups == ["Bad"]
+    assert items.value == [{"id": "stable", "label": "Stable"}]
     assert widget.children[0].props["content"] == "Stable"
 
     unmount(mounted)
     assert cleanups == ["Bad", "Stable"]
+
+
+def test_for_rolls_back_without_leaking_when_previous_item_cleanup_fails():
+    items = signal([{"id": "old", "label": "Old"}])
+    events = []
+    fail_old_cleanup = True
+
+    @component
+    def Row(label: str):
+        nonlocal fail_old_cleanup
+        on_mount(lambda: events.append(f"mount:{label}"))
+
+        def cleanup():
+            nonlocal fail_old_cleanup
+            events.append(f"cleanup:{label}")
+            if label == "Old" and fail_old_cleanup:
+                fail_old_cleanup = False
+                raise RuntimeError("old cleanup failed")
+
+        on_cleanup(cleanup)
+        return Text(label)
+
+    mounted = mount(
+        For(
+            each=items,
+            key=lambda item: item["id"],
+            children=lambda item: Row(item["label"]),
+        )
+    )
+
+    with pytest.raises(ExceptionGroup):
+        items.set([{"id": "next", "label": "Next"}])
+
+    assert items.value == [{"id": "old", "label": "Old"}]
+    assert root_widget(mounted).children[0].props["content"] == "Old"
+    assert events == [
+        "mount:Old",
+        "mount:Next",
+        "cleanup:Old",
+        "mount:Old",
+        "cleanup:Next",
+    ]
+
+    unmount(mounted)
+    assert events == [
+        "mount:Old",
+        "mount:Next",
+        "cleanup:Old",
+        "mount:Old",
+        "cleanup:Next",
+        "cleanup:Old",
+    ]
+
+
+def test_for_reentrant_update_during_activation_keeps_latest_items_without_leaks():
+    items = signal([{"id": "a", "label": "A"}])
+    mounted_labels = []
+    cleaned_labels = []
+
+    @component
+    def Row(item):
+        label = item["label"]
+
+        def activate():
+            mounted_labels.append(label)
+            if label == "B":
+                items.set([{"id": "d", "label": "D"}])
+
+        on_mount(activate)
+        on_cleanup(lambda: cleaned_labels.append(label))
+        return Text(label)
+
+    mounted = mount(
+        For(
+            each=items,
+            key=lambda item: item["id"],
+            children=Row,
+        )
+    )
+
+    items.set(
+        [
+            {"id": "b", "label": "B"},
+            {"id": "c", "label": "C"},
+        ]
+    )
+
+    assert items.value == [{"id": "d", "label": "D"}]
+    assert [child.props["content"] for child in root_widget(mounted).children] == ["D"]
+    assert mounted_labels == ["A", "B", "D"]
+    assert sorted(cleaned_labels) == ["A", "B", "C"]
+
+    unmount(mounted)
+    assert sorted(cleaned_labels) == ["A", "B", "C", "D"]
+
+
+def _flatten_exceptions(error):
+    if not isinstance(error, ExceptionGroup):
+        return [error]
+    return [
+        nested
+        for child in error.exceptions
+        for nested in _flatten_exceptions(child)
+    ]

@@ -8,6 +8,7 @@ from ._native_backend import NativeRendererBackend
 from .mount import FakeWidget, MountedNode
 from .native import NativePaint, NativeSurface
 from .node import Node
+from .scheduler import drain_posted
 from .style import StyleSheet
 
 
@@ -194,6 +195,7 @@ class NativeWindowDriver:
         )
         if next_value is None:
             return self.key_down(key, shift=shift, ctrl=ctrl, meta=meta, alt=alt)
+        self.surface.key_down(key, shift=shift, ctrl=ctrl, meta=meta, alt=alt)
         return self.input_text(next_value)
 
     def input_text(self, value: str) -> Any:
@@ -279,6 +281,7 @@ class TkNativeWindow:
         self._render()
 
     def run(self) -> None:
+        self.root.after(16, self._poll_posted_callbacks)
         self.root.mainloop()
 
     def close(self) -> None:
@@ -344,6 +347,13 @@ class TkNativeWindow:
                 offset_y=self._offset_y,
             )
 
+    def _poll_posted_callbacks(self) -> None:
+        try:
+            if drain_posted() > 0:
+                self._render()
+        finally:
+            self.root.after(16, self._poll_posted_callbacks)
+
     def _sync_canvas_transform(self) -> None:
         scale_x = self._canvas_width / max(1, self._logical_width)
         scale_y = self._canvas_height / max(1, self._logical_height)
@@ -401,7 +411,7 @@ def _draw_tk_canvas_rect(
             right,
             bottom,
             outline=command.stroke,
-            width=command.stroke_width,
+            width=command.stroke_width * scale,
         )
 
 
@@ -423,9 +433,13 @@ def _draw_tk_canvas_text(
         anchor="nw",
         text=command.text,
         fill=command.color or "#111827",
-        font=("TkDefaultFont", max(1, int(command.font_size))),
+        font=("TkDefaultFont", _scaled_tk_font_size(command.font_size, scale=scale)),
         width=max(1, command.width * scale),
     )
+
+
+def _scaled_tk_font_size(font_size: int, *, scale: float) -> int:
+    return max(1, int(round(font_size * scale)))
 
 
 def _visible_canvas_rect(command: Any) -> tuple[int, int, int, int] | None:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import Any, ClassVar, Iterable
+from typing import Any, ClassVar, Iterable, cast
 
 from .errors import DuplicatePrimaryPropError
 from .events import EventSignature
@@ -58,4 +58,7 @@ def _normalize_child(parent_tag: Any, child: Any) -> Node:
 
 
 def _tag_name(tag: Any) -> str:
-    return getattr(tag, "__name__", getattr(tag, "name", tag.__class__.__name__))
+    return cast(
+        str,
+        getattr(tag, "__name__", getattr(tag, "name", tag.__class__.__name__)),
+    )

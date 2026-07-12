@@ -1,11 +1,19 @@
+import pytest
+
 from otoe import (
     Button,
     EventSignature,
+    EventHandlerArityError,
     Input,
     ScrollView,
+    Text,
     UI_EVENT_SIGNATURES,
+    UnknownEventError,
+    UnknownPropError,
     event_signature_for,
     format_event_signature,
+    mount,
+    root_widget,
 )
 from otoe.widgets import ShortcutScope as ShortcutScopeWidget
 
@@ -66,3 +74,38 @@ def test_ui_event_signature_catalog_documents_public_callbacks():
     assert UI_EVENT_SIGNATURES["SidebarNav.on_navigate"] == EventSignature(
         ("route_id",)
     )
+
+
+def test_unknown_widget_prop_error_lists_widget_and_known_props():
+    with pytest.raises(UnknownPropError) as excinfo:
+        mount(Text("Hello", clasName="title"))
+
+    message = str(excinfo.value)
+    assert "Text received unknown prop 'clasName'." in message
+    assert "Known props:" in message
+    assert "className" in message
+    assert "content" in message
+
+
+def test_unknown_widget_event_error_lists_widget_and_known_events():
+    with pytest.raises(UnknownEventError) as excinfo:
+        mount(Button("Save", onClik=lambda: None))
+
+    message = str(excinfo.value)
+    assert "Button received unknown event 'onClik'." in message
+    assert "Known events:" in message
+    assert "onClick()" in message
+    assert "onKeyDown(key)" in message
+
+
+def test_event_handler_arity_error_includes_event_signature():
+    mounted = mount(Button("Save", onClick=lambda value: None))
+    button = root_widget(mounted)
+
+    with pytest.raises(EventHandlerArityError) as excinfo:
+        button.trigger("onClick")
+
+    message = str(excinfo.value)
+    assert "Button.onClick() handler" in message
+    assert "expected (value)" in message
+    assert "got 0 argument(s)" in message

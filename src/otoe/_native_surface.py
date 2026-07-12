@@ -19,6 +19,7 @@ from ._native_surface_focus import (
     focusable_paths,
     hit_test_focusable,
     is_focusable_path,
+    is_focusable_widget,
 )
 from ._native_surface_input import (
     enabled_input_widget,
@@ -50,6 +51,8 @@ class NativeSurface:
         self.renderer_backend = renderer_backend or PYTHON_NATIVE_RENDERER_BACKEND
         self.frame = 0
         self.focused_path: tuple[int, ...] | None = None
+        self._focused_widget: FakeWidget | None = None
+        self._focused_identities: frozenset[object] = frozenset()
         self._mounted: MountedNode | None
         if isinstance(target, Node):
             self._owns_mount = True
@@ -68,6 +71,8 @@ class NativeSurface:
         self.refresh()
         self.focused_path = self._first_autofocus_path()
         if self.focused_path is not None:
+            self._focused_widget = widget_by_path(self._root_widget(), self.focused_path)
+            self._focused_identities = frozenset(self._focused_widget.focus_identities)
             self._paint = self.renderer_backend.paint(
                 self.layout,
                 background=self.background,
@@ -108,13 +113,14 @@ class NativeSurface:
             return None
 
     def refresh(self) -> NativePaint:
+        focus_was_lost = self._sync_focused_widget_before_refresh()
         self._layout = self.renderer_backend.layout(
             self._target,
             stylesheet=self.stylesheet,
             strict_styles=self.strict_styles,
         )
         self._tree_revision = tree_revision(self._root_widget())
-        self._sync_focus_after_refresh()
+        self._sync_focus_after_refresh(focus_was_lost=focus_was_lost)
         self._paint = self.renderer_backend.paint(
             self._layout,
             background=self.background,
@@ -146,17 +152,27 @@ class NativeSurface:
         return result
 
     def focus(self, path: tuple[int, ...] | None) -> None:
-        if path == self.focused_path:
+        self._ensure_fresh()
+        next_widget = (
+            widget_by_path(self._root_widget(), path) if path is not None else None
+        )
+        if path == self.focused_path and next_widget is self._focused_widget:
             return
         if path is not None and not self._is_focusable_path(path):
             raise KeyError(focus_error_message(self._root_widget(), path))
 
-        previous_path = self.focused_path
+        previous_widget = self._focused_widget
         self.focused_path = path
-        if previous_path is not None:
-            self._trigger_path_event(previous_path, "onBlur")
-        if path is not None:
-            self._trigger_path_event(path, "onFocus")
+        self._focused_widget = next_widget
+        self._focused_identities = (
+            frozenset(next_widget.focus_identities)
+            if next_widget is not None
+            else frozenset()
+        )
+        if previous_widget is not None:
+            _trigger_widget_event(previous_widget, "onBlur")
+        if next_widget is not None:
+            _trigger_widget_event(next_widget, "onFocus")
         self.refresh()
 
     def focus_next(self, *, reverse: bool = False) -> LayoutBox | None:
@@ -246,12 +262,16 @@ class NativeSurface:
         return self.layout.by_path(path)
 
     def dispose(self) -> None:
+        if self._focused_widget is not None:
+            _trigger_widget_event(self._focused_widget, "onBlur")
         if self._owns_mount and self._mounted is not None:
             unmount(self._mounted)
         self._layout = None
         self._paint = None
         self._tree_revision = None
         self.focused_path = None
+        self._focused_widget = None
+        self._focused_identities = frozenset()
 
     def _ensure_fresh(self) -> None:
         current_revision = tree_revision(self._root_widget())
@@ -262,12 +282,41 @@ class NativeSurface:
         ):
             self.refresh()
 
-    def _sync_focus_after_refresh(self) -> None:
-        if self.focused_path is None:
-            return
-        if self._is_focusable_path(self.focused_path):
+    def _sync_focused_widget_before_refresh(self) -> bool:
+        focused_widget = self._focused_widget
+        if focused_widget is None:
+            return False
+
+        next_path = _path_for_widget(self._root_widget(), focused_widget)
+        if next_path is not None and is_focusable_widget(focused_widget):
+            self.focused_path = next_path
+            return False
+
+
+        replacement = _widget_for_focus_identities(
+            self._root_widget(),
+            self._focused_identities,
+        )
+        if replacement is not None and is_focusable_widget(replacement):
+            replacement_path = _path_for_widget(self._root_widget(), replacement)
+            assert replacement_path is not None
+            self.focused_path = replacement_path
+            self._focused_widget = replacement
+            return False
+
+        self.focused_path = None
+        self._focused_widget = None
+        self._focused_identities = frozenset()
+        _trigger_widget_event(focused_widget, "onBlur")
+        return True
+
+    def _sync_focus_after_refresh(self, *, focus_was_lost: bool) -> None:
+        if not focus_was_lost:
             return
         self.focused_path = self._first_autofocus_path()
+        if self.focused_path is not None:
+            self._focused_widget = widget_by_path(self._root_widget(), self.focused_path)
+            self._focused_identities = frozenset(self._focused_widget.focus_identities)
 
     def _first_autofocus_path(self) -> tuple[int, ...] | None:
         return first_autofocus_path(self.layout, self._root_widget())
@@ -311,3 +360,38 @@ class NativeSurface:
 
     def _root_widget(self) -> FakeWidget:
         return surface_root_widget(self._target)
+
+
+def _path_for_widget(
+    root: FakeWidget,
+    target: FakeWidget,
+    path: tuple[int, ...] = (),
+) -> tuple[int, ...] | None:
+    if root is target:
+        return path
+    for index, child in enumerate(root.children):
+        found = _path_for_widget(child, target, (*path, index))
+        if found is not None:
+            return found
+    return None
+
+
+def _trigger_widget_event(widget: FakeWidget, event: str, *args: Any) -> Any:
+    if event not in widget.events:
+        return None
+    return widget.trigger(event, *args)
+
+
+def _widget_for_focus_identities(
+    root: FakeWidget,
+    identities: frozenset[object],
+) -> FakeWidget | None:
+    if not identities:
+        return None
+    if identities.intersection(root.focus_identities):
+        return root
+    for child in root.children:
+        found = _widget_for_focus_identities(child, identities)
+        if found is not None:
+            return found
+    return None

@@ -529,13 +529,13 @@ def _combined_status(plan_status: str, deps_status: str) -> str:
 
 
 def _copy_manifest_files(
-    files,
+    files: Iterable[BundleFile | ProfileAsset | ProfileRuntimeFile],
     *,
     output_dir: Path,
     bundle_dir: str,
     missing_label: str,
 ) -> list[dict[str, Any]]:
-    copied = []
+    copied: list[dict[str, Any]] = []
     for file in files:
         if not file.source.exists():
             raise BuildError(f"{missing_label} {str(file.source)!r} does not exist")

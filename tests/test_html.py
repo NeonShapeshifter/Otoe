@@ -1,3 +1,5 @@
+import pytest
+
 from examples.wraith.preview import build_preview_html
 from otoe import Button, FocusScope, HStack, Input, Text, css, mount, render_html
 
@@ -57,6 +59,44 @@ def test_render_html_marks_focus_scope_trap():
     assert 'class="otoe-focus-scope ui-focus-scope modal"' in html
     assert 'data-otoe-focus-scope="trap"' in html
     assert 'data-otoe-restore-focus="true"' in html
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        'x" onclick="alert(1)',
+        "bad name",
+        "bad<name",
+        "bad>name",
+        "bad=name",
+        "bad/name",
+        "bad`name",
+    ],
+)
+def test_render_html_rejects_invalid_attribute_names_from_callback(name):
+    mounted = mount(Text("Safe"))
+
+    with pytest.raises(ValueError, match="Invalid HTML attribute name"):
+        render_html(mounted, attributes=lambda widget: {name: "unsafe"})
+
+
+def test_render_html_allows_attributes_from_callback_and_escapes_values():
+    mounted = mount(Button("Save"))
+
+    html = render_html(
+        mounted,
+        attributes=lambda widget: {
+            "data-testid": "save-button",
+            "aria-label": 'Save "draft"',
+            "role": "button",
+            "title": "<Save>",
+        },
+    )
+
+    assert 'data-testid="save-button"' in html
+    assert 'aria-label="Save &quot;draft&quot;"' in html
+    assert 'role="button"' in html
+    assert 'title="&lt;Save&gt;"' in html
 
 
 def test_render_html_can_apply_otoe_stylesheet_inline():

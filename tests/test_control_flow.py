@@ -56,6 +56,23 @@ def test_show_disposes_hidden_branch_owner():
     assert events == ["effect", "cleanup"]
 
 
+def test_show_does_not_remount_when_value_changes_within_same_truthy_branch():
+    value = signal(1)
+    events = []
+
+    @component
+    def Branch():
+        on_mount(lambda: events.append("mount"))
+        on_cleanup(lambda: events.append("cleanup"))
+        return Text("Branch")
+
+    mount(Show(Branch(), when=value, fallback=Text("Fallback")))
+
+    value.set(2)
+
+    assert events == ["mount"]
+
+
 def test_for_renders_keyed_items_and_reorders_without_remounting():
     missions = signal(
         [

@@ -8,17 +8,54 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYPI_PUBLISH_TAG_MARKER: "Publish-PyPI: yes"
+
 jobs:
   build:
     name: Build package distributions
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
-      - name: Install release tooling
-        run: python -m pip install -U "build>=1.2" "setuptools>=77" "twine>=6" "wheel>=0.43"
+      - name: Check deliberate PyPI publish gate
+        run: |
+          tag_ref="refs/tags/$GITHUB_REF_NAME"
+          tag_type="$(git cat-file -t "$tag_ref" 2>/dev/null || true)"
+          if [ "$tag_type" != "tag" ]; then
+            echo "PyPI publication requires an annotated tag containing this marker on its own line: $PYPI_PUBLISH_TAG_MARKER" >&2
+            exit 1
+          fi
+
+          tag_message="$(git for-each-ref "$tag_ref" --format='%(contents)')"
+          if ! printf '%s\n' "$tag_message" | grep -Fxq "$PYPI_PUBLISH_TAG_MARKER"; then
+            echo "PyPI publication requires this exact marker on its own line in the annotated tag message: $PYPI_PUBLISH_TAG_MARKER" >&2
+            exit 1
+          fi
+
+          tag_commit="$(git rev-parse "$tag_ref^{}")"
+          if [ "$tag_commit" != "$GITHUB_SHA" ]; then
+            echo "Tag target $tag_commit does not match workflow commit $GITHUB_SHA" >&2
+            exit 1
+          fi
+
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor "$tag_commit" refs/remotes/origin/main; then
+            echo "Release commit $tag_commit is not reachable from origin/main" >&2
+            exit 1
+          fi
       - name: Check tag matches package version
         run: |
           tag_version="${GITHUB_REF_NAME#v}"
@@ -27,16 +64,55 @@ jobs:
             echo "Tag version $tag_version does not match pyproject version $package_version" >&2
             exit 1
           fi
-      - name: Build
-        run: python -m build
-      - name: Check metadata
+      - name: Install constrained build tooling
+        run: python -m pip install --constraint requirements/ci-constraints.txt build setuptools twine wheel
+      - name: Install project and test dependencies
+        run: python -m pip install --no-build-isolation --constraint requirements/ci-constraints.txt -e ".[dev,native-text]"
+      - name: Check installed dependencies
+        run: python -m pip check
+      - name: Portable core docs
+        run: python scripts/update_portable_core_docs.py --check
+      - name: Compile
+        run: python -m compileall -q src examples tests
+      - name: Ruff
+        run: python -m ruff check src tests examples scripts
+      - name: Mypy
+        run: python -m mypy --strict src/otoe
+      - name: Stub/runtime parity
+        run: python -m mypy.stubtest otoe --allowlist tests/stubtest_allowlist.txt
+      - name: Test
+        run: python -m pytest -q --cov=otoe --cov-report=term-missing --cov-fail-under=82
+      - name: Build package
+        run: |
+          export SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
+          python -m build --no-isolation
+          python scripts/normalize_sdist.py --epoch "$SOURCE_DATE_EPOCH" dist/*.tar.gz
+      - name: Check package metadata
         run: python -m twine check dist/*.whl dist/*.tar.gz
+      - name: Smoke source distribution
+        run: bash scripts/sdist_smoke.sh "$(find dist -maxdepth 1 -name 'otoe-*.tar.gz' -print -quit)"
       - name: Smoke installed wheel
-        run: OTOE_SMOKE_NO_BUILD_ISOLATION=1 bash scripts/wheel_smoke.sh
-      - uses: actions/upload-artifact@v4
+        run: bash scripts/wheel_smoke.sh "$(find dist -maxdepth 1 -name 'otoe-*.whl' -print -quit)"
+      - name: Verify reproducible distributions
+        run: PYTHON=python scripts/reproducible_build_check.sh dist
+      - name: Verify performance regression budgets
+        run: python scripts/bench_smoke.py --check
+      - name: Assemble immutable release artifact
+        run: |
+          mkdir -p release/packages
+          cp dist/*.whl dist/*.tar.gz release/packages/
+          (cd release && sha256sum packages/* > SHA256SUMS)
+      - name: Attest release distributions
+        uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661 # v3
+        with:
+          subject-path: release/packages/*
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: python-package-distributions
-          path: dist/
+          path: release/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
 
   pypi-publish:
     name: Publish package to PyPI
@@ -49,11 +125,14 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: python-package-distributions
-          path: dist/
+          path: release/
+      - name: Verify release artifact checksums
+        working-directory: release
+        run: sha256sum --check SHA256SUMS
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         with:
-          skip-existing: true
+          packages-dir: release/packages

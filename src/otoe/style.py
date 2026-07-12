@@ -12,6 +12,7 @@ from ._style_schema import (
     supported_properties,
     token_properties,
 )
+from .style_ops_types import AppliedStyleOps
 
 
 SUPPORTED_PROPERTIES = supported_properties()
@@ -278,7 +279,11 @@ def resolved_style_map_from_style_ops_artifact(
     )
 
 
-def _applied_style_ops_from_artifact(payload: dict[str, Any], *, strict: bool):
+def _applied_style_ops_from_artifact(
+    payload: dict[str, Any],
+    *,
+    strict: bool,
+) -> AppliedStyleOps:
     from .style_ops import (
         StyleIRError,
         apply_style_ops,

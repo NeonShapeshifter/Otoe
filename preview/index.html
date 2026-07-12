@@ -295,9 +295,9 @@
       <div class="section-head">
         <h2 id="front-door-heading">Front-Door Previews</h2>
         <p class="section-note">
-          Hardware, Portable Core UI, and UI Kit are the neutral starting
-          points. Wraith remains here as case-study evidence, not the product
-          identity.
+          Hardware, local admin, data workflow, Utility Ops, Portable Core UI,
+          and UI Kit are the neutral starting points. Wraith remains here as
+          case-study evidence, not the product identity.
         </p>
       </div>
 
@@ -324,6 +324,42 @@
               <code>PYTHONPATH=src:. python -m otoe render examples.hardware.control_panel:app --out /tmp/hardware_cli.fragment.html --css preview/hardware_portable.css --pretty</code>
               <span>Then copy the rendered fragment into the checked-in <code>hardware_cli.html</code> wrapper.</span>
             </dd>
+          </dl>
+        </article>
+
+        <article class="card">
+          <div class="meta">
+            <span class="chip reference">Reference app</span>
+            <span class="chip status">Product preview</span>
+          </div>
+          <h3>Local Admin Console</h3>
+          <dl class="detail">
+            <dt>Demonstrates</dt>
+            <dd>Local settings, access controls, validation feedback, route chrome, and provider-backed updates.</dd>
+            <dt>Maturity</dt>
+            <dd>Static and live previews are app-author evidence. Native behavior remains pre-alpha evidence.</dd>
+            <dt>HTML</dt>
+            <dd><a href="admin.html">admin.html</a></dd>
+            <dt>Regenerate</dt>
+            <dd><code>PYTHONPATH=src:. python -m examples.admin.preview &gt; preview/admin.html</code></dd>
+          </dl>
+        </article>
+
+        <article class="card">
+          <div class="meta">
+            <span class="chip reference">Reference app</span>
+            <span class="chip status">Product preview</span>
+          </div>
+          <h3>Data Workflow Console</h3>
+          <dl class="detail">
+            <dt>Demonstrates</dt>
+            <dd>Table workflow, search/filter state, batch selection, guarded actions, and fake provider boundaries.</dd>
+            <dt>Maturity</dt>
+            <dd>Static and live previews prove the operational data shape; native/offline behavior is still evidence work.</dd>
+            <dt>HTML</dt>
+            <dd><a href="data_workflow.html">data_workflow.html</a></dd>
+            <dt>Regenerate</dt>
+            <dd><code>PYTHONPATH=src:. python -m examples.data_workflow.preview &gt; preview/data_workflow.html</code></dd>
           </dl>
         </article>
 
@@ -457,18 +493,6 @@
           </thead>
           <tbody>
             <tr>
-              <td><code>admin.css</code></td>
-              <td><a href="admin.html">admin.html</a></td>
-              <td>Supporting local-admin reference preview.</td>
-              <td><code>PYTHONPATH=src:. python -m examples.admin.preview &gt; preview/admin.html</code></td>
-            </tr>
-            <tr>
-              <td><code>data_workflow.css</code></td>
-              <td><a href="data_workflow.html">data_workflow.html</a></td>
-              <td>Supporting data workflow reference preview.</td>
-              <td><code>PYTHONPATH=src:. python -m examples.data_workflow.preview &gt; preview/data_workflow.html</code></td>
-            </tr>
-            <tr>
               <td><code>wraith_input_console.css</code></td>
               <td><a href="wraith_input_console.html">wraith_input_console.html</a></td>
               <td>Wraith case-study support surface for portable input and command patterns.</td>
@@ -500,12 +524,12 @@
             <tr>
               <td><code>admin.css</code></td>
               <td><a href="admin.html">admin.html</a></td>
-              <td>Supporting local-admin reference preview.</td>
+              <td>Front-door local-admin reference preview.</td>
             </tr>
             <tr>
               <td><code>data_workflow.css</code></td>
               <td><a href="data_workflow.html">data_workflow.html</a></td>
-              <td>Supporting data workflow reference preview.</td>
+              <td>Front-door data workflow reference preview.</td>
             </tr>
             <tr>
               <td><code>hardware.css</code></td>

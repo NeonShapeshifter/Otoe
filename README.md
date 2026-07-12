@@ -172,6 +172,7 @@ hardware, admin, data workflow, utility, SaaS, and UI examples.
 - [Portable Core UI v0](docs/portable-core-ui-v0.md)
 - [Portable Input Core v0](docs/portable-input-core-v0.md)
 - [API Tiers](docs/api-tiers.md)
+- [Compatibility And Versioning](docs/compatibility.md)
 - [Testing Guide](TESTING_GUIDE.md)
 
 ### Operational UI/Product Demos
@@ -229,10 +230,10 @@ coverage declarations, and Path0. App authors do not need this path to start.
 
 ## Status
 
-Current status: v0.1.9 pre-alpha product/evidence hardening. The project
-maintains broad test coverage and the suite is expected to pass locally;
-optional typing and Pillow tests skip cleanly when those dependencies are
-unavailable.
+Current source targets v0.2.0 pre-alpha runtime and release-integrity
+hardening. CI enforces strict typing, branch coverage, stub/runtime parity,
+reproducible package artifacts, and the full test suite. Pillow remains an
+optional runtime dependency; Pillow-specific tests skip when it is unavailable.
 See [ROADMAP.md](ROADMAP.md) for the active phase plan.
 
 Readable native PNG text is available through the optional Pillow-backed

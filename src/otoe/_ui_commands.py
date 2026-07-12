@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from ._ui_helpers import _active_class, _has_value, _list_value, _state_class, _value, class_names
@@ -36,15 +37,15 @@ __all__ = [
 @component
 def CommandPalette(
     *,
-    query,
-    commands,
-    on_query,
-    on_select,
+    query: Any,
+    commands: Any,
+    on_query: Callable[[Any], Any],
+    on_select: Callable[[str], Any],
     placeholder: str = "Search commands...",
     className: str | None = None,
-    empty="No commands",
+    empty: Any = "No commands",
     autoFocus: bool = False,
-):
+) -> Node:
     visible_commands = computed(
         lambda: _filter_commands(commands, _value(query))
     )
@@ -76,16 +77,16 @@ def CommandPalette(
 @component
 def Menu(
     *,
-    items,
-    on_select,
-    open=True,
-    active=None,
-    focused=None,
-    on_focus=None,
-    on_open_change=None,
+    items: Any,
+    on_select: Callable[[str], Any],
+    open: Any = True,
+    active: Any = None,
+    focused: Any = None,
+    on_focus: Callable[[str], Any] | None = None,
+    on_open_change: Callable[[bool], Any] | None = None,
     className: str | None = None,
-    empty="No actions",
-):
+    empty: Any = "No actions",
+) -> Node:
     normalized_items = computed(lambda: [_normalize_menu_item(item) for item in _list_value(items)])
     focus_value = focused if focused is not None else active
     fallback = empty if isinstance(empty, Node) else Text(empty, className="ui-menu-empty")
@@ -120,15 +121,15 @@ def Menu(
 @component
 def Select(
     *,
-    options,
-    value,
-    on_change,
-    open,
-    on_open_change,
-    placeholder="Select...",
+    options: Any,
+    value: Any,
+    on_change: Callable[[str], Any],
+    open: Any,
+    on_open_change: Callable[[bool], Any],
+    placeholder: Any = "Select...",
     className: str | None = None,
-    empty="No options",
-):
+    empty: Any = "No options",
+) -> Node:
     normalized_options = computed(lambda: [_normalize_select_option(option) for option in _list_value(options)])
     selected_option = computed(lambda: _selected_option(normalized_options.value, _value(value)))
     fallback = empty if isinstance(empty, Node) else Text(empty, className="ui-select-empty")
@@ -193,7 +194,7 @@ def Select(
         gap=8,
     )
 
-def _command_item(command: Command, on_select) -> Node:
+def _command_item(command: Command, on_select: Callable[[str], Any]) -> Node:
     return Button(
         "",
         HStack(
@@ -211,7 +212,14 @@ def _command_item(command: Command, on_select) -> Node:
         onClick=lambda: on_select(command.id),
     )
 
-def _menu_item(item: MenuItem, items, on_select, focused, on_focus, on_open_change) -> Node:
+def _menu_item(
+    item: MenuItem,
+    items: Any,
+    on_select: Callable[[str], Any],
+    focused: Any,
+    on_focus: Callable[[str], Any] | None,
+    on_open_change: Callable[[bool], Any] | None,
+) -> Node:
     return Button(
         "",
         HStack(
@@ -249,7 +257,13 @@ def _menu_item(item: MenuItem, items, on_select, focused, on_focus, on_open_chan
         ),
     )
 
-def _select_option_button(option: SelectOption, options, value, on_change, on_open_change) -> Node:
+def _select_option_button(
+    option: SelectOption,
+    options: Any,
+    value: Any,
+    on_change: Callable[[str], Any],
+    on_open_change: Callable[[bool], Any],
+) -> Node:
     return Button(
         "",
         HStack(
@@ -293,7 +307,7 @@ def _selected_option(options: list[SelectOption], value: str) -> SelectOption | 
             return option
     return None
 
-def _select_label(option: SelectOption | None, placeholder) -> Any:
+def _select_label(option: SelectOption | None, placeholder: Any) -> Any:
     if option is not None:
         return option.label
     return _value(placeholder)

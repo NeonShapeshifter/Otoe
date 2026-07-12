@@ -28,3 +28,7 @@ class ReactiveDisposedError(OtoeError):
 
 class ReactiveMutationError(OtoeError):
     """Raised when reactive state is mutated from an unsafe runtime phase."""
+
+
+class ReactiveThreadError(OtoeError):
+    """Raised when reactive subscribers would run on a foreign thread."""

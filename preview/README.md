@@ -15,6 +15,8 @@ checkout with `PYTHONPATH=src:.` so the local package is used.
 | Preview | Type | Maturity | HTML | Regenerate |
 | --- | --- | --- | --- | --- |
 | Hardware Control Panel | Reference app | Product-preview surface; static HTML is usable for review, native/offline paths remain pre-alpha evidence | `hardware.html`, `hardware_cli.html` | `python -m examples.hardware.preview > preview/hardware.html`; `python -m otoe render examples.hardware.control_panel:app --out /tmp/hardware_cli.fragment.html --css preview/hardware_portable.css --pretty`, then copy the fragment into the checked-in wrapper |
+| Local Admin Console | Reference app | Product-preview surface for local settings, access controls, validation feedback, route chrome, and provider-backed updates | `admin.html` | `python -m examples.admin.preview > preview/admin.html` |
+| Data Workflow Console | Reference app | Product-preview surface for table workflow, search/filter state, batch selection, guarded actions, and fake provider boundaries | `data_workflow.html` | `python -m examples.data_workflow.preview > preview/data_workflow.html` |
 | Portable Core UI | Reference gallery | Public pre-alpha support matrix for portable widgets and product-preview UI primitives | `portable_core_ui.html` | `python -m otoe render examples.portable_core_ui:app --out preview/portable_core_ui.html --css preview/portable_core_ui.css --pretty` |
 | UI Kit | Reference app | Product-preview kitchen sink for shared UI primitives and live interaction patterns | `ui.html` | `python -m examples.ui.preview > preview/ui.html` |
 | SaaS Case Study | Case study | Browser/static product-shape example; not Otoe's primary appliance niche | `saas.html` | `python -m examples.saas.preview > preview/saas.html` |
@@ -22,15 +24,13 @@ checkout with `PYTHONPATH=src:.` so the local package is used.
 | Wraith Case Study | Case study | Legacy Wraith-inspired static surface; useful context, not the product identity | `wraith.html` | `python -m examples.wraith.preview > preview/wraith.html` |
 | Wraith Mission Exec Case Study | Case study | Pre-alpha operator-console showcase with fake local data and portable style evidence | `wraith_mission_exec.html` | `python -m otoe render examples.wraith.mission_exec_showcase:app --out preview/wraith_mission_exec.html --css preview/wraith_mission_exec.css --pretty` |
 
-## Supporting Reference Previews
+## Supporting Previews
 
 These are checked in for coverage and comparison, but they are not front-door
 gallery cards yet.
 
 | Asset | HTML status | Regenerate |
 | --- | --- | --- |
-| `admin.css` | `admin.html` is checked in | `python -m examples.admin.preview > preview/admin.html` |
-| `data_workflow.css` | `data_workflow.html` is checked in | `python -m examples.data_workflow.preview > preview/data_workflow.html` |
 | `wraith_input_console.css` | `wraith_input_console.html` is checked in as a Wraith case-study support surface | `python -m otoe render examples.wraith_input_console:app --out preview/wraith_input_console.html --css preview/wraith_input_console.css --pretty` |
 
 ## CSS Inventory
@@ -42,8 +42,8 @@ command.
 
 | CSS | Checked-in HTML | Notes |
 | --- | --- | --- |
-| `admin.css` | `admin.html` | Supporting local-admin reference preview. |
-| `data_workflow.css` | `data_workflow.html` | Supporting data workflow reference preview. |
+| `admin.css` | `admin.html` | Front-door local-admin reference preview. |
+| `data_workflow.css` | `data_workflow.html` | Front-door data workflow reference preview. |
 | `hardware.css` | `hardware.html` | Rich static hardware reference preview from `examples.hardware.preview`. |
 | `hardware_portable.css` | `hardware_cli.html` | Strict portable CSS path for CLI render, native PNG, plan, and build evidence. |
 | `portable_core_ui.css` | `portable_core_ui.html` | Portable Core UI support matrix/gallery source CSS. |

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import Any
+
 from ._ui_helpers import _active_class, _has_value, _list_value, _slot_node, _value, class_names
 from ._ui_models import NavRoute, _normalize_route
 from ._ui_surfaces import Badge
@@ -18,14 +21,14 @@ __all__ = [
 @component
 def SidebarNav(
     *,
-    routes,
-    active,
-    on_navigate,
-    brand=None,
-    footer=None,
+    routes: Any,
+    active: Any,
+    on_navigate: Callable[[str], Any],
+    brand: Any = None,
+    footer: Any = None,
     className: str | None = None,
-    empty="No routes",
-):
+    empty: Any = "No routes",
+) -> Node:
     normalized_routes = computed(lambda: [_normalize_route(route) for route in _list_value(routes)])
     children = []
     if brand is not None:
@@ -53,11 +56,11 @@ def SidebarNav(
 @component
 def NavItem(
     *,
-    route,
-    active,
-    on_navigate,
+    route: Any,
+    active: Any,
+    on_navigate: Callable[[str], Any],
     className: str | None = None,
-):
+) -> Node:
     normalized = _normalize_route(route)
     return Button(
         "",
@@ -85,12 +88,12 @@ def NavItem(
 @component
 def RouteView(
     *,
-    route,
-    routes,
-    render,
+    route: Any,
+    routes: Any,
+    render: Callable[[NavRoute], Any],
     className: str | None = None,
-    fallback="Route not found",
-):
+    fallback: Any = "Route not found",
+) -> Node:
     normalized_routes = computed(lambda: [_normalize_route(item) for item in _list_value(routes)])
     active_routes = computed(lambda: _matching_routes(normalized_routes.value, _value(route)))
     fallback_node = fallback if isinstance(fallback, Node) else Text(fallback, className="ui-route-empty")
@@ -109,7 +112,7 @@ def RouteView(
 def _matching_routes(routes: list[NavRoute], route_id: str) -> list[NavRoute]:
     return [route for route in routes if route.id == route_id]
 
-def _render_route(route: NavRoute, render) -> Node:
+def _render_route(route: NavRoute, render: Callable[[NavRoute], Any]) -> Node:
     view = render(route)
     if not isinstance(view, Node):
         raise TypeError("RouteView render must return a Node.")

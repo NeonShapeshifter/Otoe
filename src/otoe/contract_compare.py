@@ -132,7 +132,9 @@ def _collect_json_contract_differences(
                     "actual": len(actual),
                 }
             )
-        for index, (expected_item, actual_item) in enumerate(zip(expected, actual)):
+        for index, (expected_item, actual_item) in enumerate(
+            zip(expected, actual, strict=False)
+        ):
             _collect_json_contract_differences(
                 expected_item,
                 actual_item,

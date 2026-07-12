@@ -191,7 +191,9 @@ def _iter_children(
         return tuple((child, None) for child in widget.children)
     return tuple(
         (child_widget, child_mounted)
-        for child_widget, child_mounted in zip(widget.children, mounted.children)
+        for child_widget, child_mounted in zip(
+            widget.children, mounted.children, strict=True
+        )
     )
 
 

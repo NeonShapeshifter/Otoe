@@ -1,25 +1,40 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from ._ui_helpers import _value
 from ._ui_models import Command, MenuItem, SelectOption
 
 
-def _submit_first_command(key: str, commands: list[Command], on_select) -> None:
+Callback = Callable[..., Any]
+OpenChangeHandler = Callable[[bool], Any]
+SelectionHandler = Callable[[str], Any]
+
+
+def _submit_first_command(
+    key: str,
+    commands: list[Command],
+    on_select: SelectionHandler,
+) -> None:
     if key != "Enter" or not commands:
         return
     on_select(commands[0].id)
 
 
-def _select_option(option_value: str, disabled: bool, on_change, on_open_change) -> None:
+def _select_option(
+    option_value: str,
+    disabled: bool,
+    on_change: SelectionHandler,
+    on_open_change: OpenChangeHandler,
+) -> None:
     if disabled:
         return
     on_change(option_value)
     on_open_change(False)
 
 
-def _focused_id(focused, fallback: str) -> str:
+def _focused_id(focused: Any, fallback: str) -> str:
     if focused is None:
         return fallback
     value = _value(focused)
@@ -30,9 +45,9 @@ def _menu_key_down(
     key: str,
     items: list[MenuItem],
     focused_id: str,
-    on_select,
-    on_focus,
-    on_open_change,
+    on_select: SelectionHandler,
+    on_focus: SelectionHandler | None,
+    on_open_change: OpenChangeHandler | None,
 ) -> None:
     if key == "Escape":
         _call_optional(on_open_change, False)
@@ -54,8 +69,8 @@ def _select_trigger_key_down(
     options: list[SelectOption],
     value: str,
     open: bool,
-    on_change,
-    on_open_change,
+    on_change: SelectionHandler,
+    on_open_change: OpenChangeHandler,
 ) -> None:
     if key == "Escape":
         on_open_change(False)
@@ -75,8 +90,8 @@ def _select_option_key_down(
     options: list[SelectOption],
     option_value: str,
     disabled: bool,
-    on_change,
-    on_open_change,
+    on_change: SelectionHandler,
+    on_open_change: OpenChangeHandler,
 ) -> None:
     if key == "Escape":
         on_open_change(False)
@@ -139,6 +154,6 @@ def _is_submit_key(key: str) -> bool:
     return key in {"Enter", " ", "Spacebar"}
 
 
-def _call_optional(callback, *args) -> None:
+def _call_optional(callback: Callback | None, *args: Any) -> None:
     if callback is not None:
         callback(*args)

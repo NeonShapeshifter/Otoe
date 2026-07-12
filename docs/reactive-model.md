@@ -161,6 +161,28 @@ ordering. Move mutations to one of these places:
 Use `on_cleanup(...)` or effect cleanup for timers, subscriptions, files, and
 other external resources.
 
+## Runtime Thread
+
+Reactive subscribers run synchronously on the thread where they were created.
+Do not mutate subscribed signals directly from hardware, network, or worker
+threads. Queue the result and drain it from the UI/runtime thread:
+
+```python
+from otoe.scheduler import drain_posted, post
+
+# Worker thread:
+post(lambda: status.set("ready"))
+
+# UI/runtime thread or custom backend event loop:
+drain_posted()
+```
+
+The built-in Tk window polls this queue, and the development HTTP server drains
+it before rendering or dispatching an event. Custom backends must call
+`drain_posted()` from their event loop. A direct cross-thread update raises
+`ReactiveThreadError` before changing the signal. Catch it from the normal
+app-author surface with `from otoe import ReactiveThreadError`.
+
 ## Recommended Patterns
 
 - Pass signals or computed values directly when a prop should keep updating.

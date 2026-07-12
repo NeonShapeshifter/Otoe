@@ -138,7 +138,7 @@ def _valid_bounds(value: Any) -> bool:
     if not all(_finite_number(item) for item in value):
         return False
     _x, _y, width, height = value
-    return width >= 0 and height >= 0
+    return bool(width >= 0 and height >= 0)
 
 
 def _finite_number(value: Any) -> bool:

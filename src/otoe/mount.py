@@ -23,6 +23,8 @@ class FakeWidget:
         self.events: dict[str, Callable[..., Any]] = {}
         self.children: list["FakeWidget"] = []
         self.revision = 0
+        self.focus_identity: object | None = None
+        self.focus_identities: set[object] = set()
 
     def set_prop(self, name: str, value: Any) -> None:
         missing = object()
@@ -58,6 +60,7 @@ class MountedNode:
     _keyed_items: dict[Any, Any] = field(default_factory=dict, init=False, repr=False)
     _fallback_mounted: "MountedNode | None" = field(default=None, init=False, repr=False)
     _activated: bool = field(default=False, init=False, repr=False)
+    _unmounted: bool = field(default=False, init=False, repr=False)
 
     def root_widget(self) -> FakeWidget:
         return root_widget(self)
@@ -112,8 +115,12 @@ def _mount_component(
             if activate:
                 owner.run_mount()
                 mounted._activated = True
-        except Exception:
-            unmount(mounted)
+        except Exception as primary_error:
+            _run_failure_cleanup(
+                primary_error,
+                lambda: unmount(mounted),
+                message=f"{owner.name}: mount and cleanup both failed.",
+            )
             raise
     finally:
         CURRENT_OWNER.reset(token)
@@ -155,8 +162,12 @@ def _mount_widget(
             widget.children.append(child_widget)
         if activate:
             mounted._activated = True
-    except Exception:
-        unmount(mounted)
+    except Exception as primary_error:
+        _run_failure_cleanup(
+            primary_error,
+            lambda: unmount(mounted),
+            message=f"{_tag_name(node.tag)}: mount and cleanup both failed.",
+        )
         raise
 
     return mounted
@@ -183,9 +194,14 @@ def _mount_show(
 ) -> MountedNode:
     widget = FakeWidget(node.tag, component_stack=component_stack)
     mounted = MountedNode(node=node, widget=widget)
+    selected_truthiness: bool | None = None
 
     def refresh() -> None:
-        branch_nodes = node.children if bool(resolve_value(node.props["when"])) else []
+        nonlocal selected_truthiness
+        next_truthiness = bool(resolve_value(node.props["when"]))
+        if selected_truthiness is next_truthiness:
+            return
+        branch_nodes = node.children if next_truthiness else []
         if not branch_nodes and node.props.get("fallback") is not None:
             branch_nodes = [node.props["fallback"]]
 
@@ -194,25 +210,60 @@ def _mount_show(
             component_stack=component_stack,
             activate=False,
         )
+        previous_children = mounted.children
+        previous_widgets = widget.children
+        previous_truthiness = selected_truthiness
         try:
             next_widgets = [root_widget(child) for child in next_children]
-            if mounted._activated:
-                _activate_children(next_children)
-        except Exception:
-            _unmount_children(next_children)
+        except Exception as primary_error:
+            _run_failure_cleanup(
+                primary_error,
+                lambda: _unmount_children(next_children),
+                message="Show branch preparation and cleanup both failed.",
+            )
             raise
-        previous_children = mounted.children
+
         mounted.children = next_children
         widget.children = next_widgets
-        _unmount_children(previous_children)
+        selected_truthiness = next_truthiness
+        try:
+            if mounted._activated:
+                _activate_children(next_children)
+        except Exception as primary_error:
+            staged_state_is_current = mounted.children is next_children
+            if staged_state_is_current:
+                mounted.children = previous_children
+                widget.children = previous_widgets
+                selected_truthiness = previous_truthiness
+            cleanup_candidates = list(next_children)
+            if not staged_state_is_current:
+                cleanup_candidates.extend(previous_children)
+            orphaned_children = _unretained_children(
+                cleanup_candidates,
+                retained=mounted.children,
+            )
+            _run_failure_cleanup(
+                primary_error,
+                lambda: _unmount_children(orphaned_children),
+                message="Show branch activation and cleanup both failed.",
+            )
+            raise
+
+        _unmount_children(
+            _unretained_children(previous_children, retained=mounted.children)
+        )
 
     try:
         refresh()
         _subscribe_control_value(mounted, node.props["when"], refresh)
         if activate:
             _activate_mounted(mounted)
-    except Exception:
-        unmount(mounted)
+    except Exception as primary_error:
+        _run_failure_cleanup(
+            primary_error,
+            lambda: unmount(mounted),
+            message="Show mount and cleanup both failed.",
+        )
         raise
     return mounted
 
@@ -233,15 +284,25 @@ def _mount_children(
                     activate=activate,
                 )
             )
-    except Exception:
-        _unmount_children(mounted_children)
+    except Exception as primary_error:
+        _run_failure_cleanup(
+            primary_error,
+            lambda: _unmount_children(mounted_children),
+            message="Child mount and cleanup both failed.",
+        )
         raise
     return mounted_children
 
 
 def _unmount_children(children: list[MountedNode]) -> None:
+    errors: list[Exception] = []
     for child in reversed(children):
-        unmount(child)
+        try:
+            unmount(child)
+        except Exception as exc:
+            errors.append(exc)
+    if errors:
+        raise ExceptionGroup("Errors while unmounting children.", errors)
 
 
 def _activate_children(children: list[MountedNode]) -> None:
@@ -250,12 +311,12 @@ def _activate_children(children: list[MountedNode]) -> None:
 
 
 def _activate_mounted(mounted: MountedNode) -> None:
-    if mounted._activated:
+    if mounted._activated or mounted._unmounted:
         return
-    _activate_children(mounted.children)
-    if mounted.owner is not None:
-        mounted.owner.run_mount()
     mounted._activated = True
+    _activate_children(mounted.children)
+    if mounted.owner is not None and not mounted._unmounted:
+        mounted.owner.run_mount()
 
 
 def _mount_for(
@@ -295,31 +356,72 @@ def _mount_for(
                     created_fallback = True
                 try:
                     next_widgets = [root_widget(next_fallback)]
-                    if mounted._activated:
-                        _activate_mounted(next_fallback)
-                except Exception:
+                except Exception as primary_error:
                     if created_fallback:
-                        unmount(next_fallback)
+                        _run_failure_cleanup(
+                            primary_error,
+                            lambda: unmount(next_fallback),
+                            message="For fallback preparation and cleanup both failed.",
+                        )
                     raise
                 next_children = [next_fallback]
             else:
                 next_widgets = []
                 next_children = []
 
-            for existing in keyed_children.values():
-                unmount(existing)
-            keyed_children.clear()
-            keyed_items.clear()
+            empty_previous_children = list(keyed_children.values())
+            empty_previous_fallback = fallback_mounted
+            empty_previous_keyed_children = keyed_children
+            empty_previous_keyed_items = keyed_items
+            empty_previous_mounted_children = mounted.children
+            empty_previous_widgets = widget.children
             mounted._fallback_mounted = next_fallback if fallback is not None else None
+            mounted._keyed_children = {}
+            mounted._keyed_items = {}
             mounted.children = next_children
             widget.children = next_widgets
+            try:
+                if mounted._activated and next_fallback is not None:
+                    _activate_mounted(next_fallback)
+            except Exception as primary_error:
+                staged_state_is_current = mounted.children is next_children
+                if staged_state_is_current:
+                    mounted._fallback_mounted = empty_previous_fallback
+                    mounted._keyed_children = empty_previous_keyed_children
+                    mounted._keyed_items = empty_previous_keyed_items
+                    mounted.children = empty_previous_mounted_children
+                    widget.children = empty_previous_widgets
+                cleanup_candidates = [
+                    child
+                    for child in [next_fallback]
+                    if child is not None and created_fallback
+                ]
+                if not staged_state_is_current:
+                    cleanup_candidates.extend(empty_previous_children)
+                orphaned_children = _unretained_children(
+                    cleanup_candidates,
+                    retained=mounted.children,
+                )
+                _run_failure_cleanup(
+                    primary_error,
+                    lambda: _unmount_children(orphaned_children),
+                    message="For fallback activation and cleanup both failed.",
+                )
+                raise
+
+            _unmount_children(
+                _unretained_children(
+                    empty_previous_children,
+                    retained=mounted.children,
+                )
+            )
             return
 
         next_keyed_children: dict[Any, MountedNode] = {}
         next_keyed_items: dict[Any, Any] = {}
         created_children: list[MountedNode] = []
         try:
-            for item, item_key in zip(items, next_keys):
+            for item, item_key in zip(items, next_keys, strict=True):
                 if item_key in keyed_children and _items_equal(
                     keyed_items.get(item_key), item
                 ):
@@ -333,38 +435,87 @@ def _mount_for(
                     created_children.append(child_mounted)
                 next_keyed_children[item_key] = child_mounted
                 next_keyed_items[item_key] = item
-        except Exception:
-            _unmount_children(created_children)
+        except Exception as primary_error:
+            _run_failure_cleanup(
+                primary_error,
+                lambda: _unmount_children(created_children),
+                message="For child mount and cleanup both failed.",
+            )
             raise
 
         next_children = [next_keyed_children[item_key] for item_key in next_keys]
         try:
             next_widgets = [root_widget(child) for child in next_children]
-            if mounted._activated:
-                _activate_children(next_children)
-        except Exception:
-            _unmount_children(created_children)
+            for item_key, child_widget in zip(next_keys, next_widgets, strict=True):
+                _assign_keyed_focus_identity(
+                    child_widget,
+                    control_widget=widget,
+                    item_key=item_key,
+                )
+        except Exception as primary_error:
+            _run_failure_cleanup(
+                primary_error,
+                lambda: _unmount_children(created_children),
+                message="For child preparation and cleanup both failed.",
+            )
             raise
 
+        previous_children: list[MountedNode] = []
         if fallback_mounted is not None:
-            unmount(fallback_mounted)
+            previous_children.append(fallback_mounted)
         for existing_key, existing_child in keyed_children.items():
             if next_keyed_children.get(existing_key) is not existing_child:
-                unmount(existing_child)
+                previous_children.append(existing_child)
 
+        previous_keyed_children = keyed_children
+        previous_keyed_items = keyed_items
+        previous_mounted_children = mounted.children
+        previous_widgets = widget.children
         mounted._fallback_mounted = None
         mounted._keyed_children = next_keyed_children
         mounted._keyed_items = next_keyed_items
         mounted.children = next_children
         widget.children = next_widgets
+        try:
+            if mounted._activated:
+                _activate_children(next_children)
+        except Exception as primary_error:
+            staged_state_is_current = mounted._keyed_children is next_keyed_children
+            if staged_state_is_current:
+                mounted._fallback_mounted = fallback_mounted
+                mounted._keyed_children = previous_keyed_children
+                mounted._keyed_items = previous_keyed_items
+                mounted.children = previous_mounted_children
+                widget.children = previous_widgets
+            cleanup_candidates = list(created_children)
+            if not staged_state_is_current:
+                cleanup_candidates.extend(previous_children)
+            orphaned_children = _unretained_children(
+                cleanup_candidates,
+                retained=mounted.children,
+            )
+            _run_failure_cleanup(
+                primary_error,
+                lambda: _unmount_children(orphaned_children),
+                message="For child activation and cleanup both failed.",
+            )
+            raise
+
+        _unmount_children(
+            _unretained_children(previous_children, retained=mounted.children)
+        )
 
     try:
         refresh()
         _subscribe_control_value(mounted, node.props["each"], refresh)
         if activate:
             _activate_mounted(mounted)
-    except Exception:
-        unmount(mounted)
+    except Exception as primary_error:
+        _run_failure_cleanup(
+            primary_error,
+            lambda: unmount(mounted),
+            message="For mount and cleanup both failed.",
+        )
         raise
     return mounted
 
@@ -460,16 +611,90 @@ def _validated_key_set(widget: FakeWidget, keys: list[Any]) -> set[Any]:
     return seen
 
 
-def unmount(mounted: MountedNode) -> None:
-    for child in reversed(mounted.children):
-        unmount(child)
+def _assign_keyed_focus_identity(
+    widget: FakeWidget,
+    *,
+    control_widget: FakeWidget,
+    item_key: Any,
+    relative_path: tuple[int, ...] = (),
+) -> None:
+    identity = (
+        "for-key",
+        control_widget,
+        item_key,
+        relative_path,
+    )
+    widget.focus_identity = identity
+    widget.focus_identities.add(identity)
+    for index, child in enumerate(widget.children):
+        _assign_keyed_focus_identity(
+            child,
+            control_widget=control_widget,
+            item_key=item_key,
+            relative_path=(*relative_path, index),
+        )
 
-    for cleanup in reversed(mounted.cleanups):
+
+def _run_failure_cleanup(
+    primary_error: Exception,
+    cleanup: Callable[[], None],
+    *,
+    message: str,
+) -> None:
+    try:
         cleanup()
+    except Exception as cleanup_error:
+        raise ExceptionGroup(message, [primary_error, cleanup_error]) from primary_error
+
+
+def _unretained_children(
+    candidates: Sequence[MountedNode],
+    *,
+    retained: Sequence[MountedNode],
+) -> list[MountedNode]:
+    retained_ids = {id(child) for child in retained}
+    seen_ids: set[int] = set()
+    result: list[MountedNode] = []
+    for child in candidates:
+        child_id = id(child)
+        if child_id in retained_ids or child_id in seen_ids:
+            continue
+        seen_ids.add(child_id)
+        result.append(child)
+    return result
+
+
+def unmount(mounted: MountedNode) -> None:
+    if mounted._unmounted:
+        return
+    mounted._unmounted = True
+
+    errors: list[Exception] = []
+    for child in reversed(mounted.children):
+        try:
+            unmount(child)
+        except Exception as exc:
+            errors.append(exc)
+
+    cleanups = list(reversed(mounted.cleanups))
     mounted.cleanups.clear()
+    for cleanup in cleanups:
+        try:
+            cleanup()
+        except Exception as exc:
+            errors.append(exc)
 
     if mounted.owner is not None:
-        mounted.owner.dispose()
+        try:
+            mounted.owner.dispose()
+        except Exception as exc:
+            errors.append(exc)
+
+    if errors:
+        raise ExceptionGroup(
+            f"{_tag_name(mounted.node.tag)}: errors while unmounting.",
+            errors,
+        )
 
 
 def root_widget(mounted: MountedNode) -> FakeWidget:
@@ -481,4 +706,7 @@ def root_widget(mounted: MountedNode) -> FakeWidget:
 
 
 def _tag_name(tag: Any) -> str:
-    return getattr(tag, "__name__", getattr(tag, "name", tag.__class__.__name__))
+    return cast(
+        str,
+        getattr(tag, "__name__", getattr(tag, "name", tag.__class__.__name__)),
+    )

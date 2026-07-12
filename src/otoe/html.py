@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from html import escape
 from typing import Any
 
 from .mount import FakeWidget, MountedNode, root_widget
 from .style import StyleSheet, merge_inline_styles
+
+
+_HTML_ATTRIBUTE_NAME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]*$")
 
 
 def render_html(
@@ -373,7 +377,18 @@ def _void_element(tag: str, attrs: dict[str, Any]) -> str:
 def _attrs(attrs: dict[str, Any]) -> str:
     parts = []
     for key, value in attrs.items():
+        key = _valid_attribute_name(key)
         if value is None or value is False or value == "":
             continue
         parts.append(f'{key}="{escape(str(value), quote=True)}"')
     return (" " + " ".join(parts)) if parts else ""
+
+
+def _valid_attribute_name(name: object) -> str:
+    if not isinstance(name, str):
+        raise TypeError(
+            f"HTML attribute names must be strings, got {type(name).__name__}."
+        )
+    if not _HTML_ATTRIBUTE_NAME_RE.fullmatch(name):
+        raise ValueError(f"Invalid HTML attribute name {name!r}.")
+    return name

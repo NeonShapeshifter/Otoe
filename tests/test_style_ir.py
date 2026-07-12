@@ -535,6 +535,48 @@ def test_style_ir_validation_rejects_invalid_class_value_payloads():
     )
 
 
+def test_style_ir_validation_rejects_non_object_compiled_declarations():
+    stylesheet = css(".shell { padding: 8; }\n")
+    mounted = mount(VStack(Text("Bad compiled class declarations"), className="shell"))
+    plan = plan_mounted(mounted, stylesheet=stylesheet)
+    payload = compiled_styles_to_dict(
+        plan,
+        target="app:app",
+        stylesheet=stylesheet,
+    )
+    payload["rules"][0]["declarations"] = []
+
+    validation = validate_style_ops(payload)
+
+    assert validation.passed is False
+    assert "compiled rule 'shell' declarations must be an object" in validation.errors
+    assert (
+        "styleOps class 'shell' applied declarations do not match compiled rules"
+        in validation.errors
+    )
+
+    mounted = mount(VStack(Text("Bad compiled direct declarations"), padding=8))
+    plan = plan_mounted(mounted, stylesheet=None)
+    direct_payload = compiled_styles_to_dict(
+        plan,
+        target="app:app",
+        stylesheet=None,
+    )
+    direct_payload["directStyles"][0]["declarations"] = []
+
+    direct_validation = validate_style_ops(direct_payload)
+
+    assert direct_validation.passed is False
+    assert (
+        "compiled directStyles [] declarations must be an object"
+        in direct_validation.errors
+    )
+    assert (
+        "styleOps directStyles [] applied declarations do not match compiled artifact"
+        in direct_validation.errors
+    )
+
+
 def test_style_ir_validation_rejects_unresolved_runtime_style_ops():
     stylesheet = css(".shell { color: ink; }\n", tokens={"ink": "#111827"})
     mounted = mount(VStack(Text("Bad runtime payload"), className="shell"))
@@ -749,6 +791,67 @@ def test_style_ir_replay_reports_invalid_primitive_ops():
         "styleOps class 'bad' omitted op 0 must use op='omitStyle'"
         in replay.errors
     )
+
+
+def test_style_ir_replay_reports_malformed_entries():
+    class_replay = replay_style_ops_class(["not", "an", "object"])
+
+    assert class_replay.class_name == "<invalid>"
+    assert class_replay.errors == ("styleOps class entry must be an object",)
+
+    direct_replay = replay_style_ops_direct(
+        {
+            "path": [-1, "bad"],
+            "nodeId": "",
+            "widget": None,
+            "ops": {},
+            "omittedOps": [
+                [],
+                {
+                    "op": "omitStyle",
+                    "property": 123,
+                    "support": "paint",
+                    "value": {"type": "literal", "value": "#111827"},
+                },
+            ],
+        },
+        style_support={},
+    )
+
+    assert direct_replay.path == ()
+    assert direct_replay.node_id is None
+    assert direct_replay.widget == "<invalid>"
+    assert "styleOps directStyles path item 0 must be a non-negative integer" in (
+        direct_replay.errors
+    )
+    assert "styleOps directStyles path item 1 must be a non-negative integer" in (
+        direct_replay.errors
+    )
+    assert "styleOps directStyles nodeId must be a non-empty string" in (
+        direct_replay.errors
+    )
+    assert "styleOps directStyles widget must be a string" in direct_replay.errors
+    assert "styleOps class 'direct style []' ops must be a list" in (
+        direct_replay.errors
+    )
+    assert (
+        "styleOps class 'direct style []' omitted op 0 must be an object"
+        in direct_replay.errors
+    )
+    assert (
+        "styleOps class 'direct style []' omitted op 1 property must be a string"
+        in direct_replay.errors
+    )
+    assert (
+        "styleOps class 'direct style []' omitted op 1 support 'paint' "
+        "does not match 'unsupported'"
+    ) in direct_replay.errors
+
+
+def test_expected_omitted_style_ops_ignores_malformed_rule_payloads():
+    assert expected_omitted_style_ops(None) == ()
+    assert expected_omitted_style_ops({"omittedDeclarations": {}}) == ()
+    assert expected_omitted_style_ops({"omittedDeclarations": [object()]}) == ()
 
 
 def _direct_style_by_key(mounted, key):

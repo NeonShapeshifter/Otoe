@@ -1,0 +1,99 @@
+# Dynamic CLI module execution.
+otoe.__main__
+
+# Internal cached factories and generated runner template placeholders.
+otoe._widget_contracts._registry_by_name
+otoe._widget_contracts._registry_by_tag
+otoe.build_runner_template.EXPECTED_FRAMEWORK_FILES
+otoe.build_runner_template.exc
+
+# Literal aliases are runtime typing objects, not concrete unions.
+otoe.deps_imports.RuntimePolicyCategory
+otoe.deps_types.DependencyStatus
+otoe.deps_types.DiagnosticLevel
+otoe.deps_types.ExtraStatus
+otoe.deps_types.RuntimePolicyCategory
+otoe.profile_types.NativeTextRenderer
+otoe.profile_types.RuntimePolicyAction
+
+# Namespace packages and a request-local handler class confuse stub discovery.
+otoe.experimental.__all__
+otoe.experimental.backend
+otoe.experimental.native
+otoe.live_server.Handler@103
+otoe.live_server.__all__
+
+# UI functions are runtime Component callables; stubs intentionally expose their
+# ergonomic call signatures. Typing-only aliases and dataclass match args do not
+# exist as matching runtime symbols.
+otoe.ui.ActionButton
+otoe.ui.AppFrame
+otoe.ui.AppShell
+otoe.ui.Badge
+otoe.ui.Card
+otoe.ui.ClickHandler
+otoe.ui.ColumnLike
+otoe.ui.Command.__match_args__
+otoe.ui.CommandLike
+otoe.ui.CommandPalette
+otoe.ui.DataTable
+otoe.ui.Dialog
+otoe.ui.EmptyState
+otoe.ui.FeedbackToast
+otoe.ui.FocusScope
+otoe.ui.GlobalKeyHandler
+otoe.ui.KeyFn
+otoe.ui.ListRow
+otoe.ui.Menu
+otoe.ui.MenuItem.__match_args__
+otoe.ui.MenuItemLike
+otoe.ui.MetricGrid
+otoe.ui.MetricTile
+otoe.ui.NavItem
+otoe.ui.NavRoute.__match_args__
+otoe.ui.NodeRenderer
+otoe.ui.OpenChangeHandler
+otoe.ui.RouteLike
+otoe.ui.RouteRenderer
+otoe.ui.RouteView
+otoe.ui.SectionHeader
+otoe.ui.Select
+otoe.ui.SelectOption.__match_args__
+otoe.ui.SelectOptionLike
+otoe.ui.SelectionHandler
+otoe.ui.ShortcutScope
+otoe.ui.SidebarFrame
+otoe.ui.SidebarItem
+otoe.ui.SidebarNav
+otoe.ui.StatCard
+otoe.ui.StatusPill
+otoe.ui.Surface
+otoe.ui.TabButton
+otoe.ui.TableCellRenderer
+otoe.ui.TableColumn.__match_args__
+otoe.ui.Tabs
+otoe.ui.Toast
+otoe.ui.Toolbar
+otoe.ui.TopBar
+otoe.ui.ValueHandler
+otoe.ui.__all__
+
+# Core widget factories intentionally accept dynamic runtime arguments while
+# their stubs enforce the public prop/event contracts.
+otoe.widgets.Button
+otoe.widgets.ChangeHandler
+otoe.widgets.ClickHandler
+otoe.widgets.FocusScope
+otoe.widgets.GlobalKeyHandler
+otoe.widgets.HStack
+otoe.widgets.Input
+otoe.widgets.KeyHandler
+otoe.widgets.Panel
+otoe.widgets.ScrollHandler
+otoe.widgets.ScrollView
+otoe.widgets.ShortcutScope
+otoe.widgets.Text
+otoe.widgets.VStack
+
+# tkinter is imported lazily and is optional at runtime.
+otoe.window.TkNativeWindow._tk

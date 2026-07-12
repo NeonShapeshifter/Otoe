@@ -7,7 +7,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from .backend_package import backend_package_payload_errors
 
@@ -420,7 +420,7 @@ def _require_manifest_string(manifest: dict[str, Any], key: str) -> str:
 def _load_json_bundle_file(root: str | Path, relative: str) -> dict[str, Any]:
     payload = json.loads(_require_bundle_file(root, relative).read_text(encoding="utf-8"))
     _verify_schema_version(payload, relative)
-    return payload
+    return cast(dict[str, Any], payload)
 
 
 def _load_json_file(path: Path, *, label: str) -> dict[str, Any]:
@@ -431,7 +431,7 @@ def _load_json_file(path: Path, *, label: str) -> dict[str, Any]:
     except json.JSONDecodeError as exc:
         raise ValueError(f"{label} must be valid JSON: {exc}") from exc
     _verify_schema_version(payload, label)
-    return payload
+    return cast(dict[str, Any], payload)
 
 
 def _write_json_file(path: Path, payload: Any) -> None:

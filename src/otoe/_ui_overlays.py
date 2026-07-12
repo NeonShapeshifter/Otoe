@@ -7,6 +7,7 @@ from ._ui_layout import FocusScope
 from ._ui_surfaces import Badge, Card
 from .component import component
 from .control import Show
+from .node import Node
 from .reactive import computed, is_reactive
 from .widgets import HStack, Text, VStack
 
@@ -18,12 +19,12 @@ __all__ = [
 
 @component
 def Dialog(
-    *children,
-    open,
-    title=None,
-    description=None,
+    *children: Node,
+    open: Any,
+    title: Any = None,
+    description: Any = None,
     className: str | None = None,
-):
+) -> Node:
     return Show(
         HStack(
             FocusScope(
@@ -52,12 +53,12 @@ def Dialog(
 
 @component
 def Toast(
-    title,
+    title: Any,
     *,
-    description=None,
-    tone: str = "neutral",
+    description: Any = None,
+    tone: Any = "neutral",
     className: str | None = None,
-):
+) -> Node:
     tone_label = computed(lambda: str(_value(tone)).upper()) if is_reactive(tone) else str(tone).upper()
     return HStack(
         VStack(
@@ -76,13 +77,13 @@ def Toast(
 
 @component
 def FeedbackToast(
-    feedback,
+    feedback: Any,
     *,
     title_key: str = "title",
     description_key: str = "detail",
     tone_key: str = "tone",
     className: str | None = None,
-):
+) -> Node:
     return Show(
         Toast(
             computed(lambda: _feedback_field(feedback, title_key, "")),
@@ -93,7 +94,7 @@ def FeedbackToast(
         when=computed(lambda: _value(feedback) is not None),
     )
 
-def _feedback_field(feedback, field: str, default: Any) -> Any:
+def _feedback_field(feedback: Any, field: str, default: Any) -> Any:
     value = _value(feedback)
     if value is None:
         return default

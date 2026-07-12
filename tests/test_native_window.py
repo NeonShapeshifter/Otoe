@@ -1,10 +1,13 @@
 import builtins
 from types import SimpleNamespace
 
+import otoe.window as window_module
+import pytest
 from otoe import (
     Button,
     Input,
     NativeBackendAdapter,
+    PaintCommand,
     NativeSurface,
     TkNativeBackendAdapter,
     TkNativeWindow,
@@ -102,13 +105,41 @@ def test_native_window_driver_key_input_edits_focused_input():
     assert driver.surface.input_value() == "a"
 
 
+def test_native_window_driver_key_input_dispatches_keydown_before_change():
+    events = []
+    value = signal("")
+
+    def handle_key(key: str) -> None:
+        events.append(("keydown", key, value.value))
+
+    def handle_change(next_value: str) -> None:
+        events.append(("change", next_value, value.value))
+        value.set(next_value)
+
+    driver = NativeWindowDriver.from_target(
+        Input(
+            value=value,
+            autoFocus=True,
+            onChange=handle_change,
+            onKeyDown=handle_key,
+        )
+    )
+
+    driver.key_input("a", text="a")
+
+    assert events == [("keydown", "a", ""), ("change", "a", "")]
+    assert value.value == "a"
+    assert driver.surface.input_value() == "a"
+
+
 def test_native_window_driver_key_input_falls_back_to_key_down():
     keys = []
     driver = NativeWindowDriver.from_target(Input(value="", autoFocus=True, onKeyDown=keys.append))
 
     driver.key_input("Enter", text="\r")
+    driver.key_input("Escape")
 
-    assert keys == ["Enter"]
+    assert keys == ["Enter", "Escape"]
 
 
 def test_native_window_driver_key_input_keeps_shortcuts_out_of_text():
@@ -443,14 +474,42 @@ def test_tk_native_window_canvas_scales_paint_and_maps_pointer_events(monkeypatc
     window._canvas.operations.clear()
     window._on_configure(SimpleNamespace(width=driver.paint.width * 2, height=driver.paint.height * 2))
 
+    rect_operations = [operation for operation in window._canvas.operations if operation[0] == "rectangle"]
     text_operations = [operation for operation in window._canvas.operations if operation[0] == "text"]
+    expected_rect_coords = []
+    expected_stroke_widths = []
+    for command in driver.paint.commands:
+        if command.kind != "rect":
+            continue
+        coords = (
+            command.x * 2,
+            command.y * 2,
+            (command.x + command.width) * 2,
+            (command.y + command.height) * 2,
+        )
+        if command.fill:
+            expected_rect_coords.append(coords)
+        if command.stroke and command.stroke_width > 0:
+            expected_rect_coords.append(coords)
+            expected_stroke_widths.append(command.stroke_width * 2)
+    expected_font_sizes = sorted(
+        command.font_size * 2
+        for command in driver.paint.commands
+        if command.kind == "text"
+    )
     expected_text_widths = sorted(
         command.width * 2
         for command in driver.paint.commands
         if command.kind == "text"
     )
     assert window._scale == 2
-    assert any(operation[2]["font"][1] == 14 for operation in text_operations)
+    assert [operation[1] for operation in rect_operations] == expected_rect_coords
+    assert [
+        operation[2]["width"]
+        for operation in rect_operations
+        if "width" in operation[2]
+    ] == expected_stroke_widths
+    assert sorted(operation[2]["font"][1] for operation in text_operations) == expected_font_sizes
     assert sorted(operation[2]["width"] for operation in text_operations) == expected_text_widths
 
     window._on_configure(SimpleNamespace(width=driver.paint.width * 5, height=driver.paint.height * 5))
@@ -467,6 +526,84 @@ def test_tk_native_window_canvas_scales_paint_and_maps_pointer_events(monkeypatc
 
     assert clicked.value is True
     assert window._canvas.focused
+
+
+def test_tk_posted_callback_poll_reschedules_after_failure(monkeypatch):
+    scheduled = []
+
+    class FakeRoot:
+        def after(self, delay, callback):
+            scheduled.append((delay, callback))
+
+    window = object.__new__(TkNativeWindow)
+    window.root = FakeRoot()
+    monkeypatch.setattr(
+        window_module,
+        "drain_posted",
+        lambda: (_ for _ in ()).throw(RuntimeError("posted callback failed")),
+    )
+
+    with pytest.raises(RuntimeError, match="posted callback failed"):
+        window._poll_posted_callbacks()
+
+    assert scheduled == [(16, window._poll_posted_callbacks)]
+
+
+def test_tk_canvas_text_clipping_is_intersection_only_not_pixel_masked():
+    class FakeCanvas:
+        def __init__(self):
+            self.operations = []
+
+        def create_text(self, *args, **kwargs):
+            self.operations.append(("text", args, kwargs))
+
+    canvas = FakeCanvas()
+    hidden = PaintCommand(
+        kind="text",
+        path=(),
+        x=40,
+        y=40,
+        width=20,
+        height=12,
+        text="Hidden",
+        clip=(0, 0, 10, 10),
+    )
+    partially_clipped = PaintCommand(
+        kind="text",
+        path=(),
+        x=8,
+        y=8,
+        width=24,
+        height=12,
+        text="Visible edge",
+        font_size=10,
+        clip=(10, 10, 8, 8),
+    )
+
+    window_module._draw_tk_canvas_command(canvas, hidden, scale=2, offset_x=0, offset_y=0)
+    assert canvas.operations == []
+
+    window_module._draw_tk_canvas_command(
+        canvas,
+        partially_clipped,
+        scale=2,
+        offset_x=0,
+        offset_y=0,
+    )
+
+    assert canvas.operations == [
+        (
+            "text",
+            (16, 16),
+            {
+                "anchor": "nw",
+                "text": "Visible edge",
+                "fill": "#111827",
+                "font": ("TkDefaultFont", 20),
+                "width": 48,
+            },
+        )
+    ]
 
 
 def test_tk_native_window_missing_tkinter_error_is_actionable(monkeypatch):

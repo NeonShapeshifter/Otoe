@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import Any
+
 from ._ui_helpers import _as_node, _has_value, _slot_node, _state_class, class_names
 from ._ui_surfaces import StatusPill, Toolbar
 from .component import component
 from .control import Show
+from .node import Node
 from .reactive import computed
 from .widgets import (
     FocusScope as FocusScopeWidget,
@@ -24,7 +28,11 @@ __all__ = [
 ]
 
 @component
-def ShortcutScope(*children, onKeyDown, className: str | None = None):
+def ShortcutScope(
+    *children: Node,
+    onKeyDown: Callable[[dict[str, Any]], Any],
+    className: str | None = None,
+) -> Node:
     return ShortcutScopeWidget(
         *children,
         className=class_names("ui-shortcut-scope", className),
@@ -33,11 +41,11 @@ def ShortcutScope(*children, onKeyDown, className: str | None = None):
 
 @component
 def FocusScope(
-    *children,
+    *children: Node,
     trapFocus: bool = True,
     restoreFocus: bool = True,
     className: str | None = None,
-):
+) -> Node:
     return FocusScopeWidget(
         *children,
         className=class_names("ui-focus-scope", className),
@@ -48,11 +56,11 @@ def FocusScope(
 @component
 def AppShell(
     *,
-    sidebar,
-    content,
-    header=None,
+    sidebar: Any,
+    content: Any,
+    header: Any = None,
     className: str | None = None,
-):
+) -> Node:
     children = []
     if header is not None:
         children.append(HStack(_as_node(header), className="ui-app-header"))
@@ -73,15 +81,15 @@ def AppShell(
 @component
 def AppFrame(
     *,
-    sidebar,
-    content,
-    topbar=None,
-    feedback=None,
+    sidebar: Any,
+    content: Any,
+    topbar: Any = None,
+    feedback: Any = None,
     className: str | None = None,
     shellClassName: str | None = None,
     contentClassName: str | None = None,
     max_width: str = "7xl",
-):
+) -> Node:
     main_children = []
     if topbar is not None:
         main_children.append(_as_node(topbar))
@@ -108,12 +116,12 @@ def AppFrame(
 
 @component
 def SidebarFrame(
-    *items,
-    brand,
-    subtitle=None,
-    footer=None,
+    *items: Node,
+    brand: Any,
+    subtitle: Any = None,
+    footer: Any = None,
     className: str | None = None,
-):
+) -> Node:
     children = [
         VStack(
             Text(brand, className="text-xl font-bold text-white"),
@@ -137,13 +145,13 @@ def SidebarFrame(
 
 @component
 def SidebarItem(
-    label,
+    label: Any,
     *,
-    detail=None,
+    detail: Any = None,
     tone: str = "neutral",
-    active=False,
+    active: Any = False,
     className: str | None = None,
-):
+) -> Node:
     return HStack(
         StatusPill(" ", tone=tone),
         VStack(
@@ -164,14 +172,14 @@ def SidebarItem(
 
 @component
 def TopBar(
-    title,
+    title: Any,
     *,
-    subtitle=None,
-    status=None,
+    subtitle: Any = None,
+    status: Any = None,
     status_tone: str = "neutral",
-    actions=None,
+    actions: Any = None,
     className: str | None = None,
-):
+) -> Node:
     side_children = []
     if status is not None:
         side_children.append(StatusPill(status, tone=status_tone))

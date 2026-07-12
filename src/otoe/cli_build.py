@@ -33,7 +33,7 @@ from .cli_common import CliError, write_json_artifact
 from .cli_plan import resolve_plan_request_details
 from .deps import audit_deps, deps_to_dict
 from .plan import OtoePlan, PlanError
-from .plan_artifacts import compiled_styles_to_dict
+from .plan_artifacts import compiled_styles_to_dict as compiled_styles_to_dict
 from .render_ir import render_tree_from_target, render_tree_to_dict
 from .runtime_files import RuntimeFileError, build_runtime_files
 from .style import resolved_style_map_from_style_ops_artifact

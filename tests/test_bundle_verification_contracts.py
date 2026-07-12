@@ -1,10 +1,12 @@
 import hashlib
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 import otoe.build_runner_template as runner
+import otoe.bundle_backend_package as backend_package_bundle
 from otoe.backend_package import package_hash
 from otoe.bundle_backend_coverage import verify_backend_coverage_contract
 from otoe.bundle_backend_package import (
@@ -280,6 +282,41 @@ def test_backend_coverage_contract_rejects_malformed_runtime_proof():
         verify_backend_coverage_contract(payload, "otoe-backend-coverage.json")
 
 
+def test_backend_coverage_contract_rejects_backend_identity_drift():
+    payload = _backend_coverage_payload()
+    payload["readiness"]["candidate"]["backend"] = "other-backend"
+
+    with pytest.raises(
+        ValueError,
+        match="backend must match readiness.candidate.backend",
+    ):
+        verify_backend_coverage_contract(payload, "otoe-backend-coverage.json")
+
+
+def test_backend_coverage_contract_rejects_paint_boundary_hash_drift():
+    payload = _backend_coverage_payload()
+    payload["coverage"]["rendererBoundaries"] = _covered_section(
+        "paint",
+        {
+            "groupIndex": 0,
+            "source": "path0",
+            "gate": "required",
+            "boundaryProof": {
+                "phase": "paint",
+                "source": "path0",
+                "outputHash": _sha_uri("wrong-paint"),
+                "paintCommands": 1,
+            },
+        },
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="boundaryProof.outputHash must match trace.path0.paintOutputHash",
+    ):
+        verify_backend_coverage_contract(payload, "otoe-backend-coverage.json")
+
+
 def test_build_runner_rejects_path_traversal_manifest_entry():
     with pytest.raises(ValueError, match="bundle path '../secret.py' is not safe"):
         runner._verify_manifest_file_entry(
@@ -354,6 +391,24 @@ def test_build_runner_accepts_minimal_manifest_contract():
     runner._verify_manifest_contract(_runner_manifest())
 
 
+def test_build_runner_manifest_contract_rejects_status_and_runtime_policy():
+    manifest = _runner_manifest()
+    manifest["runtimeInstallsAllowed"] = True
+    with pytest.raises(
+        ValueError,
+        match="manifest.json: runtimeInstallsAllowed must be false",
+    ):
+        runner._verify_manifest_contract(manifest)
+
+    manifest = _runner_manifest()
+    manifest["status"] = "partial"
+    with pytest.raises(
+        ValueError,
+        match="manifest.json: status must be 'ok' or 'warnings'",
+    ):
+        runner._verify_manifest_contract(manifest)
+
+
 def test_build_runner_manifest_contract_rejects_duplicate_bundle_paths():
     manifest = _runner_manifest()
     manifest["artifacts"].append(
@@ -413,6 +468,33 @@ def test_build_runner_ignores_cache_files_when_rejecting_unmanifested_files(
     cache_file.write_bytes(b"cached")
 
     runner._reject_unmanifested_bundle_files(_runner_manifest())
+
+
+def test_build_runner_framework_policy_rejects_unsupported_and_missing_files(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setattr(runner, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        runner,
+        "EXPECTED_FRAMEWORK_FILES",
+        {"native": ("framework/otoe/__init__.py",)},
+    )
+
+    manifest = _runner_manifest()
+    manifest["backend"] = "missing-backend"
+    with pytest.raises(
+        ValueError,
+        match="manifest.json: unsupported backend 'missing-backend'",
+    ):
+        runner._verify_framework_policy(manifest)
+
+    manifest = _runner_manifest()
+    with pytest.raises(
+        ValueError,
+        match="frameworkFiles missing required file 'framework/otoe/__init__.py'",
+    ):
+        runner._verify_framework_policy(manifest)
 
 
 def test_build_runner_native_text_contracts_cover_marker_and_pillow_font():
@@ -614,6 +696,23 @@ def test_bundle_backend_package_detects_descriptor_file_hash_mismatch(tmp_path):
         verify_backend_package(manifest, root=tmp_path)
 
 
+def test_bundle_backend_package_rejects_descriptor_file_size_mismatch(tmp_path):
+    manifest = _write_backend_package_bundle(tmp_path)
+    descriptor_path = tmp_path / manifest["backendPackage"]["path"]
+    descriptor = json.loads(descriptor_path.read_text(encoding="utf-8"))
+    descriptor["files"][0]["size"] += 1
+    descriptor["packageHash"] = package_hash(descriptor)
+    _write_json(descriptor_path, descriptor)
+    manifest["backendPackage"]["packageHash"] = descriptor["packageHash"]
+
+    with pytest.raises(
+        ValueError,
+        match="backend/path0/backend-package.json: file "
+        "'backend/path0/runner.py' size mismatch",
+    ):
+        verify_backend_package(manifest, root=tmp_path)
+
+
 def test_bundle_backend_package_report_rejects_style_hash_drift(tmp_path):
     manifest = _write_backend_package_report_bundle(tmp_path)
     report_path = tmp_path / manifest["externalBackendReport"]
@@ -626,6 +725,118 @@ def test_bundle_backend_package_report_rejects_style_hash_drift(tmp_path):
         match="backend package report style artifact hash mismatch",
     ):
         verify_backend_package_report(manifest, root=tmp_path)
+
+
+def test_bundle_backend_package_report_rejects_malformed_output(tmp_path):
+    manifest = _write_backend_package_report_bundle(tmp_path)
+    report_path = tmp_path / manifest["externalBackendReport"]
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report["output"] = []
+    _write_json(report_path, report)
+
+    with pytest.raises(
+        ValueError,
+        match="otoe-path0-external-backend.json: output must be an object",
+    ):
+        verify_backend_package_report(manifest, root=tmp_path)
+
+
+def test_bundle_backend_package_command_errors_include_timeout_and_status(
+    tmp_path,
+    monkeypatch,
+):
+    package = {"path": "backend/path0/backend-package.json"}
+    paths = {
+        "entrypoint": tmp_path / "runner.py",
+        "package_root": tmp_path,
+        "render_tree_path": tmp_path / "render-tree.json",
+        "layout_path": tmp_path / "layout.json",
+        "paint_path": tmp_path / "paint.json",
+        "report_path": tmp_path / "report.json",
+    }
+
+    def timeout_run(*args, **kwargs):
+        raise backend_package_bundle.subprocess.TimeoutExpired(cmd=args[0], timeout=1)
+
+    monkeypatch.setattr(backend_package_bundle.subprocess, "run", timeout_run)
+    with pytest.raises(
+        ValueError,
+        match="backend package smoke timed out",
+    ):
+        backend_package_bundle._run_backend_package_command(
+            package=package,
+            source="smoke",
+            executable=None,
+            timeout=1,
+            error_label="backend package smoke",
+            **paths,
+        )
+
+    def failed_run(*args, **kwargs):
+        return SimpleNamespace(returncode=2, stdout="", stderr="")
+
+    monkeypatch.setattr(backend_package_bundle.subprocess, "run", failed_run)
+    with pytest.raises(
+        ValueError,
+        match="backend package smoke failed: backend package exited with status 2",
+    ):
+        backend_package_bundle._run_backend_package_command(
+            package=package,
+            source="smoke",
+            executable=None,
+            timeout=1,
+            error_label="backend package smoke",
+            **paths,
+        )
+
+
+def test_bundle_backend_package_smoke_output_rejects_tampered_hash_and_style_flag():
+    render_tree = {"schemaVersion": 1, "nodeCount": 1}
+    layout = {"format": "path0-layout-output", "boxCount": 1}
+    layout["outputHash"] = _contract_hash(layout)
+    paint = {"format": "path0-paint-output", "commandCount": 1}
+    paint["outputHash"] = _contract_hash(paint)
+    report = {
+        "format": "path0-external-backend-report",
+        "backend": "path0",
+        "source": "bundle:otoe-render-tree.json",
+        "input": {
+            "renderTreeHash": _contract_hash(render_tree),
+            "nodeCount": 1,
+            "styleOps": {"present": False},
+        },
+        "output": {"layout": layout, "paint": paint},
+    }
+    package = {"name": "path0"}
+
+    tampered_layout = {**layout, "outputHash": _sha_uri("wrong-layout")}
+    with pytest.raises(
+        ValueError,
+        match="backend package layout outputHash must match payload",
+    ):
+        backend_package_bundle._verify_path0_external_smoke_output(
+            package=package,
+            layout=tampered_layout,
+            paint=paint,
+            report=report,
+            expected_source="bundle:otoe-render-tree.json",
+            expected_render_tree=render_tree,
+            expected_styles=None,
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="backend package report input.styleOps.present must be true",
+    ):
+        backend_package_bundle._verify_path0_external_smoke_output(
+            package=package,
+            layout=layout,
+            paint=paint,
+            report=report,
+            expected_source="bundle:otoe-render-tree.json",
+            expected_render_tree=render_tree,
+            expected_styles={"schemaVersion": 1, "styleOps": {"classes": []}},
+        )
 
 
 def _backend_coverage_payload() -> dict:

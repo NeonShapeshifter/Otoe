@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from typing import Any
 
@@ -19,7 +20,7 @@ from ._style_planning import (
     dedupe_names,
     planned_class_names,
 )
-from .mount import MountedNode
+from .mount import FakeWidget, MountedNode
 from .style import StyleSheet
 
 
@@ -273,7 +274,7 @@ def compiled_styles_to_dict(
 
 
 def _widget_support_counts(
-    widgets,
+    widgets: Iterable[FakeWidget],
     capabilities: BackendCapabilityProfile,
 ) -> dict[str, int]:
     counts: dict[str, int] = {}
@@ -287,7 +288,7 @@ def _widget_support_counts(
 class _PlannedWidget:
     path: tuple[int, ...]
     node_id: str
-    widget: Any
+    widget: FakeWidget
 
 
 def _walk_widgets_with_paths(
@@ -296,7 +297,7 @@ def _walk_widgets_with_paths(
     path: tuple[int, ...] = (),
     parent_id: str | None = None,
     key: Any = None,
-):
+) -> Iterator[_PlannedWidget]:
     if mounted.widget is None:
         if len(mounted.children) != 1:
             return
@@ -326,7 +327,7 @@ def _walk_widgets_with_paths(
         )
 
 
-def _used_classes(widgets) -> tuple[str, ...]:
+def _used_classes(widgets: Iterable[FakeWidget]) -> tuple[str, ...]:
     class_names: list[str] = []
     for widget in widgets:
         raw = widget.props.get("className")

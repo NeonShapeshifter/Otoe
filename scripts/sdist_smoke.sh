@@ -6,6 +6,59 @@ PYTHON_BIN="${PYTHON:-python3}"
 if [[ "$PYTHON_BIN" == */* && "$PYTHON_BIN" != /* ]]; then
   PYTHON_BIN="$(pwd)/$PYTHON_BIN"
 fi
+
+resolve_path() {
+  "$PYTHON_BIN" - "$1" <<'PY'
+from pathlib import Path
+import sys
+
+print(Path(sys.argv[1]).expanduser().resolve(strict=False))
+PY
+}
+
+refuse_unsafe_rm_rf() {
+  local label="$1"
+  local path="${2:-}"
+  local abs_path
+  local current_path
+  local home_path=""
+  local part
+  local depth=0
+  local -a path_parts
+
+  if [[ -z "$path" ]]; then
+    echo "sdist smoke: refusing to delete empty $label" >&2
+    exit 1
+  fi
+
+  abs_path="$(resolve_path "$path")"
+  current_path="$(resolve_path "$PWD")"
+  if [[ -n "${HOME:-}" ]]; then
+    home_path="$(resolve_path "$HOME")"
+  fi
+
+  IFS='/' read -r -a path_parts <<< "${abs_path#/}"
+  for part in "${path_parts[@]}"; do
+    if [[ -n "$part" ]]; then
+      depth=$((depth + 1))
+    fi
+  done
+
+  if [[ "$abs_path" == "/" || "$abs_path" == "$current_path" || "$abs_path" == "$ROOT_ABS" ]]; then
+    echo "sdist smoke: refusing to delete unsafe $label: $path" >&2
+    exit 1
+  fi
+  if [[ -n "$home_path" && "$abs_path" == "$home_path" ]]; then
+    echo "sdist smoke: refusing to delete home directory as $label: $path" >&2
+    exit 1
+  fi
+  if ((depth < 2)) || [[ "${abs_path##*/}" == "tmp" ]]; then
+    echo "sdist smoke: refusing to delete too-broad $label: $path" >&2
+    exit 1
+  fi
+}
+
+ROOT_ABS="$(resolve_path "$ROOT")"
 SDIST="${1:-}"
 WORKDIR="${OTOE_SDIST_SMOKE_WORKDIR:-"$(mktemp -d)"}"
 
@@ -17,7 +70,14 @@ if [[ -z "$SDIST" || ! -f "$SDIST" ]]; then
   exit 1
 fi
 
-rm -rf "$WORKDIR"
+# OTOE_SDIST_SMOKE_WORKDIR is destructive: this directory is deleted before extraction.
+refuse_unsafe_rm_rf "workdir" "$WORKDIR"
+WORKDIR_ABS="$(resolve_path "$WORKDIR")"
+if [[ "$WORKDIR_ABS" == "$ROOT_ABS"/* ]]; then
+  echo "sdist smoke: refusing to delete workdir inside repo: $WORKDIR" >&2
+  exit 1
+fi
+rm -rf -- "$WORKDIR"
 mkdir -p "$WORKDIR"
 tar -xzf "$SDIST" -C "$WORKDIR"
 SOURCE_DIR="$(find "$WORKDIR" -mindepth 1 -maxdepth 1 -type d -name 'otoe-*' -print | sort | tail -n 1)"

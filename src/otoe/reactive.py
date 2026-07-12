@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from contextvars import ContextVar
+from threading import get_ident
 from typing import Any, Callable
 
-from .errors import ReactiveDisposedError, ReactiveMutationError
+from .errors import ReactiveDisposedError, ReactiveMutationError, ReactiveThreadError
 from .owner import current_mount_phase, current_owner
-from .scheduler import schedule
+from .scheduler import _register_rollback, schedule
 
 
 Collector = Any
@@ -29,11 +30,21 @@ class Subscription:
 
 class ReactiveValue:
     def __init__(self) -> None:
-        self._subscribers: set[Callable[[], None]] = set()
+        self._subscribers: dict[Callable[[], None], int] = {}
 
     def subscribe(self, callback: Callable[[], None]) -> Subscription:
-        self._subscribers.add(callback)
-        return Subscription(lambda: self._subscribers.discard(callback))
+        subscriber_thread = get_ident()
+        existing_threads = set(self._subscribers.values())
+        if existing_threads and existing_threads != {subscriber_thread}:
+            raise ReactiveThreadError(
+                "Reactive subscribers for one value must belong to one runtime thread."
+            )
+        self._subscribers[callback] = subscriber_thread
+
+        def unsubscribe() -> None:
+            self._subscribers.pop(callback, None)
+
+        return Subscription(unsubscribe)
 
     def _track_read(self) -> None:
         collector = CURRENT_COLLECTOR.get()
@@ -41,8 +52,27 @@ class ReactiveValue:
             collector._depend_on(self)
 
     def _notify(self) -> None:
-        for callback in list(self._subscribers):
-            schedule(callback)
+        self._assert_notification_thread()
+        errors: list[Exception] = []
+        for callback in tuple(self._subscribers):
+            try:
+                schedule(callback)
+            except Exception as exc:
+                errors.append(exc)
+        _raise_notification_errors(errors)
+
+    def _assert_notification_thread(self) -> None:
+        if not self._subscribers:
+            return
+        subscriber_thread = next(iter(self._subscribers.values()))
+        current_thread = get_ident()
+        if current_thread == subscriber_thread:
+            return
+        raise ReactiveThreadError(
+            "Reactive updates must run on the subscriber's runtime thread; "
+            "queue worker results with otoe.scheduler.post(...) and call "
+            "otoe.scheduler.drain_posted() on the runtime thread."
+        )
 
 
 class Signal(ReactiveValue):
@@ -57,14 +87,35 @@ class Signal(ReactiveValue):
 
     @value.setter
     def value(self, next_value: Any) -> None:
-        if next_value == self._value:
+        if _values_equal(next_value, self._value):
             return
         _guard_mount_mutation(self)
+        self._assert_notification_thread()
+        previous_value = self._value
+        _register_rollback(
+            self,
+            restore=lambda: self._restore_value(previous_value),
+            notify=self._notify,
+        )
         self._value = next_value
-        self._notify()
+        try:
+            self._notify()
+        except Exception as update_error:
+            self._value = previous_value
+            try:
+                self._notify()
+            except Exception as rollback_error:
+                raise ExceptionGroup(
+                    "Reactive update and rollback notifications failed.",
+                    [update_error, rollback_error],
+                ) from update_error
+            raise
 
     def set(self, next_value: Any) -> None:
         self.value = next_value
+
+    def _restore_value(self, value: Any) -> None:
+        self._value = value
 
 
 class Computed(ReactiveValue):
@@ -136,7 +187,11 @@ class Effect:
             if autorun:
                 owner.add_pending_effect(self)
         elif autorun:
-            self.run()
+            try:
+                self.run()
+            except Exception:
+                self.dispose()
+                raise
 
     def run(self) -> None:
         if self._disposed:
@@ -171,8 +226,17 @@ class Effect:
         if self._disposed:
             return
         self._disposed = True
-        self._run_cleanup()
-        self._clear_deps()
+        errors: list[Exception] = []
+        try:
+            self._run_cleanup()
+        except Exception as exc:
+            errors.append(exc)
+        try:
+            self._clear_deps()
+        except Exception as exc:
+            errors.append(exc)
+        if errors:
+            raise ExceptionGroup("Errors while disposing reactive effect.", errors)
 
 
 def signal(initial: Any) -> Signal:
@@ -189,6 +253,22 @@ def effect(fn: Callable[[], Any]) -> Effect:
 
 def is_reactive(value: Any) -> bool:
     return isinstance(value, ReactiveValue)
+
+
+def _values_equal(left: Any, right: Any) -> bool:
+    try:
+        result = left == right
+    except Exception:
+        return left is right
+    return result if isinstance(result, bool) else left is right
+
+
+def _raise_notification_errors(errors: list[Exception]) -> None:
+    if not errors:
+        return
+    if len(errors) == 1:
+        raise errors[0]
+    raise ExceptionGroup("Multiple reactive subscribers failed.", errors)
 
 
 def _disposed_computed_message(owner_name: str | None) -> str:

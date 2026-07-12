@@ -19,7 +19,7 @@ from .deps_types import (
     DependencyAuditPackage,
     DependencyAuditRuntimePolicyFinding,
 )
-from .profile_types import PlanProfileConfig
+from .profile_types import PlanProfileConfig, ProfileRuntimeFile
 from .runtime_files import build_runtime_files
 
 __all__ = [
@@ -229,7 +229,9 @@ def _runtime_policy_findings_for_target(
     return tuple(findings)
 
 
-def _local_module_roots(runtime_files) -> set[str]:
+def _local_module_roots(
+    runtime_files: tuple[ProfileRuntimeFile, ...],
+) -> set[str]:
     roots = set()
     for runtime_file in runtime_files:
         parts = runtime_file.relative_path.parts

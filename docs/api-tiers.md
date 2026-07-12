@@ -151,6 +151,9 @@ Programmatically, top-level backend-evidence aliases report
 
 ## Compatibility Policy For Now
 
+The release-level rules and deprecation window are defined in
+[Compatibility And Versioning](compatibility.md).
+
 Do not break existing imports casually. Instead:
 
 - document the tiers clearly
@@ -190,7 +193,7 @@ top-level `otoe.__all__` surface.
 | Tier | Top-Level Names |
 | --- | --- |
 | `api-metadata` | `API_METADATA_APIS`, `API_STATUSES`, `API_TIERS`, `ApiStatus`, `CORE_PREVIEW_APIS`, `EXPERIMENTAL_APIS`, `EXPERIMENTAL_BACKEND_APIS`, `EXPERIMENTAL_NATIVE_APIS`, `PREVIEW_APIS`, `PREVIEW_SUPPORT_APIS`, `PRODUCT_PREVIEW_UI_APIS`, `api_status`, `is_experimental_api` |
-| `core-preview` | `Button`, `Computed`, `DuplicatePrimaryPropError`, `Effect`, `EventHandlerArityError`, `EventHandlerError`, `EventSignature`, `For`, `HStack`, `Input`, `Node`, `OtoeError`, `Panel`, `ReactiveDisposedError`, `ReactiveMutationError`, `ScrollView`, `Show`, `Signal`, `Size`, `StyleError`, `StyleRule`, `StyleSheet`, `StyleSyntaxError`, `Text`, `Token`, `UnknownEventError`, `UnknownPropError`, `UnknownStyleClassError`, `VStack`, `Widget`, `batch`, `component`, `computed`, `css`, `effect`, `event_signature_for`, `format_event_signature`, `mount`, `on_cleanup`, `on_mount`, `render_html`, `root_widget`, `signal`, `snapshot`, `snapshot_text`, `unmount` |
+| `core-preview` | `Button`, `Computed`, `DuplicatePrimaryPropError`, `Effect`, `EventHandlerArityError`, `EventHandlerError`, `EventSignature`, `For`, `HStack`, `Input`, `Node`, `OtoeError`, `Panel`, `ReactiveDisposedError`, `ReactiveMutationError`, `ReactiveThreadError`, `ScrollView`, `Show`, `Signal`, `Size`, `StyleError`, `StyleRule`, `StyleSheet`, `StyleSyntaxError`, `Text`, `Token`, `UnknownEventError`, `UnknownPropError`, `UnknownStyleClassError`, `VStack`, `Widget`, `batch`, `component`, `computed`, `css`, `effect`, `event_signature_for`, `format_event_signature`, `mount`, `on_cleanup`, `on_mount`, `render_html`, `root_widget`, `signal`, `snapshot`, `snapshot_text`, `unmount` |
 | `product-preview-ui` | `ActionButton`, `AppFrame`, `AppShell`, `Badge`, `Card`, `Command`, `CommandPalette`, `CommandRegistry`, `DataTable`, `Dialog`, `EmptyState`, `FeedbackToast`, `FocusScope`, `ListRow`, `Menu`, `MenuItem`, `MetricGrid`, `MetricTile`, `NavItem`, `NavRoute`, `RouteView`, `SectionHeader`, `Select`, `SelectOption`, `ShortcutScope`, `SidebarFrame`, `SidebarItem`, `SidebarNav`, `StatCard`, `StatusPill`, `Surface`, `TabButton`, `TableColumn`, `Tabs`, `Toast`, `Toolbar`, `TopBar`, `UI_EVENT_SIGNATURES`, `class_names` |
 | `preview-support` | `DEFAULT_UTILITY_TOKENS`, `FakeWidget`, `Interval`, `LiveEvent`, `LiveHtmlRenderer`, `MountedNode`, `TemplateError`, `interval`, `template`, `utility_css`, `utility_stylesheet` |
 | `experimental-native` | `ComposedNativeRendererBackend`, `LayoutBox`, `NativeBackendAdapter`, `NativeLayout`, `NativeLayoutBackend`, `NativeLayoutError`, `NativePaint`, `NativePaintBackend`, `NativePaintError`, `NativeRasterBackend`, `NativeRendererBackend`, `NativeSurface`, `NativeWindowDriver`, `NativeWindowEvent`, `PYTHON_NATIVE_RENDERER_BACKEND`, `PaintCommand`, `PillowNativeRendererBackend`, `PythonNativeRendererBackend`, `TkNativeBackendAdapter`, `TkNativeWindow`, `dispatch_native_click`, `edit_native_input_value`, `hit_test_native`, `layout_native`, `native_backend_adapter`, `native_backend_names`, `paint_native`, `render_native_png`, `run_native`, `write_native_png`, `write_pillow_native_png` |

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from ._ui_helpers import (
@@ -15,6 +16,7 @@ from ._ui_helpers import (
 from ._ui_theme import _surface_class
 from .component import component
 from .control import Show
+from .node import Node
 from .reactive import computed, is_reactive
 from .widgets import Button, HStack, Panel, Text, VStack
 
@@ -35,15 +37,17 @@ __all__ = [
     "ListRow",
 ]
 
+ClickHandler = Callable[[], Any]
+
 @component
 def Card(
-    *children,
+    *children: Node,
     className: str | None = None,
-    tone: str = "default",
-    title=None,
-    padding=None,
-    gap=None,
-):
+    tone: Any = "default",
+    title: Any = None,
+    padding: Any = None,
+    gap: Any = None,
+) -> Node:
     if padding is not None or gap is not None:
         body_props: dict[str, Any] = {"className": "ui-card-body"}
         if padding is not None:
@@ -58,7 +62,12 @@ def Card(
     )
 
 @component
-def StatusPill(label, *, tone: str = "neutral", className: str | None = None):
+def StatusPill(
+    label: Any,
+    *,
+    tone: Any = "neutral",
+    className: str | None = None,
+) -> Node:
     return Badge(
         label,
         tone=tone,
@@ -67,18 +76,18 @@ def StatusPill(label, *, tone: str = "neutral", className: str | None = None):
 
 @component
 def Surface(
-    *children,
-    title=None,
-    detail=None,
-    badge=None,
-    badge_tone: str = "neutral",
-    actions=None,
-    tone: str = "default",
+    *children: Node,
+    title: Any = None,
+    detail: Any = None,
+    badge: Any = None,
+    badge_tone: Any = "neutral",
+    actions: Any = None,
+    tone: Any = "default",
     padding: int = 16,
     gap: int = 12,
     className: str | None = None,
-):
-    body = []
+) -> Node:
+    body: list[Node] = []
     if title is not None:
         body.append(
             SectionHeader(
@@ -98,7 +107,7 @@ def Surface(
     )
 
 @component
-def MetricGrid(*children, className: str | None = None):
+def MetricGrid(*children: Node, className: str | None = None) -> Node:
     return HStack(
         *children,
         className=class_names("ui-metric-grid gap-3 flex-wrap", className),
@@ -107,12 +116,12 @@ def MetricGrid(*children, className: str | None = None):
 @component
 def MetricTile(
     *,
-    label,
-    value,
-    detail=None,
-    tone: str = "neutral",
+    label: Any,
+    value: Any,
+    detail: Any = None,
+    tone: Any = "neutral",
     className: str | None = None,
-):
+) -> Node:
     return StatCard(
         label=label,
         value=value,
@@ -122,7 +131,12 @@ def MetricTile(
     )
 
 @component
-def Badge(label, *, tone: str = "neutral", className: str | None = None):
+def Badge(
+    label: Any,
+    *,
+    tone: Any = "neutral",
+    className: str | None = None,
+) -> Node:
     return Text(
         label,
         className=_variant_class("ui-badge", tone, className),
@@ -130,32 +144,32 @@ def Badge(label, *, tone: str = "neutral", className: str | None = None):
 
 @component
 def ActionButton(
-    label,
+    label: Any,
     *,
-    variant: str = "primary",
-    size: str = "md",
+    variant: Any = "primary",
+    size: Any = "md",
     className: str | None = None,
-    disabled: bool = False,
-    leading=None,
-    trailing=None,
+    disabled: Any = False,
+    leading: Any = None,
+    trailing: Any = None,
     full_width: bool = False,
-    onClick=None,
-):
+    onClick: ClickHandler | None = None,
+) -> Node:
     button_class = _multi_variant_class("ui-button", variant, size, className)
     if full_width:
         if is_reactive(button_class):
             base_class = button_class
-            button_class = computed(lambda: class_names(base_class.value, "is-full"))
+            button_class = computed(lambda: class_names(_value(base_class), "is-full"))
         else:
             button_class = class_names(button_class, "is-full")
-    props = {
+    props: dict[str, Any] = {
         "className": button_class,
         "disabled": disabled,
     }
     if onClick is not None:
         props["onClick"] = onClick
     if leading is not None or trailing is not None:
-        content = []
+        content: list[Node] = []
         if leading is not None:
             content.append(_slot_node(leading, "ui-button-leading"))
         content.append(Text(label, className="ui-button-label"))
@@ -169,7 +183,11 @@ def ActionButton(
     return Button(label, **props)
 
 @component
-def Toolbar(*children, className: str | None = None, gap: int = 8):
+def Toolbar(
+    *children: Node,
+    className: str | None = None,
+    gap: int = 8,
+) -> Node:
     return HStack(
         *children,
         className=class_names("ui-toolbar", className),
@@ -178,11 +196,11 @@ def Toolbar(*children, className: str | None = None, gap: int = 8):
 
 @component
 def Tabs(
-    *children,
+    *children: Node,
     className: str | None = None,
     gap: int = 6,
     orientation: str = "horizontal",
-):
+) -> Node:
     container = VStack if orientation == "vertical" else HStack
     return container(
         *children,
@@ -192,13 +210,13 @@ def Tabs(
 
 @component
 def TabButton(
-    label,
+    label: Any,
     *,
-    active=False,
+    active: Any = False,
     className: str | None = None,
-    onClick=None,
-):
-    props = {
+    onClick: ClickHandler | None = None,
+) -> Node:
+    props: dict[str, Any] = {
         "className": _active_class("ui-tab", active, className),
     }
     if onClick is not None:
@@ -208,12 +226,12 @@ def TabButton(
 @component
 def StatCard(
     *,
-    label,
-    value,
-    detail=None,
-    tone: str = "neutral",
+    label: Any,
+    value: Any,
+    detail: Any = None,
+    tone: Any = "neutral",
     className: str | None = None,
-):
+) -> Node:
     detail_class = (
         computed(lambda: class_names("ui-stat-detail", f"is-{_value(tone)}"))
         if is_reactive(tone)
@@ -234,17 +252,17 @@ def StatCard(
 
 @component
 def SectionHeader(
-    title,
+    title: Any,
     *,
-    detail=None,
-    badge=None,
-    badge_tone: str = "neutral",
-    actions=None,
-    action_label=None,
-    on_action=None,
-    action_variant: str = "ghost",
+    detail: Any = None,
+    badge: Any = None,
+    badge_tone: Any = "neutral",
+    actions: Any = None,
+    action_label: Any = None,
+    on_action: ClickHandler | None = None,
+    action_variant: Any = "ghost",
     className: str | None = None,
-):
+) -> Node:
     if actions is None and action_label is not None:
         actions = ActionButton(
             action_label,
@@ -252,7 +270,7 @@ def SectionHeader(
             size="sm",
             onClick=on_action,
         )
-    children = [
+    children: list[Node] = [
         VStack(
             Text(title, className="ui-section-title"),
             Show(
@@ -277,15 +295,15 @@ def SectionHeader(
 
 @component
 def EmptyState(
-    title,
+    title: Any,
     *,
-    description=None,
-    action=None,
-    action_label=None,
-    on_action=None,
-    action_variant: str = "ghost",
+    description: Any = None,
+    action: Any = None,
+    action_label: Any = None,
+    on_action: ClickHandler | None = None,
+    action_variant: Any = "ghost",
     className: str | None = None,
-):
+) -> Node:
     if action is None and action_label is not None:
         action = ActionButton(
             action_label,
@@ -293,7 +311,7 @@ def EmptyState(
             size="sm",
             onClick=on_action,
         )
-    children = [
+    children: list[Node] = [
         Text(title, className="ui-empty-title"),
         Show(
             Text(description, className="ui-empty-description"),
@@ -311,18 +329,18 @@ def EmptyState(
 @component
 def ListRow(
     *,
-    title,
-    detail=None,
-    meta=None,
-    badge=None,
-    badge_tone: str = "neutral",
-    tone: str = "default",
-    action=None,
-    action_label=None,
-    on_action=None,
-    action_variant: str = "ghost",
+    title: Any,
+    detail: Any = None,
+    meta: Any = None,
+    badge: Any = None,
+    badge_tone: Any = "neutral",
+    tone: Any = "default",
+    action: Any = None,
+    action_label: Any = None,
+    on_action: ClickHandler | None = None,
+    action_variant: Any = "ghost",
     className: str | None = None,
-):
+) -> Node:
     resolved_action = action
     if resolved_action is None and action_label is not None:
         resolved_action = ActionButton(
@@ -331,7 +349,7 @@ def ListRow(
             size="sm",
             onClick=on_action,
         )
-    children = [
+    children: list[Node] = [
         VStack(
             Text(title, className="font-semibold text-ink"),
             Show(

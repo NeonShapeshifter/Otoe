@@ -79,6 +79,7 @@ CORE_PREVIEW_APIS = frozenset(
         "Panel",
         "ReactiveDisposedError",
         "ReactiveMutationError",
+        "ReactiveThreadError",
         "Signal",
         "ScrollView",
         "Show",

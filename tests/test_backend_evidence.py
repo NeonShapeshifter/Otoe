@@ -2,6 +2,7 @@ import hashlib
 import json
 from copy import deepcopy
 
+from otoe.backend_package import package_hash
 from otoe.backend_evidence import (
     readiness_evidence_blockers,
     readiness_evidence_errors,
@@ -657,6 +658,81 @@ def test_readiness_evidence_rejects_untraced_renderer_paint_boundary_hash():
     assert readiness_evidence_blockers(errors) == ["rendererBoundariesEvidence"]
 
 
+def test_readiness_evidence_accepts_external_path0_backend_evidence():
+    report = _valid_readiness_report_with_external_backend()
+
+    assert readiness_evidence_errors(report) == []
+
+
+def test_readiness_evidence_rejects_external_backend_gate_and_source_drift():
+    report = _valid_readiness_report_with_external_backend()
+    report["gates"]["path0ExternalJsonBackend"] = False
+    report["path0"]["externalBackend"]["source"] = "other-source"
+
+    errors = readiness_evidence_errors(report)
+
+    assert {
+        "blocker": "path0ExternalJsonBackend",
+        "message": (
+            "gates.path0ExternalJsonBackend must be true when "
+            "path0.externalBackend is present"
+        ),
+    } in errors
+    assert {
+        "blocker": "path0ExternalJsonBackend",
+        "message": "path0.externalBackend.source must match path0.input.source",
+    } in errors
+    assert readiness_evidence_blockers(errors) == ["path0ExternalJsonBackend"]
+
+
+def test_readiness_evidence_rejects_external_backend_output_hash_drift():
+    report = _valid_readiness_report_with_external_backend()
+    report["path0"]["externalBackend"]["output"]["layout"]["outputHash"] = _test_sha(
+        "wrong-layout"
+    )
+
+    errors = readiness_evidence_errors(report)
+
+    assert {
+        "blocker": "path0ExternalJsonBackend",
+        "message": (
+            "path0.externalBackend.output.layout.outputHash must match payload"
+        ),
+    } in errors
+    assert readiness_evidence_blockers(errors) == ["path0ExternalJsonBackend"]
+
+
+def test_readiness_evidence_rejects_external_backend_semantic_validation_drift():
+    report = _valid_readiness_report_with_external_backend()
+    paint = report["path0"]["externalBackend"]["output"]["paint"]
+    paint["commands"][0]["path"] = [99]
+    paint["outputHash"] = _output_hash(paint)
+
+    errors = readiness_evidence_errors(report)
+
+    assert {
+        "blocker": "path0ExternalJsonBackend",
+        "message": (
+            "path0.externalBackend.output: "
+            "evidence.path0.output.paint.commands[0].path "
+            "must reference a layout box"
+        ),
+    } in errors
+    assert {
+        "blocker": "path0ExternalJsonBackend",
+        "message": (
+            "path0.externalBackend.semanticValidation.passed must match output audit"
+        ),
+    } in errors
+    assert {
+        "blocker": "path0ExternalJsonBackend",
+        "message": (
+            "path0.externalBackend.semanticValidation.errors must match output audit"
+        ),
+    } in errors
+    assert readiness_evidence_blockers(errors) == ["path0ExternalJsonBackend"]
+
+
 def _valid_readiness_report() -> dict:
     return deepcopy(
         {
@@ -809,6 +885,69 @@ def _valid_readiness_report() -> dict:
             },
         }
     )
+
+
+def _valid_readiness_report_with_external_backend() -> dict:
+    report = _valid_readiness_report()
+    report["gates"]["path0ExternalJsonBackend"] = True
+    report["path0"]["input"].update(
+        {
+            "source": "bundle:otoe-render-tree.json",
+            "nodeCount": 1,
+            "styleOps": {"present": True, "artifactHash": _test_sha("styles")},
+        }
+    )
+    report["path0"]["externalBackend"] = _valid_external_backend_evidence(
+        report["path0"]
+    )
+    return report
+
+
+def _valid_external_backend_evidence(path0: dict) -> dict:
+    runner = b"print('ok')\n"
+    package = {
+        "schemaVersion": 1,
+        "format": "backend-package",
+        "name": "path0",
+        "label": "Path0",
+        "kind": "path0-external-json",
+        "entrypoint": "runner.py",
+        "contracts": {
+            "inputs": ["otoe-render-tree"],
+            "outputs": ["path0-layout-output", "path0-paint-output"],
+        },
+        "runtime": {"language": "python", "runtimeInstallsAllowed": False},
+        "files": [
+            {
+                "path": "runner.py",
+                "role": "runner",
+                "size": len(runner),
+                "sha256": hashlib.sha256(runner).hexdigest(),
+            }
+        ],
+    }
+    package["packageHash"] = package_hash(package)
+    return {
+        "schemaVersion": 1,
+        "format": "path0-external-backend-evidence",
+        "passed": True,
+        "backend": "path0",
+        "package": package,
+        "source": path0["input"]["source"],
+        "process": {
+            "exitCode": 0,
+            "packageEntrypoint": "runner.py",
+            "packageHash": package["packageHash"],
+        },
+        "input": {
+            "renderTreeHash": path0["input"]["renderTreeHash"],
+            "nodeCount": path0["input"]["nodeCount"],
+            "styleOps": path0["input"]["styleOps"],
+        },
+        "output": deepcopy(path0["output"]),
+        "semanticValidation": {"passed": True, "errors": []},
+        "errors": [],
+    }
 
 
 def _valid_style_runtime() -> dict:

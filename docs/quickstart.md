@@ -47,10 +47,13 @@ The scaffold contains:
 
 ```bash
 otoe check
+otoe check --target app:app --css styles.css
 ```
 
 `otoe check` compiles the generated app and catches basic Python errors before
-you render or build. Once your app has tests, use:
+you render or build. The optional `--target` and `--css` flags turn it into a
+small doctor check for the import target and portable stylesheet. Once your app
+has tests, use:
 
 ```bash
 otoe check --tests

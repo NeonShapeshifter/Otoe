@@ -2,7 +2,35 @@
 
 ## Unreleased
 
+## v0.2.0 - Runtime and Release Integrity
+
+- Made reactive updates transactional across direct writes and `batch()`: all
+  subscribers are attempted, failed renders restore the previous signal value,
+  and independent runtime threads no longer share one global batch queue.
+- Hardened component lifecycle ownership so effects and intervals created from
+  `on_mount()` belong to the activating component, pending effects run during
+  mount, failed effect construction releases dependencies, and unmount attempts
+  every cleanup while aggregating failures.
+- Preserved native focus by keyed identity across list reorder and same-key
+  replacement, and dispatch `onBlur` when a focused control becomes disabled or
+  disappears.
+- Defined the reactive runtime as single-threaded and added the thread-safe
+  `otoe.scheduler.post()` / `drain_posted()` handoff for worker and hardware
+  integrations; the Tk host and development server now drain that queue.
+  **Migration:** replace direct writes to subscribed signals from worker threads
+  with `post(lambda: value.set(...))` and drain callbacks on the runtime thread.
+- Expanded failed-update staging, bundle verification, live-preview hardening,
+  style normalization, backend evidence, and their regression contracts.
+- Reworked release integrity around annotated publish tags, exact wheel/sdist
+  smoke tests, reproducible distributions, checksums, provenance attestations,
+  pinned GitHub Actions, dependency constraints, coverage and performance gates,
+  and fail-loud PyPI publication without `skip-existing`.
+
 ## v0.1.9 - Product and Evidence Hardening
+
+Provenance note: the PyPI files were built from commit `c8906ee`, while the
+release tag was moved later. See
+[`docs/releases/v0.1.9-provenance.md`](docs/releases/v0.1.9-provenance.md).
 
 - Aligned the public product framing around the Product North Star: Python-first
   local operational interfaces, hardware control panels, kiosks, appliances,

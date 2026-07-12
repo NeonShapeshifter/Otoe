@@ -6,13 +6,15 @@ import importlib
 import json
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 
 ROOT = Path(__file__).resolve().parent
 MANIFEST_PATH = ROOT / "manifest.json"
 EXPECTED_SCHEMA_VERSION = 1
 if TYPE_CHECKING:
+    from otoe import MountedNode, NativeRendererBackend, StyleSheet
+
     EXPECTED_FRAMEWORK_FILES: dict[str, tuple[str, ...]] = {}
 else:
     EXPECTED_FRAMEWORK_FILES = "__OTOE_EXPECTED_FRAMEWORK_FILES__"
@@ -134,7 +136,7 @@ def _install_pythonpath() -> None:
 def _load_manifest() -> dict[str, Any]:
     payload = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     _verify_schema_version(payload, "manifest.json")
-    return payload
+    return cast(dict[str, Any], payload)
 
 
 def _verify_manifest_contract(manifest: dict[str, Any]) -> None:
@@ -178,7 +180,7 @@ def _require_manifest_string(manifest: dict[str, Any], key: str) -> str:
     return value
 
 
-def _load_stylesheet(manifest: dict[str, Any]):
+def _load_stylesheet(manifest: dict[str, Any]) -> StyleSheet | None:
     styles_path = manifest.get("styles")
     if not styles_path:
         return None
@@ -473,7 +475,9 @@ def _verify_manifest_native_text_contract(native_text: Any) -> None:
     )
 
 
-def _native_renderer_backend(manifest: dict[str, Any]):
+def _native_renderer_backend(
+    manifest: dict[str, Any],
+) -> NativeRendererBackend | None:
     native_text = manifest.get("nativeText")
     if not isinstance(native_text, dict):
         return None
@@ -495,7 +499,7 @@ def _native_renderer_backend(manifest: dict[str, Any]):
     font_path = _require_bundle_file(bundle_path)
     from otoe import PillowNativeRendererBackend
 
-    return PillowNativeRendererBackend(font_path=font_path)
+    return cast("NativeRendererBackend", PillowNativeRendererBackend(font_path=font_path))
 
 
 def _verify_backend_package(manifest: dict[str, Any]) -> None:
@@ -561,7 +565,7 @@ def _load_json_bundle_file(
     _verify_schema_version(payload, relative)
     if style_artifact:
         _verify_style_ops_schema(payload, relative)
-    return payload
+    return cast(dict[str, Any], payload)
 
 
 def _verify_style_ops_schema(payload: dict[str, Any], label: str) -> None:
@@ -687,7 +691,7 @@ def _load_target(spec: str) -> Any:
     return value
 
 
-def _coerce_target(target: Any):
+def _coerce_target(target: Any) -> MountedNode:
     from otoe import MountedNode, Node, mount
 
     if isinstance(target, MountedNode):
@@ -706,4 +710,4 @@ if __name__ == "__main__":
         raise SystemExit(main())
     except Exception as exc:
         print(f"otoe-run: {exc}", file=sys.stderr)
-        raise SystemExit(1)
+        raise SystemExit(1) from None

@@ -7,7 +7,15 @@ from pathlib import Path
 from typing import Any
 
 from .cli_common import CliError, load_json_artifact
-from .style_ops import StyleIRError, apply_style_ops, load_style_ir, validate_style_ops
+from .style_ops import (
+    AppliedStyleOps,
+    StyleIRArtifact,
+    StyleIRError,
+    StyleOpsValidation,
+    apply_style_ops,
+    load_style_ir,
+    validate_style_ops,
+)
 
 
 def run_style_ir(args: argparse.Namespace) -> int:
@@ -37,11 +45,11 @@ def run_style_ir(args: argparse.Namespace) -> int:
 
 def style_ir_report(
     artifact_path: Path,
-    artifact,
-    applied,
+    artifact: StyleIRArtifact,
+    applied: AppliedStyleOps,
     *,
     strict: bool,
-    validation,
+    validation: StyleOpsValidation | None,
 ) -> dict[str, Any]:
     class_reports = [
         {

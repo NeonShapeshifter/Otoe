@@ -22,6 +22,7 @@ from .errors import (
     OtoeError,
     ReactiveDisposedError,
     ReactiveMutationError,
+    ReactiveThreadError,
     UnknownEventError,
     UnknownPropError,
 )
@@ -212,6 +213,7 @@ __all__ = [
     "RENDER_TREE_SCHEMA_VERSION",
     "ReactiveDisposedError",
     "ReactiveMutationError",
+    "ReactiveThreadError",
     "ResolvedStyleMap",
     "RenderIRError",
     "RenderNode",

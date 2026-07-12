@@ -114,6 +114,40 @@ def test_wraith_is_framed_as_case_study_not_readme_title() -> None:
     assert "| Wraith Mission Exec Case Study | Case study |" in gallery
 
 
+def test_phase5_reference_apps_are_front_door_gallery_entries() -> None:
+    readme = README.read_text(encoding="utf-8")
+    gallery = _section(readme, "Gallery Entries")
+    supporting = _section(readme, "Supporting Previews")
+    index = INDEX.read_text(encoding="utf-8")
+    front_door = _html_between(
+        index,
+        '<section aria-labelledby="front-door-heading">',
+        '<section aria-labelledby="supporting-heading">',
+    )
+    supporting_html = _html_between(
+        index,
+        '<section aria-labelledby="supporting-heading">',
+        '<section aria-labelledby="css-heading">',
+    )
+
+    expected_entries = {
+        "Hardware Control Panel": "hardware.html",
+        "Local Admin Console": "admin.html",
+        "Data Workflow Console": "data_workflow.html",
+        "Utility Ops": "utility_ops.html",
+    }
+    for title, html_file in expected_entries.items():
+        assert title in gallery
+        assert f"`{html_file}`" in gallery
+        assert title in front_door
+        assert f'href="{html_file}"' in front_door
+
+    assert "admin.html" not in supporting
+    assert "data_workflow.html" not in supporting
+    assert "admin.html" not in supporting_html
+    assert "data_workflow.html" not in supporting_html
+
+
 def test_index_regenerate_commands_are_reflected_in_readme() -> None:
     parser = _parse_html(INDEX)
     readme = _normalize_text(README.read_text(encoding="utf-8"))
@@ -180,6 +214,12 @@ def _section(markdown: str, heading: str) -> str:
     if next_heading == -1:
         return markdown[start:]
     return markdown[start:next_heading]
+
+
+def _html_between(html: str, start_marker: str, end_marker: str) -> str:
+    start = html.index(start_marker)
+    end = html.index(end_marker, start + len(start_marker))
+    return html[start:end]
 
 
 def _normalize_text(text: str) -> str:

@@ -76,13 +76,15 @@ def write_pillow_native_png(
             _draw_with_clip(
                 image,
                 command.clip,
-                lambda draw: _draw_pillow_rect(draw, command),
+                lambda draw, command=command: _draw_pillow_rect(draw, command),
             )
         elif command.kind == "text":
             _draw_with_clip(
                 image,
                 command.clip,
-                lambda draw: _draw_pillow_text(draw, command, font_path=font_path),
+                lambda draw, command=command: _draw_pillow_text(
+                    draw, command, font_path=font_path
+                ),
             )
         else:
             raise NativePaintError(
@@ -172,7 +174,7 @@ def _load_font(font_path: str | Path | None, *, font_size: int) -> Any:
 
 def _pillow_modules() -> tuple[Any, Any, Any]:
     try:
-        from PIL import Image, ImageDraw, ImageFont  # type: ignore[import-not-found]
+        from PIL import Image, ImageDraw, ImageFont
     except ImportError as exc:
         raise NativePaintError(
             f"Pillow native text backend requires Pillow. {_PILLOW_INSTALL_HINT}"

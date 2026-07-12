@@ -1222,9 +1222,9 @@
         ],
         "frame": 7,
         "hashes": {
-          "frame": "sha256:54d80680f16074f29dcca9007942561acf1f7c539674a27bcb3f0e5280b7bb51",
+          "frame": "sha256:05df32523bce3d57ed8be0f0e62079c1282c616c74f015d4ec0f0163bf4e7045",
           "layout": "sha256:0a6a4193f37979ca3e8b1de4c29d196ec626b5edaed4d3878502c1961589e72c",
-          "paint": "sha256:094bfc1e937998181a0872a528c2337966437372e03a05c90463d9ed30431ae4",
+          "paint": "sha256:e8f5a6f1e51ff8e86d1400bb7ad1f74227b5e401b927b620724c18627ee42c53",
           "visibleText": "sha256:b06d22f7bd155ff88ccc9ee62f468d593b5264c21aebe47392f4d9d778d24693"
         },
         "label": "after",
@@ -1251,12 +1251,12 @@
           "text",
           "text",
           "rect",
-          "rect",
           "text",
           "rect",
           "text",
           "text",
           "text",
+          "rect",
           "rect",
           "text",
           "rect",
@@ -1266,7 +1266,7 @@
           "rect",
           "text"
         ],
-        "paintSignature": "sha256:8c58f1ba6afe122c0f660be096c6b77d63123d044bfbc232633cc55f839aff08",
+        "paintSignature": "sha256:2afd58651d2169e4b86b605993f0dbdf03a4de49ae2c9f6b5646d6a708dfcdc0",
         "rootName": "ShortcutScope",
         "size": [
           420,

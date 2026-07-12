@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+from typing import Any
+
 from ._ui_helpers import _value, class_names
 from .events import EventSignature
-from .reactive import computed, is_reactive
+from .reactive import Computed, computed, is_reactive
 
 __all__ = [
     "UI_EVENT_SIGNATURES",
     "_surface_class",
 ]
 
-UI_EVENT_SIGNATURES = {
+UI_EVENT_SIGNATURES: dict[str, EventSignature] = {
     "ActionButton.onClick": EventSignature(),
     "CommandPalette.on_query": EventSignature(("value",)),
     "CommandPalette.on_select": EventSignature(("command_id",)),
@@ -27,7 +29,7 @@ UI_EVENT_SIGNATURES = {
     "TabButton.onClick": EventSignature(),
 }
 
-_SURFACE_CLASSES = {
+_SURFACE_CLASSES: dict[str, str] = {
     "default": "bg-panel border border-line",
     "neutral": "bg-panel border border-line",
     "soft": "bg-panel-soft border border-line",
@@ -38,7 +40,7 @@ _SURFACE_CLASSES = {
     "danger": "bg-danger-soft border border-danger",
 }
 
-def _surface_class(base: str, tone, extra: str | None = None):
+def _surface_class(base: str, tone: Any, extra: Any = None) -> str | Computed:
     if is_reactive(tone) or is_reactive(extra):
         return computed(
             lambda: class_names(

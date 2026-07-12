@@ -4,12 +4,24 @@ from cli_helpers import (
     tomllib,
     main,
 )
+import pytest
 
 
 def test_pyproject_declares_otoe_console_script():
     metadata = tomllib.loads(open("pyproject.toml", encoding="utf-8").read())
 
     assert metadata["project"]["scripts"]["otoe"] == "otoe.cli:main"
+
+
+def test_cli_help_leads_with_app_author_workflow(capsys):
+    with pytest.raises(SystemExit) as exit_info:
+        main(["--help"])
+
+    help_text = capsys.readouterr().out
+    assert exit_info.value.code == 0
+    assert help_text.index("new") < help_text.index("backend-profile")
+    assert help_text.index("dev") < help_text.index("backend-profile")
+    assert "Create an app with `otoe new`" in help_text
 
 def test_cli_check_compiles_requested_path(tmp_path, capsys):
     module = tmp_path / "surface.py"
@@ -88,8 +100,60 @@ def test_cli_check_defaults_to_app_py_outside_source_checkout(
     captured = capsys.readouterr()
     assert result == 0
     assert "compile app.py: ok" in captured.out
+    assert "next: validate target with `otoe check --target app:app`" in captured.out
+    assert "next: render HTML with `otoe render app:app --out preview.html --pretty`" in captured.out
     assert "pytest: skipped (tests directory missing)" in captured.out
     assert "compile src: missing" not in captured.err
+
+
+
+def test_cli_check_validates_target_and_css_for_generated_app(tmp_path, monkeypatch, capsys):
+    project = tmp_path / "hello"
+    assert main(["new", str(project)]) == 0
+    monkeypatch.chdir(project)
+    monkeypatch.delitem(sys.modules, "app", raising=False)
+
+    result = main(["check", "--target", "app:app", "--css", "styles.css"])
+
+    captured = capsys.readouterr()
+    assert result == 0
+    assert "compile app.py: ok" in captured.out
+    assert "target app:app: ok" in captured.out
+    assert "css styles.css: ok (2 rules)" in captured.out
+    assert "next: validate target" not in captured.out
+    assert "next: render HTML with `otoe render app:app --out preview.html --css styles.css --pretty`" in captured.out
+
+
+def test_cli_check_reports_target_failure(tmp_path, monkeypatch, capsys):
+    app = tmp_path / "app.py"
+    app.write_text("value = 1\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+
+    result = main(["check", "--target", "app"])
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "compile app.py: ok" in captured.out
+    assert "target app: failed:" in captured.err
+    assert "target 'app' must use MODULE:OBJECT syntax" in captured.err
+    assert "for example app:app" in captured.err
+
+
+def test_cli_check_reports_css_failure(tmp_path, monkeypatch, capsys):
+    app = tmp_path / "app.py"
+    app.write_text("value = 1\n", encoding="utf-8")
+    styles = tmp_path / "styles.css"
+    styles.write_text(".bad { made-up: 1; }\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+
+    result = main(["check", "--css", "styles.css"])
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "compile app.py: ok" in captured.out
+    assert "css styles.css: failed:" in captured.err
+    assert "Unknown style property 'made-up'" in captured.err
+    assert "Known portable properties:" in captured.err
 
 def test_cli_portable_core_prints_support_matrix(capsys):
     result = main(["portable-core"])
@@ -320,6 +384,15 @@ def test_cli_dev_rejects_invalid_app_target(tmp_path, monkeypatch, capsys):
     assert "dev target must expose render_fragment()" in captured.err
     assert "or be a Node, MountedNode" in captured.err
 
+
+def test_cli_dev_reports_target_spec_without_module_object(capsys):
+    result = main(["dev", "app"])
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "dev: target 'app' must use MODULE:OBJECT syntax" in captured.err
+    assert "for example app:app" in captured.err
+
 def test_cli_new_scaffolds_renderable_app(tmp_path, monkeypatch, capsys):
     project = tmp_path / "hello-otoe"
 
@@ -334,6 +407,8 @@ def test_cli_new_scaffolds_renderable_app(tmp_path, monkeypatch, capsys):
     assert "def app():" in app_source
     assert (project / "styles.css").is_file()
     assert "otoe check" in readme
+    assert "otoe check --target app:app --css styles.css" in readme
+    assert "validates that the generated target imports" in readme
     assert "otoe dev app:app --css styles.css" in readme
     assert "otoe render app:app --out preview.html --css styles.css --pretty" in readme
     assert "otoe render app:app --out preview.png --native --css styles.css" in readme
@@ -349,6 +424,7 @@ def test_cli_new_scaffolds_renderable_app(tmp_path, monkeypatch, capsys):
     assert set(stylesheet.rules) == {".app", ".title"}
 
     monkeypatch.syspath_prepend(str(project))
+    monkeypatch.delitem(sys.modules, "app", raising=False)
     output = tmp_path / "preview.html"
 
     assert (
@@ -374,6 +450,7 @@ def test_cli_new_can_skip_css(tmp_path):
     assert result == 0
     assert not (project / "styles.css").exists()
     readme = (project / "README.md").read_text(encoding="utf-8")
+    assert "otoe check --target app:app\n" in readme
     assert "otoe dev app:app\n" in readme
     assert "otoe render app:app --out preview.html --pretty" in readme
     assert "otoe render app:app --out preview.png --native" in readme

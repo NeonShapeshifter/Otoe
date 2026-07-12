@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable
 from typing import Any
 
 from ._ui_helpers import class_names
@@ -16,13 +17,13 @@ __all__ = [
 @component
 def DataTable(
     *,
-    columns,
-    rows,
-    key,
-    render_cell=None,
+    columns: Iterable[Any],
+    rows: Any,
+    key: Callable[[Any], Any],
+    render_cell: Callable[[Any, TableColumn], Any] | None = None,
     className: str | None = None,
-    empty="No rows",
-):
+    empty: Any = "No rows",
+) -> Node:
     normalized_columns = [_normalize_column(column) for column in columns]
     fallback = empty if isinstance(empty, Node) else Text(empty, className="ui-table-empty")
 
@@ -53,7 +54,11 @@ def DataTable(
         gap=8,
     )
 
-def _render_cell(row: Any, column: TableColumn, render_cell) -> Node:
+def _render_cell(
+    row: Any,
+    column: TableColumn,
+    render_cell: Callable[[Any, TableColumn], Any] | None,
+) -> Node:
     if render_cell is not None:
         cell = render_cell(row, column)
         if not isinstance(cell, Node):

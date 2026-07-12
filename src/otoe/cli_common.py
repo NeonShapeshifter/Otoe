@@ -54,7 +54,9 @@ def load_json_artifact(path: Path, *, label: str) -> Any:
 def parse_target_spec(spec: str) -> tuple[str, str]:
     module_name, separator, object_path = spec.partition(":")
     if not separator or not module_name or not object_path:
-        raise CliError("target must use MODULE:OBJECT syntax")
+        raise CliError(
+            f"target {spec!r} must use MODULE:OBJECT syntax, for example app:app"
+        )
     return module_name, object_path
 
 
@@ -76,12 +78,18 @@ def load_target(spec: str) -> Any:
     try:
         value = importlib.import_module(module_name)
     except Exception as exc:
-        raise CliError(f"could not import module {module_name!r}") from exc
+        raise CliError(
+            f"could not import module {module_name!r} from target {spec!r}; "
+            "run the command from the app directory or use MODULE:OBJECT syntax"
+        ) from exc
     for part in object_path.split("."):
         try:
             value = getattr(value, part)
         except AttributeError as exc:
-            raise CliError(f"{spec!r} could not resolve attribute {part!r}") from exc
+            raise CliError(
+                f"target {spec!r} could not resolve attribute {part!r}; "
+                f"available object path starts at module {module_name!r}"
+            ) from exc
     return value
 
 

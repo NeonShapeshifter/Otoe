@@ -3,12 +3,13 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
+from typing import cast
 
 from .cli_common import CliError, load_target
 from .cli_styles import load_stylesheet
 from .cli_targets import coerce_render_target
 from .html import render_html
-from .native import PillowNativeRendererBackend, render_native_png
+from .native import NativeRendererBackend, PillowNativeRendererBackend, render_native_png
 from .style import StyleError
 
 
@@ -55,7 +56,9 @@ def run_render(args: argparse.Namespace) -> int:
     return 0
 
 
-def _native_renderer_backend(args: argparse.Namespace):
+def _native_renderer_backend(
+    args: argparse.Namespace,
+) -> NativeRendererBackend | None:
     native_text = getattr(args, "native_text", "marker")
     font = getattr(args, "font", None)
     native_scale = getattr(args, "native_scale", 1)
@@ -70,5 +73,8 @@ def _native_renderer_backend(args: argparse.Namespace):
     if font is not None and native_text != "pillow":
         raise CliError("--font requires --native-text pillow")
     if native_text == "pillow":
-        return PillowNativeRendererBackend(font_path=font)
+        return cast(
+            NativeRendererBackend,
+            PillowNativeRendererBackend(font_path=font),
+        )
     return None

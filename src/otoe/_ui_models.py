@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -55,14 +56,14 @@ class NavRoute:
 
 
 class CommandRegistry:
-    def __init__(self, commands) -> None:
+    def __init__(self, commands: Iterable[Command | Mapping[str, Any]]) -> None:
         self._commands = tuple(_normalize_command(command) for command in _list_value(commands))
 
     @property
     def commands(self) -> list[Command]:
         return list(self._commands)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Command]:
         return iter(self._commands)
 
     def visible(self, query: str) -> list[Command]:
@@ -164,7 +165,7 @@ def _normalize_route(route: Any) -> NavRoute:
     raise TypeError(f"Routes must be NavRoute or dict; got {type(route).__name__}.")
 
 
-def _filter_commands(commands, query: str) -> list[Command]:
+def _filter_commands(commands: Any, query: str) -> list[Command]:
     items = [_normalize_command(command) for command in _list_value(commands)]
     needle = query.strip().lower()
     if not needle:

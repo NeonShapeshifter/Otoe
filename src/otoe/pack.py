@@ -10,6 +10,7 @@ import sys
 import tarfile
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from .build import (
     ASSET_OUTPUT_DIR,
@@ -145,7 +146,7 @@ def _run_style_ir_strict_verify(bundle_dir: Path) -> None:
     raise PackError(f"style-ir strict verification failed: {details}")
 
 
-def _load_manifest(bundle_dir: Path) -> dict:
+def _load_manifest(bundle_dir: Path) -> dict[str, Any]:
     manifest_path = bundle_dir / BUILD_MANIFEST_FILENAME
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -183,7 +184,7 @@ def _bundle_entries(bundle_dir: Path, *, output_path: Path) -> list[Path]:
 
 def _reject_unmanifested_entries(
     entries: tuple[Path, ...],
-    manifest: dict,
+    manifest: dict[str, Any],
     *,
     bundle_dir: Path,
 ) -> None:
@@ -194,7 +195,11 @@ def _reject_unmanifested_entries(
             raise PackError(f"unmanifested bundle file {relative!r}")
 
 
-def _manifest_pack_paths(manifest: dict, *, bundle_dir: Path) -> set[str]:
+def _manifest_pack_paths(
+    manifest: dict[str, Any],
+    *,
+    bundle_dir: Path,
+) -> set[str]:
     paths = {BUILD_MANIFEST_FILENAME}
     for key in (
         "plan",

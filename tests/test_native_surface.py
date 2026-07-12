@@ -2,6 +2,7 @@ import pytest
 
 from otoe import (
     Button,
+    For,
     HStack,
     Input,
     LayoutBox,
@@ -199,6 +200,82 @@ def test_native_surface_click_moves_focus_and_runs_focus_events():
         "button-focus",
         "button-click",
     ]
+
+
+def test_native_surface_focus_follows_keyed_widget_across_reorder():
+    items = signal(
+        [
+            {"id": "a", "label": "Alpha"},
+            {"id": "b", "label": "Beta"},
+        ]
+    )
+    surface = NativeSurface(
+        For(
+            each=items,
+            key=lambda item: item["id"],
+            children=lambda item: Button(item["label"], onClick=lambda: None),
+        )
+    )
+    surface.focus((0,))
+
+    items.set(list(reversed(items.value)))
+
+    assert surface.focused_box is not None
+    assert surface.focused_box.text == "Alpha"
+    assert surface.focused_path == (1,)
+
+
+def test_native_surface_keyed_focus_does_not_cross_sibling_for_controls():
+    first_items = signal([{"id": "shared", "label": "First"}])
+    second_items = signal([{"id": "shared", "label": "Second"}])
+    events = []
+    surface = NativeSurface(
+        VStack(
+            For(
+                each=first_items,
+                key=lambda item: item["id"],
+                children=lambda item: Button(
+                    item["label"],
+                    onClick=lambda: None,
+                    onBlur=lambda: events.append("first-blur"),
+                ),
+            ),
+            For(
+                each=second_items,
+                key=lambda item: item["id"],
+                children=lambda item: Button(item["label"], onClick=lambda: None),
+            ),
+        )
+    )
+    surface.focus((0, 0))
+
+    first_items.set([])
+    _ = surface.paint
+
+    assert surface.focused_path is None
+    assert surface.focused_box is None
+    assert events == ["first-blur"]
+
+
+def test_native_surface_blurs_focused_control_when_it_becomes_disabled():
+    disabled = signal(False)
+    events = []
+    surface = NativeSurface(
+        Button(
+            "Run",
+            disabled=disabled,
+            onClick=lambda: None,
+            onFocus=lambda: events.append("focus"),
+            onBlur=lambda: events.append("blur"),
+        )
+    )
+    surface.focus(())
+
+    disabled.set(True)
+    _ = surface.paint
+
+    assert surface.focused_path is None
+    assert events == ["focus", "blur"]
 
 
 def test_native_surface_tab_cycles_focusable_controls_and_skips_disabled():

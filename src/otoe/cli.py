@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import argparse
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from typing import cast
 
 from . import cli_build as _cli_build
 from .cli_backend import (
@@ -44,12 +45,44 @@ __all__ = [
 def main(argv: Sequence[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
-    return args.func(args)
+    func = cast(Callable[[argparse.Namespace], int], args.func)
+    return func(args)
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="otoe")
+    parser = argparse.ArgumentParser(
+        prog="otoe",
+        description="Create an app with `otoe new`, then use `otoe dev` and `otoe check`.",
+    )
     subcommands = parser.add_subparsers(dest="command", required=True)
+
+    new = subcommands.add_parser("new", help="scaffold a small Otoe app")
+    new.add_argument("path", help="directory to create or populate")
+    new.add_argument(
+        "--name",
+        help="display name for the generated app; defaults to the directory name",
+    )
+    new.add_argument(
+        "--force",
+        action="store_true",
+        help="overwrite existing scaffold files",
+    )
+    new.add_argument(
+        "--no-css",
+        action="store_true",
+        help="skip writing styles.css",
+    )
+    new.set_defaults(func=run_new)
+
+    dev = subcommands.add_parser("dev", help="run a local live preview app")
+    dev.add_argument("target", help="app target in MODULE:APP form")
+    dev.add_argument("--host", default="127.0.0.1")
+    dev.add_argument("--port", default=8767, type=int)
+    dev.add_argument("--title", default="Otoe Dev")
+    dev.add_argument("--css", help="optional CSS file to serve")
+    dev.add_argument("--css-route", default="/otoe.css")
+    dev.add_argument("--root-class", default="", help="class added to the live root")
+    dev.set_defaults(func=run_dev)
 
     check = subcommands.add_parser("check", help="run local Otoe health checks")
     check.add_argument(
@@ -62,6 +95,16 @@ def _build_parser() -> argparse.ArgumentParser:
         "--tests",
         action="store_true",
         help="also run pytest after compile checks",
+    )
+    check.add_argument(
+        "--target",
+        help="optional import target in MODULE:OBJECT form to validate",
+    )
+    check.add_argument(
+        "--css",
+        action="append",
+        default=[],
+        help="optional Otoe CSS file to parse; may be passed more than once",
     )
     check.add_argument(
         "--pytest-arg",
@@ -361,34 +404,6 @@ def _build_parser() -> argparse.ArgumentParser:
         help="write the dependency audit as JSON to stdout",
     )
     deps.set_defaults(func=run_deps)
-
-    dev = subcommands.add_parser("dev", help="run a local live preview app")
-    dev.add_argument("target", help="app target in MODULE:APP form")
-    dev.add_argument("--host", default="127.0.0.1")
-    dev.add_argument("--port", default=8767, type=int)
-    dev.add_argument("--title", default="Otoe Dev")
-    dev.add_argument("--css", help="optional CSS file to serve")
-    dev.add_argument("--css-route", default="/otoe.css")
-    dev.add_argument("--root-class", default="", help="class added to the live root")
-    dev.set_defaults(func=run_dev)
-
-    new = subcommands.add_parser("new", help="scaffold a small Otoe app")
-    new.add_argument("path", help="directory to create or populate")
-    new.add_argument(
-        "--name",
-        help="display name for the generated app; defaults to the directory name",
-    )
-    new.add_argument(
-        "--force",
-        action="store_true",
-        help="overwrite existing scaffold files",
-    )
-    new.add_argument(
-        "--no-css",
-        action="store_true",
-        help="skip writing styles.css",
-    )
-    new.set_defaults(func=run_new)
 
     return parser
 
