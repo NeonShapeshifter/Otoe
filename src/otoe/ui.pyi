@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Iterable, Iterator, Mapping
+import sys
+from typing import Any, Callable, Iterable, Iterator, Mapping, Self
 
 from .events import EventSignature
 from .node import Node
@@ -28,6 +29,9 @@ class TableColumn:
         className: str | None = ...,
     ) -> None: ...
 
+    if sys.version_info >= (3, 13):
+        def __replace__(self, /, **changes: Any) -> Self: ...
+
 
 class Command:
     id: str
@@ -46,6 +50,9 @@ class Command:
         shortcut: str | None = ...,
         className: str | None = ...,
     ) -> None: ...
+
+    if sys.version_info >= (3, 13):
+        def __replace__(self, /, **changes: Any) -> Self: ...
 
 
 class MenuItem:
@@ -68,6 +75,9 @@ class MenuItem:
         className: str | None = ...,
     ) -> None: ...
 
+    if sys.version_info >= (3, 13):
+        def __replace__(self, /, **changes: Any) -> Self: ...
+
 
 class SelectOption:
     value: str
@@ -87,6 +97,9 @@ class SelectOption:
         className: str | None = ...,
     ) -> None: ...
 
+    if sys.version_info >= (3, 13):
+        def __replace__(self, /, **changes: Any) -> Self: ...
+
 
 class NavRoute:
     id: str
@@ -105,6 +118,9 @@ class NavRoute:
         tone: Any = ...,
         className: str | None = ...,
     ) -> None: ...
+
+    if sys.version_info >= (3, 13):
+        def __replace__(self, /, **changes: Any) -> Self: ...
 
 
 ColumnLike = TableColumn | Mapping[str, Any]
