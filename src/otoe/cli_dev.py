@@ -11,6 +11,7 @@ from .cli_common import CliError, load_target
 from .cli_targets import coerce_render_target
 from .html_live import LiveHtmlRenderer
 from .live_server import LivePreviewApp, LivePreviewConfig, run_live_preview
+from .mount import unmount
 
 
 def run_dev(args: argparse.Namespace) -> int:
@@ -90,6 +91,9 @@ class _RenderTargetPreview:
         with self._lock:
             self._renderer.dispatch(event_id, *args)
             return self.render_fragment()
+
+    def dispose(self) -> None:
+        unmount(self._mounted)
 
 
 def _dev_css_path(path: str | None) -> Path | None:

@@ -16,7 +16,7 @@ from examples.wraith.mission_exec_snapshot import (
     normalize_mission_exec_snapshot,
 )
 from examples.wraith.mission_exec_surface import MissionExecSurface
-from otoe import LiveHtmlRenderer, mount, signal
+from otoe import LiveHtmlRenderer, mount, signal, unmount
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -99,6 +99,9 @@ class MissionExecLivePreview:
         with self._lock:
             self.renderer.dispatch(event_id, *args)
             return self.render_fragment()
+
+    def dispose(self) -> None:
+        unmount(self.surface)
 
     def _set_filter(self, value: str) -> None:
         self.active_filter.set(value)

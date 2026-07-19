@@ -317,6 +317,68 @@ def test_unmount_attempts_every_cleanup_when_one_fails():
     assert events == ["last", "failed", "first"]
 
 
+def test_unmount_attempts_every_cleanup_after_process_control_exceptions():
+    value = signal("ready")
+    events: list[str] = []
+
+    @component
+    def CleanupFailures():
+        def watch_value():
+            _ = value.value
+
+            def cleanup_effect():
+                events.append("effect")
+                raise SystemExit("effect cleanup stopped")
+
+            return cleanup_effect
+
+        effect(watch_value)
+        on_cleanup(lambda: events.append("first"))
+
+        def interrupt_cleanup():
+            events.append("interrupted")
+            raise KeyboardInterrupt("owner cleanup interrupted")
+
+        on_cleanup(interrupt_cleanup)
+        on_cleanup(lambda: events.append("last"))
+        return Text(value)
+
+    mounted = mount(CleanupFailures())
+
+    with pytest.raises(BaseExceptionGroup) as caught:
+        unmount(mounted)
+
+    errors = _flatten_exceptions(caught.value)
+    assert any(isinstance(error, KeyboardInterrupt) for error in errors)
+    assert any(isinstance(error, SystemExit) for error in errors)
+    assert events == ["last", "interrupted", "first", "effect"]
+    assert mounted.owner is not None
+    assert mounted.owner.disposed is True
+    assert value._subscribers == {}
+
+    unmount(mounted)
+    assert events == ["last", "interrupted", "first", "effect"]
+
+
+def test_process_control_during_mount_still_disposes_partial_owner():
+    events: list[str] = []
+
+    @component
+    def InterruptedMount():
+        on_cleanup(lambda: events.append("cleanup"))
+
+        def interrupt_mount():
+            raise KeyboardInterrupt("mount interrupted")
+
+        on_mount(interrupt_mount)
+        return Text("Ready")
+
+    with pytest.raises(KeyboardInterrupt, match="mount interrupted"):
+        mount(InterruptedMount())
+
+    assert events == ["cleanup"]
+
+
 def test_computed_prop_updates_when_dependency_changes():
     active = signal(False)
     node = Button("ST", className=computed(lambda: "on" if active.value else "off"))
@@ -747,7 +809,7 @@ def test_for_reentrant_update_during_activation_keeps_latest_items_without_leaks
 
 
 def _flatten_exceptions(error):
-    if not isinstance(error, ExceptionGroup):
+    if not isinstance(error, BaseExceptionGroup):
         return [error]
     return [
         nested

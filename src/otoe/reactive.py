@@ -189,8 +189,14 @@ class Effect:
         elif autorun:
             try:
                 self.run()
-            except Exception:
-                self.dispose()
+            except BaseException as primary_error:
+                try:
+                    self.dispose()
+                except BaseException as cleanup_error:
+                    raise BaseExceptionGroup(
+                        "Reactive effect construction and cleanup both failed.",
+                        [primary_error, cleanup_error],
+                    ) from primary_error
                 raise
 
     def run(self) -> None:
@@ -226,17 +232,20 @@ class Effect:
         if self._disposed:
             return
         self._disposed = True
-        errors: list[Exception] = []
+        errors: list[BaseException] = []
         try:
             self._run_cleanup()
-        except Exception as exc:
+        except BaseException as exc:
             errors.append(exc)
         try:
             self._clear_deps()
-        except Exception as exc:
+        except BaseException as exc:
             errors.append(exc)
         if errors:
-            raise ExceptionGroup("Errors while disposing reactive effect.", errors)
+            raise BaseExceptionGroup(
+                "Errors while disposing reactive effect.",
+                errors,
+            )
 
 
 def signal(initial: Any) -> Signal:

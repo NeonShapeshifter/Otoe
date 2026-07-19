@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +14,7 @@ from examples.live_server import (
 from examples.wraith.arsenal import ArsenalView
 from examples.wraith.runtime_status import RuntimeStatusCluster
 from examples.wraith.topbar import TopBar
-from otoe import LiveHtmlRenderer, computed, mount, signal
+from otoe import LiveHtmlRenderer, computed, mount, signal, unmount
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -29,38 +30,54 @@ PAGE_SIZE = 3
 
 class WraithLivePreview:
     def __init__(self) -> None:
-        self._lock = threading.RLock()
-        self.renderer = LiveHtmlRenderer()
+        self._disposed = False
+        owned_cleanups: list[Callable[[], None]] = []
+        try:
+            self._lock = threading.RLock()
+            self.renderer = LiveHtmlRenderer()
 
-        self.campaign = signal("Primary Campaign")
-        self.wifi_state = signal("UP")
-        self.stealth_active = signal(True)
-        self.query = signal("")
-        self.active_tag = signal("ALL")
-        self.page = signal(0)
-        self.status_index = 0
+            self.campaign = signal("Primary Campaign")
+            self.wifi_state = signal("UP")
+            self.stealth_active = signal(True)
+            self.query = signal("")
+            self.active_tag = signal("ALL")
+            self.page = signal(0)
+            self.status_index = 0
 
-        self.visible_missions = computed(self._visible_missions)
-        self.page_label = computed(self._page_label)
+            self.visible_missions = computed(self._visible_missions)
+            owned_cleanups.append(self.visible_missions.dispose)
+            self.page_label = computed(self._page_label)
+            owned_cleanups.append(self.page_label.dispose)
 
-        self.topbar = mount(
-            TopBar(
-                campaign=self.campaign,
-                wifi_state=self.wifi_state,
-                stealth_active=self.stealth_active,
+            self.topbar = mount(
+                TopBar(
+                    campaign=self.campaign,
+                    wifi_state=self.wifi_state,
+                    stealth_active=self.stealth_active,
+                )
             )
-        )
-        self.status = mount(RuntimeStatusCluster(probe=self._probe_runtime))
-        self.arsenal = mount(
-            ArsenalView(
-                query=self.query,
-                active_tag=self.active_tag,
-                missions=self.visible_missions,
-                page_label=self.page_label,
-                on_search=self._search,
-                on_next=self._next_page,
+            owned_cleanups.append(lambda: unmount(self.topbar))
+            self.status = mount(RuntimeStatusCluster(probe=self._probe_runtime))
+            owned_cleanups.append(lambda: unmount(self.status))
+            self.arsenal = mount(
+                ArsenalView(
+                    query=self.query,
+                    active_tag=self.active_tag,
+                    missions=self.visible_missions,
+                    page_label=self.page_label,
+                    on_search=self._search,
+                    on_next=self._next_page,
+                )
             )
-        )
+            owned_cleanups.append(lambda: unmount(self.arsenal))
+        except BaseException as primary_error:
+            self._disposed = True
+            _cleanup_after_construction_failure(
+                primary_error,
+                reversed(owned_cleanups),
+                message="Wraith live preview construction and cleanup failed.",
+            )
+            raise
 
     def render_fragment(self) -> str:
         with self._lock:
@@ -88,6 +105,27 @@ class WraithLivePreview:
         with self._lock:
             self.renderer.dispatch(event_id, *args)
             return self.render_fragment()
+
+    def dispose(self) -> None:
+        if getattr(self, "_disposed", False):
+            return
+        self._disposed = True
+
+        errors: list[BaseException] = []
+        cleanups: tuple[Callable[[], None], ...] = (
+            lambda: unmount(self.arsenal),
+            lambda: unmount(self.status),
+            lambda: unmount(self.topbar),
+            self.page_label.dispose,
+            self.visible_missions.dispose,
+        )
+        for cleanup in cleanups:
+            try:
+                cleanup()
+            except BaseException as exc:
+                errors.append(exc)
+        if errors:
+            raise BaseExceptionGroup("Wraith live preview cleanup failed.", errors)
 
     def _search(self, value: str) -> None:
         query = value.strip()
@@ -173,6 +211,22 @@ RUNTIME_SNAPSHOTS = [
     {"wifi": "UP", "bluetooth": "READY", "cpu": "43C", "storage": "18GB"},
     {"wifi": "DEGRADED", "bluetooth": "READY", "cpu": "44C", "storage": "17GB"},
 ]
+
+
+def _cleanup_after_construction_failure(
+    primary_error: BaseException,
+    cleanups: Iterable[Callable[[], None]],
+    *,
+    message: str,
+) -> None:
+    errors: list[BaseException] = [primary_error]
+    for cleanup in cleanups:
+        try:
+            cleanup()
+        except BaseException as cleanup_error:
+            errors.append(cleanup_error)
+    if len(errors) > 1:
+        raise BaseExceptionGroup(message, errors) from primary_error
 
 
 def run(host: str = "127.0.0.1", port: int = 8765) -> None:

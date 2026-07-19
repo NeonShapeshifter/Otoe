@@ -159,6 +159,19 @@ def test_failed_global_effect_construction_releases_collected_dependencies():
     assert len(value._subscribers) == 0
 
 
+def test_interrupted_global_effect_construction_releases_collected_dependencies():
+    value = signal("ready")
+
+    def interrupted_effect():
+        _ = value.value
+        raise KeyboardInterrupt("effect interrupted")
+
+    with pytest.raises(KeyboardInterrupt, match="effect interrupted"):
+        effect(interrupted_effect)
+
+    assert len(value._subscribers) == 0
+
+
 def test_effect_created_during_on_mount_runs_and_tracks_dependencies():
     value = signal("ready")
     seen = []

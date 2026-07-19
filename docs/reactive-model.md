@@ -177,11 +177,49 @@ post(lambda: status.set("ready"))
 drain_posted()
 ```
 
-The built-in Tk window polls this queue, and the development HTTP server drains
-it before rendering or dispatching an event. Custom backends must call
-`drain_posted()` from their event loop. A direct cross-thread update raises
+Each built-in Tk window polls its own queue, and each development HTTP server
+drains its own queue before rendering or dispatching an event. Custom backends
+must call `drain_posted()` from their event loop. A direct cross-thread update raises
 `ReactiveThreadError` before changing the signal. Catch it from the normal
 app-author surface with `from otoe import ReactiveThreadError`.
+
+An unqualified `post()` is routed automatically only when there is zero or one
+active runtime. With concurrent windows or preview servers, bind the producer
+to one runtime instead of allowing callbacks to cross hosts:
+
+```python
+from otoe.scheduler import capture_post
+
+# Capture during app-factory setup or on the owning runtime thread.
+post_to_this_runtime = capture_post()
+
+# Worker thread:
+post_to_this_runtime(lambda: status.set("ready"))
+```
+
+The HTTP preview binds its app factory automatically, and `TkNativeWindow.post`
+is the targeted form for an existing Tk window. A custom backend that can run
+alongside another host must own a `PostedCallbackQueue`: bind it while creating
+the reactive app, activate it around the event loop, drain that queue
+explicitly, and close it before disposing the app. Closing is permanent,
+drains already accepted callbacks on the owning runtime, and makes captured
+posters fail loudly rather than accumulating work without a consumer.
+
+Maintainers can exercise the runtime and host contract with machine-readable
+evidence:
+
+```bash
+python scripts/runtime_soak.py --cycles 1000 --host-cycles 100 > runtime-soak.json
+```
+
+The gate runs in a supervised subprocess. It checks transactional failure and
+recovery, concurrent producers, callbacks posted while draining, exact
+resource and owner cleanup, HTTP server start/request/failure/stop/restart on a
+reused loopback port, and the production Tk lifecycle against an injected
+headless Tk module. Its JSON includes partial counters and the failing cycle if
+the child errors or reaches its hard deadline. This is host-contract evidence;
+it does not claim a real GUI display, RSS pressure, or physical-device
+coverage. Those remain native and hardware acceptance work.
 
 ## Recommended Patterns
 

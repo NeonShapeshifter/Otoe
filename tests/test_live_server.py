@@ -1,16 +1,25 @@
 import json
+import threading
+from http.client import HTTPConnection
 from io import BytesIO
 from pathlib import Path
 from typing import Any, cast
 
+import otoe.live_server as live_server_module
+import pytest
+from otoe import Text, component, mount, on_cleanup
+from otoe.cli_dev import _RenderTargetPreview
 from otoe.live_server import (
     LivePreviewConfig,
     LivePreviewStylesheet,
     MAX_EVENT_BODY_BYTES,
     _LivePreviewHandler,
+    _LivePreviewServer,
     _LivePreviewState,
     render_live_page,
+    run_live_preview,
 )
+from otoe.scheduler import capture_post, drain_posted, post
 
 
 class DummyPreview:
@@ -19,6 +28,603 @@ class DummyPreview:
 
     def dispatch_event(self, event_id, *args):
         return f"{event_id}:{len(args)}"
+
+
+def test_concurrent_live_hosts_only_drain_their_own_runtime_queue():
+    servers = [
+        _LivePreviewServer(
+            app_factory=DummyPreview,
+            config=_live_config(),
+            host="127.0.0.1",
+            port=0,
+        )
+        for _ in range(2)
+    ]
+    hosts = [threading.Thread(target=server.serve_forever) for server in servers]
+    callback_threads: list[list[int]] = [[], []]
+    try:
+        for host in hosts:
+            host.start()
+        for server in servers:
+            assert _request_live_server(server, "/health") == (200, '{"ok": true}')
+
+        with pytest.raises(RuntimeError, match="multiple active runtimes"):
+            post(lambda: None)
+
+        for index, server in enumerate(servers):
+            server.state.posted_callbacks.post(
+                lambda index=index: callback_threads[index].append(
+                    threading.get_ident()
+                )
+            )
+
+        assert _request_live_server(servers[1], "/")[0] == 200
+        assert callback_threads == [[], [hosts[1].ident]]
+
+        assert _request_live_server(servers[0], "/")[0] == 200
+        assert callback_threads == [[hosts[0].ident], [hosts[1].ident]]
+    finally:
+        for server in servers:
+            server.shutdown()
+        for host in hosts:
+            host.join(timeout=2)
+        for server in servers:
+            server.close()
+
+    assert all(not host.is_alive() for host in hosts)
+
+
+def test_live_preview_server_disposes_app_when_bind_fails(monkeypatch):
+    class DisposablePreview(DummyPreview):
+        def __init__(self):
+            self.dispose_calls = 0
+
+        def dispose(self):
+            self.dispose_calls += 1
+
+    app = DisposablePreview()
+
+    def fail_bind(address, handler, *, state):
+        raise OSError("bind failed")
+
+    monkeypatch.setattr(live_server_module, "_LivePreviewHTTPServer", fail_bind)
+
+    with pytest.raises(OSError, match="bind failed"):
+        _LivePreviewServer(
+            app_factory=lambda: app,
+            config=_live_config(),
+            host="127.0.0.1",
+            port=0,
+        )
+
+    assert app.dispose_calls == 1
+
+
+def test_live_preview_factory_failure_drains_and_seals_its_bound_queue():
+    seen: list[str] = []
+    posters = []
+
+    def fail_factory():
+        poster = capture_post()
+        posters.append(poster)
+        poster(lambda: seen.append("accepted"))
+        raise RuntimeError("factory failed")
+
+    with pytest.raises(RuntimeError, match="factory failed"):
+        _LivePreviewServer(
+            app_factory=fail_factory,
+            config=_live_config(),
+            host="127.0.0.1",
+            port=0,
+        )
+
+    assert seen == ["accepted"]
+    with pytest.raises(RuntimeError, match="not accepting work"):
+        posters[0](lambda: None)
+
+
+def test_live_preview_bind_failure_preserves_queue_and_app_cleanup_failures(
+    monkeypatch,
+):
+    class BrokenPreview(DummyPreview):
+        def dispose(self):
+            raise SystemExit("app cleanup failed")
+
+    def fail_queue_callback():
+        raise KeyboardInterrupt("queue cleanup failed")
+
+    def app_factory():
+        post(fail_queue_callback)
+        return BrokenPreview()
+
+    def fail_bind(address, handler, *, state):
+        raise OSError("bind failed")
+
+    monkeypatch.setattr(live_server_module, "_LivePreviewHTTPServer", fail_bind)
+
+    with pytest.raises(BaseExceptionGroup) as caught:
+        _LivePreviewServer(
+            app_factory=app_factory,
+            config=_live_config(),
+            host="127.0.0.1",
+            port=0,
+        )
+
+    assert [str(error) for error in caught.value.exceptions] == [
+        "bind failed",
+        "queue cleanup failed",
+        "app cleanup failed",
+    ]
+
+
+def test_live_preview_server_close_is_idempotent(monkeypatch):
+    class DisposablePreview(DummyPreview):
+        def __init__(self):
+            self.dispose_calls = 0
+
+        def dispose(self):
+            self.dispose_calls += 1
+
+    class FakeHTTPServer:
+        server_address = ("127.0.0.1", 43210)
+
+        def __init__(self, address, handler, *, state):
+            self.close_calls = 0
+
+        def server_close(self):
+            self.close_calls += 1
+
+    app = DisposablePreview()
+    monkeypatch.setattr(live_server_module, "_LivePreviewHTTPServer", FakeHTTPServer)
+    server = _LivePreviewServer(
+        app_factory=lambda: app,
+        config=_live_config(),
+        host="127.0.0.1",
+        port=0,
+    )
+
+    server.close()
+    server.close()
+
+    assert server._server.close_calls == 1
+    assert app.dispose_calls == 1
+
+
+def test_live_preview_server_foreign_close_rejects_before_cleanup(monkeypatch):
+    class DisposablePreview(DummyPreview):
+        def __init__(self):
+            self.dispose_calls = 0
+
+        def dispose(self):
+            self.dispose_calls += 1
+
+    class FakeHTTPServer:
+        server_address = ("127.0.0.1", 43210)
+
+        def __init__(self, address, handler, *, state):
+            self.close_calls = 0
+
+        def server_close(self):
+            self.close_calls += 1
+
+    app = DisposablePreview()
+    monkeypatch.setattr(live_server_module, "_LivePreviewHTTPServer", FakeHTTPServer)
+    server = _LivePreviewServer(
+        app_factory=lambda: app,
+        config=_live_config(),
+        host="127.0.0.1",
+        port=0,
+    )
+    errors: list[BaseException] = []
+
+    def close_from_foreign_thread():
+        try:
+            server.close()
+        except BaseException as exc:
+            errors.append(exc)
+
+    thread = threading.Thread(target=close_from_foreign_thread)
+    thread.start()
+    thread.join()
+
+    assert len(errors) == 1
+    assert isinstance(errors[0], RuntimeError)
+    assert str(errors[0]) == "Live preview server must be closed by its owning thread."
+    assert server._server.close_calls == 0
+    assert app.dispose_calls == 0
+    assert server._posted_callbacks.closed is False
+
+    server.close()
+    assert server._server.close_calls == 1
+    assert app.dispose_calls == 1
+
+
+def test_live_preview_server_close_drains_queue_before_disposing_app(monkeypatch):
+    events: list[str] = []
+    posters = []
+
+    class FakeHTTPServer:
+        server_address = ("127.0.0.1", 43210)
+
+        def __init__(self, address, handler, *, state):
+            pass
+
+        def server_close(self):
+            events.append("socket")
+
+    class DisposablePreview(DummyPreview):
+        def dispose(self):
+            events.append("dispose")
+
+    def app_factory():
+        poster = capture_post()
+        posters.append(poster)
+        poster(lambda: events.append("callback"))
+        return DisposablePreview()
+
+    monkeypatch.setattr(live_server_module, "_LivePreviewHTTPServer", FakeHTTPServer)
+
+    server = _LivePreviewServer(
+        app_factory=app_factory,
+        config=_live_config(),
+        host="127.0.0.1",
+        port=0,
+    )
+
+    server.close()
+
+    assert events == ["socket", "callback", "dispose"]
+    with pytest.raises(RuntimeError, match="not accepting work"):
+        posters[0](lambda: None)
+
+
+def test_live_preview_server_rejects_close_while_serving_before_app_disposal(
+    monkeypatch,
+):
+    events: list[str] = []
+
+    class DisposablePreview(DummyPreview):
+        def dispose(self):
+            events.append("dispose")
+
+    class FakeHTTPServer:
+        server_address = ("127.0.0.1", 43210)
+
+        def __init__(self, address, handler, *, state):
+            self.state = state
+            self.owner = None
+
+        def serve_forever(self, *, poll_interval):
+            assert self.owner is not None
+            self.state.posted_callbacks.post(self.owner.close)
+            self.state.posted_callbacks.post(lambda: events.append("accepted callback"))
+            with pytest.raises(RuntimeError, match="cannot be closed while"):
+                self.state.render_page()
+
+        def server_close(self):
+            events.append("socket")
+
+    monkeypatch.setattr(live_server_module, "_LivePreviewHTTPServer", FakeHTTPServer)
+    server = _LivePreviewServer(
+        app_factory=DisposablePreview,
+        config=_live_config(),
+        host="127.0.0.1",
+        port=0,
+    )
+    server._server.owner = server
+
+    server.serve_forever()
+
+    assert events == ["accepted callback"]
+    assert server._app_disposed is False
+    server.close()
+    assert events == ["accepted callback", "socket", "dispose"]
+
+
+def test_live_preview_app_cleanup_posts_cannot_escape_its_closed_queue(monkeypatch):
+    assert drain_posted() == 0
+    escaped: list[str] = []
+
+    class PostingPreview(DummyPreview):
+        def dispose(self):
+            post(lambda: escaped.append("escaped"))
+
+    class FakeHTTPServer:
+        server_address = ("127.0.0.1", 43210)
+
+        def __init__(self, address, handler, *, state):
+            pass
+
+        def server_close(self):
+            pass
+
+    monkeypatch.setattr(live_server_module, "_LivePreviewHTTPServer", FakeHTTPServer)
+    server = _LivePreviewServer(
+        app_factory=PostingPreview,
+        config=_live_config(),
+        host="127.0.0.1",
+        port=0,
+    )
+
+    with pytest.raises(RuntimeError, match="not accepting work"):
+        server.close()
+
+    assert escaped == []
+    assert drain_posted() == 0
+    assert server._posted_callbacks.closed is True
+
+
+def test_live_preview_server_aggregates_socket_and_app_cleanup_errors(monkeypatch):
+    class BrokenPreview(DummyPreview):
+        def __init__(self):
+            self.dispose_calls = 0
+
+        def dispose(self):
+            self.dispose_calls += 1
+            if self.dispose_calls == 1:
+                raise RuntimeError("app cleanup failed")
+
+    class BrokenHTTPServer:
+        server_address = ("127.0.0.1", 43210)
+
+        def __init__(self, address, handler, *, state):
+            self.close_calls = 0
+
+        def server_close(self):
+            self.close_calls += 1
+            if self.close_calls == 1:
+                raise OSError("socket cleanup failed")
+
+    monkeypatch.setattr(live_server_module, "_LivePreviewHTTPServer", BrokenHTTPServer)
+    app = BrokenPreview()
+
+    def fail_queue_callback():
+        raise KeyboardInterrupt("queue cleanup failed")
+
+    def app_factory():
+        post(fail_queue_callback)
+        return app
+
+    server = _LivePreviewServer(
+        app_factory=app_factory,
+        config=_live_config(),
+        host="127.0.0.1",
+        port=0,
+    )
+
+    with pytest.raises(BaseExceptionGroup) as caught:
+        server.close()
+
+    assert [str(error) for error in caught.value.exceptions] == [
+        "socket cleanup failed",
+        "queue cleanup failed",
+        "app cleanup failed",
+    ]
+
+    server.close()
+    server.close()
+
+    assert server._server.close_calls == 2
+    assert app.dispose_calls == 2
+
+
+def test_live_preview_server_does_not_repeat_successful_socket_cleanup(monkeypatch):
+    class EventuallyDisposablePreview(DummyPreview):
+        def __init__(self):
+            self.dispose_calls = 0
+
+        def dispose(self):
+            self.dispose_calls += 1
+            if self.dispose_calls == 1:
+                raise RuntimeError("app cleanup failed")
+
+    class FakeHTTPServer:
+        server_address = ("127.0.0.1", 43210)
+
+        def __init__(self, address, handler, *, state):
+            self.close_calls = 0
+
+        def server_close(self):
+            self.close_calls += 1
+
+    app = EventuallyDisposablePreview()
+    monkeypatch.setattr(live_server_module, "_LivePreviewHTTPServer", FakeHTTPServer)
+    server = _LivePreviewServer(
+        app_factory=lambda: app,
+        config=_live_config(),
+        host="127.0.0.1",
+        port=0,
+    )
+
+    with pytest.raises(RuntimeError, match="app cleanup failed"):
+        server.close()
+
+    server.close()
+
+    assert server._server.close_calls == 1
+    assert app.dispose_calls == 2
+
+
+def test_live_preview_server_does_not_repeat_successful_app_cleanup(monkeypatch):
+    class DisposablePreview(DummyPreview):
+        def __init__(self):
+            self.dispose_calls = 0
+
+        def dispose(self):
+            self.dispose_calls += 1
+
+    class EventuallyClosingHTTPServer:
+        server_address = ("127.0.0.1", 43210)
+
+        def __init__(self, address, handler, *, state):
+            self.close_calls = 0
+
+        def server_close(self):
+            self.close_calls += 1
+            if self.close_calls == 1:
+                raise OSError("socket cleanup failed")
+
+    app = DisposablePreview()
+    monkeypatch.setattr(
+        live_server_module,
+        "_LivePreviewHTTPServer",
+        EventuallyClosingHTTPServer,
+    )
+    server = _LivePreviewServer(
+        app_factory=lambda: app,
+        config=_live_config(),
+        host="127.0.0.1",
+        port=0,
+    )
+
+    with pytest.raises(OSError, match="socket cleanup failed"):
+        server.close()
+
+    server.close()
+
+    assert server._server.close_calls == 2
+    assert app.dispose_calls == 1
+
+
+def test_run_live_preview_reports_bound_ephemeral_port_and_closes(monkeypatch, capsys):
+    calls = []
+
+    class FakeLivePreviewServer:
+        server_address = ("127.0.0.1", 43210)
+
+        def __init__(self, **kwargs):
+            calls.append(("init", kwargs["port"]))
+
+        def serve_forever(self):
+            calls.append(("serve",))
+
+        def close(self):
+            calls.append(("close",))
+
+    monkeypatch.setattr(live_server_module, "_LivePreviewServer", FakeLivePreviewServer)
+
+    run_live_preview(
+        app_factory=DummyPreview,
+        config=_live_config(),
+        host="127.0.0.1",
+        port=0,
+        label="Probe",
+    )
+
+    assert capsys.readouterr().out == "Probe: http://127.0.0.1:43210\n"
+    assert calls == [("init", 0), ("serve",), ("close",)]
+
+
+def test_run_live_preview_closes_when_reporting_bound_address_fails(monkeypatch):
+    calls = []
+
+    class FakeLivePreviewServer:
+        def __init__(self, **kwargs):
+            pass
+
+        @property
+        def server_address(self):
+            raise RuntimeError("address failed")
+
+        def close(self):
+            calls.append("close")
+
+    monkeypatch.setattr(live_server_module, "_LivePreviewServer", FakeLivePreviewServer)
+
+    with pytest.raises(RuntimeError, match="address failed"):
+        run_live_preview(
+            app_factory=DummyPreview,
+            config=_live_config(),
+            host="127.0.0.1",
+            port=0,
+            label="Probe",
+        )
+
+    assert calls == ["close"]
+
+
+def test_run_live_preview_preserves_operation_and_cleanup_failures(monkeypatch):
+    class FakeLivePreviewServer:
+        server_address = ("127.0.0.1", 43210)
+
+        def __init__(self, **kwargs):
+            pass
+
+        def serve_forever(self):
+            raise RuntimeError("serve failed")
+
+        def close(self):
+            raise OSError("close failed")
+
+    monkeypatch.setattr(live_server_module, "_LivePreviewServer", FakeLivePreviewServer)
+
+    with pytest.raises(BaseExceptionGroup) as caught:
+        run_live_preview(
+            app_factory=DummyPreview,
+            config=_live_config(),
+            host="127.0.0.1",
+            port=0,
+            label="Probe",
+        )
+
+    assert [str(error) for error in caught.value.exceptions] == [
+        "serve failed",
+        "close failed",
+    ]
+
+
+def test_run_live_preview_preserves_interruption_and_cleanup_failures(monkeypatch):
+    class FakeLivePreviewServer:
+        server_address = ("127.0.0.1", 43210)
+
+        def __init__(self, **kwargs):
+            pass
+
+        def serve_forever(self):
+            raise KeyboardInterrupt("serve interrupted")
+
+        def close(self):
+            raise SystemExit("close failed")
+
+    monkeypatch.setattr(live_server_module, "_LivePreviewServer", FakeLivePreviewServer)
+
+    with pytest.raises(BaseExceptionGroup) as caught:
+        run_live_preview(
+            app_factory=DummyPreview,
+            config=_live_config(),
+            host="127.0.0.1",
+            port=0,
+            label="Probe",
+        )
+
+    assert [str(error) for error in caught.value.exceptions] == [
+        "serve interrupted",
+        "close failed",
+    ]
+
+
+def test_render_target_preview_dispose_unmounts_exactly_once():
+    cleanups = []
+
+    @component
+    def PreviewRoot():
+        on_cleanup(lambda: cleanups.append("cleanup"))
+        return Text("Ready")
+
+    preview = _RenderTargetPreview(mount(PreviewRoot()))
+
+    preview.dispose()
+    preview.dispose()
+
+    assert cleanups == ["cleanup"]
+
+
+def _live_config():
+    return LivePreviewConfig(
+        title="Dummy",
+        css_route="/dummy.css",
+        css_path=None,
+    )
 
 
 def test_render_live_page_wraps_fragment_with_shared_shell():
@@ -543,3 +1149,17 @@ def _get_path(state: _LivePreviewState, path: str) -> tuple[int, str, str]:
         handler.captured_content_type,
         handler.captured_body,
     )
+
+
+def _request_live_server(
+    server: _LivePreviewServer,
+    path: str,
+) -> tuple[int, str]:
+    host, port = server.server_address
+    connection = HTTPConnection(host, port, timeout=2)
+    try:
+        connection.request("GET", path)
+        response = connection.getresponse()
+        return response.status, response.read().decode("utf-8")
+    finally:
+        connection.close()

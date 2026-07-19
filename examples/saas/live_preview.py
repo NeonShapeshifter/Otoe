@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +13,7 @@ from examples.live_server import (
 )
 from examples.saas.overview import SaaSOverview
 from examples.saas.preview import CUSTOMERS, DEALS
-from otoe import LiveHtmlRenderer, computed, mount, signal
+from otoe import LiveHtmlRenderer, computed, mount, signal, unmount
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -26,30 +27,45 @@ LIVE_CONFIG = LivePreviewConfig(
 
 class SaaSLivePreview:
     def __init__(self) -> None:
-        self._lock = threading.RLock()
-        self.renderer = LiveHtmlRenderer()
+        self._disposed = False
+        owned_cleanups: list[Callable[[], None]] = []
+        try:
+            self._lock = threading.RLock()
+            self.renderer = LiveHtmlRenderer()
 
-        self.query = signal("")
-        self.invites = signal(0)
-        self.active_section = signal("Overview")
-        self.all_deals = signal([dict(deal) for deal in DEALS])
-        self.all_customers = signal([dict(customer) for customer in CUSTOMERS])
-        self.workspace = computed(self._workspace_label)
-        self.filtered_deals = computed(self._filtered_deals)
-        self.filtered_customers = computed(self._filtered_customers)
+            self.query = signal("")
+            self.invites = signal(0)
+            self.active_section = signal("Overview")
+            self.all_deals = signal([dict(deal) for deal in DEALS])
+            self.all_customers = signal([dict(customer) for customer in CUSTOMERS])
+            self.workspace = computed(self._workspace_label)
+            owned_cleanups.append(self.workspace.dispose)
+            self.filtered_deals = computed(self._filtered_deals)
+            owned_cleanups.append(self.filtered_deals.dispose)
+            self.filtered_customers = computed(self._filtered_customers)
+            owned_cleanups.append(self.filtered_customers.dispose)
 
-        self.app = mount(
-            SaaSOverview(
-                query=self.query,
-                workspace=self.workspace,
-                active_section=self.active_section,
-                deals=self.filtered_deals,
-                customers=self.filtered_customers,
-                on_search=self._search,
-                on_invite=self._add_opportunity,
-                on_nav=self._navigate,
+            self.app = mount(
+                SaaSOverview(
+                    query=self.query,
+                    workspace=self.workspace,
+                    active_section=self.active_section,
+                    deals=self.filtered_deals,
+                    customers=self.filtered_customers,
+                    on_search=self._search,
+                    on_invite=self._add_opportunity,
+                    on_nav=self._navigate,
+                )
             )
-        )
+            owned_cleanups.append(lambda: unmount(self.app))
+        except BaseException as primary_error:
+            self._disposed = True
+            _cleanup_after_construction_failure(
+                primary_error,
+                reversed(owned_cleanups),
+                message="SaaS live preview construction and cleanup failed.",
+            )
+            raise
 
     def render_fragment(self) -> str:
         with self._lock:
@@ -63,6 +79,26 @@ class SaaSLivePreview:
         with self._lock:
             self.renderer.dispatch(event_id, *args)
             return self.render_fragment()
+
+    def dispose(self) -> None:
+        if getattr(self, "_disposed", False):
+            return
+        self._disposed = True
+
+        errors: list[BaseException] = []
+        cleanups: tuple[Callable[[], None], ...] = (
+            lambda: unmount(self.app),
+            self.filtered_customers.dispose,
+            self.filtered_deals.dispose,
+            self.workspace.dispose,
+        )
+        for cleanup in cleanups:
+            try:
+                cleanup()
+            except BaseException as exc:
+                errors.append(exc)
+        if errors:
+            raise BaseExceptionGroup("SaaS live preview cleanup failed.", errors)
 
     def _workspace_label(self) -> str:
         if self.invites.value == 0:
@@ -141,6 +177,22 @@ def _new_customer(index: int) -> dict[str, str]:
         "health": "New",
         "tone": "good",
     }
+
+
+def _cleanup_after_construction_failure(
+    primary_error: BaseException,
+    cleanups: Iterable[Callable[[], None]],
+    *,
+    message: str,
+) -> None:
+    errors: list[BaseException] = [primary_error]
+    for cleanup in cleanups:
+        try:
+            cleanup()
+        except BaseException as cleanup_error:
+            errors.append(cleanup_error)
+    if len(errors) > 1:
+        raise BaseExceptionGroup(message, errors) from primary_error
 
 
 def run(host: str = "127.0.0.1", port: int = 8766) -> None:

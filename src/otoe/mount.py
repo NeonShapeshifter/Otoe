@@ -115,7 +115,7 @@ def _mount_component(
             if activate:
                 owner.run_mount()
                 mounted._activated = True
-        except Exception as primary_error:
+        except BaseException as primary_error:
             _run_failure_cleanup(
                 primary_error,
                 lambda: unmount(mounted),
@@ -162,7 +162,7 @@ def _mount_widget(
             widget.children.append(child_widget)
         if activate:
             mounted._activated = True
-    except Exception as primary_error:
+    except BaseException as primary_error:
         _run_failure_cleanup(
             primary_error,
             lambda: unmount(mounted),
@@ -215,7 +215,7 @@ def _mount_show(
         previous_truthiness = selected_truthiness
         try:
             next_widgets = [root_widget(child) for child in next_children]
-        except Exception as primary_error:
+        except BaseException as primary_error:
             _run_failure_cleanup(
                 primary_error,
                 lambda: _unmount_children(next_children),
@@ -229,7 +229,7 @@ def _mount_show(
         try:
             if mounted._activated:
                 _activate_children(next_children)
-        except Exception as primary_error:
+        except BaseException as primary_error:
             staged_state_is_current = mounted.children is next_children
             if staged_state_is_current:
                 mounted.children = previous_children
@@ -258,7 +258,7 @@ def _mount_show(
         _subscribe_control_value(mounted, node.props["when"], refresh)
         if activate:
             _activate_mounted(mounted)
-    except Exception as primary_error:
+    except BaseException as primary_error:
         _run_failure_cleanup(
             primary_error,
             lambda: unmount(mounted),
@@ -284,7 +284,7 @@ def _mount_children(
                     activate=activate,
                 )
             )
-    except Exception as primary_error:
+    except BaseException as primary_error:
         _run_failure_cleanup(
             primary_error,
             lambda: _unmount_children(mounted_children),
@@ -295,14 +295,14 @@ def _mount_children(
 
 
 def _unmount_children(children: list[MountedNode]) -> None:
-    errors: list[Exception] = []
+    errors: list[BaseException] = []
     for child in reversed(children):
         try:
             unmount(child)
-        except Exception as exc:
+        except BaseException as exc:
             errors.append(exc)
     if errors:
-        raise ExceptionGroup("Errors while unmounting children.", errors)
+        raise BaseExceptionGroup("Errors while unmounting children.", errors)
 
 
 def _activate_children(children: list[MountedNode]) -> None:
@@ -356,7 +356,7 @@ def _mount_for(
                     created_fallback = True
                 try:
                     next_widgets = [root_widget(next_fallback)]
-                except Exception as primary_error:
+                except BaseException as primary_error:
                     if created_fallback:
                         _run_failure_cleanup(
                             primary_error,
@@ -383,7 +383,7 @@ def _mount_for(
             try:
                 if mounted._activated and next_fallback is not None:
                     _activate_mounted(next_fallback)
-            except Exception as primary_error:
+            except BaseException as primary_error:
                 staged_state_is_current = mounted.children is next_children
                 if staged_state_is_current:
                     mounted._fallback_mounted = empty_previous_fallback
@@ -435,7 +435,7 @@ def _mount_for(
                     created_children.append(child_mounted)
                 next_keyed_children[item_key] = child_mounted
                 next_keyed_items[item_key] = item
-        except Exception as primary_error:
+        except BaseException as primary_error:
             _run_failure_cleanup(
                 primary_error,
                 lambda: _unmount_children(created_children),
@@ -452,7 +452,7 @@ def _mount_for(
                     control_widget=widget,
                     item_key=item_key,
                 )
-        except Exception as primary_error:
+        except BaseException as primary_error:
             _run_failure_cleanup(
                 primary_error,
                 lambda: _unmount_children(created_children),
@@ -479,7 +479,7 @@ def _mount_for(
         try:
             if mounted._activated:
                 _activate_children(next_children)
-        except Exception as primary_error:
+        except BaseException as primary_error:
             staged_state_is_current = mounted._keyed_children is next_keyed_children
             if staged_state_is_current:
                 mounted._fallback_mounted = fallback_mounted
@@ -510,7 +510,7 @@ def _mount_for(
         _subscribe_control_value(mounted, node.props["each"], refresh)
         if activate:
             _activate_mounted(mounted)
-    except Exception as primary_error:
+    except BaseException as primary_error:
         _run_failure_cleanup(
             primary_error,
             lambda: unmount(mounted),
@@ -636,15 +636,18 @@ def _assign_keyed_focus_identity(
 
 
 def _run_failure_cleanup(
-    primary_error: Exception,
+    primary_error: BaseException,
     cleanup: Callable[[], None],
     *,
     message: str,
 ) -> None:
     try:
         cleanup()
-    except Exception as cleanup_error:
-        raise ExceptionGroup(message, [primary_error, cleanup_error]) from primary_error
+    except BaseException as cleanup_error:
+        raise BaseExceptionGroup(
+            message,
+            [primary_error, cleanup_error],
+        ) from primary_error
 
 
 def _unretained_children(
@@ -669,11 +672,11 @@ def unmount(mounted: MountedNode) -> None:
         return
     mounted._unmounted = True
 
-    errors: list[Exception] = []
+    errors: list[BaseException] = []
     for child in reversed(mounted.children):
         try:
             unmount(child)
-        except Exception as exc:
+        except BaseException as exc:
             errors.append(exc)
 
     cleanups = list(reversed(mounted.cleanups))
@@ -681,17 +684,17 @@ def unmount(mounted: MountedNode) -> None:
     for cleanup in cleanups:
         try:
             cleanup()
-        except Exception as exc:
+        except BaseException as exc:
             errors.append(exc)
 
     if mounted.owner is not None:
         try:
             mounted.owner.dispose()
-        except Exception as exc:
+        except BaseException as exc:
             errors.append(exc)
 
     if errors:
-        raise ExceptionGroup(
+        raise BaseExceptionGroup(
             f"{_tag_name(mounted.node.tag)}: errors while unmounting.",
             errors,
         )

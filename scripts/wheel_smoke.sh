@@ -101,6 +101,7 @@ def version_tuple(distribution: str) -> tuple[int, ...]:
 
 
 requirements = {
+    "packaging": (26, 2),
     "setuptools": (77,),
     "wheel": (0, 43),
 }
@@ -137,60 +138,8 @@ if [[ -z "$WHEEL" ]]; then
   fi
 fi
 
-"$PYTHON_BIN" -m venv "$WORKDIR/venv"
-"$WORKDIR/venv/bin/python" -m pip install "$WHEEL"
-"$WORKDIR/venv/bin/otoe" new "$WORKDIR/app"
-
-cd "$WORKDIR/app"
-test -f app.py
-test -f README.md
-test -f styles.css
-"$WORKDIR/venv/bin/otoe" check --target app:app --css styles.css > doctor.txt
-"$WORKDIR/venv/bin/otoe" render app:app --out preview.html --css styles.css --pretty
-"$WORKDIR/venv/bin/otoe" render app:app --out preview.png --native --css styles.css
-"$WORKDIR/venv/bin/otoe" check --tests > check.txt
-"$WORKDIR/venv/bin/otoe" build app:app --out dist/cage --css styles.css --validate
-"$WORKDIR/venv/bin/otoe" portable-core > portable-core.txt
-"$WORKDIR/venv/bin/otoe" portable-core --json > portable-core.json
-"$WORKDIR/venv/bin/otoe" portable-core --format json > portable-core-format.json
-
-DEV_PORT="$("$WORKDIR/venv/bin/python" -c 'import socket; sock = socket.socket(); sock.bind(("127.0.0.1", 0)); print(sock.getsockname()[1]); sock.close()')"
-"$WORKDIR/venv/bin/otoe" dev app:app --css styles.css --port "$DEV_PORT" > dev.log 2>&1 &
-DEV_PID="$!"
-trap 'kill "$DEV_PID" 2>/dev/null || true' EXIT
-DEV_READY=0
-for _ in $(seq 1 50); do
-  if "$WORKDIR/venv/bin/python" -c 'import json, sys, urllib.request; payload = json.load(urllib.request.urlopen(f"http://127.0.0.1:{sys.argv[1]}/health", timeout=0.2)); assert payload["ok"] is True' "$DEV_PORT" >/dev/null 2>&1; then
-    DEV_READY=1
-    break
-  fi
-  sleep 0.1
-done
-if [[ "$DEV_READY" != "1" ]]; then
-  cat dev.log >&2
-  kill "$DEV_PID" 2>/dev/null || true
-  exit 1
-fi
-"$WORKDIR/venv/bin/python" -c 'import sys, urllib.request; html = urllib.request.urlopen(f"http://127.0.0.1:{sys.argv[1]}/", timeout=1).read().decode(); assert "Count: 0" in html and "Increment" in html' "$DEV_PORT"
-kill "$DEV_PID"
-wait "$DEV_PID" 2>/dev/null || true
-trap - EXIT
-
-test -s doctor.txt
-test -s preview.html
-test -s preview.png
-test -s check.txt
-test -f dist/cage/manifest.json
-test -f dist/cage/otoe-run.py
-test -s portable-core.txt
-test -s portable-core.json
-test -s portable-core-format.json
-"$WORKDIR/venv/bin/python" -c 'from pathlib import Path; import sys; text = Path(sys.argv[1]).read_text(encoding="utf-8"); assert "Portable Core UI v0" in text and "`Button`" in text' portable-core.txt
-"$WORKDIR/venv/bin/python" -c 'import json, sys; payload = json.load(open(sys.argv[1], encoding="utf-8")); assert payload["format"] == "otoe-portable-core-ui-v0"; assert any(entry["id"] == "button" for entry in payload["entries"])' portable-core.json
-"$WORKDIR/venv/bin/python" -c 'import json, sys; payload = json.load(open(sys.argv[1], encoding="utf-8")); assert payload["format"] == "otoe-portable-core-ui-v0"; assert any(entry["id"] == "button" for entry in payload["entries"])' portable-core-format.json
-"$WORKDIR/venv/bin/python" -c 'from pathlib import Path; text = Path("doctor.txt").read_text(encoding="utf-8"); assert "compile app.py: ok" in text and "target app:app: ok" in text and "css styles.css: ok (2 rules)" in text'
-"$WORKDIR/venv/bin/python" -c 'from pathlib import Path; text = Path("check.txt").read_text(encoding="utf-8"); assert "compile app.py: ok" in text and "pytest: skipped (tests directory missing)" in text'
-"$WORKDIR/venv/bin/python" -c 'from pathlib import Path; text = Path("README.md").read_text(encoding="utf-8"); assert "otoe check" in text; assert "otoe check --target app:app --css styles.css" in text; assert "otoe render app:app --out preview.html --css styles.css --pretty" in text; assert "otoe render app:app --out preview.png --native --css styles.css" in text; assert "otoe build app:app --out dist/cage --css styles.css --validate" in text; assert "examples." not in text and "PYTHONPATH" not in text'
-"$WORKDIR/venv/bin/python" -c 'from pathlib import Path; from otoe.style import css; sheet = css(Path("styles.css").read_text(encoding="utf-8")); assert set(sheet.rules) == {".app", ".title"}'
+PYTHON="$PYTHON_BIN" \
+  OTOE_COLD_START_WORKDIR="$WORKDIR" \
+  "$ROOT/scripts/cold_start_smoke.sh" "$WHEEL"
 
 echo "wheel smoke: ok"

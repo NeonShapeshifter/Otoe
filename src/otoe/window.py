@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Protocol, runtime_checkable
+from threading import get_ident
+from typing import Any, Callable, Protocol, runtime_checkable
 
 from ._native_backend import NativeRendererBackend
 from .mount import FakeWidget, MountedNode
 from .native import NativePaint, NativeSurface
 from .node import Node
-from .scheduler import drain_posted
+from .scheduler import PostedCallbackQueue, drain_posted
 from .style import StyleSheet
 
 
@@ -19,6 +20,104 @@ _TKINTER_REQUIRED_MESSAGE = (
     "`PYTHONPATH=src:. python -m examples.native.window_demo`."
 )
 _TK_CANVAS_MAX_SCALE = 2.0
+
+
+class _PostedCallbackRoot(Protocol):
+    def after(self, delay: int, callback: Callable[[], None]) -> Any: ...
+
+
+class _TkPostedCallbackPump:
+    def __init__(
+        self,
+        root: _PostedCallbackRoot,
+        render: Callable[[], None],
+        *,
+        drain: Callable[[], int] | None = None,
+        interval_ms: int = 16,
+    ) -> None:
+        self._root = root
+        self._render = render
+        self._drain = drain
+        self._interval_ms = interval_ms
+        self._scheduled = False
+        self._closed = False
+
+    @property
+    def closed(self) -> bool:
+        return self._closed
+
+    def start(self) -> None:
+        self._schedule()
+
+    def poll(self) -> None:
+        self._scheduled = False
+        if self._closed:
+            return
+
+        errors: list[BaseException] = []
+        should_render = False
+        drain = self._drain or drain_posted
+        try:
+            should_render = drain() > 0
+        except BaseException as drain_error:
+            errors.append(drain_error)
+            # A failing drain still consumed its callback snapshot, including
+            # successful callbacks that may have changed rendered state.
+            should_render = True
+
+        if should_render:
+            try:
+                self._render()
+            except BaseException as render_error:
+                errors.append(render_error)
+
+        try:
+            self._schedule()
+        except BaseException as schedule_error:
+            errors.append(schedule_error)
+
+        if len(errors) == 1:
+            raise errors[0]
+        if errors:
+            raise BaseExceptionGroup(
+                "Posted callback polling failed.",
+                errors,
+            ) from errors[0]
+
+    def close(self) -> None:
+        self._closed = True
+
+    def _schedule(self) -> None:
+        if self._closed or self._scheduled:
+            return
+        self._scheduled = True
+        try:
+            self._root.after(self._interval_ms, self.poll)
+        except BaseException:
+            self._scheduled = False
+            raise
+
+
+def _cleanup_after_failure(
+    primary_error: BaseException,
+    *cleanups: Callable[[], None],
+    message: str,
+) -> None:
+    errors: list[BaseException] = [primary_error]
+    for cleanup in cleanups:
+        try:
+            cleanup()
+        except BaseException as cleanup_error:
+            errors.append(cleanup_error)
+    if len(errors) > 1:
+        raise BaseExceptionGroup(message, errors) from primary_error
+
+
+def _raise_tk_cleanup_errors(errors: list[BaseException]) -> None:
+    if len(errors) == 1:
+        raise errors[0]
+    if errors:
+        raise BaseExceptionGroup("Tk window cleanup failed.", errors)
 
 
 @dataclass(frozen=True)
@@ -210,6 +309,9 @@ class NativeWindowDriver:
     def render_png(self, path: str | Path) -> NativePaint:
         return self.surface.render_png(path)
 
+    def dispose(self) -> None:
+        self.surface.dispose()
+
     def _focus_capability(
         self,
         focused_before: tuple[int, ...] | None,
@@ -239,11 +341,16 @@ class TkNativeWindow:
         *,
         title: str = "Otoe",
         frame_path: str | Path | None = None,
+        _tk_module: Any | None = None,
+        _drain_posted: Callable[[], int] | None = None,
     ) -> None:
-        try:
-            import tkinter as tk
-        except ImportError as exc:  # pragma: no cover - platform dependent.
-            raise RuntimeError(_TKINTER_REQUIRED_MESSAGE) from exc
+        if _tk_module is None:
+            try:
+                import tkinter as tk
+            except ImportError as exc:  # pragma: no cover - platform dependent.
+                raise RuntimeError(_TKINTER_REQUIRED_MESSAGE) from exc
+        else:
+            tk = _tk_module
 
         self._tk = tk
         self.driver = (
@@ -252,40 +359,139 @@ class TkNativeWindow:
             else NativeWindowDriver(driver)
         )
         self.frame_path = Path(frame_path) if frame_path is not None else None
-        width, height = self.driver.size
-        self._logical_width = width
-        self._logical_height = height
-        self._canvas_width = width
-        self._canvas_height = height
-        self._scale = 1.0
-        self._offset_x = 0.0
-        self._offset_y = 0.0
+        self._owner_thread = get_ident()
+        self._closed = False
+        self._runtime_active = False
+        self._runtime_thread: int | None = None
+        self._posted_callbacks = PostedCallbackQueue()
 
-        self.root = tk.Tk()
-        self.root.title(title)
-        self._canvas = tk.Canvas(
-            self.root,
-            bd=0,
-            highlightthickness=0,
-            width=width,
-            height=height,
-        )
-        self._canvas.pack(fill="both", expand=True)
-        self._canvas.bind("<Button-1>", self._on_click)
-        self._canvas.bind("<MouseWheel>", self._on_wheel)
-        self._canvas.bind("<Button-4>", self._on_wheel)
-        self._canvas.bind("<Button-5>", self._on_wheel)
-        self._canvas.bind("<Configure>", self._on_configure)
-        self.root.bind("<KeyPress>", self._on_key_press)
-        self.root.geometry(f"{width}x{height}")
-        self._render()
+        root: Any | None = None
+        try:
+            with self._posted_callbacks.bind():
+                width, height = self.driver.size
+                self._logical_width = width
+                self._logical_height = height
+                self._canvas_width = width
+                self._canvas_height = height
+                self._scale = 1.0
+                self._offset_x = 0.0
+                self._offset_y = 0.0
+
+                self.root = tk.Tk()
+                root = self.root
+                self.root.title(title)
+                self._canvas = tk.Canvas(
+                    self.root,
+                    bd=0,
+                    highlightthickness=0,
+                    width=width,
+                    height=height,
+                )
+                self._canvas.pack(fill="both", expand=True)
+                self._canvas.bind("<Button-1>", self._on_click)
+                self._canvas.bind("<MouseWheel>", self._on_wheel)
+                self._canvas.bind("<Button-4>", self._on_wheel)
+                self._canvas.bind("<Button-5>", self._on_wheel)
+                self._canvas.bind("<Configure>", self._on_configure)
+                self.root.bind("<KeyPress>", self._on_key_press)
+                self.root.geometry(f"{width}x{height}")
+                self._render()
+                self._posted_callback_pump = _TkPostedCallbackPump(
+                    self.root,
+                    self._render,
+                    drain=(
+                        _drain_posted
+                        if _drain_posted is not None
+                        else lambda: drain_posted(queue=self._posted_callbacks)
+                    ),
+                )
+                protocol = getattr(self.root, "protocol", None)
+                if callable(protocol):
+                    protocol("WM_DELETE_WINDOW", self.close)
+        except BaseException as primary_error:
+            self._closed = True
+            cleanups: list[Callable[[], None]] = [self._posted_callbacks.close]
+            if root is not None:
+                cleanups.append(root.destroy)
+            with self._posted_callbacks.bind():
+                _cleanup_after_failure(
+                    primary_error,
+                    *cleanups,
+                    message="Tk window startup and root cleanup both failed.",
+                )
+            raise
+
+    def post(self, callback: Callable[[], None]) -> None:
+        """Queue a callback specifically for this window's runtime thread."""
+        self._posted_callbacks.post(callback)
 
     def run(self) -> None:
-        self.root.after(16, self._poll_posted_callbacks)
-        self.root.mainloop()
+        if self._owner_thread != get_ident():
+            raise RuntimeError("Tk window must run on the thread that created it.")
+        if self._runtime_thread is not None:
+            raise RuntimeError("Tk window is already running.")
+        self._runtime_thread = get_ident()
+        try:
+            try:
+                self._runtime_active = True
+                try:
+                    with self._posted_callbacks.activate():
+                        self._posted_callback_pump.start()
+                        self.root.mainloop()
+                finally:
+                    self._runtime_active = False
+            except BaseException as primary_error:
+                _cleanup_after_failure(
+                    primary_error,
+                    self.close,
+                    message="Tk window run and root cleanup both failed.",
+                )
+                raise
+            else:
+                self.close()
+        finally:
+            self._runtime_thread = None
+            self._posted_callback_pump.close()
 
     def close(self) -> None:
-        self.root.destroy()
+        if self._closed and self._posted_callbacks.closed:
+            return
+        if self._owner_thread != get_ident():
+            raise RuntimeError("Tk window must be closed by its owning thread.")
+        if self._runtime_active:
+            self._posted_callback_pump.close()
+            active_errors: list[BaseException] = []
+            with self._posted_callbacks.bind():
+                if not self._posted_callbacks.closed:
+                    try:
+                        self._posted_callbacks.close()
+                    except BaseException as exc:
+                        active_errors.append(exc)
+                quit_mainloop = getattr(self.root, "quit", None)
+                if callable(quit_mainloop):
+                    try:
+                        quit_mainloop()
+                    except BaseException as exc:
+                        active_errors.append(exc)
+            _raise_tk_cleanup_errors(active_errors)
+            return
+
+        self._posted_callback_pump.close()
+        errors: list[BaseException] = []
+        with self._posted_callbacks.bind():
+            if not self._posted_callbacks.closed:
+                try:
+                    self._posted_callbacks.close()
+                except BaseException as exc:
+                    errors.append(exc)
+            if not self._closed:
+                try:
+                    self.root.destroy()
+                except BaseException as exc:
+                    errors.append(exc)
+                else:
+                    self._closed = True
+        _raise_tk_cleanup_errors(errors)
 
     def _on_click(self, event: Any) -> str:
         focus_set = getattr(self._canvas, "focus_set", None)
@@ -348,11 +554,7 @@ class TkNativeWindow:
             )
 
     def _poll_posted_callbacks(self) -> None:
-        try:
-            if drain_posted() > 0:
-                self._render()
-        finally:
-            self.root.after(16, self._poll_posted_callbacks)
+        self._posted_callback_pump.poll()
 
     def _sync_canvas_transform(self) -> None:
         scale_x = self._canvas_width / max(1, self._logical_width)
@@ -577,6 +779,7 @@ def run_native(
     renderer_backend: NativeRendererBackend | None = None,
 ) -> None:
     adapter = _resolve_native_backend(backend)
+    owns_driver = False
 
     if isinstance(target, NativeWindowDriver):
         if renderer_backend is not None:
@@ -593,6 +796,7 @@ def run_native(
             )
         driver = NativeWindowDriver(target)
     else:
+        owns_driver = True
         driver = NativeWindowDriver.from_target(
             target,
             stylesheet=stylesheet,
@@ -600,7 +804,19 @@ def run_native(
             background=background,
             renderer_backend=renderer_backend,
         )
-    adapter.run(driver, title=title)
+    try:
+        adapter.run(driver, title=title)
+    except BaseException as primary_error:
+        if owns_driver:
+            _cleanup_after_failure(
+                primary_error,
+                driver.dispose,
+                message="Native backend operation and driver cleanup both failed.",
+            )
+        raise
+    else:
+        if owns_driver:
+            driver.dispose()
 
 
 def _resolve_native_backend(backend: str | NativeBackendAdapter) -> NativeBackendAdapter:

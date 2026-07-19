@@ -19,8 +19,10 @@ jobs:
   build:
     name: Build package distributions
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
+      actions: read
       id-token: write
       attestations: write
     steps:
@@ -56,6 +58,13 @@ jobs:
             echo "Release commit $tag_commit is not reachable from origin/main" >&2
             exit 1
           fi
+      - name: Verify required checks for exact release commit
+        env:
+          RELEASE_CHECK_API_URL: ${{ github.api_url }}
+          RELEASE_CHECK_REPOSITORY: ${{ github.repository }}
+          RELEASE_CHECK_SHA: ${{ github.sha }}
+          RELEASE_CHECK_TOKEN: ${{ github.token }}
+        run: python -I scripts/verify_release_checks.py
       - name: Check tag matches package version
         run: |
           tag_version="${GITHUB_REF_NAME#v}"
@@ -65,7 +74,7 @@ jobs:
             exit 1
           fi
       - name: Install constrained build tooling
-        run: python -m pip install --constraint requirements/ci-constraints.txt build setuptools twine wheel
+        run: python -m pip install --constraint requirements/ci-constraints.txt build markdown-it-py packaging setuptools twine wheel
       - name: Install project and test dependencies
         run: python -m pip install --no-build-isolation --constraint requirements/ci-constraints.txt -e ".[dev,native-text]"
       - name: Check installed dependencies
@@ -78,32 +87,81 @@ jobs:
         run: python -m ruff check src tests examples scripts
       - name: Mypy
         run: python -m mypy --strict src/otoe
+      - name: Mypy release gates
+        run: python -m mypy --strict scripts/cold_start_evidence.py scripts/runtime_soak.py scripts/verify_release_artifacts.py scripts/verify_release_checks.py
       - name: Stub/runtime parity
         run: python -m mypy.stubtest otoe --allowlist tests/stubtest_allowlist.txt
       - name: Test
         run: python -m pytest -q --cov=otoe --cov-report=term-missing --cov-fail-under=82
+      - name: Verify frozen source before build
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
       - name: Build package
         run: |
           export SOURCE_DATE_EPOCH="$(git show -s --format=%ct HEAD)"
           python -m build --no-isolation
           python scripts/normalize_sdist.py --epoch "$SOURCE_DATE_EPOCH" dist/*.tar.gz
+      - name: Verify exact release artifact identity
+        run: python -I scripts/verify_release_artifacts.py --dist-dir dist --project pyproject.toml --tag "$GITHUB_REF_NAME"
       - name: Check package metadata
         run: python -m twine check dist/*.whl dist/*.tar.gz
       - name: Smoke source distribution
         run: bash scripts/sdist_smoke.sh "$(find dist -maxdepth 1 -name 'otoe-*.tar.gz' -print -quit)"
       - name: Smoke installed wheel
+        env:
+          OTOE_SMOKE_WORKDIR: ${{ runner.temp }}/otoe-cold-start
         run: bash scripts/wheel_smoke.sh "$(find dist -maxdepth 1 -name 'otoe-*.whl' -print -quit)"
+      - name: Record cold-start evidence digest
+        if: always()
+        env:
+          COLD_START_EVIDENCE: ${{ runner.temp }}/otoe-cold-start/cold-start-evidence.json
+        run: |
+          if [[ ! -f "$COLD_START_EVIDENCE" ]]; then
+            echo "cold-start evidence was not produced" >&2
+            exit 1
+          fi
+          python -I - "$COLD_START_EVIDENCE" "$GITHUB_STEP_SUMMARY" <<'PY'
+          from hashlib import sha256
+          import json
+          from pathlib import Path
+          import sys
+
+          evidence = Path(sys.argv[1])
+          payload = json.loads(evidence.read_text(encoding="utf-8"))
+          evidence_digest = sha256(evidence.read_bytes()).hexdigest()
+          wheel_digest = payload["wheel"]["sha256"]
+          print(f"cold-start evidence sha256 {evidence_digest}")
+          print(f"cold-start wheel sha256 {wheel_digest}")
+          with Path(sys.argv[2]).open("a", encoding="utf-8") as summary:
+              summary.write("## Cold-start evidence\n\n")
+              summary.write(f"- Evidence SHA-256: `{evidence_digest}`\n")
+              summary.write(f"- Wheel SHA-256: `{wheel_digest}`\n")
+          PY
+      - name: Upload cold-start evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: cold-start-evidence-publish-attempt${{ github.run_attempt }}
+          path: ${{ runner.temp }}/otoe-cold-start/cold-start-evidence.json
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
       - name: Verify reproducible distributions
         run: PYTHON=python scripts/reproducible_build_check.sh dist
       - name: Verify performance regression budgets
         run: python scripts/bench_smoke.py --check
+      - name: Verify frozen source after release checks
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
       - name: Assemble immutable release artifact
         run: |
           mkdir -p release/packages
           cp dist/*.whl dist/*.tar.gz release/packages/
           (cd release && sha256sum packages/* > SHA256SUMS)
       - name: Attest release distributions
-        uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661 # v3
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3.0.0
         with:
           subject-path: release/packages/*
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -113,11 +171,13 @@ jobs:
           if-no-files-found: error
           retention-days: 7
           compression-level: 0
+          overwrite: true
 
   pypi-publish:
     name: Publish package to PyPI
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: pypi
       url: https://pypi.org/p/otoe

@@ -16,12 +16,10 @@ otoe.deps_types.RuntimePolicyCategory
 otoe.profile_types.NativeTextRenderer
 otoe.profile_types.RuntimePolicyAction
 
-# Namespace packages and a request-local handler class confuse stub discovery.
+# Namespace packages confuse stub discovery.
 otoe.experimental.__all__
 otoe.experimental.backend
 otoe.experimental.native
-otoe.live_server.Handler@103
-otoe.live_server.__all__
 
 # UI functions are runtime Component callables; stubs intentionally expose their
 # ergonomic call signatures. Typing-only aliases and dataclass match args do not

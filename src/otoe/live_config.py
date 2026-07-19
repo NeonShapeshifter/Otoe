@@ -13,6 +13,13 @@ class LivePreviewApp(Protocol):
         raise NotImplementedError
 
 
+class DisposableLivePreviewApp(Protocol):
+    """Optional lifecycle capability for live-preview applications."""
+
+    def dispose(self) -> None:
+        raise NotImplementedError
+
+
 @dataclass(frozen=True)
 class LivePreviewStylesheet:
     route: str

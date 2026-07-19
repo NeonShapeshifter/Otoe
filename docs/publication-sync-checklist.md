@@ -33,43 +33,7 @@ Decide whether the current branch contains one coherent public update. The sync
 source will be a commit, never the current working tree. If it contains unrelated
 tracked experiments, split them out before creating the promotion commit.
 
-## 2. Run the Release Checks
-
-For release-ready publication, use the local reference command:
-
-```bash
-scripts/release_check.sh
-```
-
-For a smaller docs-only or planning sync, still run the relevant focused checks
-and record what was intentionally skipped:
-
-```bash
-python3 -m compileall -q src examples tests
-python3 -m pytest -q
-```
-
-`scripts/release_check.sh` builds reproducible distributions and smoke-tests the
-exact wheel and sdist. Do not substitute a smoke that rebuilds from the checkout.
-
-Build artifacts are validation outputs. They should not be copied into
-`Otoe-public` unless there is a separate, explicit reason.
-
-The PyPI publish workflow accepts only an annotated `vX.Y.Z` tag whose message
-contains this exact marker on its own line:
-
-```text
-Publish-PyPI: yes
-```
-
-Do not create that tag until the source sync is reviewed and the release checks
-above are complete.
-
-Never move or reuse a release tag. If a tag-triggered workflow reached PyPI,
-repair forward with a new package version. A rerun against an existing PyPI
-version is expected to fail.
-
-## 3. Decide Experimental Files
+## 2. Decide Experimental Files
 
 Review new or experimental work before it enters the public repository:
 
@@ -106,7 +70,7 @@ When a file moves from this list into the promotion commit, make the decision
 visible in the public commit message or PR description. Do not use rsync
 exclusions to create an undocumented second version of a tracked source tree.
 
-## 4. Scan for Files That Must Not Be Copied
+## 3. Scan for Files That Must Not Be Copied
 
 These paths and artifacts should never be copied from `Otoe` to `Otoe-public`:
 
@@ -156,7 +120,7 @@ find /home/ale/Otoe \
 Seeing these paths in the working repo is normal. Seeing them in the sync plan
 is a blocker.
 
-## 5. Freeze A Promotion Commit
+## 4. Freeze A Promotion Commit
 
 Commit the coherent source state, then require a clean tree:
 
@@ -172,6 +136,53 @@ git show --stat --oneline "$SOURCE_COMMIT"
 
 If the clean-tree test fails, stop. Never promote from a dirty tree and never
 amend the source commit after recording `SOURCE_COMMIT`.
+
+## 5. Run Release Checks From The Exact Commit
+
+Validation starts only after the promotion commit is frozen. Confirm that `HEAD`
+is still the recorded commit and that neither the index nor working tree changed,
+then run the local reference command:
+
+```bash
+test "$(git rev-parse HEAD)" = "$SOURCE_COMMIT"
+test -z "$(git status --porcelain)"
+scripts/release_check.sh
+test "$(git rev-parse HEAD)" = "$SOURCE_COMMIT"
+test -z "$(git status --porcelain)"
+```
+
+The release script rejects staged, unstaged, or untracked source changes before
+it removes or creates build outputs, fixes `SOURCE_DATE_EPOCH` to the recorded
+commit, and revalidates both HEAD and source status before building and after all
+checks. It builds reproducible distributions, rejects extra archives, verifies
+filename and internal metadata identity, and smoke-tests the exact wheel and
+sdist from `SOURCE_COMMIT`; do not substitute a smoke that rebuilds from a
+different checkout state.
+
+For a smaller docs-only or planning sync, still run the relevant focused checks
+after freezing the commit and record what was intentionally skipped:
+
+```bash
+python3 -m compileall -q src examples tests
+python3 -m pytest -q
+```
+
+If a check requires a source fix, create a new commit, update `SOURCE_COMMIT`,
+require a clean tree again, and rerun the checks. Do not amend the recorded commit
+or reuse evidence from its predecessor. Build artifacts are validation outputs;
+do not copy them into `Otoe-public` without a separate, explicit reason.
+
+The PyPI publish workflow accepts only an annotated `vX.Y.Z` tag whose message
+contains this exact marker on its own line:
+
+```text
+Publish-PyPI: yes
+```
+
+Do not create that tag until the exact source commit has passed these checks and
+the public sync is reviewed. Never move or reuse a release tag. If a tag-triggered
+workflow reached PyPI, repair forward with a new package version; a rerun against
+an existing PyPI version is expected to fail.
 
 ## 6. Export And Dry-Run The Commit
 
@@ -304,11 +315,43 @@ git push
 After pushing, preserve `SOURCE_COMMIT` in the PR/release record and remove the
 temporary export. The public commit tree must continue to match that export.
 
-Do not tag or publish a package unless the release checklist is also complete.
-For PyPI, use an annotated tag with the required marker only after this public
-sync is committed and pushed:
+Freeze the exact public commit and confirm that `origin/main` resolves to it:
 
 ```bash
-git tag -a vX.Y.Z -m "Release vX.Y.Z" -m "Publish-PyPI: yes"
+PUBLIC_COMMIT="$(git rev-parse HEAD)"
+git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+test "$(git rev-parse refs/remotes/origin/main)" = "$PUBLIC_COMMIT"
+```
+
+Wait for the public `CI` and `CodeQL` workflows for `PUBLIC_COMMIT` to finish.
+Then query the exact GitHub Actions workflow runs and jobs for that SHA. The token
+must be able to read repository Actions; `gh auth token` normally supplies the authenticated CLI
+token without putting it in the command arguments:
+
+```bash
+RELEASE_CHECK_REPOSITORY="NeonShapeshifter/Otoe" \
+RELEASE_CHECK_SHA="$PUBLIC_COMMIT" \
+RELEASE_CHECK_TOKEN="$(gh auth token)" \
+python3 -I scripts/verify_release_checks.py
+```
+
+The verifier binds `ci.yml` and `codeql.yml` to `main`, event `push`, and
+`PUBLIC_COMMIT`, then requires successful jobs named `tests (3.11)`,
+`tests (3.12)`, `tests (3.13)`, `tests (3.14)`, and `Analyze Python` in those
+exact attempts. A missing, pending, unsuccessful, ambiguous, malformed, or
+unreadable result is a blocker; fix or rerun the check and execute
+the verifier again. Do not substitute checks from another commit.
+
+Do not tag or publish a package unless this remote gate and the release checklist
+are complete. Create the annotated PyPI tag on `PUBLIC_COMMIT` only after the
+verifier succeeds:
+
+```bash
+test "$(git rev-parse HEAD)" = "$PUBLIC_COMMIT"
+git tag -a vX.Y.Z "$PUBLIC_COMMIT" -m "Release vX.Y.Z" -m "Publish-PyPI: yes"
 git push origin vX.Y.Z
 ```
+
+The tag workflow repeats the exact-SHA Actions verification before installing
+release dependencies or building. It has `actions: read` for that query and
+fails closed if a tag is pushed before the required public checks have succeeded.

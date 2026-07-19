@@ -45,6 +45,8 @@ dev = [
 native-text = ["Pillow>=10"]
 release = [
     "build>=1.2",
+    "markdown-it-py>=4.2",
+    "packaging>=26.2",
     "setuptools>=77",
     "twine>=6",
     "wheel>=0.43",

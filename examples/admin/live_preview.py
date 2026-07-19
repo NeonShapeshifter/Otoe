@@ -16,7 +16,7 @@ from examples.live_server import (
     run_live_preview,
 )
 from examples.reference_theme import REFERENCE_THEME_STYLESHEET
-from otoe import LiveHtmlRenderer, mount, signal
+from otoe import LiveHtmlRenderer, mount, signal, unmount
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -59,6 +59,9 @@ class AdminLivePreview:
         with self._lock:
             self.renderer.dispatch(event_id, *args)
             return self.render_fragment()
+
+    def dispose(self) -> None:
+        unmount(self.app)
 
     def _navigate(self, route_id: str) -> None:
         self.active_route.set(route_id)

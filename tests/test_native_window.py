@@ -1,4 +1,5 @@
 import builtins
+from threading import Thread
 from types import SimpleNamespace
 
 import otoe.window as window_module
@@ -22,10 +23,13 @@ from otoe import (
     css,
     native_backend_adapter,
     native_backend_names,
+    on_cleanup,
     run_native,
     signal,
 )
 from otoe._native_shared import NATIVE_INPUT_SUPPORT, native_input_support
+from otoe.scheduler import PostedCallbackQueue, capture_post, drain_posted, post
+from otoe.window import _TkPostedCallbackPump
 
 
 def test_native_window_driver_click_dispatches_and_updates_frame():
@@ -528,25 +532,679 @@ def test_tk_native_window_canvas_scales_paint_and_maps_pointer_events(monkeypatc
     assert window._canvas.focused
 
 
-def test_tk_posted_callback_poll_reschedules_after_failure(monkeypatch):
+def test_tk_posted_callback_poll_reschedules_after_failure():
     scheduled = []
 
     class FakeRoot:
         def after(self, delay, callback):
             scheduled.append((delay, callback))
 
-    window = object.__new__(TkNativeWindow)
-    window.root = FakeRoot()
-    monkeypatch.setattr(
-        window_module,
-        "drain_posted",
-        lambda: (_ for _ in ()).throw(RuntimeError("posted callback failed")),
+    pump = _TkPostedCallbackPump(
+        FakeRoot(),
+        lambda: None,
+        drain=lambda: (_ for _ in ()).throw(RuntimeError("posted callback failed")),
     )
 
     with pytest.raises(RuntimeError, match="posted callback failed"):
-        window._poll_posted_callbacks()
+        pump.poll()
 
-    assert scheduled == [(16, window._poll_posted_callbacks)]
+    assert scheduled == [(16, pump.poll)]
+
+
+def test_tk_posted_callback_poll_renders_successful_work_after_peer_failure():
+    scheduled = []
+    state: list[str] = []
+    renders: list[tuple[str, ...]] = []
+    queue = PostedCallbackQueue()
+
+    class FakeRoot:
+        def after(self, delay, callback):
+            scheduled.append((delay, callback))
+
+    def fail_callback():
+        raise RuntimeError("posted callback failed")
+
+    queue.post(fail_callback)
+    queue.post(lambda: state.append("updated"))
+    pump = _TkPostedCallbackPump(
+        FakeRoot(),
+        lambda: renders.append(tuple(state)),
+        drain=queue.drain,
+    )
+
+    with pytest.raises(RuntimeError, match="posted callback failed"):
+        pump.poll()
+
+    assert state == ["updated"]
+    assert renders == [("updated",)]
+    assert queue.drain() == 0
+    assert scheduled == [(16, pump.poll)]
+
+
+def test_tk_posted_callback_poll_preserves_drain_and_reschedule_failures():
+    class FakeRoot:
+        def after(self, delay, callback):
+            raise SystemExit("reschedule failed")
+
+    pump = _TkPostedCallbackPump(
+        FakeRoot(),
+        lambda: (_ for _ in ()).throw(ValueError("render failed")),
+        drain=lambda: (_ for _ in ()).throw(KeyboardInterrupt("drain failed")),
+    )
+
+    with pytest.raises(BaseExceptionGroup) as caught:
+        pump.poll()
+
+    assert [str(error) for error in caught.value.exceptions] == [
+        "drain failed",
+        "render failed",
+        "reschedule failed",
+    ]
+    assert pump._scheduled is False
+
+
+@pytest.mark.parametrize("failure_stage", ["canvas", "render"])
+def test_tk_native_window_destroys_root_when_startup_fails(
+    monkeypatch,
+    failure_stage,
+):
+    cleanups = []
+
+    @component
+    def App():
+        on_cleanup(lambda: cleanups.append("driver"))
+        return Button("Run", onClick=lambda: None)
+
+    class FakeRoot:
+        def __init__(self):
+            self.destroy_calls = 0
+
+        def title(self, value):
+            pass
+
+        def bind(self, event, handler):
+            pass
+
+        def geometry(self, value):
+            pass
+
+        def destroy(self):
+            self.destroy_calls += 1
+
+    class FakeCanvas:
+        def __init__(self, root, **kwargs):
+            if failure_stage == "canvas":
+                raise RuntimeError("canvas failed")
+
+        def pack(self, **kwargs):
+            pass
+
+        def bind(self, event, handler):
+            pass
+
+        def delete(self, tag):
+            pass
+
+        def create_rectangle(self, *args, **kwargs):
+            pass
+
+        def create_text(self, *args, **kwargs):
+            pass
+
+    root = FakeRoot()
+    fake_tk = SimpleNamespace(Tk=lambda: root, Canvas=FakeCanvas)
+    driver = NativeWindowDriver.from_target(App())
+    if failure_stage == "render":
+        monkeypatch.setattr(
+            window_module,
+            "_draw_tk_canvas_command",
+            lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("render failed")),
+        )
+
+    with pytest.raises(RuntimeError, match=f"{failure_stage} failed"):
+        TkNativeWindow(driver, _tk_module=fake_tk)
+
+    assert root.destroy_calls == 1
+    assert cleanups == []
+
+    driver.dispose()
+    assert cleanups == ["driver"]
+
+
+def test_tk_startup_preserves_primary_queue_and_root_cleanup_failures():
+    posters = []
+
+    class FakeRoot:
+        def title(self, value):
+            pass
+
+        def bind(self, event, handler):
+            pass
+
+        def geometry(self, value):
+            pass
+
+        def destroy(self):
+            raise SystemExit("root cleanup failed")
+
+    class FakeCanvas:
+        def __init__(self, root, **kwargs):
+            pass
+
+        def pack(self, **kwargs):
+            pass
+
+        def bind(self, event, handler):
+            pass
+
+        def delete(self, tag):
+            poster = capture_post()
+            posters.append(poster)
+            poster(lambda: (_ for _ in ()).throw(KeyboardInterrupt("queue cleanup failed")))
+            raise RuntimeError("render failed")
+
+    root = FakeRoot()
+    fake_tk = SimpleNamespace(Tk=lambda: root, Canvas=FakeCanvas)
+    driver = NativeWindowDriver.from_target(Button("Run", onClick=lambda: None))
+
+    with pytest.raises(BaseExceptionGroup) as caught:
+        TkNativeWindow(driver, _tk_module=fake_tk)
+
+    assert [str(error) for error in caught.value.exceptions] == [
+        "render failed",
+        "queue cleanup failed",
+        "root cleanup failed",
+    ]
+    with pytest.raises(RuntimeError, match="not accepting work"):
+        posters[0](lambda: None)
+    driver.dispose()
+
+
+def test_tk_active_close_drains_accepted_work_before_destroying_root():
+    events: list[str] = []
+    window_holder = {}
+
+    class FakeRoot:
+        def __init__(self):
+            self.destroy_calls = 0
+            self.scheduled = []
+
+        def title(self, value):
+            pass
+
+        def bind(self, event, handler):
+            pass
+
+        def geometry(self, value):
+            pass
+
+        def protocol(self, name, callback):
+            pass
+
+        def after(self, delay, callback):
+            self.scheduled.append((delay, callback))
+
+        def mainloop(self):
+            window = window_holder["window"]
+            window.post(lambda: events.append("accepted callback"))
+            window.close()
+            assert self.destroy_calls == 0
+            events.append("mainloop returned")
+
+        def quit(self):
+            events.append("quit")
+
+        def destroy(self):
+            self.destroy_calls += 1
+            events.append("destroy")
+
+    class FakeCanvas:
+        def __init__(self, root, **kwargs):
+            pass
+
+        def pack(self, **kwargs):
+            pass
+
+        def bind(self, event, handler):
+            pass
+
+        def delete(self, tag):
+            pass
+
+        def create_rectangle(self, *args, **kwargs):
+            pass
+
+        def create_text(self, *args, **kwargs):
+            pass
+
+    root = FakeRoot()
+    fake_tk = SimpleNamespace(Tk=lambda: root, Canvas=FakeCanvas)
+    driver = NativeWindowDriver.from_target(Text("Ready"))
+    window = TkNativeWindow(driver, _tk_module=fake_tk)
+    window_holder["window"] = window
+
+    window.run()
+
+    assert events == [
+        "quit",
+        "mainloop returned",
+        "accepted callback",
+        "destroy",
+    ]
+    assert root.destroy_calls == 1
+    assert window._posted_callbacks.closed is True
+    driver.dispose()
+
+
+def test_tk_root_cleanup_posts_cannot_escape_the_closed_window_queue():
+    assert drain_posted() == 0
+    escaped: list[str] = []
+
+    class FakeRoot:
+        def title(self, value):
+            pass
+
+        def bind(self, event, handler):
+            pass
+
+        def geometry(self, value):
+            pass
+
+        def destroy(self):
+            post(lambda: escaped.append("escaped"))
+
+    class FakeCanvas:
+        def __init__(self, root, **kwargs):
+            pass
+
+        def pack(self, **kwargs):
+            pass
+
+        def bind(self, event, handler):
+            pass
+
+        def delete(self, tag):
+            pass
+
+        def create_rectangle(self, *args, **kwargs):
+            pass
+
+        def create_text(self, *args, **kwargs):
+            pass
+
+    fake_tk = SimpleNamespace(Tk=FakeRoot, Canvas=FakeCanvas)
+    driver = NativeWindowDriver.from_target(Text("Ready"))
+    window = TkNativeWindow(driver, _tk_module=fake_tk)
+
+    with pytest.raises(RuntimeError, match="not accepting work"):
+        window.close()
+
+    assert escaped == []
+    assert drain_posted() == 0
+    assert window._posted_callbacks.closed is True
+    driver.dispose()
+
+
+def test_tk_close_from_foreign_thread_rejects_before_touching_root_or_queue():
+    class FakeRoot:
+        def __init__(self):
+            self.destroy_calls = 0
+
+        def title(self, value):
+            pass
+
+        def bind(self, event, handler):
+            pass
+
+        def geometry(self, value):
+            pass
+
+        def destroy(self):
+            self.destroy_calls += 1
+
+    class FakeCanvas:
+        def __init__(self, root, **kwargs):
+            pass
+
+        def pack(self, **kwargs):
+            pass
+
+        def bind(self, event, handler):
+            pass
+
+        def delete(self, tag):
+            pass
+
+        def create_rectangle(self, *args, **kwargs):
+            pass
+
+        def create_text(self, *args, **kwargs):
+            pass
+
+    root = FakeRoot()
+    fake_tk = SimpleNamespace(Tk=lambda: root, Canvas=FakeCanvas)
+    driver = NativeWindowDriver.from_target(Text("Ready"))
+    window = TkNativeWindow(driver, _tk_module=fake_tk)
+    errors: list[BaseException] = []
+
+    def close_from_foreign_thread():
+        try:
+            window.close()
+        except BaseException as exc:
+            errors.append(exc)
+
+    thread = Thread(target=close_from_foreign_thread)
+    thread.start()
+    thread.join()
+
+    assert len(errors) == 1
+    assert isinstance(errors[0], RuntimeError)
+    assert str(errors[0]) == "Tk window must be closed by its owning thread."
+    assert root.destroy_calls == 0
+    assert window._posted_callbacks.closed is False
+
+    window.close()
+    assert root.destroy_calls == 1
+    driver.dispose()
+
+
+def test_tk_close_seals_queue_and_retries_only_failed_root_cleanup():
+    class FakeRoot:
+        def __init__(self):
+            self.destroy_calls = 0
+
+        def title(self, value):
+            pass
+
+        def bind(self, event, handler):
+            pass
+
+        def geometry(self, value):
+            pass
+
+        def destroy(self):
+            self.destroy_calls += 1
+            if self.destroy_calls == 1:
+                raise SystemExit("root cleanup failed")
+
+    class FakeCanvas:
+        def __init__(self, root, **kwargs):
+            pass
+
+        def pack(self, **kwargs):
+            pass
+
+        def bind(self, event, handler):
+            pass
+
+        def delete(self, tag):
+            pass
+
+        def create_rectangle(self, *args, **kwargs):
+            pass
+
+        def create_text(self, *args, **kwargs):
+            pass
+
+    root = FakeRoot()
+    fake_tk = SimpleNamespace(Tk=lambda: root, Canvas=FakeCanvas)
+    driver = NativeWindowDriver.from_target(Button("Run", onClick=lambda: None))
+    window = TkNativeWindow(driver, _tk_module=fake_tk)
+
+    window.post(
+        lambda: (_ for _ in ()).throw(KeyboardInterrupt("queue cleanup failed"))
+    )
+    with pytest.raises(BaseExceptionGroup) as caught:
+        window.close()
+
+    assert [str(error) for error in caught.value.exceptions] == [
+        "queue cleanup failed",
+        "root cleanup failed",
+    ]
+    assert window._posted_callbacks.closed is True
+    with pytest.raises(RuntimeError, match="not accepting work"):
+        window.post(lambda: None)
+
+    window.close()
+    window.close()
+    assert root.destroy_calls == 2
+    driver.dispose()
+
+
+def test_tk_native_window_mainloop_and_cleanup_failure_can_retry_root_cleanup():
+    cleanups = []
+
+    @component
+    def App():
+        on_cleanup(lambda: cleanups.append("driver"))
+        return Button("Run", onClick=lambda: None)
+
+    class FakeRoot:
+        def __init__(self):
+            self.scheduled = []
+            self.destroy_calls = 0
+
+        def title(self, value):
+            pass
+
+        def bind(self, event, handler):
+            pass
+
+        def geometry(self, value):
+            pass
+
+        def after(self, delay, callback):
+            self.scheduled.append((delay, callback))
+
+        def mainloop(self):
+            raise RuntimeError("mainloop failed")
+
+        def destroy(self):
+            self.destroy_calls += 1
+            if self.destroy_calls == 1:
+                raise OSError("destroy failed")
+
+    class FakeCanvas:
+        def __init__(self, root, **kwargs):
+            pass
+
+        def pack(self, **kwargs):
+            pass
+
+        def bind(self, event, handler):
+            pass
+
+        def delete(self, tag):
+            pass
+
+        def create_rectangle(self, *args, **kwargs):
+            pass
+
+        def create_text(self, *args, **kwargs):
+            pass
+
+    root = FakeRoot()
+    fake_tk = SimpleNamespace(Tk=lambda: root, Canvas=FakeCanvas)
+    driver = NativeWindowDriver.from_target(App())
+    window = TkNativeWindow(driver, _tk_module=fake_tk)
+
+    with pytest.raises(BaseExceptionGroup) as caught:
+        window.run()
+
+    assert root.destroy_calls == 1
+    assert [str(error) for error in caught.value.exceptions] == [
+        "mainloop failed",
+        "destroy failed",
+    ]
+    assert window._posted_callback_pump.closed is True
+    assert cleanups == []
+
+    window.close()
+    assert root.destroy_calls == 2
+    _, deferred_poll = root.scheduled.pop()
+    deferred_poll()
+    assert root.scheduled == []
+
+    driver.dispose()
+    assert cleanups == ["driver"]
+
+
+def test_tk_native_window_injected_run_and_close_are_idempotent():
+    class FakeRoot:
+        def __init__(self):
+            self.scheduled = []
+            self.destroy_calls = 0
+            self.mainloop_calls = 0
+
+        def title(self, value):
+            pass
+
+        def bind(self, event, handler):
+            pass
+
+        def geometry(self, value):
+            pass
+
+        def after(self, delay, callback):
+            self.scheduled.append((delay, callback))
+
+        def mainloop(self):
+            self.mainloop_calls += 1
+            _, callback = self.scheduled.pop(0)
+            callback()
+
+        def destroy(self):
+            self.destroy_calls += 1
+
+    class FakeCanvas:
+        def __init__(self, root, **kwargs):
+            pass
+
+        def pack(self, **kwargs):
+            pass
+
+        def bind(self, event, handler):
+            pass
+
+        def delete(self, tag):
+            pass
+
+        def create_rectangle(self, *args, **kwargs):
+            pass
+
+        def create_text(self, *args, **kwargs):
+            pass
+
+    class FakeTk:
+        def __init__(self):
+            self.root = FakeRoot()
+
+        def Tk(self):
+            return self.root
+
+        Canvas = FakeCanvas
+
+    fake_tk = FakeTk()
+    driver = NativeWindowDriver.from_target(Button("Run", onClick=lambda: None))
+    window = TkNativeWindow(
+        driver,
+        _tk_module=fake_tk,
+        _drain_posted=lambda: 0,
+    )
+
+    window.run()
+    window.close()
+    window.close()
+
+    assert fake_tk.root.mainloop_calls == 1
+    assert fake_tk.root.destroy_calls == 1
+    assert len(fake_tk.root.scheduled) == 1
+    _, deferred_poll = fake_tk.root.scheduled.pop(0)
+    deferred_poll()
+    assert fake_tk.root.scheduled == []
+    driver.dispose()
+
+
+def test_run_native_disposes_only_the_driver_it_creates():
+    cleanups = []
+
+    @component
+    def App():
+        on_cleanup(lambda: cleanups.append("cleanup"))
+        return Button("Run", onClick=lambda: None)
+
+    class RecordingBackend:
+        name = "recording"
+
+        def run(self, driver, *, title="Otoe"):
+            assert driver.paint.width > 0
+
+    run_native(App(), backend=RecordingBackend())
+    assert cleanups == ["cleanup"]
+
+    borrowed = NativeWindowDriver.from_target(App())
+    run_native(borrowed, backend=RecordingBackend())
+    assert cleanups == ["cleanup"]
+
+    borrowed.dispose()
+    borrowed.dispose()
+    assert cleanups == ["cleanup", "cleanup"]
+
+
+def test_run_native_backend_failure_disposes_only_the_driver_it_creates():
+    cleanups = []
+
+    @component
+    def App():
+        on_cleanup(lambda: cleanups.append("cleanup"))
+        return Button("Run", onClick=lambda: None)
+
+    class FailingBackend:
+        name = "failing"
+
+        def run(self, driver, *, title="Otoe"):
+            assert driver.paint.width > 0
+            raise RuntimeError("backend failed")
+
+    with pytest.raises(RuntimeError, match="backend failed"):
+        run_native(App(), backend=FailingBackend())
+    assert cleanups == ["cleanup"]
+
+    borrowed = NativeWindowDriver.from_target(App())
+    with pytest.raises(RuntimeError, match="backend failed"):
+        run_native(borrowed, backend=FailingBackend())
+    assert cleanups == ["cleanup"]
+
+    borrowed_surface = NativeSurface(App())
+    with pytest.raises(RuntimeError, match="backend failed"):
+        run_native(borrowed_surface, backend=FailingBackend())
+    assert cleanups == ["cleanup"]
+
+    borrowed.dispose()
+    borrowed_surface.dispose()
+    assert cleanups == ["cleanup", "cleanup", "cleanup"]
+
+
+def test_run_native_preserves_backend_and_owned_driver_cleanup_failures():
+    @component
+    def App():
+        def fail_cleanup():
+            raise OSError("driver cleanup failed")
+
+        on_cleanup(fail_cleanup)
+        return Button("Run", onClick=lambda: None)
+
+    class FailingBackend:
+        name = "failing"
+
+        def run(self, driver, *, title="Otoe"):
+            raise RuntimeError("backend failed")
+
+    with pytest.raises(BaseExceptionGroup) as caught:
+        run_native(App(), backend=FailingBackend())
+
+    assert str(caught.value.exceptions[0]) == "backend failed"
+    assert "driver cleanup failed" in repr(caught.value.exceptions[1])
 
 
 def test_tk_canvas_text_clipping_is_intersection_only_not_pixel_masked():

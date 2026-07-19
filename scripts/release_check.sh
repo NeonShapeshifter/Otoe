@@ -74,9 +74,33 @@ refuse_unexpected_release_cleanup_target() {
   esac
 }
 
+require_frozen_source_tree() {
+  local current_commit
+  local source_status
+
+  if ! current_commit="$(git -C "$ROOT" rev-parse --verify HEAD 2>/dev/null)"; then
+    echo "release check: source checkout must have a committed HEAD" >&2
+    exit 1
+  fi
+  if [[ -n "${SOURCE_COMMIT:-}" && "$current_commit" != "$SOURCE_COMMIT" ]]; then
+    echo "release check: HEAD changed during the release check" >&2
+    exit 1
+  fi
+  source_status="$(git -C "$ROOT" status --porcelain=v1 --untracked-files=all)"
+  if [[ -n "$source_status" ]]; then
+    echo "release check: source working tree and index must be clean" >&2
+    printf '%s\n' "$source_status" >&2
+    exit 1
+  fi
+}
+
 ROOT_ABS="$(resolve_path "$ROOT")"
 
 cd "$ROOT"
+SOURCE_COMMIT="$(git rev-parse --verify HEAD)"
+SOURCE_DATE_EPOCH="$(git show -s --format=%ct "$SOURCE_COMMIT")"
+export SOURCE_DATE_EPOCH
+require_frozen_source_tree
 
 # Release cleanup is destructive and is limited to known generated artifacts.
 cleanup_paths=("$ROOT/build" "$ROOT/dist" "$ROOT/dist-wheel-smoke")
@@ -90,7 +114,7 @@ rm -rf -- "${cleanup_paths[@]}"
 
 "$PYTHON_BIN" -m pip install \
   --constraint "$ROOT/requirements/ci-constraints.txt" \
-  build setuptools twine wheel
+  build markdown-it-py packaging setuptools twine wheel
 "$PYTHON_BIN" -m pip install \
   --no-build-isolation \
   --constraint "$ROOT/requirements/ci-constraints.txt" \
@@ -100,16 +124,24 @@ rm -rf -- "${cleanup_paths[@]}"
 "$PYTHON_BIN" -m compileall -q src examples tests
 "$PYTHON_BIN" -m ruff check src tests examples scripts
 "$PYTHON_BIN" -m mypy --strict src/otoe
+"$PYTHON_BIN" -m mypy --strict \
+  scripts/cold_start_evidence.py \
+  scripts/runtime_soak.py \
+  scripts/verify_release_artifacts.py \
+  scripts/verify_release_checks.py
 "$PYTHON_BIN" -m mypy.stubtest otoe --allowlist tests/stubtest_allowlist.txt
 "$PYTHON_BIN" -m pytest -q --cov=otoe --cov-report=term-missing --cov-fail-under=82
-SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(git show -s --format=%ct HEAD)}"
-export SOURCE_DATE_EPOCH
+require_frozen_source_tree
 "$PYTHON_BIN" -m build --no-isolation
 "$PYTHON_BIN" scripts/normalize_sdist.py --epoch "$SOURCE_DATE_EPOCH" dist/*.tar.gz
+"$PYTHON_BIN" -I scripts/verify_release_artifacts.py \
+  --dist-dir dist \
+  --project pyproject.toml
 "$PYTHON_BIN" -m twine check dist/*.whl dist/*.tar.gz
 bash "$ROOT/scripts/sdist_smoke.sh" "$(find dist -maxdepth 1 -name 'otoe-*.tar.gz' -print -quit)"
 bash "$ROOT/scripts/wheel_smoke.sh" "$(find dist -maxdepth 1 -name 'otoe-*.whl' -print -quit)"
 PYTHON="$PYTHON_BIN" "$ROOT/scripts/reproducible_build_check.sh" "$ROOT/dist"
 "$PYTHON_BIN" scripts/bench_smoke.py --check
+require_frozen_source_tree
 
 echo "release check: ok"

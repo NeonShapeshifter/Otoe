@@ -113,22 +113,25 @@ class Owner:
         self.pending_effects.clear()
         self.mount_callbacks.clear()
 
-        errors: list[Exception] = []
+        errors: list[BaseException] = []
         for callback in cleanups:
             try:
                 callback()
-            except Exception as exc:
+            except BaseException as exc:
                 errors.append(exc)
 
         for disposable in disposables:
             try:
                 disposable.dispose()
-            except Exception as exc:
+            except BaseException as exc:
                 errors.append(exc)
 
         self.state = OwnerState.DISPOSED
         if errors:
-            raise ExceptionGroup(f"{self.name}: errors while disposing owner.", errors)
+            raise BaseExceptionGroup(
+                f"{self.name}: errors while disposing owner.",
+                errors,
+            )
 
 
 def current_owner() -> Owner | None:

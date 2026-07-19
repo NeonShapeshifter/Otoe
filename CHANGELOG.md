@@ -16,15 +16,37 @@
   disappears.
 - Defined the reactive runtime as single-threaded and added the thread-safe
   `otoe.scheduler.post()` / `drain_posted()` handoff for worker and hardware
-  integrations; the Tk host and development server now drain that queue.
+  integrations. Each Tk or development-server runtime now owns and drains an
+  isolated queue; ambiguous unqualified posts fail when multiple runtimes are
+  active, while captured posters and explicit queues target one runtime.
   **Migration:** replace direct writes to subscribed signals from worker threads
   with `post(lambda: value.set(...))` and drain callbacks on the runtime thread.
+- Made native-surface disposal fail loudly and idempotently: owned mounts are
+  released even when blur cleanup fails, borrowed targets remain borrowed, and
+  disposed surfaces reject further rendering, input, and state access.
+- Added explicit, idempotent host cleanup for live-preview apps and owned native
+  drivers, including bind-failure cleanup, retryable close handling, and
+  all-resource disposal of every shipped live-preview example. The live server
+  now reports its actual bound port.
+- Added a supervised runtime/host soak with a release-test `1000+100` gate,
+  explicit partial-checkpoint evidence on timeout, HTTP restart coverage, exact
+  cleanup ledgers, and injected headless Tk lifecycle coverage.
+- Added an exact-wheel cold-start gate with structured wheel identity and README
+  validation, controller-bound source/copy digests, offline clean-venv
+  installation, source-checkout isolation, OS-assigned dev-server health checks,
+  a hard five-minute process-group watchdog, and atomic evidence for pass,
+  failure, and timeout outcomes.
 - Expanded failed-update staging, bundle verification, live-preview hardening,
   style normalization, backend evidence, and their regression contracts.
 - Reworked release integrity around annotated publish tags, exact wheel/sdist
   smoke tests, reproducible distributions, checksums, provenance attestations,
   pinned GitHub Actions, dependency constraints, coverage and performance gates,
   and fail-loud PyPI publication without `skip-existing`.
+- Bound publication to successful `push` attempts of the exact `CI` and `CodeQL`
+  workflows on `main`, and verify the project/tag identity against the only wheel
+  and sdist plus their internal metadata before either artifact can be promoted.
+- Kept runtime stubs aligned with Python 3.13+ dataclass `__replace__` generation
+  and removed obsolete stubtest allowlist entries.
 
 ## v0.1.9 - Product and Evidence Hardening
 

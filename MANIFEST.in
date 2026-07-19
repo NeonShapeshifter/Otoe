@@ -6,6 +6,7 @@ include ADR-*.md
 recursive-include docs *.md *.json
 recursive-include examples *.py *.json *.toml *.txt *.md
 recursive-include preview *.md *.css *.html
+prune preview/native
 recursive-include requirements *.txt
 recursive-include scripts *.py *.sh
 recursive-include tests *.py *.txt

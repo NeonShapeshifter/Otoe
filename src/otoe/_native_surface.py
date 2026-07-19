@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from ._native_backend import NativeRendererBackend, PYTHON_NATIVE_RENDERER_BACKEND
 from ._native_contracts import LayoutBox, NativeLayout, NativePaint
@@ -45,12 +45,16 @@ class NativeSurface:
         background: str = "#ffffff",
         renderer_backend: NativeRendererBackend | None = None,
     ) -> None:
-        self.stylesheet = stylesheet
-        self.strict_styles = strict_styles
-        self.background = background
-        self.renderer_backend = renderer_backend or PYTHON_NATIVE_RENDERER_BACKEND
-        self.frame = 0
-        self.focused_path: tuple[int, ...] | None = None
+        self._disposed = False
+        self._stylesheet = stylesheet
+        self._strict_styles = strict_styles
+        self._background = background
+        self._renderer_backend: NativeRendererBackend | None = (
+            renderer_backend
+            or cast(NativeRendererBackend, PYTHON_NATIVE_RENDERER_BACKEND)
+        )
+        self._frame = 0
+        self._focused_path: tuple[int, ...] | None = None
         self._focused_widget: FakeWidget | None = None
         self._focused_identities: frozenset[object] = frozenset()
         self._mounted: MountedNode | None
@@ -60,27 +64,104 @@ class NativeSurface:
         else:
             self._owns_mount = False
             self._mounted = None
-        self._target: FakeWidget | MountedNode = (
-            self._mounted
-            if self._mounted is not None
-            else native_surface_target(target)
-        )
-        self._layout: NativeLayout | None = None
-        self._paint: NativePaint | None = None
-        self._tree_revision: tuple[Any, ...] | None = None
-        self.refresh()
-        self.focused_path = self._first_autofocus_path()
-        if self.focused_path is not None:
-            self._focused_widget = widget_by_path(self._root_widget(), self.focused_path)
-            self._focused_identities = frozenset(self._focused_widget.focus_identities)
-            self._paint = self.renderer_backend.paint(
-                self.layout,
-                background=self.background,
-                focused_path=self.focused_path,
+        try:
+            self._target: FakeWidget | MountedNode | None = (
+                self._mounted
+                if self._mounted is not None
+                else native_surface_target(target)
             )
+            self._layout: NativeLayout | None = None
+            self._paint: NativePaint | None = None
+            self._tree_revision: tuple[Any, ...] | None = None
+            self.refresh()
+            self.focused_path = self._first_autofocus_path()
+            if self.focused_path is not None:
+                self._focused_widget = widget_by_path(
+                    self._root_widget(),
+                    self.focused_path,
+                )
+                self._focused_identities = frozenset(
+                    self._focused_widget.focus_identities
+                )
+                self._paint = self.renderer_backend.paint(
+                    self.layout,
+                    background=self.background,
+                    focused_path=self.focused_path,
+                )
+        except BaseException as primary_error:
+            if self._owns_mount and self._mounted is not None:
+                _cleanup_failed_surface_mount(primary_error, self._mounted)
+            raise
+
+    @property
+    def disposed(self) -> bool:
+        return self._disposed
+
+    @property
+    def stylesheet(self) -> StyleSheet | None:
+        self._ensure_active()
+        return self._stylesheet
+
+    @stylesheet.setter
+    def stylesheet(self, value: StyleSheet | None) -> None:
+        self._ensure_active()
+        self._stylesheet = value
+
+    @property
+    def strict_styles(self) -> bool:
+        self._ensure_active()
+        return self._strict_styles
+
+    @strict_styles.setter
+    def strict_styles(self, value: bool) -> None:
+        self._ensure_active()
+        self._strict_styles = value
+
+    @property
+    def background(self) -> str:
+        self._ensure_active()
+        return self._background
+
+    @background.setter
+    def background(self, value: str) -> None:
+        self._ensure_active()
+        self._background = value
+
+    @property
+    def renderer_backend(self) -> NativeRendererBackend:
+        self._ensure_active()
+        assert self._renderer_backend is not None
+        return self._renderer_backend
+
+    @renderer_backend.setter
+    def renderer_backend(self, value: NativeRendererBackend) -> None:
+        self._ensure_active()
+        self._renderer_backend = value
+
+    @property
+    def frame(self) -> int:
+        self._ensure_active()
+        return self._frame
+
+    @frame.setter
+    def frame(self, value: int) -> None:
+        self._ensure_active()
+        self._frame = value
+
+    @property
+    def focused_path(self) -> tuple[int, ...] | None:
+        self._ensure_active()
+        return self._focused_path
+
+    @focused_path.setter
+    def focused_path(self, value: tuple[int, ...] | None) -> None:
+        self._ensure_active()
+        self._focused_path = value
 
     @property
     def mounted(self) -> MountedNode | None:
+        self._ensure_active()
+        assert self._target is not None
         return (
             self._mounted
             if self._mounted is not None
@@ -89,22 +170,27 @@ class NativeSurface:
 
     @property
     def target(self) -> FakeWidget | MountedNode:
+        self._ensure_active()
+        assert self._target is not None
         return self._target
 
     @property
     def layout(self) -> NativeLayout:
+        self._ensure_active()
         self._ensure_fresh()
         assert self._layout is not None
         return self._layout
 
     @property
     def paint(self) -> NativePaint:
+        self._ensure_active()
         self._ensure_fresh()
         assert self._paint is not None
         return self._paint
 
     @property
     def focused_box(self) -> LayoutBox | None:
+        self._ensure_active()
         if self.focused_path is None:
             return None
         try:
@@ -113,9 +199,10 @@ class NativeSurface:
             return None
 
     def refresh(self) -> NativePaint:
+        self._ensure_active()
         focus_was_lost = self._sync_focused_widget_before_refresh()
         self._layout = self.renderer_backend.layout(
-            self._target,
+            self.target,
             stylesheet=self.stylesheet,
             strict_styles=self.strict_styles,
         )
@@ -130,6 +217,7 @@ class NativeSurface:
         return self._paint
 
     def render_png(self, path: str | Path) -> NativePaint:
+        self._ensure_active()
         paint = self.refresh()
         self.renderer_backend.write_png(paint, path)
         return paint
@@ -141,17 +229,20 @@ class NativeSurface:
         *,
         event: str = "onClick",
     ) -> LayoutBox | None:
+        self._ensure_active()
         return hit_test_native(self.layout, x, y, event=event)
 
     def click(self, x: int, y: int) -> Any:
+        self._ensure_active()
         focus_hit = self._hit_test_focusable(x, y)
         if focus_hit is not None:
             self.focus(focus_hit.path)
-        result = dispatch_native_click(self._target, self.layout, x, y)
+        result = dispatch_native_click(self.target, self.layout, x, y)
         self.refresh()
         return result
 
     def focus(self, path: tuple[int, ...] | None) -> None:
+        self._ensure_active()
         self._ensure_fresh()
         next_widget = (
             widget_by_path(self._root_widget(), path) if path is not None else None
@@ -176,6 +267,7 @@ class NativeSurface:
         self.refresh()
 
     def focus_next(self, *, reverse: bool = False) -> LayoutBox | None:
+        self._ensure_active()
         focusable = self._focusable_paths()
         if not focusable:
             self.focus(None)
@@ -199,6 +291,7 @@ class NativeSurface:
         meta: bool = False,
         alt: bool = False,
     ) -> Any:
+        self._ensure_active()
         if key == "Tab":
             return self.focus_next(reverse=shift)
 
@@ -229,6 +322,7 @@ class NativeSurface:
         return result
 
     def input_text(self, value: str, *, path: tuple[int, ...] | None = None) -> Any:
+        self._ensure_active()
         target_path = self.focused_path if path is None else path
         self._enabled_input_widget(target_path)
 
@@ -241,11 +335,13 @@ class NativeSurface:
         return result
 
     def input_value(self, *, path: tuple[int, ...] | None = None) -> str:
+        self._ensure_active()
         target_path = self.focused_path if path is None else path
         widget = self._enabled_input_widget(target_path)
         return str(widget.props.get("value") or "")
 
     def scroll(self, x: int, y: int, delta_y: int) -> Any:
+        self._ensure_active()
         did_scroll, result = dispatch_scroll(
             self._root_widget(),
             self.layout,
@@ -259,21 +355,45 @@ class NativeSurface:
         return result
 
     def box(self, path: tuple[int, ...]) -> LayoutBox:
+        self._ensure_active()
         return self.layout.by_path(path)
 
     def dispose(self) -> None:
-        if self._focused_widget is not None:
-            _trigger_widget_event(self._focused_widget, "onBlur")
-        if self._owns_mount and self._mounted is not None:
-            unmount(self._mounted)
+        if self._disposed:
+            return
+
+        focused_widget = self._focused_widget
+        owned_mount = self._mounted if self._owns_mount else None
+
+        # Mark the surface unusable before callbacks can re-enter it. Clear all
+        # tree and render references even when blur or owner cleanup fails.
+        self._disposed = True
         self._layout = None
         self._paint = None
         self._tree_revision = None
-        self.focused_path = None
+        self._focused_path = None
         self._focused_widget = None
         self._focused_identities = frozenset()
+        self._mounted = None
+        self._target = None
+        self._stylesheet = None
+        self._renderer_backend = None
+
+        errors: list[BaseException] = []
+        if focused_widget is not None:
+            try:
+                _trigger_widget_event(focused_widget, "onBlur")
+            except BaseException as error:
+                errors.append(error)
+        if owned_mount is not None:
+            try:
+                unmount(owned_mount)
+            except BaseException as error:
+                errors.append(error)
+        _raise_surface_dispose_errors(errors)
 
     def _ensure_fresh(self) -> None:
+        self._ensure_active()
         current_revision = tree_revision(self._root_widget())
         if (
             self._layout is None
@@ -281,6 +401,10 @@ class NativeSurface:
             or current_revision != self._tree_revision
         ):
             self.refresh()
+
+    def _ensure_active(self) -> None:
+        if self._disposed:
+            raise RuntimeError("NativeSurface has been disposed and cannot be used.")
 
     def _sync_focused_widget_before_refresh(self) -> bool:
         focused_widget = self._focused_widget
@@ -291,8 +415,6 @@ class NativeSurface:
         if next_path is not None and is_focusable_widget(focused_widget):
             self.focused_path = next_path
             return False
-
-
         replacement = _widget_for_focus_identities(
             self._root_widget(),
             self._focused_identities,
@@ -359,7 +481,33 @@ class NativeSurface:
         )
 
     def _root_widget(self) -> FakeWidget:
+        self._ensure_active()
+        assert self._target is not None
         return surface_root_widget(self._target)
+
+
+def _cleanup_failed_surface_mount(
+    primary_error: BaseException,
+    mounted: MountedNode,
+) -> None:
+    try:
+        unmount(mounted)
+    except BaseException as cleanup_error:
+        raise BaseExceptionGroup(
+            "NativeSurface initialization and mount cleanup both failed.",
+            [primary_error, cleanup_error],
+        ) from primary_error
+
+
+def _raise_surface_dispose_errors(errors: list[BaseException]) -> None:
+    if not errors:
+        return
+    if len(errors) == 1:
+        raise errors[0]
+    raise BaseExceptionGroup(
+        "NativeSurface focus blur and owned mount cleanup both failed.",
+        errors,
+    ) from errors[0]
 
 
 def _path_for_widget(

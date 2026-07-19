@@ -6,17 +6,23 @@ from dataclasses import dataclass, field
 from html import escape
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from threading import RLock
-from typing import Any, Callable
+from threading import RLock, get_ident
+from typing import Any, Callable, cast
 from urllib.parse import urlsplit
 
-from .live_config import LivePreviewApp, LivePreviewConfig, LivePreviewStylesheet
+from .live_config import (
+    DisposableLivePreviewApp,
+    LivePreviewApp,
+    LivePreviewConfig,
+    LivePreviewStylesheet,
+)
 from .live_events import LiveEventSequenceTracker, live_event_from_payload
 from .live_script import LIVE_SCRIPT
-from .scheduler import drain_posted
+from .scheduler import PostedCallbackQueue, drain_posted
 
 __all__ = [
     "LivePreviewApp",
+    "DisposableLivePreviewApp",
     "LivePreviewConfig",
     "LivePreviewStylesheet",
     "LiveEventSequenceTracker",
@@ -65,21 +71,22 @@ def render_live_page(app: LivePreviewApp, config: LivePreviewConfig) -> str:
 class _LivePreviewState:
     app: LivePreviewApp
     config: LivePreviewConfig
+    posted_callbacks: PostedCallbackQueue = field(default_factory=PostedCallbackQueue)
     lock: RLock = field(default_factory=RLock)
     event_sequences: LiveEventSequenceTracker = field(
         default_factory=LiveEventSequenceTracker
     )
 
     def render_page(self) -> str:
-        with self.lock:
-            drain_posted()
+        with self.lock, self.posted_callbacks.bind():
+            drain_posted(queue=self.posted_callbacks)
             return render_live_page(self.app, self.config)
 
     def dispatch_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
         event = live_event_from_payload(payload)
 
-        with self.lock:
-            drain_posted()
+        with self.lock, self.posted_callbacks.bind():
+            drain_posted(queue=self.posted_callbacks)
             if not self.event_sequences.accept(event):
                 return {
                     "ok": True,
@@ -90,6 +97,153 @@ class _LivePreviewState:
         return {"ok": True, "html": html, "stale": False}
 
 
+class _LivePreviewHTTPServer(HTTPServer):
+    """HTTP server that owns the state consumed by its request handlers."""
+
+    def __init__(
+        self,
+        server_address: tuple[str, int],
+        request_handler_class: type[BaseHTTPRequestHandler],
+        *,
+        state: _LivePreviewState,
+    ) -> None:
+        self.live_preview_state = state
+        super().__init__(server_address, request_handler_class)
+
+
+class _LivePreviewServer:
+    """Single-thread live-preview host with explicit shutdown and cleanup."""
+
+    def __init__(
+        self,
+        *,
+        app_factory: Callable[[], LivePreviewApp],
+        config: LivePreviewConfig,
+        host: str,
+        port: int,
+    ) -> None:
+        self._owner_thread = get_ident()
+        self._posted_callbacks = PostedCallbackQueue()
+        self._lifecycle_lock = RLock()
+        self._serving_thread: int | None = None
+        self._closing = False
+        self._closed = False
+        self._socket_closed = False
+        self._app_disposed = False
+
+        try:
+            with self._posted_callbacks.bind():
+                self.app = app_factory()
+        except BaseException as primary_error:
+            with self._posted_callbacks.bind():
+                _cleanup_after_failure(
+                    primary_error,
+                    self._posted_callbacks.close,
+                    message="Live preview app factory and queue cleanup both failed.",
+                )
+            raise
+
+        try:
+            self.state = _LivePreviewState(
+                self.app,
+                config,
+                posted_callbacks=self._posted_callbacks,
+            )
+            self._server = _LivePreviewHTTPServer(
+                (host, port),
+                _LivePreviewHandler,
+                state=self.state,
+            )
+        except BaseException as primary_error:
+            with self._posted_callbacks.bind():
+                _cleanup_after_failure(
+                    primary_error,
+                    self._posted_callbacks.close,
+                    lambda: _dispose_live_preview_app(self.app),
+                    message="Live preview startup and cleanup both failed.",
+                )
+            raise
+
+    @property
+    def server_address(self) -> tuple[str, int]:
+        host, port = self._server.server_address[:2]
+        return str(host), int(port)
+
+    def serve_forever(self, *, poll_interval: float = 0.5) -> None:
+        runtime_thread = get_ident()
+        with self._lifecycle_lock:
+            if self._closed:
+                raise RuntimeError("Live preview server is closed.")
+            if self._serving_thread is not None:
+                raise RuntimeError("Live preview server is already serving.")
+            self._serving_thread = runtime_thread
+        try:
+            with self._posted_callbacks.activate():
+                self._server.serve_forever(poll_interval=poll_interval)
+        finally:
+            with self._lifecycle_lock:
+                self._serving_thread = None
+
+    def shutdown(self) -> None:
+        """Ask a running serve loop to stop; call from a different thread."""
+        self._server.shutdown()
+
+    def close(self) -> None:
+        """Close the socket and dispose the app on its owning runtime thread."""
+        with self._lifecycle_lock:
+            if (
+                self._socket_closed
+                and self._posted_callbacks.closed
+                and self._app_disposed
+            ):
+                return
+            if self._serving_thread is not None:
+                raise RuntimeError(
+                    "Live preview server cannot be closed while serve_forever() "
+                    "is active; call shutdown() from another thread, wait for "
+                    "serve_forever() to return, then close it."
+                )
+            if self._owner_thread != get_ident():
+                raise RuntimeError(
+                    "Live preview server must be closed by its owning thread."
+                )
+            if self._closing:
+                return
+            self._closing = True
+            self._closed = True
+            try:
+                errors: list[BaseException] = []
+                with self._posted_callbacks.bind():
+                    if not self._socket_closed:
+                        try:
+                            self._server.server_close()
+                        except BaseException as exc:
+                            errors.append(exc)
+                        else:
+                            self._socket_closed = True
+                    if not self._posted_callbacks.closed:
+                        try:
+                            self._posted_callbacks.close()
+                        except BaseException as exc:
+                            errors.append(exc)
+                    if not self._app_disposed:
+                        try:
+                            _dispose_live_preview_app(self.app)
+                        except BaseException as exc:
+                            errors.append(exc)
+                        else:
+                            self._app_disposed = True
+                if len(errors) == 1:
+                    raise errors[0]
+                if errors:
+                    raise BaseExceptionGroup(
+                        "Live preview server cleanup failed.",
+                        errors,
+                    )
+            finally:
+                self._closing = False
+
+
 def run_live_preview(
     *,
     app_factory: Callable[[], LivePreviewApp],
@@ -98,20 +252,52 @@ def run_live_preview(
     port: int,
     label: str,
 ) -> None:
-    state = _LivePreviewState(app_factory(), config)
-
-    class Handler(_LivePreviewHandler):
-        pass
-
-    Handler.state = state
-    server = HTTPServer((host, port), Handler)
-    print(f"{label}: http://{host}:{port}")
+    server = _LivePreviewServer(
+        app_factory=app_factory,
+        config=config,
+        host=host,
+        port=port,
+    )
     try:
+        bound_host, bound_port = server.server_address
+        print(f"{label}: http://{bound_host}:{bound_port}", flush=True)
         server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()
+    except KeyboardInterrupt as primary_error:
+        _cleanup_after_failure(
+            primary_error,
+            server.close,
+            message="Live preview interruption and cleanup both failed.",
+        )
+    except BaseException as primary_error:
+        _cleanup_after_failure(
+            primary_error,
+            server.close,
+            message="Live preview operation and cleanup both failed.",
+        )
+        raise
+    else:
+        server.close()
+
+
+def _cleanup_after_failure(
+    primary_error: BaseException,
+    *cleanups: Callable[[], None],
+    message: str,
+) -> None:
+    errors: list[BaseException] = [primary_error]
+    for cleanup in cleanups:
+        try:
+            cleanup()
+        except BaseException as cleanup_error:
+            errors.append(cleanup_error)
+    if len(errors) > 1:
+        raise BaseExceptionGroup(message, errors) from primary_error
+
+
+def _dispose_live_preview_app(app: LivePreviewApp) -> None:
+    dispose = getattr(app, "dispose", None)
+    if callable(dispose):
+        cast(DisposableLivePreviewApp, app).dispose()
 
 
 def parse_host_port(
@@ -128,15 +314,23 @@ def parse_host_port(
 class _LivePreviewHandler(BaseHTTPRequestHandler):
     state: _LivePreviewState
 
+    def _preview_state(self) -> _LivePreviewState:
+        server = getattr(self, "server", None)
+        state = getattr(server, "live_preview_state", None)
+        if isinstance(state, _LivePreviewState):
+            return state
+        return self.state
+
     def do_GET(self) -> None:
+        state = self._preview_state()
         path = urlsplit(self.path).path
         if path in {"/", "/index.html"}:
             self._send_text(
-                self.state.render_page(),
+                state.render_page(),
                 "text/html; charset=utf-8",
             )
             return
-        stylesheet = self.state.config.stylesheet_for(path)
+        stylesheet = state.config.stylesheet_for(path)
         if stylesheet is not None:
             self._send_stylesheet(stylesheet)
             return
@@ -152,7 +346,7 @@ class _LivePreviewHandler(BaseHTTPRequestHandler):
             return
         try:
             payload = self._read_event_payload()
-            result = self.state.dispatch_payload(payload)
+            result = self._preview_state().dispatch_payload(payload)
         except _PayloadTooLargeError as exc:
             self._send_json(
                 {"ok": False, "error": str(exc)},

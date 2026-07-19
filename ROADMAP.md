@@ -1,7 +1,7 @@
 # Otoe Roadmap
 
-**Updated:** July 11, 2026\
-**Current program gate:** G0-G2 runtime and release stabilization\
+**Updated:** July 19, 2026\
+**Current program gate:** G0 public promotion; G1-G3 candidate verification\
 **Product reference:** [Product North Star](docs/product-north-star.md)\
 **Native track:** [ADR-021](ADR-021-native-yoga-skia-sdl3-roadmap.md)\
 **Layout track:** [Layout v1 Plan](docs/layout-v1-plan.md)\
@@ -30,6 +30,9 @@ technical phases, but they do not override the status or exit gates here.
   are not implemented.
 - Otoe is already public and published on PyPI. The remaining framework phase is
   runtime/API stabilization, not deciding whether to extract a public project.
+- The release candidate has a supervised `1000+100` runtime/host soak and an
+  exact-wheel cold-start gate. Both pass locally; neither substitutes for remote
+  supported-Python CI, a real GUI display, or physical-device evidence.
 - Wraith is a case study and contract source. It is not an Otoe dependency or a
   production migration target today.
 
@@ -57,15 +60,22 @@ it cannot be called complete before its prerequisites pass.
 
 ### G0 - Source And Release Integrity
 
-**Status:** Active; implementation hardened locally, public promotion pending.
+**Status:** Active; local candidate acceptance is green. Freezing and validating
+the exact promotion commit, tag protection, public promotion, remote CI, and
+publication remain pending.
 
 Exit criteria:
 
 - one Git commit is the source of every public source sync and package artifact;
 - no release is copied from an uncommitted working tree;
 - annotated immutable `vX.Y.Z` tags target a commit reachable from `main`;
+- an active `v*` tag ruleset prevents release-tag updates and deletions;
 - CI, strict typing, coverage, package metadata, exact wheel/sdist smoke,
   reproducibility, and performance budgets pass before publication;
+- the exact `CI` and `CodeQL` push attempts on `main` pass for the release SHA,
+  without mixing jobs across workflow runs or rerun attempts;
+- one canonical project/tag version matches both distribution filenames and the
+  wheel/sdist internal metadata, with no extra distribution files;
 - one checksummed, attested artifact is promoted to PyPI without rebuilding;
 - existing PyPI versions fail loudly rather than using `skip-existing`;
 - the historical `v0.1.9` discrepancy is documented with immutable PyPI hashes
@@ -73,7 +83,8 @@ Exit criteria:
 
 ### G1 - Runtime Correctness
 
-**Status:** Active; fixes and focused/property tests pass locally.
+**Status:** Implementation complete locally; the supported-Python matrix for the
+exact promoted candidate remains pending under G0.
 
 Exit criteria:
 
@@ -90,8 +101,8 @@ Exit criteria:
 
 ### G2 - Runtime Thread And Host Contract
 
-**Status:** Active; single-thread enforcement and posted-callback queue landed
-locally, integration soak remains.
+**Status:** Local acceptance complete; exact public-candidate evidence remains
+pending under G0.
 
 Exit criteria:
 
@@ -103,10 +114,16 @@ Exit criteria:
 - repeated start, update, failure, unmount, and restart tests show no lost work or
   leaked resources.
 
+Local acceptance on Python 3.12 exercises 1,000 reactive cycles and 100 host
+cycles in a supervised subprocess: 9,000 posted callbacks, 13,000 acquired and
+released resources, 4,100 joined workers, 100 HTTP starts with 99 same-port
+restarts and 400 requests, and 100 injected headless Tk lifecycles. This proves
+the runtime/host contract, not a real GUI or hardware host.
+
 ### G3 - Phase 5 Product-Shape Closure
 
-**Status:** Active; the strict MissionExec baseline is landed, while external
-cold-start validation remains open.
+**Status:** Automated product-shape acceptance complete locally; observation by
+an unfamiliar developer remains open.
 
 Exit criteria:
 
@@ -122,6 +139,15 @@ Exit criteria:
   clearly separate;
 - Wraith and all backend-candidate material are labeled contributor/case-study
   evidence rather than the product entry point.
+
+The exact-wheel cold-start gate installs with `--no-index --no-deps` in a clean
+venv outside the checkout, verifies canonical wheel identity and binds the
+source and copied artifacts to a controller-computed SHA-256, runs the generated
+README flow through an OS-assigned live-server port, and emits evidence on
+success, failure, or hard timeout. The current candidate completes that
+automated scope well inside its 300-second watchdog. This is
+repeatable tooling evidence, not a human usability study, so it does not alone
+satisfy the unfamiliar-developer wording above.
 
 ### G4 - Native V0 Vertical Slice
 
@@ -200,15 +226,18 @@ Exit criteria:
 
 ## Immediate Sequence
 
-1. Finish G0 by committing a coherent private source state, reviewing its diff,
-   syncing from that commit, and repairing/documenting `v0.1.9` provenance.
-2. Finish G1/G2 with the full matrix, coverage, package, and soak verification.
-3. Run an external cold-start Phase 5 test and keep the landed strict portable
-   MissionExec baseline green.
-4. Freeze new backend-evidence formats and UI primitives unless a gate requires
-   them.
-5. Implement G4 as Skia CPU -> SDL3 counter -> MissionExec -> Yoga-on-demand.
-6. Run G5 on x86_64, then Raspberry Pi/Cage, before API graduation.
+1. Enforce immutable release tags with an active `v*` update/delete ruleset.
+2. Commit the reviewed source candidate, run the release check from that exact
+   commit, and sync only that commit into the public repository.
+3. Push public `main`, require the exact 3.11-3.14 CI matrix and CodeQL to pass,
+   then create and push the annotated `v0.2.0` publication tag.
+4. Verify the published PyPI bytes, hashes, provenance, and clean external
+   installation without moving the tag or rebuilding.
+5. Observe the onboarding flow with an unfamiliar Python developer and record
+   friction separately from the automated cold-start budget.
+6. Freeze new backend-evidence formats and UI primitives unless a gate requires
+   them, then implement G4 in its required staged order.
+7. Run G5 on x86_64, then Raspberry Pi/Cage, before API graduation.
 
 ## Explicit Non-Goals
 
